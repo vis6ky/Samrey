@@ -1,0 +1,6 @@
+{
+  "name": "Aether Framework Architectural Design & Competitive Analysis",
+  "description": "Production-grade technical analysis of React, Angular, Vue, Svelte, and Solid, with complete architectural blueprints, compiler pipeline, security model, and technical decision records for the Aether framework.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

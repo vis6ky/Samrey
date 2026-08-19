@@ -1,0 +1,25 @@
+{
+  "name": "@aether/router",
+  "version": "0.1.0",
+  "description": "Fine-grained reactive client & server router with parameterized matching and loader pipelines.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@aether/reactivity": "^0.1.0",
+    "@aether/runtime": "^0.1.0"
+  },
+  "keywords": ["aether", "router", "routing", "loaders", "navigation"],
+  "author": "Aether Framework Team",
+  "license": "Apache-2.0"
+}
