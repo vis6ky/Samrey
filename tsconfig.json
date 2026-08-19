@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@aether/security": ["./packages/security/src/index.ts"],
+      "@aether/reactivity": ["./packages/reactivity/src/index.ts"],
+      "@aether/runtime": ["./packages/runtime/src/index.ts"],
+      "@aether/compiler": ["./packages/compiler/src/index.ts"],
+      "@aether/router": ["./packages/router/src/index.ts"],
+      "@aether/http": ["./packages/http/src/index.ts"],
+      "@aether/forms": ["./packages/forms/src/index.ts"],
+      "@aether/ssr": ["./packages/ssr/src/index.ts"],
+      "@aether/testing": ["./packages/testing/src/index.ts"],
+      "@aether/cli": ["./packages/cli/src/index.ts"],
+      "@aether/devtools": ["./packages/devtools/src/index.ts"]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
