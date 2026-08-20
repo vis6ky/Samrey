@@ -50,10 +50,16 @@ export function batch<T>(fn: () => T): T {
   } finally {
     batchDepth--;
     if (batchDepth === 0 && pendingEffects.size > 0) {
-      const queue = Array.from(pendingEffects);
-      pendingEffects.clear();
-      for (const effect of queue) {
-        effect.update();
+      // Drain queue safely handling re-entrant queuing
+      while (pendingEffects.size > 0) {
+        const effectsToRun: Subscriber[] = [];
+        for (const effect of pendingEffects) {
+          effectsToRun.push(effect);
+        }
+        pendingEffects.clear();
+        for (let i = 0; i < effectsToRun.length; i++) {
+          effectsToRun[i].update();
+        }
       }
     }
   }
