@@ -28,6 +28,7 @@ import { classifyBindingContext } from './security-classifier.js';
 import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
 import { AetherCompilerError, AetherErrorCode } from './errors.js';
+import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@aether/security';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
@@ -736,7 +737,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         // Compile-time Constant Expression Folding for static interpolations
         const fold = evaluateConstantExpression(node.expression);
         if (fold.isConstant && fold.value !== null) {
-          html += fold.value;
+          html += escapeHtmlText(fold.value);
           childIndex++;
         } else {
           html += '<!-- dynamic-slot -->';
@@ -766,7 +767,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
             // Compile-time Constant Expression Folding for static attributes
             const fold = evaluateConstantExpression(attr.expression);
             if (fold.isConstant && fold.value !== null) {
-              tagOpen += ` ${attr.name}="${fold.value}"`;
+              let safeFoldVal = fold.value;
+              const lowerName = attr.name.toLowerCase();
+              if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href') {
+                safeFoldVal = sanitizeUri(safeFoldVal);
+              }
+              tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeFoldVal)}"`;
             } else {
               const attrSlot: AIRDynamicAttrNode = {
                 type: 'dynamic-attr',
@@ -778,7 +784,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               slots.push(attrSlot);
             }
           } else if (attr.value !== null) {
-            tagOpen += ` ${attr.name}="${attr.value}"`;
+            let safeAttrVal = attr.value;
+            const lowerName = attr.name.toLowerCase();
+            if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href') {
+              safeAttrVal = sanitizeUri(safeAttrVal);
+            }
+            tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeAttrVal)}"`;
           } else {
             tagOpen += ` ${attr.name}`;
           }

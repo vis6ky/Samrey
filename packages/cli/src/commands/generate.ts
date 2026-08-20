@@ -197,7 +197,16 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
     };
   }
 
-  const scaffold = scaffoldArtifact(options.type, options.name);
+  const cleanName = options.name.trim();
+  if (cleanName.includes('..') || cleanName.includes('/') || cleanName.includes('\\') || !/^[a-zA-Z0-9_-]+$/.test(cleanName)) {
+    return {
+      success: false,
+      message: `[Aether Generate Error] Invalid artifact name "${options.name}". Path traversal characters and path separators are forbidden.`,
+      exitCode: 1
+    };
+  }
+
+  const scaffold = scaffoldArtifact(options.type, cleanName);
   const targetDir = options.targetDir || process.cwd();
 
   if (options.dryRun) {

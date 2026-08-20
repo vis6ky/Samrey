@@ -3,6 +3,8 @@
  * @aether/http - Fetch Client Wrapper
  */
 
+import { sanitizeUri } from '@aether/security';
+
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number;
 }
@@ -10,8 +12,17 @@ export interface RequestOptions extends RequestInit {
 export class HttpClient {
   constructor(private baseUrl = '') {}
 
+  private resolveUrl(path: string): string {
+    const raw = this.baseUrl ? `${this.baseUrl}${path}` : path;
+    const safe = sanitizeUri(raw);
+    if (safe === 'about:blank' && raw !== 'about:blank') {
+      throw new Error(`[Aether HTTP] Blocked insecure request URL: "${raw}"`);
+    }
+    return raw;
+  }
+
   async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const url = this.baseUrl ? `${this.baseUrl}${path}` : path;
+    const url = this.resolveUrl(path);
     const res = await fetch(url, {
       ...options,
       method: 'GET',
@@ -29,7 +40,7 @@ export class HttpClient {
   }
 
   async post<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
-    const url = this.baseUrl ? `${this.baseUrl}${path}` : path;
+    const url = this.resolveUrl(path);
     const res = await fetch(url, {
       ...options,
       method: 'POST',

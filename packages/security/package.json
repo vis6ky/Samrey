@@ -15,6 +15,17 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts"
   },
+  "devDependencies": {
+    "@aether/compiler": "^0.1.0",
+    "@aether/reactivity": "^0.1.0",
+    "@aether/runtime": "^0.1.0",
+    "@aether/router": "^0.1.0",
+    "@aether/ssr": "^0.1.0",
+    "@aether/forms": "^0.1.0",
+    "@aether/http": "^0.1.0",
+    "@aether/devtools": "^0.1.0",
+    "@aether/cli": "^0.1.0"
+  },
   "keywords": ["aether", "security", "trusted-types", "sanitizer", "csrf", "xss"],
   "author": "Aether Framework Team",
   "license": "Apache-2.0"

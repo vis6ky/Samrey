@@ -70,12 +70,18 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
   }
 
   const script = document.getElementById(scriptId);
-  if (!script || !script.textContent) {
+  // Defend against DOM clobbering: ensure target is an actual SCRIPT element
+  if (!script || (script.nodeName !== 'SCRIPT' && !(typeof HTMLScriptElement !== 'undefined' && script instanceof HTMLScriptElement))) {
+    return fallback;
+  }
+
+  const rawContent = script.textContent;
+  if (!rawContent) {
     return fallback;
   }
 
   try {
-    const parsed = safeJsonParse<T>(script.textContent);
+    const parsed = safeJsonParse<T>(rawContent);
 
     if (options.validator) {
       const res = options.validator(parsed);

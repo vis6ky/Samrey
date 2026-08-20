@@ -4,11 +4,13 @@
  */
 
 import { signal, computed } from '@aether/reactivity';
+import { sanitizeRedirectUri } from '@aether/security';
 import { RouteRecord, RouterInstance, RouteMatch } from './types.js';
 import { matchRoutes } from './matcher.js';
 
 export function createRouter(routes: RouteRecord[], initialPath = '/'): RouterInstance {
-  const pathSignal = signal(initialPath);
+  const safeInitial = sanitizeRedirectUri(initialPath, '/');
+  const pathSignal = signal(safeInitial);
 
   const activeMatch = computed(() => {
     return matchRoutes(routes, pathSignal.value);
@@ -19,10 +21,11 @@ export function createRouter(routes: RouteRecord[], initialPath = '/'): RouterIn
   });
 
   function navigate(to: string): void {
-    if (pathSignal.value !== to) {
-      pathSignal.value = to;
+    const safeTo = sanitizeRedirectUri(to, pathSignal.value);
+    if (pathSignal.value !== safeTo) {
+      pathSignal.value = safeTo;
       if (typeof window !== 'undefined' && window.history) {
-        window.history.pushState(null, '', to);
+        window.history.pushState(null, '', safeTo);
       }
     }
   }
