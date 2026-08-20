@@ -12,7 +12,7 @@ import { runAnalyzeCommand } from './commands/analyze.js';
 import { runGenerateCommand, GenerateArtifactType } from './commands/generate.js';
 import { CommandResult } from './commands/create.js';
 
-export const CLI_VERSION = '0.1.0';
+export const CLI_VERSION = '1.0.0-rc.1';
 
 export const HELP_TEXT = `
 Aether Framework CLI v${CLI_VERSION}

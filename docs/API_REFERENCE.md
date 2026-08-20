@@ -85,6 +85,12 @@ Creates a reactive router instance.
 - `.currentParams`: Computed signal of active route parameters.
 - `.navigate(path: string)`: Navigates safely to a new path.
 
+### `matchPath(pattern: string, pathname: string): Record<string, string> | null`
+Matches a parameterized URL pattern (e.g. `/users/:id`) against an incoming pathname.
+
+### `matchRoutes(routes: RouteRecord[], pathname: string): RouteMatch | null`
+Evaluates a collection of route records to find the first matching route and extracted parameters.
+
 ---
 
 ## `@aether/http`

@@ -64,7 +64,7 @@ describe('@aether/cli - Comprehensive Developer Experience & Tooling Suite', () 
 
     const versionResult = await runCLI(['--version']);
     assert.equal(versionResult.exitCode, 0);
-    assert.ok(versionResult.message.includes('aether v0.1.0'));
+    assert.ok(versionResult.message.includes('aether v1.0.0-rc.1'));
   });
 
   it('executes "aether create" in dry-run mode with deterministic output', async () => {
