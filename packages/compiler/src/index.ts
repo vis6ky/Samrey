@@ -9,3 +9,4 @@ export * from './a11y-linter.js';
 export * from './codegen.js';
 export * from './parser.js';
 export * from './static-analyzer.js';
+export * from './errors.js';

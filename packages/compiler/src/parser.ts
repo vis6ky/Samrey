@@ -27,6 +27,7 @@ import {
 import { classifyBindingContext } from './security-classifier.js';
 import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
+import { AetherCompilerError, AetherErrorCode } from './errors.js';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
@@ -64,6 +65,7 @@ export interface ParseOptions {
 export interface ParseResult {
   ast: ASTRootNode;
   diagnostics: string[];
+  errors: AetherCompilerError[];
 }
 
 /**
@@ -76,11 +78,14 @@ export class TemplateParser {
   private cursor: number = 0;
   private line: number = 1;
   private lineStartOffset: number = 0;
+  private filename?: string;
   private diagnostics: string[] = [];
+  private errors: AetherCompilerError[] = [];
 
-  constructor(source: string) {
+  constructor(source: string, options?: ParseOptions) {
     this.source = source;
     this.length = source.length;
+    this.filename = options?.filename;
   }
 
   public parse(): ParseResult {
@@ -103,8 +108,13 @@ export class TemplateParser {
 
     return {
       ast: root,
-      diagnostics: this.diagnostics
+      diagnostics: this.diagnostics,
+      errors: this.errors
     };
+  }
+
+  public getStructuredErrors(): AetherCompilerError[] {
+    return this.errors;
   }
 
   private isEOF(): boolean {
@@ -144,8 +154,28 @@ export class TemplateParser {
     };
   }
 
-  private recordDiagnostic(msg: string, pos = this.getPosition()): void {
-    this.diagnostics.push(`[${pos.line}:${pos.column}] ${msg}`);
+  private recordDiagnostic(
+    msg: string,
+    pos = this.getPosition(),
+    code: AetherErrorCode = 'AETH-102',
+    explanation?: string,
+    suggestion?: string
+  ): void {
+    const diagStr = `[${code}] [${pos.line}:${pos.column}] ${msg}`;
+    this.diagnostics.push(diagStr);
+    this.errors.push(
+      new AetherCompilerError({
+        code,
+        message: msg,
+        source: this.source,
+        filename: this.filename,
+        line: pos.line,
+        column: pos.column,
+        offset: pos.offset,
+        explanation,
+        suggestion
+      })
+    );
   }
 
   private parseNode(): ASTNode | null {
@@ -250,12 +280,14 @@ export class TemplateParser {
     const isComponent = tagName.charCodeAt(0) >= 65 && tagName.charCodeAt(0) <= 90;
 
     const children: ASTNode[] = [];
+    let foundClosing = isSelfClosing;
     if (!isSelfClosing) {
       const closingTag = `</${tagName}>`;
       while (this.cursor < this.length) {
         this.skipWhitespace();
         if (this.peekString(closingTag)) {
           this.advance(closingTag.length);
+          foundClosing = true;
           break;
         }
 
@@ -270,7 +302,10 @@ export class TemplateParser {
           const foundTag = this.source.slice(scanStart, scanEnd).trim();
           this.recordDiagnostic(
             `Mismatched closing tag </${foundTag}>, expected </${tagName}>`,
-            closePos
+            closePos,
+            'AETH-104',
+            `Encountered closing tag </${foundTag}> but currently inside open element <${tagName}>.`,
+            `Close <${tagName}> with </${tagName}> or ensure tags are not interleaved.`
           );
           this.advance(scanEnd - this.cursor + (this.source.charCodeAt(scanEnd) === 62 ? 1 : 0));
           break;
@@ -280,6 +315,16 @@ export class TemplateParser {
         if (child) {
           children.push(child);
         }
+      }
+
+      if (!foundClosing && this.cursor >= this.length) {
+        this.recordDiagnostic(
+          `Unclosed <${tagName}> tag, expected </${tagName}>`,
+          startPos,
+          'AETH-101',
+          `The element <${tagName}> was never closed before the end of the template.`,
+          `Add closing tag </${tagName}> or make it self-closing with <${tagName} />.`
+        );
       }
     }
 
@@ -316,9 +361,11 @@ export class TemplateParser {
     let fallbackNodes: ASTNode[] | undefined;
     let fallbackExpr: string | undefined;
 
+    let hasWhen = false;
     for (let i = 0; i < attributes.length; i++) {
       const attr = attributes[i];
       if (attr.name === 'when') {
+        hasWhen = true;
         whenExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => false');
       } else if (attr.name === 'fallback') {
         if (attr.isDynamic && attr.expression) {
@@ -335,6 +382,16 @@ export class TemplateParser {
       }
     }
 
+    if (!hasWhen) {
+      this.recordDiagnostic(
+        '<Show> component is missing required "when" prop',
+        startPos,
+        'AETH-103',
+        '<Show> requires a "when" conditional expression to evaluate whether to render its children.',
+        'Add when={...} to <Show>, e.g. <Show when={isLoggedIn()}>'
+      );
+    }
+
     const children: ASTNode[] = [];
     if (!isSelfClosing) {
       const closingTag = '</Show>';
@@ -345,7 +402,13 @@ export class TemplateParser {
       if (this.peekString(closingTag)) {
         this.advance(closingTag.length);
       } else {
-        this.recordDiagnostic('Unclosed <Show> component tag', startPos);
+        this.recordDiagnostic(
+          'Unclosed <Show> component tag',
+          startPos,
+          'AETH-101',
+          '<Show> component was opened but not closed before the end of the template.',
+          'Add </Show> to close the component.'
+        );
       }
     }
 
@@ -369,10 +432,12 @@ export class TemplateParser {
     let keyExpr: string | undefined;
     let fallbackNodes: ASTNode[] | undefined;
     let fallbackExpr: string | undefined;
+    let hasEach = false;
 
     for (let i = 0; i < attributes.length; i++) {
       const attr = attributes[i];
       if (attr.name === 'each') {
+        hasEach = true;
         eachExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => []');
       } else if (attr.name === 'key') {
         keyExpr = attr.expression || attr.value || undefined;
@@ -385,6 +450,16 @@ export class TemplateParser {
       }
     }
 
+    if (!hasEach) {
+      this.recordDiagnostic(
+        '<For> component is missing required "each" prop',
+        startPos,
+        'AETH-103',
+        '<For> requires an "each" array or reactive accessor to iterate over.',
+        'Add each={...} to <For>, e.g. <For each={users()} key="id">'
+      );
+    }
+
     const children: ASTNode[] = [];
     if (!isSelfClosing) {
       const closingTag = '</For>';
@@ -395,7 +470,13 @@ export class TemplateParser {
       if (this.peekString(closingTag)) {
         this.advance(closingTag.length);
       } else {
-        this.recordDiagnostic('Unclosed <For> component tag', startPos);
+        this.recordDiagnostic(
+          'Unclosed <For> component tag',
+          startPos,
+          'AETH-101',
+          '<For> component was opened but not closed before the end of the template.',
+          'Add </For> to close the component.'
+        );
       }
     }
 
@@ -459,7 +540,13 @@ export class TemplateParser {
         } else {
           value = this.source.slice(this.cursor);
           this.advance(this.length - this.cursor);
-          this.recordDiagnostic(`Unterminated attribute string literal for "${name}"`, startPos);
+          this.recordDiagnostic(
+            `Unterminated attribute string literal for "${name}"`,
+            startPos,
+            'AETH-105',
+            `Attribute "${name}" has an opening quote but no matching closing quote.`,
+            'Add a matching closing quote to terminate the attribute value.'
+          );
         }
       } else {
         // Unquoted attribute value
@@ -553,7 +640,13 @@ export class TemplateParser {
       this.cursor++;
     }
 
-    this.recordDiagnostic('Unterminated interpolation expression, missing "}"');
+    this.recordDiagnostic(
+      'Unterminated interpolation expression, missing "}"',
+      undefined,
+      'AETH-102',
+      'An expression opened with "{" was not closed before the end of the template.',
+      'Add a closing "}" to terminate the expression.'
+    );
     return this.source.slice(startOffset, this.cursor).trim();
   }
 

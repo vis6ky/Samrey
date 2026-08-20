@@ -6,7 +6,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "bin": {
-    "aether": "./src/index.ts"
+    "aether": "./bin/aether.js"
   },
   "exports": {
     ".": {
