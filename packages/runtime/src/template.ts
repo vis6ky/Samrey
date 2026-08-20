@@ -23,7 +23,9 @@ export function template(htmlString: string): () => Node {
         setAttribute: () => {},
         getAttribute: () => null,
         addEventListener: () => {},
-        removeEventListener: () => {}
+        removeEventListener: () => {},
+        querySelector: () => null,
+        querySelectorAll: () => []
       } as unknown as Node;
     }
 
