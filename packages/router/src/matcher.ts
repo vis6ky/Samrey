@@ -5,6 +5,14 @@
 
 import { RouteRecord, RouteMatch } from './types.js';
 
+function safeDecodeURIComponent(str: string): string {
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    return str;
+  }
+}
+
 export function matchPath(pattern: string, pathname: string): Record<string, string> | null {
   const patternSegments = pattern.split('/').filter(Boolean);
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -21,7 +29,10 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
 
     if (p.startsWith(':')) {
       const key = p.slice(1);
-      params[key] = decodeURIComponent(seg);
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+      params[key] = safeDecodeURIComponent(seg);
     } else if (p !== seg) {
       return null;
     }

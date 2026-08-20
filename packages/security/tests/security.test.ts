@@ -2,13 +2,17 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   sanitizeUri, 
+  sanitizeRedirectUri,
+  sanitizeCssStyle,
+  scrubPrototypePollution,
   escapeForScriptPayload, 
   sanitizeHtmlString, 
   escapeHtmlAttribute,
+  escapeHtmlText,
   generateCsrfToken,
   verifyCsrfToken,
   getAetherTrustedPolicy
-} from '../src/index.js';
+} from '../src/index.ts';
 
 describe('@aether/security', () => {
   it('blocks javascript: URLs and dangerous schemes', () => {
@@ -17,6 +21,41 @@ describe('@aether/security', () => {
     assert.equal(sanitizeUri('data:text/html,<script>alert(1)</script>'), 'about:blank');
     assert.equal(sanitizeUri('vbscript:msgbox(1)'), 'about:blank');
     assert.equal(sanitizeUri('blob:http://evil.com/payload'), 'about:blank');
+    assert.equal(sanitizeUri('%6a%61%76%61%73%63%72%69%70%74:alert(1)'), 'about:blank');
+    assert.equal(sanitizeUri('jav&#x61;script:alert(1)'), 'about:blank');
+  });
+
+  it('validates and sanitizes safe redirect URIs', () => {
+    assert.equal(sanitizeRedirectUri('/dashboard'), '/dashboard');
+    assert.equal(sanitizeRedirectUri('./profile'), './profile');
+    assert.equal(sanitizeRedirectUri('#top'), '#top');
+    // Protocol-relative attacks must be rejected
+    assert.equal(sanitizeRedirectUri('//evil.com/phish'), '/');
+    assert.equal(sanitizeRedirectUri('/\\evil.com'), '/');
+    assert.equal(sanitizeRedirectUri('\\\\evil.com'), '/');
+    assert.equal(sanitizeRedirectUri('https://attacker.com/evil', '/home'), '/home');
+    assert.equal(sanitizeRedirectUri('javascript:alert(1)', '/login'), '/login');
+  });
+
+  it('sanitizes inline CSS style strings', () => {
+    const dangerousCss = 'color: red; background: url(javascript:alert(1)); width: expression(alert(2)); behavior: url(evil.htc); @import url("evil.css");';
+    const clean = sanitizeCssStyle(dangerousCss);
+    assert.ok(!clean.includes('javascript:'));
+    assert.ok(!clean.includes('expression('));
+    assert.ok(!clean.includes('behavior:'));
+    assert.ok(!clean.includes('@import'));
+    assert.ok(clean.includes('color: red'));
+  });
+
+  it('scrubs prototype pollution vectors from objects', () => {
+    const maliciousJson = '{"name": "Alice", "__proto__": {"polluted": true}, "nested": {"constructor": {"evil": 1}}}';
+    const parsed = JSON.parse(maliciousJson);
+    const scrubbed = scrubPrototypePollution(parsed);
+
+    assert.equal(scrubbed.name, 'Alice');
+    assert.equal(Object.prototype.hasOwnProperty.call(scrubbed, '__proto__'), false);
+    assert.equal((Object.prototype as any).polluted, undefined);
+    assert.equal(Object.prototype.hasOwnProperty.call(scrubbed.nested, 'constructor'), false);
   });
 
   it('allows safe HTTP, HTTPS, and relative URLs', () => {
@@ -47,11 +86,16 @@ describe('@aether/security', () => {
     assert.ok(clean.includes('<p>Hello</p>'));
   });
 
-  it('escapes HTML attributes correctly to prevent quote breakouts', () => {
+  it('escapes HTML attributes and text correctly', () => {
     const malicious = '" onmouseover="alert(1)" data-extra="';
     const safeAttr = escapeHtmlAttribute(malicious);
     assert.ok(!safeAttr.includes('"'));
     assert.ok(safeAttr.includes('&quot;'));
+
+    const textPayload = '<script>alert("text")</script>';
+    const safeText = escapeHtmlText(textPayload);
+    assert.ok(!safeText.includes('<'));
+    assert.ok(safeText.includes('&lt;script&gt;'));
   });
 
   it('generates and verifies CSRF tokens with constant-time equality', () => {

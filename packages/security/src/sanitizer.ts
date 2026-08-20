@@ -4,19 +4,41 @@
  */
 
 const SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
-const DANGEROUS_URI_PATTERNS = /^(javascript|vbscript|data):/i;
+const DANGEROUS_URI_PATTERNS = /^(javascript|vbscript|data|blob):/i;
+
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
+      try { return String.fromCharCode(parseInt(hex, 16)); } catch { return ''; }
+    })
+    .replace(/&#([0-9]+);?/gi, (_, dec) => {
+      try { return String.fromCharCode(parseInt(dec, 10)); } catch { return ''; }
+    })
+    .replace(/&colon;?/gi, ':');
+}
 
 /**
  * Validates and sanitizes a URL or URI string.
- * Blocks dangerous schemes (javascript:, vbscript:, data:text/html).
+ * Blocks dangerous schemes (javascript:, vbscript:, data:text/html, blob:).
+ * Decodes URL encodings in scheme to prevent obfuscated javascript: executions.
  * Only allows safe protocols (http:, https:, mailto:, tel:) and relative paths.
  */
 export function sanitizeUri(rawUri: string | null | undefined): string {
   if (!rawUri) return '';
   const trimmed = String(rawUri).trim();
 
-  // Strip control characters and whitespace within scheme
-  const cleanSchemeCheck = trimmed.replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+  // Strip control characters, null bytes, and non-printable chars
+  let cleanSchemeCheck = decodeHtmlEntities(trimmed).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+
+  // Try decoding potential percent-encoded scheme bypasses (e.g. %6a%61%76%61%73%63%72%69%70%74:)
+  try {
+    const decoded = decodeURIComponent(cleanSchemeCheck);
+    if (decoded !== cleanSchemeCheck) {
+      cleanSchemeCheck = decodeHtmlEntities(decoded).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+    }
+  } catch {
+    // Malformed encoding in scheme check
+  }
 
   if (DANGEROUS_URI_PATTERNS.test(cleanSchemeCheck)) {
     return 'about:blank';
@@ -27,11 +49,75 @@ export function sanitizeUri(rawUri: string | null | undefined): string {
   }
 
   // Treat unrecognized absolute schemes as unsafe
-  if (/^[a-z0-9+.-]+:/i.test(trimmed)) {
+  if (/^[a-z0-9+.-]+:/i.test(trimmed) || /^[a-z0-9+.-]+:/i.test(cleanSchemeCheck)) {
     return 'about:blank';
   }
 
   return trimmed;
+}
+
+/**
+ * Validates that a redirect URI is strictly internal / same-origin safe.
+ * Rejects protocol-relative URLs (e.g. //evil.com, /\\evil.com) and external absolute URLs.
+ */
+export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback = '/'): string {
+  if (!rawUri) return fallback;
+  const trimmed = String(rawUri).trim();
+
+  // Reject javascript: / data: / vbscript:
+  const safe = sanitizeUri(trimmed);
+  if (safe === 'about:blank') return fallback;
+
+  // Reject protocol-relative URLs (e.g. //attacker.com or /\attacker.com)
+  if (trimmed.startsWith('//') || trimmed.startsWith('/\\') || trimmed.startsWith('\\\\')) {
+    return fallback;
+  }
+
+  // Allow safe relative paths
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+
+  return fallback;
+}
+
+/**
+ * Sanitizes inline CSS or style strings against script execution vectors
+ * (such as expression(), url(javascript:), behavior:, and @import).
+ */
+export function sanitizeCssStyle(css: unknown): string {
+  if (css === null || css === undefined) return '';
+  const str = String(css);
+
+  return str
+    .replace(/expression\s*\(.*?\)/gis, '')
+    .replace(/url\s*\(\s*["']?\s*javascript:[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/url\s*\(\s*["']?\s*vbscript:[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/url\s*\(\s*["']?\s*data:text\/html[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/behavior\s*:[^;}]*/gis, '')
+    .replace(/-moz-binding\s*:[^;}]*/gis, '')
+    .replace(/@import\b[^;}]*;?/gis, '');
+}
+
+/**
+ * Recursively removes prototype pollution properties (__proto__, constructor, prototype) from an object.
+ */
+export function scrubPrototypePollution<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => scrubPrototypePollution(item)) as unknown as T;
+  }
+
+  const clean = Object.create(null) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    clean[key] = scrubPrototypePollution(value);
+  }
+
+  return clean as T;
 }
 
 /**

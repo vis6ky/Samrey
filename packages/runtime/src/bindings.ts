@@ -4,7 +4,24 @@
  */
 
 import { effect } from '@aether/reactivity';
-import { sanitizeUri, escapeHtmlAttribute } from '@aether/security';
+import { sanitizeUri, sanitizeCssStyle } from '@aether/security';
+
+const DANGEROUS_ATTR_NAMES = new Set([
+  'innerhtml',
+  'outerhtml',
+  'srcdoc'
+]);
+
+const URI_ATTRS = new Set([
+  'href',
+  'src',
+  'action',
+  'formaction',
+  'xlink:href',
+  'data',
+  'poster',
+  'codebase'
+]);
 
 export function bindText(node: Node, getter: () => unknown): void {
   let prevText: string | null = null;
@@ -19,27 +36,45 @@ export function bindText(node: Node, getter: () => unknown): void {
 }
 
 export function bindAttr(element: Element, attrName: string, getter: () => unknown): void {
+  const lowerName = attrName.toLowerCase();
+
+  // Defend against arbitrary inline event handler injection and direct HTML injection via setAttribute
+  if (DANGEROUS_ATTR_NAMES.has(lowerName) || lowerName.startsWith('on')) {
+    console.warn(`[Aether Security Warning] Refusing to bind dangerous attribute "${attrName}". Use dedicated event bindings or trusted primitives.`);
+    return;
+  }
+
   let prevVal: string | null = null;
   let prevNull = true;
 
   effect(() => {
     let val = getter();
-    if (attrName === 'href' || attrName === 'src') {
+    if (URI_ATTRS.has(lowerName)) {
       val = sanitizeUri(val as string);
+    } else if (lowerName === 'style') {
+      val = sanitizeCssStyle(val);
     }
 
     if (val === null || val === undefined || val === false) {
       if (!prevNull) {
         prevNull = true;
         prevVal = null;
-        element.removeAttribute(attrName);
+        try {
+          element.removeAttribute(attrName);
+        } catch {
+          // Ignore removal errors on mock/detached nodes
+        }
       }
     } else {
       const nextStr = String(val);
       if (prevNull || nextStr !== prevVal) {
         prevNull = false;
         prevVal = nextStr;
-        element.setAttribute(attrName, nextStr);
+        try {
+          element.setAttribute(attrName, nextStr);
+        } catch (err) {
+          console.warn(`[Aether Runtime] Failed to set attribute "${attrName}":`, err);
+        }
       }
     }
   });

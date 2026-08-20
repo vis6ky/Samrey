@@ -25,8 +25,13 @@ export function validateProjectName(name: string): { valid: boolean; error?: str
   if (!name || name.trim().length === 0) {
     return { valid: false, error: 'Project name cannot be empty.' };
   }
-  if (!/^[a-zA-Z0-9@/._-]+$/.test(name)) {
-    return { valid: false, error: `Invalid project name "${name}". Only alphanumeric characters, dashes, underscores, and dots are allowed.` };
+  const trimmed = name.trim();
+  // Prevent directory traversal attacks (e.g. ../../, absolute paths, backslashes)
+  if (trimmed.includes('..') || trimmed.startsWith('/') || trimmed.startsWith('\\') || path.isAbsolute(trimmed)) {
+    return { valid: false, error: `Invalid project name "${name}". Directory traversal characters (..) and absolute paths are forbidden.` };
+  }
+  if (!/^(@[a-zA-Z0-9_-]+\/)?[a-zA-Z0-9_.-]+$/.test(trimmed)) {
+    return { valid: false, error: `Invalid project name "${name}". Only alphanumeric characters, dashes, underscores, dots, or valid scoped package names are allowed.` };
   }
   return { valid: true };
 }

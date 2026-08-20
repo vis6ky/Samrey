@@ -16,7 +16,8 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@aether/reactivity": "^0.1.0"
+    "@aether/reactivity": "^0.1.0",
+    "@aether/security": "^0.1.0"
   },
   "keywords": ["aether", "http", "resource", "fetch", "cache", "data-fetching"],
   "author": "Aether Framework Team",

@@ -29,9 +29,18 @@ export function evaluateConstantExpression(expr: string): ConstantFoldResult {
     (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
   ) {
-    const rawInner = trimmed.slice(1, -1);
-    // Ensure no unescaped quotes matching the boundary quote inside
-    return { isConstant: true, value: rawInner };
+    try {
+      // Safely parse JSON/JS string escape sequences
+      if (trimmed.startsWith('"')) {
+        const parsed = JSON.parse(trimmed);
+        return { isConstant: true, value: parsed };
+      }
+      const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'");
+      return { isConstant: true, value: rawInner };
+    } catch {
+      const rawInner = trimmed.slice(1, -1);
+      return { isConstant: true, value: rawInner };
+    }
   }
 
   if (trimmed.startsWith('`') && trimmed.endsWith('`') && trimmed.length >= 2) {

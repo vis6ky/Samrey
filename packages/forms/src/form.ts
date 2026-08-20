@@ -28,9 +28,10 @@ export function createForm<TValues extends Record<string, any>>(
 ): FormInstance<TValues> {
   const isSubmittingSignal = signal<boolean>(false);
   const formErrorSignal = signal<string | null>(null);
-  const fields = {} as { [K in keyof TValues]: FieldState<TValues[K]> };
+  const fields = Object.create(null) as { [K in keyof TValues]: FieldState<TValues[K]> };
 
   for (const key of Object.keys(config.initialValues) as (keyof TValues)[]) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
     const val = config.initialValues[key];
     const validator = config.validators?.[key];
     fields[key] = createField(String(key), val, validator);
