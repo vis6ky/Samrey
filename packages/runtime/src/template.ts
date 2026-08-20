@@ -11,10 +11,12 @@ export function template(htmlString: string): () => Node {
 
   return function createNode(): Node {
     if (typeof document === 'undefined') {
-      // Mock Node for SSR/headless environments
+      // Mock Node for SSR/headless environments with outerHTML support
       return {
         nodeType: 1,
         textContent: '',
+        outerHTML: htmlString,
+        innerHTML: htmlString,
         childNodes: [],
         firstChild: null,
         nextSibling: null,

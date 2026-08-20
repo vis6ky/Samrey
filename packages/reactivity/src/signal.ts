@@ -15,11 +15,6 @@ export function signal<T>(initialValue: T): Signal<T> {
     subscribers: new Set<Subscriber>()
   };
 
-  function read(): T {
-    trackDependency(node);
-    return currentValue;
-  }
-
   function write(next: T | ((prev: T) => T)): void {
     const nextValue = typeof next === 'function' ? (next as (prev: T) => T)(currentValue) : next;
     if (nextValue !== currentValue) {
@@ -27,17 +22,24 @@ export function signal<T>(initialValue: T): Signal<T> {
       node.version = incrementClock();
 
       batch(() => {
-        const subs = Array.from(node.subscribers);
-        for (const sub of subs) {
+        for (const sub of node.subscribers) {
           sub.notify(node.version);
         }
       });
     }
   }
 
-  const accessor = function (): T {
-    return read();
-  } as Signal<T>;
+  function read(): T {
+    trackDependency(node);
+    return currentValue;
+  }
+
+  const accessor = function (this: unknown, ...args: unknown[]): T | void {
+    if (args.length === 0) {
+      return read();
+    }
+    write(args[0] as T | ((prev: T) => T));
+  } as unknown as Signal<T>;
 
   Object.defineProperty(accessor, 'value', {
     get: read,

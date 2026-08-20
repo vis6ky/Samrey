@@ -39,3 +39,7 @@ jobs:
 
       - name: Build All Packages & Artifacts
         run: npm run build
+
+      - name: Performance Regression Gate
+        if: matrix.node-version == '22.x'
+        run: npm run benchmark:gate

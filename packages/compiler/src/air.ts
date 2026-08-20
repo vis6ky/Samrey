@@ -3,6 +3,8 @@
  * @aether/compiler - Aether Intermediate Representation (AIR) AST Definitions
  */
 
+export * from './ast.js';
+
 export type SecurityContext = 'html-text' | 'uri-attr' | 'safe-attr' | 'trusted-html' | 'style-attr';
 
 export interface AIRStaticNode {
@@ -34,16 +36,26 @@ export interface AIRDynamicEventNode {
   path: number[];
 }
 
-export type AIRNode = AIRStaticNode | AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode;
+export interface AIRControlFlowSlotNode {
+  type: 'control-flow-slot';
+  flowType: 'Show' | 'For';
+  expression: string;
+  path: number[];
+  helperCode: string;
+}
+
+export type AIRNode = AIRStaticNode | AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode;
 
 export interface AIRTemplateUnit {
   id: string;
   staticHtml: string;
-  dynamicSlots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode)[];
+  dynamicSlots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[];
 }
 
 export interface AIRCompilationResult {
+  ast?: import('./ast.js').ASTRootNode;
   templates: AIRTemplateUnit[];
   generatedCode: string;
   diagnostics: string[];
 }
+

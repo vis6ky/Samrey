@@ -15,6 +15,7 @@ export interface FieldState<T> {
   aria: ReadonlySignal<AriaBindingAttributes>;
   setValue: (val: T) => void;
   setTouched: (touched: boolean) => void;
+  setError: (msg: string | null) => void;
   validate: () => boolean;
 }
 
@@ -49,6 +50,10 @@ export function createField<T>(
     }
   }
 
+  function setError(msg: string | null): void {
+    errorSignal.value = msg;
+  }
+
   const dirtySignal = computed(() => valueSignal.value !== initial);
   const ariaSignal = computed(() => {
     return computeAriaAttributes(name, !!errorSignal.value && touchedSignal.value);
@@ -62,6 +67,7 @@ export function createField<T>(
     aria: ariaSignal,
     setValue,
     setTouched,
+    setError,
     validate: runValidation
   };
 }

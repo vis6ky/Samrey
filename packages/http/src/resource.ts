@@ -6,10 +6,23 @@
 import { signal, computed, onCleanup } from '@aether/reactivity';
 import { Resource, ResourceStatus } from './types.js';
 
-export function createResource<T, S = unknown>(
+export function createResource<T>(
+  fetcher: (info: { abortSignal: AbortSignal }) => Promise<T>
+): Resource<T>;
+export function createResource<T, S>(
   source: () => S,
   fetcher: (sourceVal: S, info: { abortSignal: AbortSignal }) => Promise<T>
+): Resource<T>;
+export function createResource<T, S = unknown>(
+  sourceOrFetcher: (() => S) | ((info: { abortSignal: AbortSignal }) => Promise<T>),
+  fetcherArg?: (sourceVal: S, info: { abortSignal: AbortSignal }) => Promise<T>
 ): Resource<T> {
+  const isDirectFetcher = typeof fetcherArg === 'undefined';
+  const source = isDirectFetcher ? null : (sourceOrFetcher as () => S);
+  const fetcher = isDirectFetcher
+    ? (_: S, info: { abortSignal: AbortSignal }) => (sourceOrFetcher as (info: { abortSignal: AbortSignal }) => Promise<T>)(info)
+    : fetcherArg!;
+
   const data = signal<T | undefined>(undefined);
   const error = signal<Error | null>(null);
   const status = signal<ResourceStatus>('idle');
@@ -26,7 +39,7 @@ export function createResource<T, S = unknown>(
     error.value = null;
 
     try {
-      const sourceVal = source();
+      const sourceVal = source ? source() : (undefined as unknown as S);
       const result = await fetcher(sourceVal, { abortSignal: activeController.signal });
       data.value = result;
       status.value = 'success';

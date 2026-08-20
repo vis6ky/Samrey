@@ -8,3 +8,4 @@ export * from './security-classifier.js';
 export * from './a11y-linter.js';
 export * from './codegen.js';
 export * from './parser.js';
+export * from './static-analyzer.js';

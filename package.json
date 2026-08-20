@@ -13,7 +13,14 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test packages/security/tests/security.test.ts packages/compiler/tests/compiler.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/ssr.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts"
+    "bench": "tsx benchmarks/runner.ts",
+    "benchmark": "tsx benchmarks/runner.ts",
+    "benchmark:compiler": "tsx benchmarks/runner.ts compiler",
+    "benchmark:runtime": "tsx benchmarks/runner.ts runtime",
+    "benchmark:reactivity": "tsx benchmarks/runner.ts reactivity",
+    "benchmark:ssr": "tsx benchmarks/runner.ts ssr",
+    "benchmark:gate": "tsx benchmarks/check-regression.ts",
+    "test": "node --import tsx --test packages/security/tests/security.test.ts packages/compiler/tests/*.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/*.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

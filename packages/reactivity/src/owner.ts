@@ -22,19 +22,19 @@ export function createOwner(parent = currentOwner): Owner {
     parent,
     children: [],
     cleanups: [],
-    context: parent?.context ? Object.assign(Object.create(null), parent.context) : Object.create(null),
+    context: parent?.context ? Object.create(parent.context) : Object.create(null),
     dispose() {
-      for (const cleanup of this.cleanups) {
+      for (let i = 0; i < this.cleanups.length; i++) {
         try {
-          cleanup();
+          this.cleanups[i]();
         } catch (err) {
           console.error('[Aether Reactivity] Error during cleanup:', err);
         }
       }
       this.cleanups.length = 0;
 
-      for (const child of this.children) {
-        child.dispose();
+      for (let i = 0; i < this.children.length; i++) {
+        this.children[i].dispose();
       }
       this.children.length = 0;
 
