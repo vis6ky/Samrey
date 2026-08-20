@@ -1,8 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { aetherVitePlugin, auditSource } from '../src/index.js';
+import { 
+  aetherVitePlugin, 
+  auditSource,
+  runCLI,
+  generateStarterProject,
+  validateProjectName,
+  scaffoldArtifact
+} from '../src/index.js';
 
-describe('@aether/cli', () => {
+describe('@aether/cli - Comprehensive Developer Experience & Tooling Suite', () => {
   it('integrates Vite plugin transform hook with compiler', () => {
     const plugin = aetherVitePlugin();
     assert.equal(plugin.name, 'vite-plugin-aether');
@@ -19,5 +26,109 @@ describe('@aether/cli', () => {
     assert.equal(report.violationsCount, 2);
     assert.ok(report.messages.some((m) => m.includes('alt')));
     assert.ok(report.messages.some((m) => m.includes('script')));
+  });
+
+  it('generates a complete production starter project template with SSR, routing, and reactivity', () => {
+    const files = generateStarterProject('my-aether-app', { template: 'ssr' });
+
+    assert.ok('package.json' in files);
+    assert.ok('tsconfig.json' in files);
+    assert.ok('vite.config.ts' in files);
+    assert.ok('src/App.tsx' in files);
+    assert.ok('src/components/Header.tsx' in files);
+    assert.ok('src/components/Counter.tsx' in files);
+    assert.ok('src/views/HomeView.tsx' in files);
+    assert.ok('src/entry-client.tsx' in files);
+    assert.ok('src/entry-server.tsx' in files);
+    assert.ok('tests/app.test.ts' in files);
+
+    const pkg = JSON.parse(files['package.json']!);
+    assert.equal(pkg.name, 'my-aether-app');
+    assert.ok('@aether/reactivity' in pkg.dependencies);
+    assert.ok('@aether/compiler' in pkg.dependencies);
+    assert.ok('@aether/ssr' in pkg.dependencies);
+  });
+
+  it('validates project names strictly for illegal characters and empty strings', () => {
+    assert.equal(validateProjectName('my-cool-app').valid, true);
+    assert.equal(validateProjectName('@scope/my-app').valid, true);
+    assert.equal(validateProjectName('').valid, false);
+    assert.equal(validateProjectName('my project with spaces').valid, false);
+  });
+
+  it('handles "aether --help" and "aether --version" cleanly', async () => {
+    const helpResult = await runCLI(['--help']);
+    assert.equal(helpResult.exitCode, 0);
+    assert.ok(helpResult.message.includes('Aether Framework CLI'));
+    assert.ok(helpResult.message.includes('create <name>'));
+
+    const versionResult = await runCLI(['--version']);
+    assert.equal(versionResult.exitCode, 0);
+    assert.ok(versionResult.message.includes('aether v0.1.0'));
+  });
+
+  it('executes "aether create" in dry-run mode with deterministic output', async () => {
+    const result = await runCLI(['create', 'shop-app', '--template', 'ssr', '--dry-run']);
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.message.includes('Prepared'));
+  });
+
+  it('returns non-zero exit code on missing project name in "aether create"', async () => {
+    const result = await runCLI(['create']);
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.message.includes('Project name is required'));
+  });
+
+  it('executes "aether dev" with port option and validation', async () => {
+    const validDev = await runCLI(['dev', '--port', '4000', '--dry-run']);
+    assert.equal(validDev.exitCode, 0);
+
+    const invalidDev = await runCLI(['dev', '--port', '99999', '--dry-run']);
+    assert.equal(invalidDev.exitCode, 1);
+    assert.ok(invalidDev.message.includes('Invalid port'));
+  });
+
+  it('executes "aether build" with production report and static hoisting summary', async () => {
+    const result = await runCLI(['build', '--ssr']);
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.message.includes('Aether Production Build'));
+    assert.ok(result.message.includes('SSR + Client Hydration'));
+  });
+
+  it('executes "aether test" suite runner', async () => {
+    const result = await runCLI(['test']);
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.message.includes('All test suites passed'));
+  });
+
+  it('executes "aether audit" detecting violations and honoring strict exit codes', async () => {
+    const cleanAudit = await runCLI(['audit']);
+    assert.equal(cleanAudit.exitCode, 0);
+  });
+
+  it('executes "aether analyze" with JSON flag output', async () => {
+    const result = await runCLI(['analyze', '--json']);
+    assert.equal(result.exitCode, 0);
+    const parsed = JSON.parse(result.message);
+    assert.ok(parsed.bundleSizeKb > 0);
+    assert.ok(parsed.reactivityGraph.signalsCount > 0);
+  });
+
+  it('scaffolds components, routes, stores, and resources with "aether generate"', async () => {
+    const compScaffold = scaffoldArtifact('component', 'UserProfile');
+    assert.equal(compScaffold.filename, 'UserProfile.tsx');
+    assert.equal(compScaffold.testFilename, 'UserProfile.test.ts');
+    assert.ok(compScaffold.code.includes('export function UserProfile('));
+
+    const routeScaffold = scaffoldArtifact('route', 'Settings');
+    assert.equal(routeScaffold.filename, 'SettingsView.tsx');
+
+    const storeScaffold = scaffoldArtifact('store', 'Cart');
+    assert.equal(storeScaffold.filename, 'CartStore.ts');
+    assert.ok(storeScaffold.code.includes('createCartStore'));
+
+    const genResult = await runCLI(['generate', 'component', 'Button', '--dry-run']);
+    assert.equal(genResult.exitCode, 0);
+    assert.ok(genResult.message.includes('Button.tsx'));
   });
 });

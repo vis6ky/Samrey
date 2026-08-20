@@ -4,6 +4,7 @@
  */
 
 import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@aether/reactivity';
+import { reportDuplicateKey } from './diagnostics.js';
 
 export interface ShowProps<T> {
   when: () => T;
@@ -305,9 +306,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       const key = props.key ? props.key(item, i) : item;
 
       if (seenKeys.has(key)) {
-        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-          console.warn(`[Aether For] Duplicate key detected in list reconciliation: ${String(key)}`);
-        }
+        reportDuplicateKey(key);
       }
       seenKeys.add(key);
 
