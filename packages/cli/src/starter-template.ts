@@ -13,7 +13,7 @@ export function generateStarterProject(projectName: string, options: { template?
 
   const packageJson = JSON.stringify({
     name: projectName,
-    version: '0.1.0',
+    version: '1.0.0-rc.1',
     type: 'module',
     scripts: {
       dev: 'aether dev',
@@ -24,15 +24,15 @@ export function generateStarterProject(projectName: string, options: { template?
       analyze: 'aether analyze'
     },
     dependencies: {
-      '@aether/compiler': '^0.1.0',
-      '@aether/reactivity': '^0.1.0',
-      '@aether/runtime': '^0.1.0',
-      '@aether/router': '^0.1.0',
-      '@aether/ssr': '^0.1.0',
-      '@aether/devtools': '^0.1.0'
+      '@aether/compiler': '^1.0.0-rc.1',
+      '@aether/reactivity': '^1.0.0-rc.1',
+      '@aether/runtime': '^1.0.0-rc.1',
+      '@aether/router': '^1.0.0-rc.1',
+      '@aether/ssr': '^1.0.0-rc.1',
+      '@aether/devtools': '^1.0.0-rc.1'
     },
     devDependencies: {
-      '@aether/cli': '^0.1.0',
+      '@aether/cli': '^1.0.0-rc.1',
       'typescript': '^5.0.0',
       'vite': '^5.0.0'
     }

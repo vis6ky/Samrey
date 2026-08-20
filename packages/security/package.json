@@ -1,32 +1,47 @@
 {
   "name": "@aether/security",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "description": "Contextual HTML/URI sanitizer, W3C Trusted Types policy provider, and anti-CSRF token utilities for Aether.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aether-framework/aether.git",
+    "directory": "packages/security"
+  },
+  "homepage": "https://aether.dev",
+  "bugs": {
+    "url": "https://github.com/aether-framework/aether/issues"
+  },
+  "keywords": [
+    "aether",
+    "security",
+    "trusted-types",
+    "sanitizer",
+    "csrf",
+    "xss"
+  ],
   "type": "module",
   "main": "./src/index.ts",
+  "module": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts"
-  },
-  "devDependencies": {
-    "@aether/compiler": "^0.1.0",
-    "@aether/reactivity": "^0.1.0",
-    "@aether/runtime": "^0.1.0",
-    "@aether/router": "^0.1.0",
-    "@aether/ssr": "^0.1.0",
-    "@aether/forms": "^0.1.0",
-    "@aether/http": "^0.1.0",
-    "@aether/devtools": "^0.1.0",
-    "@aether/cli": "^0.1.0"
-  },
-  "keywords": ["aether", "security", "trusted-types", "sanitizer", "csrf", "xss"],
-  "author": "Aether Framework Team",
-  "license": "Apache-2.0"
+  }
 }
