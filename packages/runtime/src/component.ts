@@ -12,13 +12,17 @@ export function createComponent<P>(comp: Component<P>, props: P): Node | Node[] 
   return runWithOwner(owner, () => comp(props));
 }
 
-export function mount(componentFn: () => Node, container: HTMLElement): () => void {
+export function mount(componentFn: () => Node | Node[], container: HTMLElement): () => void {
   let disposeRoot: (() => void) | null = null;
 
   createRoot((dispose) => {
     disposeRoot = dispose;
     const node = componentFn();
-    container.replaceChildren(node);
+    if (Array.isArray(node)) {
+      container.replaceChildren(...node);
+    } else if (node) {
+      container.replaceChildren(node);
+    }
   });
 
   return () => {
