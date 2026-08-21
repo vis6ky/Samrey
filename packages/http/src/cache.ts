@@ -28,3 +28,7 @@ export class RequestCache {
 }
 
 export const defaultRequestCache = new RequestCache();
+
+export function createHttpCache(options?: { defaultTtl?: number }): RequestCache {
+  return new RequestCache();
+}

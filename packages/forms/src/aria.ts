@@ -29,3 +29,9 @@ export function computeAriaAttributes(
 
   return attrs;
 }
+
+export function getAccessibleFieldProps(field: any): AriaBindingAttributes {
+  const hasError = !!(field?.error?.value || field?.error);
+  const name = field?.name || 'field';
+  return computeAriaAttributes(name, hasError, false);
+}

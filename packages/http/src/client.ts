@@ -117,3 +117,9 @@ export class HttpClient {
     return res.json() as Promise<T>;
   }
 }
+
+export function createHttpClient(baseUrl?: string): HttpClient {
+  return new HttpClient(baseUrl);
+}
+
+export const httpClient = new HttpClient();

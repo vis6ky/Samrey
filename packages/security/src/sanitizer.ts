@@ -265,3 +265,15 @@ export function sanitizeHtmlString(html: string): string {
     .replace(/\s(on\w+|formaction|xlink:href)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '')
     .replace(/href\s*=\s*["'](javascript:[^"']*)["']/gis, 'href="about:blank"');
 }
+
+export const sanitizeHtml = sanitizeHtmlString;
+export const sanitizeUrl = sanitizeUri;
+export function isSafeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const sanitized = sanitizeUri(url);
+  return sanitized !== 'about:blank';
+}
+export const sanitizeAttribute = escapeHtmlAttribute;
+export function safeJsonStringify(data: unknown): string {
+  return escapeForScriptPayload(JSON.stringify(stripSecrets(data)));
+}

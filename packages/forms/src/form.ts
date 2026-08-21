@@ -20,6 +20,7 @@ export interface FormInstance<TValues extends Record<string, any>> {
   isValid: ReadonlySignal<boolean>;
   isSubmitting: ReadonlySignal<boolean>;
   submit: (e?: Event) => Promise<boolean>;
+  handleSubmit: (e?: Event) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -63,6 +64,7 @@ export function createForm<TValues extends Record<string, any>>(
     for (const key of Object.keys(fields) as (keyof TValues)[]) {
       const f = fields[key];
       f.setTouched(true);
+      f.setError(null);
       if (!f.validate()) {
         allValid = false;
       }
@@ -120,6 +122,7 @@ export function createForm<TValues extends Record<string, any>>(
     isValid,
     isSubmitting: computed(() => isSubmittingSignal.value),
     submit,
+    handleSubmit: submit,
     reset
   };
 }

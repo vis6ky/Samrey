@@ -404,3 +404,66 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 
   return marker;
 }
+
+export interface MatchProps<T = unknown> {
+  when: () => T;
+  children: ((item: NonNullable<T>) => Node | Node[] | null | undefined) | Node | Node[];
+}
+
+export interface SwitchProps {
+  fallback?: () => Node | Node[] | null | undefined;
+  children: unknown;
+}
+
+export function Match<T>(props: MatchProps<T>): MatchProps<T> {
+  return props;
+}
+
+export function Switch(props: SwitchProps): Node {
+  const cases = Array.isArray(props.children) ? props.children : [props.children];
+  const matchCases = cases.filter((c): c is MatchProps<unknown> => !!c && typeof c === 'object' && 'when' in (c as any));
+
+  return Show({
+    when: () => {
+      for (const match of matchCases) {
+        const val = match.when();
+        if (val) return { match, val };
+      }
+      return null;
+    },
+    fallback: props.fallback,
+    children: (active: { match: MatchProps<unknown>; val: unknown }) => {
+      const child = active.match.children;
+      return typeof child === 'function' ? (child as (item: unknown) => Node)(active.val) : child;
+    }
+  });
+}
+
+export interface ErrorBoundaryProps {
+  fallback: (error: Error, reset: () => void) => Node | Node[] | null | undefined;
+  children: () => Node | Node[] | null | undefined;
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps): Node {
+  const errorSignal = signal<Error | null>(null);
+
+  const reset = () => {
+    errorSignal.value = null;
+  };
+
+  return Show({
+    when: () => errorSignal.value,
+    fallback: () => {
+      try {
+        return props.children();
+      } catch (err: any) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        errorSignal.value = errorObj;
+        return props.fallback(errorObj, reset);
+      }
+    },
+    children: (err: Error) => {
+      return props.fallback(err, reset);
+    }
+  });
+}

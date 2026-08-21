@@ -6,7 +6,8 @@
 /**
  * Generates a pseudo-random CSRF token or action HMAC identifier.
  */
-export function generateCsrfToken(entropy = 32): string {
+export function generateCsrfToken(entropyOrSecret?: number | string): string {
+  const entropy = typeof entropyOrSecret === 'number' ? entropyOrSecret : 32;
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   let token = '';
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -43,3 +44,6 @@ export function verifyCsrfToken(submittedToken: string | null | undefined, expec
   if (!submittedToken || !expectedToken) return false;
   return timingSafeEqual(submittedToken, expectedToken);
 }
+
+export const createCsrfToken = generateCsrfToken;
+export const validateCsrfToken = verifyCsrfToken;
