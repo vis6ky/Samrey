@@ -15,17 +15,18 @@ import { AdrView } from './components/AdrView.js';
 import { RoadmapView } from './components/RoadmapView.js';
 import { DocReader } from './components/DocReader.js';
 import { SearchModal } from './components/SearchModal.js';
+import { AppShell } from './task-studio/components/AppShell.js';
 
 export function App(): HTMLElement {
   // Initial tab from URL hash if present
   const getInitialTab = (): string => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const hash = window.location.hash.replace('#', '').trim();
-      if (['competitive', 'compiler', 'reactivity', 'security', 'architecture', 'adr', 'roadmap', 'docs'].includes(hash)) {
+      if (['task-studio', 'competitive', 'compiler', 'reactivity', 'security', 'architecture', 'adr', 'roadmap', 'docs'].includes(hash)) {
         return hash;
       }
     }
-    return 'competitive';
+    return 'task-studio';
   };
 
   const activeTab = signal<string>(getInitialTab());
@@ -67,9 +68,15 @@ export function App(): HTMLElement {
   root.appendChild(searchModalNode);
 
   // Main content area
-  const main = el('main', { class: 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8' });
+  const main = el('main', {
+    class: () =>
+      activeTab.value === 'task-studio'
+        ? 'flex-1 w-full p-0'
+        : 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8'
+  });
 
   // Lazy cache instantiated views to avoid duplicate work
+  let taskStudioEl: HTMLElement | null = null;
   let competitiveEl: HTMLElement | null = null;
   let compilerEl: HTMLElement | null = null;
   let reactivityEl: HTMLElement | null = null;
@@ -78,6 +85,14 @@ export function App(): HTMLElement {
   let adrEl: HTMLElement | null = null;
   let roadmapEl: HTMLElement | null = null;
   let docsEl: HTMLElement | null = null;
+
+  const viewTaskStudio = Show({
+    when: () => activeTab.value === 'task-studio',
+    children: () => {
+      if (!taskStudioEl) taskStudioEl = AppShell();
+      return taskStudioEl;
+    }
+  });
 
   const viewCompetitive = Show({
     when: () => activeTab.value === 'competitive',
@@ -143,6 +158,7 @@ export function App(): HTMLElement {
     }
   });
 
+  main.appendChild(viewTaskStudio);
   main.appendChild(viewCompetitive);
   main.appendChild(viewCompiler);
   main.appendChild(viewReactivity);

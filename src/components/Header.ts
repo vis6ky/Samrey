@@ -14,6 +14,7 @@ export interface NavTabItem {
 }
 
 export const NAV_ITEMS: NavTabItem[] = [
+  { id: 'task-studio', label: '🚀 Task Studio (Phase 16 App)', iconName: 'check-circle' },
   { id: 'competitive', label: 'Competitive Analysis', iconName: 'layers' },
   { id: 'compiler', label: 'Compiler & IR Pipeline', iconName: 'file-code' },
   { id: 'reactivity', label: 'Reactivity Engine', iconName: 'activity' },

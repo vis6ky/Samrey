@@ -145,6 +145,99 @@ export function escapeHtmlText(str: unknown): string {
 }
 
 /**
+ * Safe JSON parser that automatically scrubs prototype pollution keys.
+ */
+export function safeJsonParse<T = any>(jsonString: string): T {
+  const parsed = JSON.parse(jsonString);
+  return scrubPrototypePollution(parsed);
+}
+
+const SENSITIVE_KEY_PATTERNS = [
+  /password/i,
+  /secret/i,
+  /api[_-]?key/i,
+  /auth(entication|orization)?/i,
+  /bearer/i,
+  /token/i,
+  /jwt/i,
+  /private[_-]?key/i,
+  /credential/i,
+  /cookie/i,
+  /session/i,
+  /database[_-]?url/i,
+  /connection[_-]?string/i,
+  /salt/i,
+  /hash/i,
+  /^env\./i,
+  /^process\.env/i,
+  /^_secret/i,
+  /client[_-]?secret/i,
+  /service[_-]?role/i
+];
+
+export function isSensitiveKey(key: string, additionalKeys?: (string | RegExp)[]): boolean {
+  if (SENSITIVE_KEY_PATTERNS.some((p) => p.test(key))) {
+    return true;
+  }
+  if (additionalKeys) {
+    return additionalKeys.some((p) => (typeof p === 'string' ? p.toLowerCase() === key.toLowerCase() : p.test(key)));
+  }
+  return false;
+}
+
+export function stripSecrets<T>(
+  data: T,
+  options: { strict?: boolean; additionalKeys?: (string | RegExp)[]; onSecretFound?: (path: string, key: string) => void } = {}
+): T {
+  const visited = new WeakSet<object>();
+
+  function sanitize(val: unknown, currentPath = ''): unknown {
+    if (val === null || val === undefined) return val;
+    if (typeof val !== 'object') return val;
+
+    if (visited.has(val as object)) {
+      return undefined;
+    }
+    visited.add(val as object);
+
+    if (Array.isArray(val)) {
+      return val.map((item, idx) => sanitize(item, `${currentPath}[${idx}]`));
+    }
+
+    const cleanObj: Record<string, unknown> = {};
+    const entries = Object.entries(val as Record<string, unknown>);
+
+    for (const [key, value] of entries) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
+      const fullPath = currentPath ? `${currentPath}.${key}` : key;
+
+      if (isSensitiveKey(key, options.additionalKeys)) {
+        if (options.strict) {
+          throw new Error(
+            `[Aether Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
+          );
+        }
+        if (options.onSecretFound) {
+          options.onSecretFound(fullPath, key);
+        }
+        continue;
+      }
+
+      cleanObj[key] = sanitize(value, fullPath);
+    }
+
+    return cleanObj;
+  }
+
+  return sanitize(data) as T;
+}
+
+export const stripSensitiveState = stripSecrets;
+
+/**
  * Escapes strings intended for embedded script blocks or JSON SSR state.
  * Prevents HTML parser breakout attacks like </script> or <!--.
  */
@@ -156,6 +249,8 @@ export function escapeForScriptPayload(jsonString: string): string {
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 }
+
+export const escapeJsonStringForScript = escapeForScriptPayload;
 
 /**
  * Strips dangerous HTML tags and attributes for rich text boundaries.
