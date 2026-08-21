@@ -58,4 +58,62 @@ export class HttpClient {
 
     return res.json() as Promise<T>;
   }
+
+  async put<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
+    const url = this.resolveUrl(path);
+    const res = await fetch(url, {
+      ...options,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+    }
+
+    return res.json() as Promise<T>;
+  }
+
+  async patch<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
+    const url = this.resolveUrl(path);
+    const res = await fetch(url, {
+      ...options,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+    }
+
+    return res.json() as Promise<T>;
+  }
+
+  async delete<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const url = this.resolveUrl(path);
+    const res = await fetch(url, {
+      ...options,
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        ...options.headers
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+    }
+
+    return res.json() as Promise<T>;
+  }
 }
