@@ -9,7 +9,7 @@ import { generateStarterProject } from '../starter-template.js';
 
 export interface CreateCommandOptions {
   name: string;
-  template?: 'ssr' | 'spa' | 'minimal';
+  template?: 'ssr' | 'spa' | 'minimal' | 'ssg';
   targetDir?: string;
   dryRun?: boolean;
 }

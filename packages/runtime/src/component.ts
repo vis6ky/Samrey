@@ -7,6 +7,16 @@ import { createRoot, createOwner, runWithOwner, Owner, onCleanup } from '@aether
 
 export type Component<P = Record<string, unknown>> = (props: P) => Node | Node[];
 
+export function onMount(fn: () => void): void {
+  queueMicrotask(() => {
+    try {
+      fn();
+    } catch (err) {
+      console.error('[Aether Runtime] Error in onMount hook:', err);
+    }
+  });
+}
+
 export function createComponent<P>(comp: Component<P>, props: P): Node | Node[] {
   const owner = createOwner();
   return runWithOwner(owner, () => comp(props));

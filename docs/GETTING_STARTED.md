@@ -1,90 +1,147 @@
 # Getting Started with Aether
 
-This guide will walk you through setting up a new Aether application from scratch or integrating Aether packages into an existing TypeScript project.
+> **Aether Framework v1.0.0-rc.1** — Fast, pure, fine-grained reactive web framework for modern TypeScript applications.
+
+This guide walks you through bootstrapping an application with the Aether CLI, understanding Aether's core mental model, and building production-ready apps.
 
 ---
 
 ## 1. Creating a New Project
 
-The easiest way to bootstrap a production-ready Aether project is with the official `@aether/cli`:
+The official `@aether/cli` provides instant scaffolding for various architecture patterns:
 
 ```bash
-# Create a new project
-npx @aether/cli create my-aether-app
+# Default Server-Side Rendering (SSR) starter
+aether create my-app --template ssr
 
-# Navigate to project directory
-cd my-aether-app
+# Single-Page Application (SPA) starter
+aether create my-app --template spa
 
-# Install dependencies
-npm install
+# Minimal lightweight starter
+aether create my-app --template minimal
 
-# Start development server
-npm run dev
+# Static Site Generation (SSG) starter
+aether create my-app --template ssg
 ```
 
-The starter template includes:
-- Vite with `@aether/cli` plugin for automatic template compilation
-- Isomorphic SSR and client hydration scaffolding
-- Fine-grained signal reactivity
-- TypeScript 5.8+ configuration
-- Pre-configured test suite using Node.js native runner
+### Navigating & Running
+
+```bash
+cd my-app
+npm install
+
+# Start development server with DevTools
+npm run dev
+
+# Run comprehensive test suite
+npm run test
+
+# Run security & accessibility audit
+npm run audit
+
+# Analyze bundle size and reactive topology
+npm run analyze
+
+# Build for production
+npm run build
+```
 
 ---
 
-## 2. Core Concepts
+## 2. Core Mental Model
 
-Aether differs fundamentally from component-rerender frameworks (like React):
+Aether is architected from the ground up to eliminate runtime overhead and avoid virtual DOM diffing:
 
-1. **Components Run Exactly Once**: A component function executes once during initial setup. It creates signals, defines computations, and returns the DOM tree. Re-evaluating state *never* re-runs the component body.
-2. **Signals Are Not Hooks**: Signals can be declared anywhere—inside components, inside custom hooks, or as global module-level stores. They do not depend on call order or rendering context.
-3. **Direct DOM Binding**: State changes update only the specific DOM text node or attribute linked to the changed signal, without Virtual DOM diffing or tree reconciliation.
+1. **Components Run Exactly Once**: A component function executes once during setup. It initializes signals, declares computed derivations, registers lifecycle hooks (`onMount`, `onCleanup`), and returns DOM nodes. Updating state **never** re-executes the component function.
+2. **Fine-Grained Signal Subscriptions**: Reactive state is tracked at the property and DOM text node level. Only the exact text node or attribute that reads a signal updates when that signal changes.
+3. **Pure Aether Primitives**: Aether uses zero external framework dependencies (no React, Vue, Angular, Svelte, Solid, Preact, etc.). Everything is powered natively by `@aether/*` packages.
+4. **Standard Schema Validation**: Form fields and validation pipelines interface natively with Standard Schema (`~standard` v1).
 
 ---
 
-## 3. Basic Example Walkthrough
+## 3. Example: Interactive Reactive Component
 
-```typescript
-import { signal, computed, effect } from '@aether/reactivity';
-import { template, bindText, bindEvent } from '@aether/runtime';
+### JSX / TSX Syntax
+
+```tsx
+import { signal, computed } from '@aether/reactivity';
 
 export function UserProfile() {
-  const firstName = signal('Grace');
-  const lastName = signal('Hopper');
+  const firstName = signal('Ada');
+  const lastName = signal('Lovelace');
   const fullName = computed(() => `${firstName.value} ${lastName.value}`);
 
-  const tmpl = template(`
-    <section class="card">
-      <h2>Profile: <span id="full-name"></span></h2>
-      <input type="text" id="fn-input" placeholder="First Name" />
-      <input type="text" id="ln-input" placeholder="Last Name" />
+  return (
+    <section class="card p-4 rounded-xl border border-gray-200">
+      <h2 class="text-xl font-bold">Profile: {fullName.value}</h2>
+      <div class="mt-4 flex gap-2">
+        <input
+          type="text"
+          value={firstName.value}
+          onInput={(e) => { firstName.value = (e.target as HTMLInputElement).value; }}
+          placeholder="First Name"
+          class="border px-3 py-1 rounded"
+        />
+        <input
+          type="text"
+          value={lastName.value}
+          onInput={(e) => { lastName.value = (e.target as HTMLInputElement).value; }}
+          placeholder="Last Name"
+          class="border px-3 py-1 rounded"
+        />
+      </div>
     </section>
-  `);
+  );
+}
+```
 
-  const root = tmpl() as HTMLElement;
-  const nameSpan = root.querySelector('#full-name')!;
-  const fnInput = root.querySelector('#fn-input') as HTMLInputElement;
-  const lnInput = root.querySelector('#ln-input') as HTMLInputElement;
+### Direct DOM (`el`) Runtime Syntax
 
-  // Bind reactive text
-  bindText(nameSpan, () => fullName.value);
+```typescript
+import { signal, computed } from '@aether/reactivity';
+import { el } from '@aether/runtime';
 
-  // Bind inputs
-  bindEvent(fnInput, 'input', (e) => {
-    firstName.value = (e.target as HTMLInputElement).value;
-  });
-  bindEvent(lnInput, 'input', (e) => {
-    lastName.value = (e.target as HTMLInputElement).value;
-  });
+export function UserProfile() {
+  const firstName = signal('Ada');
+  const lastName = signal('Lovelace');
+  const fullName = computed(() => `${firstName.value} ${lastName.value}`);
 
-  return root;
+  return el(
+    'section',
+    { class: 'card p-4 rounded-xl border border-gray-200' },
+    el('h2', { class: 'text-xl font-bold' }, 'Profile: ', () => fullName.value),
+    el(
+      'div',
+      { class: 'mt-4 flex gap-2' },
+      el('input', {
+        type: 'text',
+        value: () => firstName.value,
+        onInput: (e: Event) => { firstName.value = (e.target as HTMLInputElement).value; },
+        placeholder: 'First Name',
+        class: 'border px-3 py-1 rounded'
+      }),
+      el('input', {
+        type: 'text',
+        value: () => lastName.value,
+        onInput: (e: Event) => { lastName.value = (e.target as HTMLInputElement).value; },
+        placeholder: 'Last Name',
+        class: 'border px-3 py-1 rounded'
+      })
+    )
+  );
 }
 ```
 
 ---
 
-## 4. Next Steps
+## 4. Documentation Index
 
-- Explore [Reactivity & Control Flow](./REACTIVITY_AND_CONTROL_FLOW.md)
-- Learn about [Templates & Components](./TEMPLATES_AND_COMPONENTS.md)
-- Set up [Server-Side Rendering & Hydration](./SSR_AND_HYDRATION.md)
-- Read the complete [API Reference](./API_REFERENCE.md)
+- 📖 **[Public API Contract](./PUBLIC_API.md)** — Complete authoritative exports & type specifications for all 11 packages.
+- 🚨 **[Error Codes Reference](./ERROR_CODES.md)** — Comprehensive diagnostic codes (`AETH-xxx`), explanations, and recovery guides.
+- ⚡ **[Reactivity & Control Flow](./REACTIVITY_AND_CONTROL_FLOW.md)** — Deep dive into signals, effects, computed derivations, stores, `<Show>`, `<For>`, `<Switch>`.
+- 🌐 **[Router & HTTP](./ROUTER_AND_HTTP.md)** — Routing, parameter signals, async resource management, and HTTP caching.
+- 📝 **[Forms & Validation](./FORMS_AND_VALIDATION.md)** — Schema-driven reactive forms with Standard Schema (`~standard` v1).
+- 🚀 **[SSR & Hydration](./SSR_AND_HYDRATION.md)** — Server-side rendering, streaming HTML, secret stripping, and static site generation (SSG).
+- 🧪 **[Testing & Tooling](./TESTING_AND_TOOLING.md)** — Testing components, mocking resources, DevTools bridge, and CLI automation.
+- 🛡️ **[Security Model](./SECURITY_MODEL.md)** — Zero-trust sanitizer, CSP compliance, and prototype pollution defense.
+- 📦 **[Deployment & Packaging](./DEPLOYMENT_AND_PACKAGING.md)** — Production building, tree-shaking, and container deployment.

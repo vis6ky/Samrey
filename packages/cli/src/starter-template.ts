@@ -8,49 +8,70 @@ export interface StarterProjectFiles {
   [filePath: string]: string;
 }
 
-export function generateStarterProject(projectName: string, options: { template?: 'ssr' | 'spa' | 'minimal'; typescript?: boolean } = {}): StarterProjectFiles {
+export function generateStarterProject(
+  projectName: string,
+  options: { template?: 'ssr' | 'spa' | 'minimal' | 'ssg'; typescript?: boolean } = {}
+): StarterProjectFiles {
   const templateType = options.template || 'ssr';
 
-  const packageJson = JSON.stringify({
-    name: projectName,
-    version: '1.0.0-rc.1',
-    type: 'module',
-    scripts: {
-      dev: 'aether dev',
-      build: 'aether build',
-      start: templateType === 'ssr' ? 'node server.js' : 'vite preview',
-      test: 'aether test',
-      audit: 'aether audit',
-      analyze: 'aether analyze'
-    },
-    dependencies: {
-      '@aether/compiler': '^1.0.0-rc.1',
-      '@aether/reactivity': '^1.0.0-rc.1',
-      '@aether/runtime': '^1.0.0-rc.1',
-      '@aether/router': '^1.0.0-rc.1',
-      '@aether/ssr': '^1.0.0-rc.1',
-      '@aether/devtools': '^1.0.0-rc.1'
-    },
-    devDependencies: {
-      '@aether/cli': '^1.0.0-rc.1',
-      'typescript': '^5.0.0',
-      'vite': '^5.0.0'
-    }
-  }, null, 2);
+  const scripts: Record<string, string> = {
+    dev: 'aether dev',
+    build: 'aether build',
+    test: 'aether test',
+    audit: 'aether audit',
+    analyze: 'aether analyze'
+  };
 
-  const tsconfigJson = JSON.stringify({
-    compilerOptions: {
-      target: 'ES2022',
-      module: 'NodeNext',
-      moduleResolution: 'NodeNext',
-      lib: ['ES2022', 'DOM', 'DOM.Iterable'],
-      jsx: 'preserve',
-      strict: true,
-      skipLibCheck: true,
-      esModuleInterop: true
+  if (templateType === 'ssr') {
+    scripts.start = 'node server.js';
+  } else if (templateType === 'ssg') {
+    scripts.build = 'aether build && tsx ssg-build.ts';
+    scripts.start = 'vite preview';
+  } else {
+    scripts.start = 'vite preview';
+  }
+
+  const packageJson = JSON.stringify(
+    {
+      name: projectName,
+      version: '1.0.0-rc.1',
+      type: 'module',
+      scripts,
+      dependencies: {
+        '@aether/compiler': '^1.0.0-rc.1',
+        '@aether/reactivity': '^1.0.0-rc.1',
+        '@aether/runtime': '^1.0.0-rc.1',
+        ...(templateType !== 'minimal' ? { '@aether/router': '^1.0.0-rc.1' } : {}),
+        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@aether/ssr': '^1.0.0-rc.1' } : {}),
+        '@aether/devtools': '^1.0.0-rc.1'
+      },
+      devDependencies: {
+        '@aether/cli': '^1.0.0-rc.1',
+        typescript: '^5.0.0',
+        vite: '^5.0.0'
+      }
     },
-    include: ['src/**/*', 'tests/**/*']
-  }, null, 2);
+    null,
+    2
+  );
+
+  const tsconfigJson = JSON.stringify(
+    {
+      compilerOptions: {
+        target: 'ES2022',
+        module: 'NodeNext',
+        moduleResolution: 'NodeNext',
+        lib: ['ES2022', 'DOM', 'DOM.Iterable'],
+        jsx: 'preserve',
+        strict: true,
+        skipLibCheck: true,
+        esModuleInterop: true
+      },
+      include: ['src/**/*', 'tests/**/*']
+    },
+    null,
+    2
+  );
 
   const viteConfig = `import { defineConfig } from 'vite';
 import { aetherVitePlugin } from '@aether/cli';
@@ -77,6 +98,63 @@ export default defineConfig({
 </html>
 `;
 
+  // Minimal Template App
+  if (templateType === 'minimal') {
+    const minimalApp = `import { signal } from '@aether/reactivity';
+
+export function App() {
+  const count = signal(0);
+  return (
+    <main style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
+      <h1>${projectName}</h1>
+      <p>Minimal Aether Application</p>
+      <div style="margin-top: 1rem;">
+        <button type="button" onClick={() => count.value--}>-</button>
+        <span style="margin: 0 1rem; font-weight: bold;">{count.value}</span>
+        <button type="button" onClick={() => count.value++}>+</button>
+      </div>
+    </main>
+  );
+}
+`;
+
+    const minimalEntry = `import { mount } from '@aether/runtime';
+import { App } from './App.js';
+
+const root = document.getElementById('app');
+if (root) {
+  mount(() => <App />, root);
+}
+`;
+
+    const minimalTest = `import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { signal } from '@aether/reactivity';
+
+describe('${projectName} Minimal Tests', () => {
+  it('updates signal state', () => {
+    const count = signal(0);
+    assert.equal(count.value, 0);
+    count.value = 42;
+    assert.equal(count.value, 42);
+  });
+});
+`;
+
+    return {
+      'package.json': packageJson,
+      'tsconfig.json': tsconfigJson,
+      'vite.config.ts': viteConfig,
+      'index.html': indexHtml,
+      'README.md': `# ${projectName}\n\nMinimal Aether Application.\n`,
+      '.gitignore': `node_modules/\ndist/\n.DS_Store\ncoverage/\n*.log\n`,
+      'src/App.tsx': minimalApp,
+      'src/entry-client.tsx': minimalEntry,
+      'tests/app.test.ts': minimalTest
+    };
+  }
+
+  // SSG / SPA / SSR Templates
   const appTsx = `import { signal } from '@aether/reactivity';
 import { Router, Route, Link } from '@aether/router';
 import { Header } from './components/Header.js';
@@ -175,6 +253,36 @@ export function render(url: string) {
 }
 `;
 
+  const ssgBuildTs = `import { generateStaticSite } from '@aether/ssr';
+import { App } from './src/App.js';
+
+async function buildSSG() {
+  await generateStaticSite({
+    routes: ['/', '/about'],
+    outDir: './dist',
+    template: ({ route, bodyHtml }) => \`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${projectName} - \${route}</title>
+  </head>
+  <body>
+    <div id="app">\${bodyHtml}</div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>\`,
+    renderRoute: async (route) => {
+      const { renderToString } = await import('@aether/ssr');
+      return renderToString(() => <App />);
+    }
+  });
+  console.log('SSG Build Complete!');
+}
+
+buildSSG().catch(console.error);
+`;
+
   const testTsx = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { signal } from '@aether/reactivity';
@@ -191,7 +299,7 @@ describe('${projectName} Component Suite', () => {
 
   const readmeMd = `# ${projectName}
 
-Built with [Aether Framework](https://github.com/aether/aether).
+Built with [Aether Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 
@@ -223,7 +331,7 @@ coverage/
 *.log
 `;
 
-  return {
+  const result: StarterProjectFiles = {
     'package.json': packageJson,
     'tsconfig.json': tsconfigJson,
     'vite.config.ts': viteConfig,
@@ -236,7 +344,16 @@ coverage/
     'src/views/HomeView.tsx': homeViewTsx,
     'src/views/AboutView.tsx': aboutViewTsx,
     'src/entry-client.tsx': entryClientTsx,
-    'src/entry-server.tsx': entryServerTsx,
     'tests/app.test.ts': testTsx
   };
+
+  if (templateType === 'ssr') {
+    result['src/entry-server.tsx'] = entryServerTsx;
+  }
+  if (templateType === 'ssg') {
+    result['ssg-build.ts'] = ssgBuildTs;
+    result['src/entry-server.tsx'] = entryServerTsx;
+  }
+
+  return result;
 }
