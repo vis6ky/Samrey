@@ -1,6 +1,6 @@
 {
-  "name": "Aether Framework Architectural Design & Competitive Analysis",
-  "description": "Production-grade technical analysis of React, Angular, Vue, Svelte, and Solid, with complete architectural blueprints, compiler pipeline, security model, and technical decision records for the Aether framework.",
+  "name": "Aether Framework — Enterprise Monorepo & Documentation Suite",
+  "description": "Production-grade frontend framework monorepo built with native Aether primitives: zero-eval security, push-pull glitch-free reactivity, direct DOM mutations, and architecture explorer.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,21 +1,29 @@
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        '@aether/security': path.resolve(__dirname, 'packages/security/src/index.ts'),
+        '@aether/reactivity': path.resolve(__dirname, 'packages/reactivity/src/index.ts'),
+        '@aether/runtime': path.resolve(__dirname, 'packages/runtime/src/index.ts'),
+        '@aether/compiler': path.resolve(__dirname, 'packages/compiler/src/index.ts'),
+        '@aether/router': path.resolve(__dirname, 'packages/router/src/index.ts'),
+        '@aether/http': path.resolve(__dirname, 'packages/http/src/index.ts'),
+        '@aether/forms': path.resolve(__dirname, 'packages/forms/src/index.ts'),
+        '@aether/ssr': path.resolve(__dirname, 'packages/ssr/src/index.ts'),
+        '@aether/testing': path.resolve(__dirname, 'packages/testing/src/index.ts'),
+        '@aether/cli': path.resolve(__dirname, 'packages/cli/src/index.ts'),
+        '@aether/devtools': path.resolve(__dirname, 'packages/devtools/src/index.ts')
       },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

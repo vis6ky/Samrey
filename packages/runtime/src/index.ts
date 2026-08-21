@@ -8,4 +8,5 @@ export * from './bindings.js';
 export * from './events.js';
 export * from './component.js';
 export * from './control-flow.js';
+export * from './dom.js';
 export * from './diagnostics.js';
