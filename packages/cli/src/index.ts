@@ -10,6 +10,7 @@ export * from './runner.js';
 export * from './commands/create.js';
 export * from './commands/dev.js';
 export * from './commands/build.js';
+export * from './commands/preview.js';
 export * from './commands/test.js';
 export * from './commands/audit.js';
 export * from './commands/analyze.js';

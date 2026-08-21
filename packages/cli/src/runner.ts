@@ -6,6 +6,7 @@
 import { runCreateCommand } from './commands/create.js';
 import { runDevCommand } from './commands/dev.js';
 import { runBuildCommand } from './commands/build.js';
+import { runPreviewCommand } from './commands/preview.js';
 import { runTestCommand } from './commands/test.js';
 import { runAuditCommand } from './commands/audit.js';
 import { runAnalyzeCommand } from './commands/analyze.js';
@@ -25,6 +26,7 @@ COMMANDS:
   create <name>        Initialize a new production Aether starter project
   dev                  Start the high-performance local dev server with DevTools
   build                Compile and bundle Aether application for production
+  preview              Serve production bundle locally for previewing
   test                 Execute application test suites
   audit                Run static security, CSP & a11y accessibility audit
   analyze              Inspect reactive graph, static hoisting & bundle metrics
@@ -33,13 +35,19 @@ COMMANDS:
 OPTIONS:
   -h, --help           Display help information
   -v, --version        Display CLI version
+  --template <type>    Starter template (ssr, spa, minimal, ssg) [default: ssr]
+  --port <number>      Port number for dev and preview servers [default: 3000]
+  --host               Expose server to local network (0.0.0.0)
+  --outDir <path>      Output directory for build artifacts [default: dist]
   --dry-run            Simulate command execution without writing to disk
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
   $ aether create my-app --template ssr
+  $ aether create quick-demo --template minimal
   $ aether dev --port 3000
   $ aether build --ssr
+  $ aether preview --port 4173
   $ aether audit --strict
   $ aether generate component UserProfile
 `;
@@ -70,13 +78,21 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!name) {
         return {
           success: false,
-          message: '[Aether Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa]',
+          message: '[Aether Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]',
           exitCode: 1
         };
       }
       const templateIdx = args.indexOf('--template');
-      const template = templateIdx !== -1 && args[templateIdx + 1] ? (args[templateIdx + 1] as 'ssr' | 'spa') : 'ssr';
-      return runCreateCommand({ name, template, dryRun });
+      const templateVal = templateIdx !== -1 && args[templateIdx + 1] ? args[templateIdx + 1] : 'ssr';
+      const validTemplates = ['ssr', 'spa', 'minimal', 'ssg'];
+      if (!validTemplates.includes(templateVal)) {
+        return {
+          success: false,
+          message: `[Aether Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(', ')}.`,
+          exitCode: 1
+        };
+      }
+      return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun });
     }
 
     case 'dev': {
@@ -91,6 +107,15 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       const outDirIdx = args.indexOf('--outDir');
       const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
       return runBuildCommand({ ssr, outDir, dryRun });
+    }
+
+    case 'preview': {
+      const portIdx = args.indexOf('--port');
+      const port = portIdx !== -1 && args[portIdx + 1] ? parseInt(args[portIdx + 1]!, 10) : 4173;
+      const host = args.includes('--host');
+      const outDirIdx = args.indexOf('--outDir');
+      const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
+      return runPreviewCommand({ port, host, outDir, dryRun });
     }
 
     case 'test': {
