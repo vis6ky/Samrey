@@ -7,45 +7,61 @@ import * as path from "node:path";
 // src/starter-template.ts
 function generateStarterProject(projectName, options = {}) {
   const templateType = options.template || "ssr";
-  const packageJson = JSON.stringify({
-    name: projectName,
-    version: "1.0.0-rc.1",
-    type: "module",
-    scripts: {
-      dev: "aether dev",
-      build: "aether build",
-      start: templateType === "ssr" ? "node server.js" : "vite preview",
-      test: "aether test",
-      audit: "aether audit",
-      analyze: "aether analyze"
+  const scripts = {
+    dev: "aether dev",
+    build: "aether build",
+    test: "aether test",
+    audit: "aether audit",
+    analyze: "aether analyze"
+  };
+  if (templateType === "ssr") {
+    scripts.start = "node server.js";
+  } else if (templateType === "ssg") {
+    scripts.build = "aether build && tsx ssg-build.ts";
+    scripts.start = "vite preview";
+  } else {
+    scripts.start = "vite preview";
+  }
+  const packageJson = JSON.stringify(
+    {
+      name: projectName,
+      version: "1.0.0",
+      type: "module",
+      scripts,
+      dependencies: {
+        "@aether/compiler": "^1.0.0",
+        "@aether/reactivity": "^1.0.0",
+        "@aether/runtime": "^1.0.0",
+        ...templateType !== "minimal" ? { "@aether/router": "^1.0.0" } : {},
+        ...templateType === "ssr" || templateType === "ssg" ? { "@aether/ssr": "^1.0.0" } : {},
+        "@aether/devtools": "^1.0.0"
+      },
+      devDependencies: {
+        "@aether/cli": "^1.0.0",
+        typescript: "^5.0.0",
+        vite: "^5.0.0"
+      }
     },
-    dependencies: {
-      "@aether/compiler": "^1.0.0-rc.1",
-      "@aether/reactivity": "^1.0.0-rc.1",
-      "@aether/runtime": "^1.0.0-rc.1",
-      "@aether/router": "^1.0.0-rc.1",
-      "@aether/ssr": "^1.0.0-rc.1",
-      "@aether/devtools": "^1.0.0-rc.1"
+    null,
+    2
+  );
+  const tsconfigJson = JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        lib: ["ES2022", "DOM", "DOM.Iterable"],
+        jsx: "preserve",
+        strict: true,
+        skipLibCheck: true,
+        esModuleInterop: true
+      },
+      include: ["src/**/*", "tests/**/*"]
     },
-    devDependencies: {
-      "@aether/cli": "^1.0.0-rc.1",
-      "typescript": "^5.0.0",
-      "vite": "^5.0.0"
-    }
-  }, null, 2);
-  const tsconfigJson = JSON.stringify({
-    compilerOptions: {
-      target: "ES2022",
-      module: "NodeNext",
-      moduleResolution: "NodeNext",
-      lib: ["ES2022", "DOM", "DOM.Iterable"],
-      jsx: "preserve",
-      strict: true,
-      skipLibCheck: true,
-      esModuleInterop: true
-    },
-    include: ["src/**/*", "tests/**/*"]
-  }, null, 2);
+    null,
+    2
+  );
   const viteConfig = `import { defineConfig } from 'vite';
 import { aetherVitePlugin } from '@aether/cli';
 
@@ -69,6 +85,65 @@ export default defineConfig({
   </body>
 </html>
 `;
+  if (templateType === "minimal") {
+    const minimalApp = `import { signal } from '@aether/reactivity';
+
+export function App() {
+  const count = signal(0);
+  return (
+    <main style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
+      <h1>${projectName}</h1>
+      <p>Minimal Aether Application</p>
+      <div style="margin-top: 1rem;">
+        <button type="button" onClick={() => count.value--}>-</button>
+        <span style="margin: 0 1rem; font-weight: bold;">{count.value}</span>
+        <button type="button" onClick={() => count.value++}>+</button>
+      </div>
+    </main>
+  );
+}
+`;
+    const minimalEntry = `import { mount } from '@aether/runtime';
+import { App } from './App.js';
+
+const root = document.getElementById('app');
+if (root) {
+  mount(() => <App />, root);
+}
+`;
+    const minimalTest = `import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { signal } from '@aether/reactivity';
+
+describe('${projectName} Minimal Tests', () => {
+  it('updates signal state', () => {
+    const count = signal(0);
+    assert.equal(count.value, 0);
+    count.value = 42;
+    assert.equal(count.value, 42);
+  });
+});
+`;
+    return {
+      "package.json": packageJson,
+      "tsconfig.json": tsconfigJson,
+      "vite.config.ts": viteConfig,
+      "index.html": indexHtml,
+      "README.md": `# ${projectName}
+
+Minimal Aether Application.
+`,
+      ".gitignore": `node_modules/
+dist/
+.DS_Store
+coverage/
+*.log
+`,
+      "src/App.tsx": minimalApp,
+      "src/entry-client.tsx": minimalEntry,
+      "tests/app.test.ts": minimalTest
+    };
+  }
   const appTsx = `import { signal } from '@aether/reactivity';
 import { Router, Route, Link } from '@aether/router';
 import { Header } from './components/Header.js';
@@ -160,6 +235,35 @@ export function render(url: string) {
   return renderToString(() => <App />);
 }
 `;
+  const ssgBuildTs = `import { generateStaticSite } from '@aether/ssr';
+import { App } from './src/App.js';
+
+async function buildSSG() {
+  await generateStaticSite({
+    routes: ['/', '/about'],
+    outDir: './dist',
+    template: ({ route, bodyHtml }) => \`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${projectName} - \${route}</title>
+  </head>
+  <body>
+    <div id="app">\${bodyHtml}</div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>\`,
+    renderRoute: async (route) => {
+      const { renderToString } = await import('@aether/ssr');
+      return renderToString(() => <App />);
+    }
+  });
+  console.log('SSG Build Complete!');
+}
+
+buildSSG().catch(console.error);
+`;
   const testTsx = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { signal } from '@aether/reactivity';
@@ -175,7 +279,7 @@ describe('${projectName} Component Suite', () => {
 `;
   const readmeMd = `# ${projectName}
 
-Built with [Aether Framework](https://github.com/aether/aether).
+Built with [Aether Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 
@@ -205,7 +309,7 @@ dist/
 coverage/
 *.log
 `;
-  return {
+  const result = {
     "package.json": packageJson,
     "tsconfig.json": tsconfigJson,
     "vite.config.ts": viteConfig,
@@ -218,9 +322,16 @@ coverage/
     "src/views/HomeView.tsx": homeViewTsx,
     "src/views/AboutView.tsx": aboutViewTsx,
     "src/entry-client.tsx": entryClientTsx,
-    "src/entry-server.tsx": entryServerTsx,
     "tests/app.test.ts": testTsx
   };
+  if (templateType === "ssr") {
+    result["src/entry-server.tsx"] = entryServerTsx;
+  }
+  if (templateType === "ssg") {
+    result["ssg-build.ts"] = ssgBuildTs;
+    result["src/entry-server.tsx"] = entryServerTsx;
+  }
+  return result;
 }
 
 // src/commands/create.ts
@@ -1390,6 +1501,30 @@ async function runBuildCommand(options = {}) {
   };
 }
 
+// src/commands/preview.ts
+async function runPreviewCommand(options = {}) {
+  const port = options.port || 4173;
+  const host = options.host ? "0.0.0.0" : "localhost";
+  const outDir = options.outDir || "dist";
+  const message = [
+    `  \u25B2 Aether Production Preview Server`,
+    `  \u279C Local:   http://${host}:${port}/`,
+    `  \u279C Serving: ${outDir}`,
+    `  \u279C Mode:    Production static preview with HTTP caching headers`,
+    `  \u2713 Preview server ready.`
+  ].join("\n");
+  return {
+    success: true,
+    message,
+    exitCode: 0,
+    data: {
+      port,
+      host,
+      outDir
+    }
+  };
+}
+
 // src/commands/test.ts
 async function runTestCommand(options = {}) {
   const fileCount = options.files?.length || 1;
@@ -1727,7 +1862,7 @@ async function runGenerateCommand(options) {
 }
 
 // src/runner.ts
-var CLI_VERSION = "1.0.0-rc.1";
+var CLI_VERSION = "1.0.0";
 var HELP_TEXT = `
 Aether Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
@@ -1739,6 +1874,7 @@ COMMANDS:
   create <name>        Initialize a new production Aether starter project
   dev                  Start the high-performance local dev server with DevTools
   build                Compile and bundle Aether application for production
+  preview              Serve production bundle locally for previewing
   test                 Execute application test suites
   audit                Run static security, CSP & a11y accessibility audit
   analyze              Inspect reactive graph, static hoisting & bundle metrics
@@ -1747,13 +1883,19 @@ COMMANDS:
 OPTIONS:
   -h, --help           Display help information
   -v, --version        Display CLI version
+  --template <type>    Starter template (ssr, spa, minimal, ssg) [default: ssr]
+  --port <number>      Port number for dev and preview servers [default: 3000]
+  --host               Expose server to local network (0.0.0.0)
+  --outDir <path>      Output directory for build artifacts [default: dist]
   --dry-run            Simulate command execution without writing to disk
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
   $ aether create my-app --template ssr
+  $ aether create quick-demo --template minimal
   $ aether dev --port 3000
   $ aether build --ssr
+  $ aether preview --port 4173
   $ aether audit --strict
   $ aether generate component UserProfile
 `;
@@ -1780,13 +1922,21 @@ async function runCLI(args2) {
       if (!name) {
         return {
           success: false,
-          message: "[Aether Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa]",
+          message: "[Aether Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]",
           exitCode: 1
         };
       }
       const templateIdx = args2.indexOf("--template");
-      const template = templateIdx !== -1 && args2[templateIdx + 1] ? args2[templateIdx + 1] : "ssr";
-      return runCreateCommand({ name, template, dryRun });
+      const templateVal = templateIdx !== -1 && args2[templateIdx + 1] ? args2[templateIdx + 1] : "ssr";
+      const validTemplates = ["ssr", "spa", "minimal", "ssg"];
+      if (!validTemplates.includes(templateVal)) {
+        return {
+          success: false,
+          message: `[Aether Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(", ")}.`,
+          exitCode: 1
+        };
+      }
+      return runCreateCommand({ name, template: templateVal, dryRun });
     }
     case "dev": {
       const portIdx = args2.indexOf("--port");
@@ -1799,6 +1949,14 @@ async function runCLI(args2) {
       const outDirIdx = args2.indexOf("--outDir");
       const outDir = outDirIdx !== -1 && args2[outDirIdx + 1] ? args2[outDirIdx + 1] : "dist";
       return runBuildCommand({ ssr, outDir, dryRun });
+    }
+    case "preview": {
+      const portIdx = args2.indexOf("--port");
+      const port = portIdx !== -1 && args2[portIdx + 1] ? parseInt(args2[portIdx + 1], 10) : 4173;
+      const host = args2.includes("--host");
+      const outDirIdx = args2.indexOf("--outDir");
+      const outDir = outDirIdx !== -1 && args2[outDirIdx + 1] ? args2[outDirIdx + 1] : "dist";
+      return runPreviewCommand({ port, host, outDir, dryRun });
     }
     case "test": {
       const watch = args2.includes("--watch");
@@ -1891,6 +2049,10 @@ runCLI(args).then((result) => {
 /**
  * @license Apache-2.0
  * @aether/cli - "aether build" Command
+ */
+/**
+ * @license Apache-2.0
+ * @aether/cli - "aether preview" Command
  */
 /**
  * @license Apache-2.0

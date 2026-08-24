@@ -1,6 +1,6 @@
 {
   "name": "@aether/devtools",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Optional runtime DevTools bridge, reactive graph inspection hooks, and transaction event dispatcher.",
   "license": "Apache-2.0",
   "repository": {
@@ -44,6 +44,9 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@aether/reactivity": "^1.0.0-rc.1"
+    "@aether/reactivity": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

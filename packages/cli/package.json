@@ -1,6 +1,6 @@
 {
   "name": "@aether/cli",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Command-line tool, Vite plugin integration, and static security/a11y auditor for Aether applications.",
   "license": "Apache-2.0",
   "repository": {
@@ -50,6 +50,9 @@
     "aether": "./bin/aether.js"
   },
   "dependencies": {
-    "@aether/compiler": "^1.0.0-rc.1"
+    "@aether/compiler": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

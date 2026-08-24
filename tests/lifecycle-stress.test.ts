@@ -178,7 +178,7 @@ describe('Aether Phase 17 - Starter Template & CLI Validation Suite', () => {
 
     const cliVersionRes = await runCLI(['--version']);
     assert.equal(cliVersionRes.success, true);
-    assert.ok(cliVersionRes.message.includes('1.0.0-rc.1'));
+    assert.ok(cliVersionRes.message.includes('1.0.0'));
 
     const cliUnknownRes = await runCLI(['nonexistent-command']);
     assert.equal(cliUnknownRes.success, false);

@@ -179,7 +179,7 @@ export function App(): HTMLElement {
       el('div', { class: 'flex items-center space-x-4 font-mono text-[11px]' },
         el('span', null, 'Zero-eval · No VDOM · Fine-Grained Reactive Signals'),
         el('span', { class: 'text-slate-300' }, '|'),
-        el('span', { class: 'text-emerald-600 font-semibold' }, 'Phase 14.5 Certified')
+        el('span', { class: 'text-emerald-600 font-semibold' }, 'v1.0.0 Production Certified')
       )
     )
   );

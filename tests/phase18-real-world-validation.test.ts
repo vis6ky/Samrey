@@ -364,10 +364,10 @@ describe('Aether Phase 18 — Real-World Application & Ecosystem Validation', ()
   describe('6. SSR, SSG & Static HTML Generation Matrix', () => {
     it('renders native Aether Project Manager components to clean static HTML', async () => {
       const ssrOutput = await renderToString(() =>
-        '<div class="project-manager-ssr"><h1>Aether Project Manager v1.0.0-rc.1</h1><p>Production SSR Render Output</p></div>'
+        '<div class="project-manager-ssr"><h1>Aether Project Manager v1.0.0</h1><p>Production SSR Render Output</p></div>'
       );
 
-      assert.ok(ssrOutput.includes('Aether Project Manager v1.0.0-rc.1'));
+      assert.ok(ssrOutput.includes('Aether Project Manager v1.0.0'));
       assert.ok(ssrOutput.includes('project-manager-ssr'));
       assert.ok(ssrOutput.includes('<!DOCTYPE html>'));
     });

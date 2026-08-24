@@ -5,9 +5,11 @@
 
 import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@aether/reactivity';
 import { reportDuplicateKey } from './diagnostics.js';
+import { el, text } from './dom.js';
+import { createComponent } from './component.js';
 
 export interface ShowProps<T> {
-  when: () => T;
+  when: (() => T) | Signal<T> | T;
   fallback?: () => Node | Node[] | null | undefined;
   children: ((item: NonNullable<T>) => Node | Node[] | null | undefined) | Node | Node[];
 }
@@ -141,7 +143,8 @@ export function Show<T>(props: ShowProps<T>): Node {
   }
 
   effect(() => {
-    const condition = props.when();
+    const whenProp = props.when;
+    const condition = typeof whenProp === 'function' ? (whenProp as () => unknown)() : (whenProp && typeof whenProp === 'object' && 'value' in whenProp) ? (whenProp as { value: unknown }).value : whenProp;
     const isTruthy = Boolean(condition);
 
     // Clean up previous branch
@@ -194,7 +197,7 @@ export function Show<T>(props: ShowProps<T>): Node {
 }
 
 export interface ForProps<T, K = unknown> {
-  each: () => readonly T[] | null | undefined;
+  each: (() => readonly T[] | null | undefined) | Signal<readonly T[] | null | undefined> | readonly T[] | null | undefined;
   key?: (item: T, index: number) => K;
   fallback?: () => Node | Node[] | null | undefined;
   children: (item: T, index: () => number) => Node | Node[] | null | undefined;
@@ -275,8 +278,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   }
 
   effect(() => {
-    const rawItems = props.each();
-    const items = rawItems ? Array.from(rawItems) : [];
+    const rawVal = typeof props.each === 'function' ? props.each() : (props.each as any)?.value !== undefined ? (props.each as any).value : props.each;
+    const rawItems = rawVal;
+    const items = rawItems ? Array.from(rawItems as Iterable<T>) : [];
 
     if (items.length === 0) {
       // Empty list
@@ -466,4 +470,49 @@ export function ErrorBoundary(props: ErrorBoundaryProps): Node {
       return props.fallback(err, reset);
     }
   });
+}
+
+export interface DynamicProps {
+  component: string | ((props: any) => Node | Node[]);
+  [key: string]: any;
+}
+
+export function Dynamic(props: DynamicProps): Node | Node[] {
+  const { component, ...rest } = props;
+  if (typeof component === 'string') {
+    return (props.children ? [el(component as any, rest, props.children)] : [el(component as any, rest)]) as unknown as Node;
+  }
+  return createComponent(component, rest);
+}
+
+export interface PortalProps {
+  mount?: HTMLElement;
+  children: () => Node | Node[] | null | undefined;
+}
+
+export function Portal(props: PortalProps): Node {
+  const target = props.mount || (typeof document !== 'undefined' ? document.body : null);
+  const rendered = props.children();
+  if (target && rendered) {
+    if (Array.isArray(rendered)) {
+      rendered.forEach((n) => target.appendChild(n));
+    } else {
+      target.appendChild(rendered);
+    }
+  }
+  return text('');
+}
+
+export interface SuspenseProps {
+  fallback: () => Node | Node[] | null | undefined;
+  children: () => Node | Node[] | null | undefined;
+}
+
+export function Suspense(props: SuspenseProps): Node {
+  try {
+    const res = props.children();
+    return (res || text('')) as Node;
+  } catch (e) {
+    return (props.fallback() || text('')) as Node;
+  }
 }

@@ -35,3 +35,5 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
     messages
   };
 }
+
+export const runAetherAudit = auditSource;

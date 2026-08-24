@@ -1,6 +1,6 @@
 {
   "name": "@aether/compiler",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Ahead-of-Time template & TSX parser, AIR intermediate representation generator, and static template hoister.",
   "license": "Apache-2.0",
   "repository": {
@@ -45,6 +45,9 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@aether/security": "^1.0.0-rc.1"
+    "@aether/security": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

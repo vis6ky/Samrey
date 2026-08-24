@@ -34,19 +34,19 @@ export function generateStarterProject(
   const packageJson = JSON.stringify(
     {
       name: projectName,
-      version: '1.0.0-rc.1',
+      version: '1.0.0',
       type: 'module',
       scripts,
       dependencies: {
-        '@aether/compiler': '^1.0.0-rc.1',
-        '@aether/reactivity': '^1.0.0-rc.1',
-        '@aether/runtime': '^1.0.0-rc.1',
-        ...(templateType !== 'minimal' ? { '@aether/router': '^1.0.0-rc.1' } : {}),
-        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@aether/ssr': '^1.0.0-rc.1' } : {}),
-        '@aether/devtools': '^1.0.0-rc.1'
+        '@aether/compiler': '^1.0.0',
+        '@aether/reactivity': '^1.0.0',
+        '@aether/runtime': '^1.0.0',
+        ...(templateType !== 'minimal' ? { '@aether/router': '^1.0.0' } : {}),
+        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@aether/ssr': '^1.0.0' } : {}),
+        '@aether/devtools': '^1.0.0'
       },
       devDependencies: {
-        '@aether/cli': '^1.0.0-rc.1',
+        '@aether/cli': '^1.0.0',
         typescript: '^5.0.0',
         vite: '^5.0.0'
       }

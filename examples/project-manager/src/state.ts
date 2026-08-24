@@ -45,6 +45,8 @@ export const store = createStore<AppState>({
   activeModal: null
 });
 
+export const projectStore = store;
+
 // Signals for UI toggles
 export const isSidebarCollapsed = signal<boolean>(false);
 export const globalSearchQuery = signal<string>('');

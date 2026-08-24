@@ -55,7 +55,7 @@ export function Header(props: HeaderProps): HTMLElement {
       { class: 'hidden sm:block' },
       el('div', { class: 'flex items-center space-x-2' },
         el('span', { class: 'text-sm font-bold text-slate-900 tracking-tight' }, 'Task Studio'),
-        el('span', { class: 'text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200' }, 'v1.0.0-rc.1')
+        el('span', { class: 'text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium' }, 'v1.0.0 Stable')
       ),
       el('p', { class: 'text-[11px] text-slate-500' }, 'Production Aether Web Platform')
     )

@@ -1,6 +1,6 @@
 # Aether Framework — Public API Authoritative Reference
 
-> **Aether v1.0.0-rc.1 Formal API Contract & Package Specification**
+> **Aether v1.0.0 Formal API Contract & Package Specification**
 
 This document serves as the authoritative Public API contract for all 11 packages comprising the Aether Framework.
 

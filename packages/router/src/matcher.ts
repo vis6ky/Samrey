@@ -54,3 +54,5 @@ export function matchRoutes(routes: RouteRecord[], pathname: string): RouteMatch
   }
   return null;
 }
+
+export const matchRoute = matchPath;

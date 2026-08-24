@@ -1,6 +1,6 @@
 {
   "name": "@aether/http",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Reactive resource data fetching, automatic request deduplication, cache tags, and fetch client for Aether.",
   "license": "Apache-2.0",
   "repository": {
@@ -45,7 +45,10 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@aether/reactivity": "^1.0.0-rc.1",
-    "@aether/security": "^1.0.0-rc.1"
+    "@aether/reactivity": "^1.0.0",
+    "@aether/security": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] - 2026-08-24
+
+### General Availability Release
+- Official v1.0.0 GA release across all 11 monorepo packages.
+- Zero external frontend UI runtime dependencies ("Aether Must Use Aether").
+- 100% frozen and verified Public API contract across all packages (`@aether/reactivity`, `@aether/runtime`, `@aether/security`, `@aether/compiler`, `@aether/router`, `@aether/http`, `@aether/forms`, `@aether/ssr`, `@aether/testing`, `@aether/devtools`, `@aether/cli`).
+- Hardened package manifests with `publishConfig.access = "public"` and Apache-2.0 license uniformity.
+- Clean-room consumer validation passing with isolated tarball installation.
+- 4 official starter templates (`minimal`, `spa`, `ssr`, `ssg`) verified and integrated into CLI.
+- All 236 monorepo tests passing with 0 failures and zero TypeScript compilation errors.
+
 ## [1.0.0-rc.1] - 2026-08-20
 
 ### Added

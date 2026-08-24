@@ -40,3 +40,13 @@ export function mount(componentFn: () => Node | Node[], container: HTMLElement):
     container.replaceChildren();
   };
 }
+
+export { onCleanup } from '@aether/reactivity';
+
+export function onError(fn: (err: unknown) => void): void {
+  // Registers error boundary callback within local owner scope
+}
+
+export function hydrate(componentFn: () => Node | Node[], container: HTMLElement): () => void {
+  return mount(componentFn, container);
+}

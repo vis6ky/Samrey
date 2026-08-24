@@ -30,6 +30,12 @@ export interface ReadonlySignal<T> {
   readonly value: T;
 }
 
+export interface Context<T> {
+  readonly id: symbol;
+  readonly defaultValue?: T;
+  Provider(props: { value: T; children: any }): any;
+}
+
 export interface Owner {
   parent: Owner | null;
   children: Owner[];

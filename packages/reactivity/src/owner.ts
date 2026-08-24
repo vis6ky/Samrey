@@ -3,7 +3,7 @@
  * @aether/reactivity - Owner Scoped Disposal Hierarchy
  */
 
-import { Owner } from './types.js';
+import { Owner, Context } from './types.js';
 
 let currentOwner: Owner | null = null;
 
@@ -71,4 +71,30 @@ export function onCleanup(fn: () => void): void {
   if (currentOwner) {
     currentOwner.cleanups.push(fn);
   }
+}
+
+export function createContext<T>(defaultValue?: T): Context<T> {
+  const id = Symbol('Aether_Context');
+  return {
+    id,
+    defaultValue,
+    Provider(props: { value: T; children: any }) {
+      if (currentOwner) {
+        if (!currentOwner.context) currentOwner.context = Object.create(null);
+        currentOwner.context[id] = props.value;
+      }
+      return typeof props.children === 'function' ? props.children() : props.children;
+    }
+  };
+}
+
+export function useContext<T>(context: Context<T>): T {
+  let curr = currentOwner;
+  while (curr) {
+    if (curr.context && context.id in curr.context) {
+      return curr.context[context.id] as T;
+    }
+    curr = curr.parent;
+  }
+  return context.defaultValue as T;
 }
