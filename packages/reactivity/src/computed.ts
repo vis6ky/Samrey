@@ -78,3 +78,5 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
   return accessor;
 }
+
+export const createMemo = computed;

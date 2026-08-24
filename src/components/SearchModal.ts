@@ -127,7 +127,11 @@ export function SearchModal(props: {
             searchQuery.value = (e.target as HTMLInputElement).value;
             selectedIndex.value = 0;
           });
-          setTimeout(() => input.focus(), 50);
+          setTimeout(() => {
+            if (input && typeof input.focus === 'function') {
+              input.focus();
+            }
+          }, 50);
           return input;
         })(),
         el('button', {

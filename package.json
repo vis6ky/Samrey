@@ -1,7 +1,7 @@
 {
   "name": "@aether/monorepo",
   "private": true,
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "type": "module",
   "workspaces": [
     "packages/*"
@@ -20,7 +20,16 @@
     "benchmark:reactivity": "tsx benchmarks/runner.ts reactivity",
     "benchmark:ssr": "tsx benchmarks/runner.ts ssr",
     "benchmark:gate": "tsx benchmarks/check-regression.ts",
-    "test": "node --import tsx --test packages/security/tests/*.test.ts packages/compiler/tests/*.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/*.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts tests/integration/task-studio.test.ts tests/examples.test.ts tests/lifecycle-stress.test.ts"
+    "release:preflight": "tsx scripts/release/preflight.ts",
+    "release:validate": "tsx scripts/release/validate-packages.ts && tsx scripts/release/validate-dependencies.ts && tsx scripts/release/validate-exports.ts && tsx scripts/release/validate-version.ts && tsx scripts/release/validate-license.ts && tsx scripts/release/validate-files.ts",
+    "release:pack": "tsx scripts/release/pack.ts",
+    "release:publish": "tsx scripts/release/publish.ts",
+    "release:verify": "tsx scripts/release/verify-registry.ts",
+    "release:smoke": "tsx scripts/release/smoke-test.ts",
+    "release:report": "tsx scripts/release/release-report.ts",
+    "release:rc": "tsx scripts/release/publish.ts --tag rc",
+    "release:latest": "tsx scripts/release/publish.ts --tag latest",
+    "test": "node --import tsx --test packages/security/tests/*.test.ts packages/compiler/tests/*.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/*.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts tests/integration/task-studio.test.ts tests/examples.test.ts tests/lifecycle-stress.test.ts tests/phase18-real-world-validation.test.ts tests/phase19-release-gate-validation.test.ts tests/phase20-release-readiness.test.ts tests/phase21-release-execution.test.ts tests/phase24/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -1,6 +1,6 @@
 {
   "name": "@aether/reactivity",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Fine-grained push-pull topological signal engine with versioned transaction clocks and Owner cleanup hierarchy.",
   "license": "Apache-2.0",
   "repository": {
@@ -43,5 +43,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@aether/router",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Fine-grained reactive client & server router with parameterized matching and loader pipelines.",
   "license": "Apache-2.0",
   "repository": {
@@ -44,8 +44,11 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@aether/reactivity": "^1.0.0-rc.1",
-    "@aether/runtime": "^1.0.0-rc.1",
-    "@aether/security": "^1.0.0-rc.1"
+    "@aether/reactivity": "^1.0.0",
+    "@aether/runtime": "^1.0.0",
+    "@aether/security": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

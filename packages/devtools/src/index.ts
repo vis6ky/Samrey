@@ -12,3 +12,18 @@ export * from './router-inspector.js';
 export * from './network-inspector.js';
 export * from './form-inspector.js';
 export * from './perf-inspector.js';
+
+import { DevToolsBridge, aetherDevToolsBridge } from './bridge.js';
+import { GraphInspector } from './graph-inspector.js';
+import { PerformanceInspector } from './perf-inspector.js';
+
+export const AetherDevToolsBridge = DevToolsBridge;
+export const ReactiveGraphInspector = GraphInspector;
+export const PerfInspector = PerformanceInspector;
+
+export function initDevTools(options?: { targetOrigin?: string }) {
+  if (options?.targetOrigin) {
+    aetherDevToolsBridge.setTargetOrigin(options.targetOrigin);
+  }
+  return aetherDevToolsBridge;
+}

@@ -28,3 +28,7 @@ export interface StandardSchemaV1<TInput = unknown, TOutput = TInput> {
 }
 
 export type Validator<T> = (value: T) => string | null | undefined;
+
+export async function validateSchema<T>(schema: StandardSchemaV1<unknown, T>, data: unknown): Promise<StandardSchemaResult<T>> {
+  return schema['~standard'].validate(data);
+}

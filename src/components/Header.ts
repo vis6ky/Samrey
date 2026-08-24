@@ -56,7 +56,7 @@ export function Header(props: {
   const titleBox = el('div', null,
     el('div', { class: 'flex items-center space-x-2' },
       el('span', { class: 'font-bold text-slate-900 tracking-tight text-lg' }, 'Aether Framework'),
-      el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium border border-emerald-200' }, 'Phase 14.5 Dogfooding')
+      el('span', { class: 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium border border-emerald-200' }, 'v1.0.0 Stable')
     ),
     el('p', { class: 'text-xs text-slate-500 hidden sm:block' },
       'Production-Grade Frontend Framework Built with Native Aether Primitives'

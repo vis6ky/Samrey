@@ -59,20 +59,144 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   ...children: ChildValue[]
 ): HTMLElementTagNameMap[K] {
   if (typeof document === 'undefined') {
-    return {
+    const attributes: Record<string, string> = {};
+    if (attrs) {
+      for (const [k, v] of Object.entries(attrs)) {
+        if (v !== undefined && v !== null && typeof v !== 'function') {
+          attributes[k] = String(v);
+        }
+      }
+    }
+    const childNodes: any[] = [];
+    for (const c of children) {
+      if (c === null || c === undefined || c === false || c === true) continue;
+      if (Array.isArray(c)) {
+        for (const item of c) {
+          if (item !== null && item !== undefined) {
+            childNodes.push(typeof item === 'object' ? item : { nodeType: 3, nodeName: '#text', textContent: String(item) });
+          }
+        }
+      } else if (typeof c === 'object') {
+        childNodes.push(c);
+      } else {
+        childNodes.push({ nodeType: 3, nodeName: '#text', textContent: String(c) });
+      }
+    }
+
+    const mockElem: any = {
       nodeType: 1,
-      nodeName: tagName.toUpperCase(),
-      tagName: tagName.toUpperCase(),
-      attributes: {},
-      childNodes: [],
-      setAttribute: () => {},
-      getAttribute: () => null,
-      removeAttribute: () => {},
-      classList: { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false },
-      appendChild: () => {},
+      nodeName: String(tagName).toUpperCase(),
+      tagName: String(tagName).toUpperCase(),
+      attributes,
+      childNodes,
+      parentNode: null,
+      nextSibling: null,
+      previousSibling: null,
+      setAttribute(k: string, v: string) { attributes[k] = String(v); },
+      getAttribute(k: string) { return attributes[k] ?? null; },
+      removeAttribute(k: string) { delete attributes[k]; },
+      classList: {
+        add: (...cls: string[]) => {
+          const current = (attributes['class'] || attributes['className'] || '').split(/\s+/).filter(Boolean);
+          attributes['class'] = [...new Set([...current, ...cls])].join(' ');
+        },
+        remove: (...cls: string[]) => {
+          const current = (attributes['class'] || attributes['className'] || '').split(/\s+/).filter(Boolean);
+          attributes['class'] = current.filter(c => !cls.includes(c)).join(' ');
+        },
+        toggle: (cls: string) => {
+          const current = (attributes['class'] || attributes['className'] || '').split(/\s+/).filter(Boolean);
+          if (current.includes(cls)) {
+            attributes['class'] = current.filter(c => c !== cls).join(' ');
+          } else {
+            attributes['class'] = [...current, cls].join(' ');
+          }
+        },
+        contains: (cls: string) => (attributes['class'] || attributes['className'] || '').split(/\s+/).filter(Boolean).includes(cls)
+      },
+      querySelector: (selector: string) => {
+        const selectors = selector.split(',').map(s => s.trim().toUpperCase());
+        function find(node: any): any {
+          if (!node || !node.childNodes) return null;
+          for (const child of node.childNodes) {
+            if (child && child.nodeType === 1) {
+              if (selectors.includes(child.tagName) || selectors.some(s => s.startsWith('.') && child.classList?.contains(s.slice(1)))) {
+                return child;
+              }
+              const nested = find(child);
+              if (nested) return nested;
+            }
+          }
+          return null;
+        }
+        return find({ childNodes });
+      },
+      querySelectorAll: (selector: string) => {
+        const selectors = selector.split(',').map(s => s.trim().toUpperCase());
+        const results: any[] = [];
+        function collect(node: any) {
+          if (!node || !node.childNodes) return;
+          for (const child of node.childNodes) {
+            if (child && child.nodeType === 1) {
+              if (selectors.includes(child.tagName) || selectors.some(s => s.startsWith('.') && child.classList?.contains(s.slice(1)))) {
+                results.push(child);
+              }
+              collect(child);
+            }
+          }
+        }
+        collect({ childNodes });
+        return results;
+      },
+      insertBefore(newChild: any, refChild: any) {
+        if (newChild && typeof newChild === 'object') newChild.parentNode = mockElem;
+        const idx = childNodes.indexOf(refChild);
+        if (idx !== -1) {
+          childNodes.splice(idx, 0, newChild);
+        } else {
+          childNodes.push(newChild);
+        }
+        return newChild;
+      },
+      removeChild(child: any) {
+        const idx = childNodes.indexOf(child);
+        if (idx !== -1) {
+          childNodes.splice(idx, 1);
+          if (child && typeof child === 'object') child.parentNode = null;
+        }
+        return child;
+      },
+      appendChild(child: any) {
+        if (child && typeof child === 'object') child.parentNode = mockElem;
+        childNodes.push(child);
+        return child;
+      },
       addEventListener: () => {},
-      removeEventListener: () => {}
-    } as unknown as HTMLElementTagNameMap[K];
+      removeEventListener: () => {},
+      focus: () => {},
+      blur: () => {},
+      click: () => {},
+      dispatchEvent: () => true,
+      get outerHTML() {
+        const tag = String(tagName).toLowerCase();
+        let attrStr = '';
+        for (const [k, v] of Object.entries(attributes)) {
+          attrStr += ` ${k}="${String(v).replace(/"/g, '&quot;')}"`;
+        }
+        const childrenHtml = childNodes.map((ch: any) => ch.outerHTML ?? ch.textContent ?? '').join('');
+        return `<${tag}${attrStr}>${childrenHtml}</${tag}>`;
+      },
+      get textContent() {
+        return childNodes.map((ch: any) => ch.textContent ?? '').join('');
+      }
+    };
+
+    for (const ch of childNodes) {
+      if (ch && typeof ch === 'object') {
+        ch.parentNode = mockElem;
+      }
+    }
+    return mockElem as unknown as HTMLElementTagNameMap[K];
   }
 
   const elem = document.createElement(tagName);
@@ -125,6 +249,9 @@ export function text(content: string | number | (() => unknown)): Node {
   }
   return document.createTextNode(String(content));
 }
+
+export const svg = svgEl;
+export const fragment = frag;
 
 export function frag(...children: ChildValue[]): DocumentFragment {
   if (typeof document === 'undefined') {

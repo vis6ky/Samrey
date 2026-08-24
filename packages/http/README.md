@@ -1,9 +1,57 @@
-# `@aether/http`
+# @aether/http
 
-Reactive data fetching primitive, automatic in-flight deduplication cache, and typed HTTP client for Aether.
+Reactive data fetching primitive, automatic in-flight deduplication cache, retry policies, and typed HTTP client.
 
-## Key Primitives
+## Purpose
 
-- `createResource(source, fetcher)`: Reactive signal with `data`, `loading`, `error`, `status`, and auto-cancellation via `AbortController`.
-- `RequestCache`: In-flight deduplication and cache tag store.
-- `HttpClient`: Zero-dependency fetch abstraction.
+`@aether/http` provides seamless asynchronous resource fetching tightly integrated with Aether signals. It handles abort signals, loading/error states, caching, and suspense integration out of the box.
+
+## Installation
+
+```bash
+npm install @aether/http @aether/reactivity
+```
+
+## Quick Example
+
+```ts
+import { createResource, HttpClient } from '@aether/http';
+import { signal } from '@aether/reactivity';
+
+const userId = signal('1');
+
+// 1. Reactive Resource fetching
+const [user, { mutate, refetch }] = createResource(userId, async (id, { signal }) => {
+  const res = await fetch(`https://api.example.com/users/${id}`, { signal });
+  if (!res.ok) throw new Error('Failed to fetch user');
+  return res.json();
+});
+
+console.log(user.loading.value); // true
+console.log(user.data.value);    // undefined -> user object once resolved
+
+// 2. Typed HTTP Client
+const client = new HttpClient({ baseUrl: 'https://api.example.com' });
+const data = await client.get('/items');
+```
+
+## API
+
+- `createResource<T, S>(source, fetcher, options)` — Creates a reactive resource bound to source signals. Returns `[ResourceSignal<T>, ResourceActions<T>]`.
+- `HttpClient` — Configurable HTTP client class with interceptors, timeouts, and JSON helpers.
+- `RequestCache` — Request cache and deduplication store.
+- `createHttpError(status, message, response)` — Structured HTTP error constructor with status codes.
+
+## Environment
+
+Universal: Node.js (>= 18.0.0 with native `fetch`), Bun, Deno, and all modern browsers.
+
+## Security
+
+Supports automatic CSRF header injection, origin validation, and timeout guarantees to prevent denial-of-service hangs.
+
+## Related Packages
+
+- `@aether/reactivity` — Signal engine driving resource triggers.
+- `@aether/runtime` — Suspense and ErrorBoundary integration.
+

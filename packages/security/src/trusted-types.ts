@@ -55,3 +55,9 @@ export function getAetherTrustedPolicy(): AetherTrustedPolicy {
 
   return cachedPolicy;
 }
+
+export const TrustedTypesPolicy = {
+  getPolicy: getAetherTrustedPolicy,
+  createHTML: (input: string) => getAetherTrustedPolicy().createHTML(input),
+  createScriptURL: (url: string) => getAetherTrustedPolicy().createScriptURL(url)
+};
