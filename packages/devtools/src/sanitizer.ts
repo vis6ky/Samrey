@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/devtools - Privacy & Secret Sanitization Utility
+ * @gati/devtools - Privacy & Secret Sanitization Utility
  * Guarantees zero leak of sensitive credentials, tokens, and PII in DevTools emissions.
  */
 

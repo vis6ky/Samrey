@@ -7,9 +7,9 @@ export async function runSsrExample(): Promise<string> {
   };
 
   const html = await renderToString(
-    `<main class="app"><h1>Aether SSR App</h1><p>Active Session</p></main>`,
+    `<main class="app"><h1>Gati SSR App</h1><p>Active Session</p></main>`,
     {
-      title: 'Aether SSR Application',
+      title: 'Gati SSR Application',
       state: initialData
     }
   );

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Clean-Room Consumer Verification
+ * @gati/monorepo - Phase 24 Clean-Room Consumer Verification
  * Installs packed tarballs into an isolated directory and executes all framework capabilities.
  */
 
@@ -47,14 +47,14 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
 
   it('2. Executes end-to-end multi-package smoke script in clean-room environment', () => {
     const smokeScript = `
-      import { signal, computed, effect, batch, createRoot } from '@aether/reactivity';
-      import { el, Show, For, ErrorBoundary } from '@aether/runtime';
-      import { sanitizeHtml, sanitizeUrl } from '@aether/security';
-      import { createRouter } from '@aether/router';
-      import { createForm, createField } from '@aether/forms';
-      import { createResource } from '@aether/http';
-      import { renderToString, escapeJsonState } from '@aether/ssr';
-      import { initDevTools } from '@aether/devtools';
+      import { signal, computed, effect, batch, createRoot } from '@gati/reactivity';
+      import { el, Show, For, ErrorBoundary } from '@gati/runtime';
+      import { sanitizeHtml, sanitizeUrl } from '@gati/security';
+      import { createRouter } from '@gati/router';
+      import { createForm, createField } from '@gati/forms';
+      import { createResource } from '@gati/http';
+      import { renderToString, escapeJsonState } from '@gati/ssr';
+      import { initDevTools } from '@gati/devtools';
 
       // 1. Reactivity check
       const count = signal(5);
@@ -72,7 +72,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
       if (effectValue !== 100) throw new Error('Reactivity computation failed');
 
       // 2. Security sanitization check
-      const safe = sanitizeHtml('<script>alert(1)</script><p>Aether Clean Room</p>');
+      const safe = sanitizeHtml('<script>alert(1)</script><p>Gati Clean Room</p>');
       if (safe.includes('<script>')) throw new Error('Security sanitization failed');
 
       // 3. SSR renderToString check

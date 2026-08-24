@@ -1,3 +1,3 @@
-# Aether Development Playground
+# Gati Development Playground
 
-Interactive developer scratchpad for live experimentation with Aether compiler transforms, signal propagation, and form validations.
+Interactive developer scratchpad for live experimentation with Gati compiler transforms, signal propagation, and form validations.

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Security Status Badge Component
- * Demonstrates @aether/security active sanitizer protection
+ * Gati Project Manager — Security Status Badge Component
+ * Demonstrates @gati/security active sanitizer protection
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { ProjectManagerApi } from '../api.js';
 
 export function SecurityBadge(): HTMLElement {

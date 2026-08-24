@@ -1,13 +1,13 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Markdown Parser & Reactive Renderer
+ * @gati/doc - Native Gati Markdown Parser & Reactive Renderer
  *
  * Implements a 100% pure TypeScript Markdown parser & DOM generator without React or external libraries.
- * Enforces strict security policies via @aether/security (sanitizing URIs, attributes, and raw HTML).
+ * Enforces strict security policies via @gati/security (sanitizing URIs, attributes, and raw HTML).
  */
 
-import { el, rawHtml } from '@aether/runtime';
-import { sanitizeUri, escapeHtmlText } from '@aether/security';
+import { el, rawHtml } from '@gati/runtime';
+import { sanitizeUri, escapeHtmlText } from '@gati/security';
 
 export interface RenderMarkdownOptions {
   enableCopyCode?: boolean;
@@ -321,4 +321,4 @@ export function formatInlineMarkdown(text: string): string {
   return escaped;
 }
 
-export { renderMarkdown as renderMarkdownToAetherDOM };
+export { renderMarkdown as renderMarkdownToGatiDOM };

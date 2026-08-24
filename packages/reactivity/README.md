@@ -1,21 +1,21 @@
-# @aether/reactivity
+# @gati/reactivity
 
 Fine-grained push-pull topological signal engine with versioned transaction clocks, automatic batching, and reactive Owner cleanup scopes.
 
 ## Purpose
 
-`@aether/reactivity` is the foundation of the Aether Framework. It provides high-performance reactive state management without virtual DOM diffing, dirty-checking, or monkey-patching. Signals act as reactive state atoms that notify only the specific DOM nodes or computations that depend on them.
+`@gati/reactivity` is the foundation of the Gati Framework. It provides high-performance reactive state management without virtual DOM diffing, dirty-checking, or monkey-patching. Signals act as reactive state atoms that notify only the specific DOM nodes or computations that depend on them.
 
 ## Installation
 
 ```bash
-npm install @aether/reactivity
+npm install @gati/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { signal, computed, effect, batch, createStore } from '@aether/reactivity';
+import { signal, computed, effect, batch, createStore } from '@gati/reactivity';
 
 // 1. Primitive state signal
 const count = signal(0);
@@ -67,7 +67,7 @@ Zero-eval architecture. Deep reactive stores include built-in prototype pollutio
 
 ## Related Packages
 
-- `@aether/runtime` — Direct DOM bindings and control flow built on `@aether/reactivity`.
-- `@aether/router` — Reactive URL routing.
-- `@aether/forms` — Reactive form validation and accessible field bindings.
+- `@gati/runtime` — Direct DOM bindings and control flow built on `@gati/reactivity`.
+- `@gati/router` — Reactive URL routing.
+- `@gati/forms` — Reactive form validation and accessible field bindings.
 

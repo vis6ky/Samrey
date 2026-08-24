@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/cli - "aether audit" Command
+ * @gati/cli - "aether audit" Command
  */
 
 import { CommandResult } from './create.js';
@@ -36,7 +36,7 @@ export async function runAuditCommand(options: AuditCommandOptions = {}): Promis
 
   const passed = totalViolations === 0 || !options.strict;
   const reportText = [
-    `  ▲ Aether Security & A11y Audit`,
+    `  ▲ Gati Security & A11y Audit`,
     `  ➜ Files Scanned:      ${sources.length}`,
     `  ➜ Violations Found:   ${totalViolations}`,
     `  ➜ Security Sandbox:   CSP & XSS Context Verified`,

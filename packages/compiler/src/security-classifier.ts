@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - Contextual Security Classifier
+ * @gati/compiler - Contextual Security Classifier
  */
 
 import { SecurityContext } from './air.js';

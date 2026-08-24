@@ -1,8 +1,8 @@
-# Aether Framework v1.0.0-rc.1
+# Gati Framework v1.0.0-rc.1
 ## Phase 21 Public Release Certification
 
 ### Architectural Mandate
-"Aether Must Use Aether"
+"Gati Must Use Gati"
 
 ### Package Count
 11

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Phase 9B focused on optimizing the **Aether Ahead-of-Time (AOT) Compiler** (`@aether/compiler`) while preserving complete AST correctness, intermediate representation (AIR) semantics, code generation fidelity, security context classification, source locations, diagnostics, and JSX/template semantics.
+Phase 9B focused on optimizing the **Gati Ahead-of-Time (AOT) Compiler** (`@gati/compiler`) while preserving complete AST correctness, intermediate representation (AIR) semantics, code generation fidelity, security context classification, source locations, diagnostics, and JSX/template semantics.
 
 Every architectural optimization was verified against empirical benchmark data gathered before and after implementation across 65+ benchmarks and 69 unit/integration regression tests.
 
@@ -57,7 +57,7 @@ Every architectural optimization was verified against empirical benchmark data g
 1. **Zero `eval` / Zero `new Function`**: All parsing and constant folding executes purely via static analysis without dynamic code evaluation.
 2. **Strict Security Classification**: Every attribute and text binding continues to pass through `classifyBindingContext` (`html-text`, `uri-attr`, `safe-attr`, `style-attr`, `trusted-html`).
 3. **Exact Source Location Diagnostics**: Line numbers, column offsets, and error diagnostics remain 100% accurate for developer debugging and error recovery.
-4. **Hydration & SSR Compatibility**: Output HTML templates and slot paths are 100% compatible with `@aether/ssr` `renderToString`, `renderToStream`, and client-side `hydrate`.
+4. **Hydration & SSR Compatibility**: Output HTML templates and slot paths are 100% compatible with `@gati/ssr` `renderToString`, `renderToStream`, and client-side `hydrate`.
 
 ---
 

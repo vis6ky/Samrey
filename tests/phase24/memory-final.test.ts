@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Memory & Lifecycle Final Gate
+ * @gati/monorepo - Phase 24 Memory & Lifecycle Final Gate
  * Validates zero memory leaks across 5,000 root creations/disposals and 10,000 batched signal updates.
  */
 

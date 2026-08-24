@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServerData, createSSRContext, runWithSSRContext, resolveSSRContext, renderToString } from '../src/index.js';
 
-describe('@aether/ssr - Server-Side Data Loading & Cache', () => {
+describe('@gati/ssr - Server-Side Data Loading & Cache', () => {
   it('registers and resolves server loaders within SSR context', async () => {
     const ctx = createSSRContext();
 

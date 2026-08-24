@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Fine-Grained Reactive Element & DOM Tree Constructors
+ * @gati/runtime - Fine-Grained Reactive Element & DOM Tree Constructors
  */
 
 import { bindText, bindAttr, bindClass } from './bindings.js';
 import { on } from './events.js';
-import { sanitizeHtmlString } from '@aether/security';
-import { effect } from '@aether/reactivity';
+import { sanitizeHtmlString } from '@gati/security';
+import { effect } from '@gati/reactivity';
 
 export type ChildValue =
   | Node

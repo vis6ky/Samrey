@@ -8,7 +8,7 @@ import {
   TemplateParser
 } from '../src/index.js';
 
-describe('@aether/compiler', () => {
+describe('@gati/compiler', () => {
   it('classifies security contexts accurately', () => {
     assert.equal(classifyBindingContext('text'), 'html-text');
     assert.equal(classifyBindingContext('attr', 'href'), 'uri-attr');

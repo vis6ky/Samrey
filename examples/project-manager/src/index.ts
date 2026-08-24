@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Application Entry Point
+ * Gati Project Manager — Application Entry Point
  */
 
-import { mount } from '@aether/runtime';
+import { mount } from '@gati/runtime';
 import { App } from './App.js';
 
 const appRoot = document.getElementById('app') || document.body;

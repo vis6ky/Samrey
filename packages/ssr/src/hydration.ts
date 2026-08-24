@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - Resumable Micro-Hydration & In-Place DOM Binding
+ * @gati/ssr - Resumable Micro-Hydration & In-Place DOM Binding
  */
 
-import { createRoot, createOwner, runWithOwner } from '@aether/reactivity';
+import { createRoot, createOwner, runWithOwner } from '@gati/reactivity';
 
 declare global {
   interface Window {
@@ -56,7 +56,7 @@ export function replayCapturedEvents(): number {
         // Re-dispatch original event to the hydrated target
         target.dispatchEvent(event);
       } catch (err) {
-        console.warn('[Aether Hydration] Failed to replay captured event:', err);
+        console.warn('[Gati Hydration] Failed to replay captured event:', err);
       }
     }
   }
@@ -76,7 +76,7 @@ export function hydrate(
   options: HydrateOptions = {}
 ): HydrationResult {
   if (!container) {
-    throw new Error('[Aether Hydration] Target container element is null or undefined.');
+    throw new Error('[Gati Hydration] Target container element is null or undefined.');
   }
 
   const repairMismatch = options.repairMismatch ?? true;
@@ -117,7 +117,7 @@ export function hydrate(
         }
 
         if (hasMismatch && repairMismatch) {
-          console.warn('[Aether Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
+          console.warn('[Gati Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
           container.replaceChildren(...clientNodes);
         } else if (!hasMismatch) {
           // In-place attachment: replace children with reactive nodes

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - 404 Not Found View
+ * @gati/task-studio - 404 Not Found View
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { EmptyState } from '../components/ui/EmptyState.js';
 
 export interface NotFoundViewProps {
@@ -17,7 +17,7 @@ export function NotFoundView(props: NotFoundViewProps): HTMLElement {
     EmptyState({
       id: 'not-found-state',
       title: 'Page Not Found (404)',
-      description: 'The requested route does not exist in Aether Task Studio. Please check the URL or return to the dashboard.',
+      description: 'The requested route does not exist in Gati Task Studio. Please check the URL or return to the dashboard.',
       actionText: 'Return to Dashboard',
       onAction: () => props.onNavigate('/dashboard')
     })

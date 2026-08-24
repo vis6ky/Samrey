@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/devtools - Main Entry Point
+ * @gati/devtools - Main Entry Point
  */
 
 export * from './bridge.js';
@@ -17,7 +17,7 @@ import { DevToolsBridge, aetherDevToolsBridge } from './bridge.js';
 import { GraphInspector } from './graph-inspector.js';
 import { PerformanceInspector } from './perf-inspector.js';
 
-export const AetherDevToolsBridge = DevToolsBridge;
+export const GatiDevToolsBridge = DevToolsBridge;
 export const ReactiveGraphInspector = GraphInspector;
 export const PerfInspector = PerformanceInspector;
 

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/router - Router State Manager
+ * @gati/router - Router State Manager
  */
 
-import { signal, computed } from '@aether/reactivity';
-import { sanitizeRedirectUri } from '@aether/security';
+import { signal, computed } from '@gati/reactivity';
+import { sanitizeRedirectUri } from '@gati/security';
 import { RouteRecord, RouterInstance, RouteMatch } from './types.js';
 import { matchRoutes } from './matcher.js';
 

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Framework Architecture & About View
+ * @gati/task-studio - Framework Architecture & About View
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { Card } from '../components/ui/Card.js';
 import { Badge } from '../components/ui/Badge.js';
 import { Button } from '../components/ui/Button.js';
@@ -21,13 +21,13 @@ export function AboutView(props: AboutViewProps): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-emerald-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
-      el('span', null, 'Aether Framework v1.0.0 GA Certified')
+      el('span', null, 'Gati Framework v1.0.0 GA Certified')
     ),
-    el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'About Aether Task Studio'),
+    el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'About Gati Task Studio'),
     el(
       'p',
       { class: 'text-xs text-slate-500 mt-0.5' },
-      'A real-world production-style task application proving framework independence, zero foreign UI dependencies, and pure native Aether engineering.'
+      'A real-world production-style task application proving framework independence, zero foreign UI dependencies, and pure native Gati engineering.'
     )
   );
   container.appendChild(header);
@@ -79,22 +79,22 @@ export function AboutView(props: AboutViewProps): HTMLElement {
 
   // 3. Monorepo Published Packages Matrix
   const packages = [
-    { name: '@aether/reactivity', desc: 'Push-pull signal engine, computed caches, batching & ownership lifecycle' },
-    { name: '@aether/runtime', desc: 'Direct DOM template bindings, event listeners, Show & keyed For control flow' },
-    { name: '@aether/router', desc: 'Declarative routing, pattern matcher, parameter extraction, and active link state' },
-    { name: '@aether/forms', desc: 'Standard Schema (~v1) integration, reactive field controllers, ARIA generators' },
-    { name: '@aether/http', desc: 'Resilient HTTP client, abort controllers, request caching, and reactive resources' },
-    { name: '@aether/security', desc: 'Zero-eval HTML sanitization, safe URI schemas, and prototype pollution scrubbing' },
-    { name: '@aether/ssr', desc: 'Streaming and string SSR, secret stripping, Unicode escaping, and event hydration' },
-    { name: '@aether/compiler', desc: 'ASCII template parser, semantic analyzer, AIR intermediate representation' },
-    { name: '@aether/testing', desc: 'Isolated test harness, microtask flusher, and DOM event dispatch simulator' },
-    { name: '@aether/devtools', desc: 'Performance profiler, dependency graph visualizer, and component inspector' },
-    { name: '@aether/cli', desc: 'Monorepo project scaffolding, bundle analyzers, and package validation tools' }
+    { name: '@gati/reactivity', desc: 'Push-pull signal engine, computed caches, batching & ownership lifecycle' },
+    { name: '@gati/runtime', desc: 'Direct DOM template bindings, event listeners, Show & keyed For control flow' },
+    { name: '@gati/router', desc: 'Declarative routing, pattern matcher, parameter extraction, and active link state' },
+    { name: '@gati/forms', desc: 'Standard Schema (~v1) integration, reactive field controllers, ARIA generators' },
+    { name: '@gati/http', desc: 'Resilient HTTP client, abort controllers, request caching, and reactive resources' },
+    { name: '@gati/security', desc: 'Zero-eval HTML sanitization, safe URI schemas, and prototype pollution scrubbing' },
+    { name: '@gati/ssr', desc: 'Streaming and string SSR, secret stripping, Unicode escaping, and event hydration' },
+    { name: '@gati/compiler', desc: 'ASCII template parser, semantic analyzer, AIR intermediate representation' },
+    { name: '@gati/testing', desc: 'Isolated test harness, microtask flusher, and DOM event dispatch simulator' },
+    { name: '@gati/devtools', desc: 'Performance profiler, dependency graph visualizer, and component inspector' },
+    { name: '@gati/cli', desc: 'Monorepo project scaffolding, bundle analyzers, and package validation tools' }
   ];
 
   const packagesCard = Card(
     {
-      title: 'Aether Monorepo Package Ecosystem',
+      title: 'Gati Monorepo Package Ecosystem',
       subtitle: 'All 11 core packages published and dogfooded directly in this application',
       padding: 'none'
     },

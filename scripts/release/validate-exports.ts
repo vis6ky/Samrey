@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Public API Export Verification
+ * @gati/monorepo - Release Public API Export Verification
  */
 
 import * as fs from 'node:fs';
@@ -17,56 +17,56 @@ export interface ExportVerificationResult {
 
 // Authoritative contract from docs/PUBLIC_API.md
 export const PUBLIC_API_CONTRACT: Record<string, string[]> = {
-  '@aether/reactivity': [
+  '@gati/reactivity': [
     'signal', 'computed', 'effect', 'batch', 'untrack', 'createStore',
     'produce', 'reconcile', 'createMemo', 'createRoot', 'getOwner',
     'runWithOwner', 'onCleanup', 'createContext', 'useContext'
   ],
-  '@aether/runtime': [
+  '@gati/runtime': [
     'el', 'svg', 'fragment', 'text', 'mount', 'hydrate', 'Show', 'For',
     'Switch', 'Match', 'ErrorBoundary', 'Dynamic', 'Portal', 'Suspense',
     'onMount', 'onCleanup', 'onError', 'createComponent'
   ],
-  '@aether/security': [
+  '@gati/security': [
     'sanitizeHtml', 'sanitizeUrl', 'sanitizeAttribute', 'isSafeUrl',
     'safeJsonParse', 'safeJsonStringify', 'createCsrfToken',
     'validateCsrfToken', 'TrustedTypesPolicy', 'escapeHtmlText'
   ],
-  '@aether/compiler': [
+  '@gati/compiler': [
     'compileTemplate', 'parseTemplate', 'buildAIR', 'generateCode',
-    'classifySecurityNode', 'lintAccessibility', 'AetherCompilerError',
+    'classifySecurityNode', 'lintAccessibility', 'GatiCompilerError',
     'generateSourceFrame', 'ERROR_REGISTRY'
   ],
-  '@aether/router': [
+  '@gati/router': [
     'Router', 'Route', 'Link', 'useRouter', 'useParams', 'useSearchParams',
     'useLocation', 'matchRoute', 'matchPath', 'matchRoutes', 'createLink',
     'createBrowserHistory', 'createMemoryHistory', 'createRouter'
   ],
-  '@aether/http': [
+  '@gati/http': [
     'createResource', 'httpClient', 'createHttpCache', 'HttpError'
   ],
-  '@aether/forms': [
+  '@gati/forms': [
     'createForm', 'createField', 'validateSchema', 'getAccessibleFieldProps'
   ],
-  '@aether/ssr': [
+  '@gati/ssr': [
     'renderToString', 'renderToStream', 'generateStaticSite', 'hydrateFromSSR',
     'escapeHtml', 'escapeJsonState', 'sanitizeSsrState', 'stripSecrets',
     'serializeStateForHydration'
   ],
-  '@aether/testing': [
+  '@gati/testing': [
     'renderTestComponent', 'fireEvent', 'waitFor', 'waitForNextUpdate',
     'createMockResource', 'cleanupAllTestContainers'
   ],
-  '@aether/devtools': [
-    'initDevTools', 'AetherDevToolsBridge', 'ReactiveGraphInspector',
+  '@gati/devtools': [
+    'initDevTools', 'GatiDevToolsBridge', 'ReactiveGraphInspector',
     'ComponentInspector', 'PerfInspector', 'DevToolsBridge',
     'aetherDevToolsBridge', 'GraphInspector', 'PerformanceInspector'
   ],
-  '@aether/cli': [
+  '@gati/cli': [
     'runCLI', 'generateStarterProject', 'aetherVitePlugin', 'runCreateCommand',
     'runDevCommand', 'runBuildCommand', 'runPreviewCommand', 'runTestCommand',
     'runAuditCommand', 'runAnalyzeCommand', 'runGenerateCommand', 'CLI_VERSION',
-    'runAetherAudit'
+    'runGatiAudit'
   ]
 };
 
@@ -75,7 +75,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
   let allValid = true;
 
   for (const [pkgName, expected] of Object.entries(PUBLIC_API_CONTRACT)) {
-    const pkgFolder = pkgName.replace('@aether/', '');
+    const pkgFolder = pkgName.replace('@gati/', '');
     const indexPath = path.join(process.cwd(), 'packages', pkgFolder, 'src', 'index.ts');
 
     let actualExports: string[] = [];
@@ -112,7 +112,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
 
   // Generate docs/release/PUBLIC_API_RELEASE_VERIFICATION.md
   const reportLines = [
-    '# Aether Framework — Public API Release Verification Report',
+    '# Gati Framework — Public API Release Verification Report',
     '',
     `**Target Version:** 1.0.0-rc.1  `,
     `**Audit Date:** 2026-08-21  `,
@@ -152,7 +152,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
 }
 
 if (process.argv[1]?.endsWith('validate-exports.ts') || process.argv[1]?.endsWith('validate-exports.js')) {
-  console.log('▲ Aether Public API Export Verification Audit\n');
+  console.log('▲ Gati Public API Export Verification Audit\n');
   validatePublicAPIExports().then(({ results, allValid }) => {
     for (const r of results) {
       console.log(`  • ${r.packageName} (${r.expectedExports.length} exports) -> ${r.isValid ? 'MATCH' : 'MISMATCH'}`);

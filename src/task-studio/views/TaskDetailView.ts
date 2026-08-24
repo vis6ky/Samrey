@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Task Detail View
+ * @gati/task-studio - Task Detail View
  */
 
-import { el, Show } from '@aether/runtime';
-import { signal, computed } from '@aether/reactivity';
-import { RouterInstance } from '@aether/router';
+import { el, Show } from '@gati/runtime';
+import { signal, computed } from '@gati/reactivity';
+import { RouterInstance } from '@gati/router';
 import { tasksState, updateTaskAction, deleteTaskAction, toggleTaskStatusAction } from '../state/tasks.store.js';
 import { TaskFormValues, TaskItem } from '../types.js';
 import { TaskForm } from '../components/TaskForm.js';

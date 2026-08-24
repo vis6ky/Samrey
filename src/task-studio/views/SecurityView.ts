@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Interactive Application Security Defense Lab
+ * @gati/task-studio - Interactive Application Security Defense Lab
  */
 
-import { el, For } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, For } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import {
   sanitizeHtmlString,
   sanitizeUri,
@@ -12,7 +12,7 @@ import {
   safeJsonParse,
   escapeJsonStringForScript,
   stripSecrets
-} from '@aether/security';
+} from '@gati/security';
 import { Card } from '../components/ui/Card.js';
 import { Button } from '../components/ui/Button.js';
 
@@ -25,7 +25,7 @@ export function SecurityView(): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-rose-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-rose-500' }),
-      el('span', null, '@aether/security Live Verification Engine')
+      el('span', null, '@gati/security Live Verification Engine')
     ),
     el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'Application Security & Hardening Lab'),
     el(

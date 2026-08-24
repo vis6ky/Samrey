@@ -1,4 +1,4 @@
-# Aether Performance Benchmarks
+# Gati Performance Benchmarks
 
 Performance benchmark suite for validating non-negotiable performance SLAs:
 

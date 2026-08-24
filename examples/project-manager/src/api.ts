@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — HTTP API Client & Mock Data Service
- * Implements full RESTful semantics using @aether/http and @aether/security
+ * Gati Project Manager — HTTP API Client & Mock Data Service
+ * Implements full RESTful semantics using @gati/http and @gati/security
  */
 
-import { httpClient, createHttpCache } from '@aether/http';
-import { sanitizeHtml, sanitizeUrl, createCsrfToken, validateCsrfToken, safeJsonParse } from '@aether/security';
+import { httpClient, createHttpCache } from '@gati/http';
+import { sanitizeHtml, sanitizeUrl, createCsrfToken, validateCsrfToken, safeJsonParse } from '@gati/security';
 import { Project, Task, AuthUser, SecurityAuditResult } from './types.js';
 
 // In-memory data store for the Project Manager API
@@ -14,7 +14,7 @@ export let currentCsrfToken = createCsrfToken();
 let projectsStore: Project[] = [
   {
     id: 'proj-1',
-    name: 'Aether Framework v1.0 Release',
+    name: 'Gati Framework v1.0 Release',
     description: 'Final production quality gate, benchmarking, and ecosystem release preparation.',
     category: 'core',
     status: 'active',
@@ -139,7 +139,7 @@ export const ProjectManagerApi = {
     return {
       id: 'usr-1',
       name: 'Ada Lovelace',
-      email: 'ada@aether-framework.dev',
+      email: 'ada@gati-framework.dev',
       role: 'admin',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
     };

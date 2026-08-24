@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Accessible Modal Dialog Component
- * 100% Native Aether Runtime with Portal, focus management, and Escape key handling
+ * Gati Project Manager — Accessible Modal Dialog Component
+ * 100% Native Gati Runtime with Portal, focus management, and Escape key handling
  */
 
-import { el, Show } from '@aether/runtime';
+import { el, Show } from '@gati/runtime';
 
 export function Modal(props: {
   isOpen: () => boolean;

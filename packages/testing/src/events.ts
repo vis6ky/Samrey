@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/testing - Synthetic DOM Event Dispatchers
+ * @gati/testing - Synthetic DOM Event Dispatchers
  */
 
 export function fireEvent(element: EventTarget, eventName: string, eventInit?: EventInit): void {

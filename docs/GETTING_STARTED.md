@@ -1,14 +1,14 @@
-# Getting Started with Aether
+# Getting Started with Gati
 
-> **Aether Framework v1.0.0-rc.1** — Fast, pure, fine-grained reactive web framework for modern TypeScript applications.
+> **Gati Framework v1.0.0-rc.1** — Fast, pure, fine-grained reactive web framework for modern TypeScript applications.
 
-This guide walks you through bootstrapping an application with the Aether CLI, understanding Aether's core mental model, and building production-ready apps.
+This guide walks you through bootstrapping an application with the Gati CLI, understanding Gati's core mental model, and building production-ready apps.
 
 ---
 
 ## 1. Creating a New Project
 
-The official `@aether/cli` provides instant scaffolding for various architecture patterns:
+The official `@gati/cli` provides instant scaffolding for various architecture patterns:
 
 ```bash
 # Default Server-Side Rendering (SSR) starter
@@ -50,11 +50,11 @@ npm run build
 
 ## 2. Core Mental Model
 
-Aether is architected from the ground up to eliminate runtime overhead and avoid virtual DOM diffing:
+Gati is architected from the ground up to eliminate runtime overhead and avoid virtual DOM diffing:
 
 1. **Components Run Exactly Once**: A component function executes once during setup. It initializes signals, declares computed derivations, registers lifecycle hooks (`onMount`, `onCleanup`), and returns DOM nodes. Updating state **never** re-executes the component function.
 2. **Fine-Grained Signal Subscriptions**: Reactive state is tracked at the property and DOM text node level. Only the exact text node or attribute that reads a signal updates when that signal changes.
-3. **Pure Aether Primitives**: Aether uses zero external framework dependencies (no React, Vue, Angular, Svelte, Solid, Preact, etc.). Everything is powered natively by `@aether/*` packages.
+3. **Pure Gati Primitives**: Gati uses zero external framework dependencies (no React, Vue, Angular, Svelte, Solid, Preact, etc.). Everything is powered natively by `@gati/*` packages.
 4. **Standard Schema Validation**: Form fields and validation pipelines interface natively with Standard Schema (`~standard` v1).
 
 ---
@@ -64,7 +64,7 @@ Aether is architected from the ground up to eliminate runtime overhead and avoid
 ### JSX / TSX Syntax
 
 ```tsx
-import { signal, computed } from '@aether/reactivity';
+import { signal, computed } from '@gati/reactivity';
 
 export function UserProfile() {
   const firstName = signal('Ada');
@@ -98,8 +98,8 @@ export function UserProfile() {
 ### Direct DOM (`el`) Runtime Syntax
 
 ```typescript
-import { signal, computed } from '@aether/reactivity';
-import { el } from '@aether/runtime';
+import { signal, computed } from '@gati/reactivity';
+import { el } from '@gati/runtime';
 
 export function UserProfile() {
   const firstName = signal('Ada');

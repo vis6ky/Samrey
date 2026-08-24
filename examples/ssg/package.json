@@ -1,5 +1,5 @@
 {
-  "name": "@aether/example-ssg",
+  "name": "@gati/example-ssg",
   "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
@@ -8,9 +8,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aether/reactivity": "^1.0.0-rc.1",
-    "@aether/runtime": "^1.0.0-rc.1",
-    "@aether/ssr": "^1.0.0-rc.1"
+    "@gati/reactivity": "^1.0.0-rc.1",
+    "@gati/runtime": "^1.0.0-rc.1",
+    "@gati/ssr": "^1.0.0-rc.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

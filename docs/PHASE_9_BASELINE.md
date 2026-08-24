@@ -1,4 +1,4 @@
-# Aether Framework — Phase 9 Baseline Performance Report
+# Gati Framework — Phase 9 Baseline Performance Report
 
 **Audit & Benchmark Date**: August 20, 2026  
 **Document Target**: `docs/PHASE_9_BASELINE.md`  
@@ -9,10 +9,10 @@
 
 ## 1. Executive Summary
 
-This report establishes the first empirical performance baseline for the **Aether Framework** across its entire architecture: compiler parser & codegen, push-pull fine-grained reactivity, template cloning & DOM binding runtime, `<Show>` and `<For>` control flow, functional component tree instantiation, SSR streaming/string rendering, hydration preparation, and memory lifecycle churn.
+This report establishes the first empirical performance baseline for the **Gati Framework** across its entire architecture: compiler parser & codegen, push-pull fine-grained reactivity, template cloning & DOM binding runtime, `<Show>` and `<For>` control flow, functional component tree instantiation, SSR streaming/string rendering, hydration preparation, and memory lifecycle churn.
 
 In accordance with Phase 9A requirements:
-- Measurements reflect real Aether operations rather than synthetic JavaScript loops.
+- Measurements reflect real Gati operations rather than synthetic JavaScript loops.
 - No production algorithms have been altered or speculative optimizations added.
 - Benchmarks are objective and make no unfounded competitive claims.
 
@@ -53,7 +53,7 @@ Across **65 distinct benchmark scenarios**, the baseline demonstrates:
 
 ## 4. Compiler Results
 
-Measures parsing raw template/JSX markup into AST nodes, converting AST to Aether Intermediate Representation (AIR), and generating hoisted template code.
+Measures parsing raw template/JSX markup into AST nodes, converting AST to Gati Intermediate Representation (AIR), and generating hoisted template code.
 
 | Benchmark Scenario | Node Count / Depth | Min (ms) | Median (ms) | Mean (ms) | p95 (ms) | Ops/sec |
 |---|---|---|---|---|---|---|

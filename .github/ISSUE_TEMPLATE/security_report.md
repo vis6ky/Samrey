@@ -10,7 +10,7 @@ assignees: ''
 
 To report a vulnerability responsibly:
 1. Refer to our [Security Policy](../../SECURITY.md).
-2. Report privately via GitHub Private Vulnerability Reporting or email `security@aether.dev`.
+2. Report privately via GitHub Private Vulnerability Reporting or email `security@gati.dev`.
 3. Include reproduction steps, environment details, and proof-of-concept payloads.
 
-Thank you for helping keep Aether and its community safe!
+Thank you for helping keep Gati and its community safe!

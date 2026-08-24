@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - Secret Leakage Prevention & Sanitization
+ * @gati/ssr - Secret Leakage Prevention & Sanitization
  */
 
 /**
@@ -93,13 +93,13 @@ export function stripSecrets<T>(data: T, options: SecretGuardOptions = {}): T {
       if (isSensitiveKey(key, options.additionalKeys)) {
         if (options.strict) {
           throw new Error(
-            `[Aether SSR Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
+            `[Gati SSR Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
           );
         }
         if (options.onSecretFound) {
           options.onSecretFound(fullPath, key);
         } else {
-          console.warn(`[Aether SSR Security Warning] Stripped sensitive property "${fullPath}" from client state payload.`);
+          console.warn(`[Gati SSR Security Warning] Stripped sensitive property "${fullPath}" from client state payload.`);
         }
         continue;
       }

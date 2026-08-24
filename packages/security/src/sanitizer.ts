@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/security - URI & HTML Sanitizers
+ * @gati/security - URI & HTML Sanitizers
  */
 
 const SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
@@ -217,7 +217,7 @@ export function stripSecrets<T>(
       if (isSensitiveKey(key, options.additionalKeys)) {
         if (options.strict) {
           throw new Error(
-            `[Aether Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
+            `[Gati Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
           );
         }
         if (options.onSecretFound) {

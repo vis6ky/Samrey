@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Aether Framework
+about: Create a report to help us improve Gati Framework
 title: '[BUG] '
 labels: ['bug', 'triage']
 assignees: ''
@@ -9,8 +9,8 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Aether Package & Version**
-- Package: (e.g. `@aether/reactivity`, `@aether/ssr`, `@aether/compiler`)
+**Gati Package & Version**
+- Package: (e.g. `@gati/reactivity`, `@gati/ssr`, `@gati/compiler`)
 - Version: (e.g. `1.0.0-rc.1`)
 - Node.js / Runtime Version: (e.g. Node 20.10.0, Bun 1.1)
 - Browser (if client-side): (e.g. Chrome 124, Safari 17)

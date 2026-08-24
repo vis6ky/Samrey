@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/testing - Component Test Harness
+ * @gati/testing - Component Test Harness
  */
 
-import { createRoot } from '@aether/reactivity';
+import { createRoot } from '@gati/reactivity';
 
 export interface TestRenderResult<TNode = unknown> {
   container: TNode;
@@ -40,7 +40,7 @@ export async function waitFor(predicate: () => boolean | Promise<boolean>, timeo
     await new Promise((r) => setTimeout(r, 10));
   }
   if (!(await predicate())) {
-    throw new Error(`[Aether Testing] waitFor timed out after ${timeoutMs}ms`);
+    throw new Error(`[Gati Testing] waitFor timed out after ${timeoutMs}ms`);
   }
 }
 

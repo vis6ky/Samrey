@@ -1,4 +1,4 @@
-# Aether Framework — Troubleshooting & Diagnostic Guide
+# Gati Framework — Troubleshooting & Diagnostic Guide
 
 **Target Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
@@ -9,7 +9,7 @@
 
 ### Issue: "AETH-SEC-001: Potential XSS in HTML string"
 - **Cause:** Raw unsanitized HTML passed into innerHTML or template binding without explicit escaping.
-- **Solution:** Pass the HTML through `sanitizeHtml(rawHtml)` from `@aether/security`.
+- **Solution:** Pass the HTML through `sanitizeHtml(rawHtml)` from `@gati/security`.
 
 ### Issue: "AETH-REC-002: Circular signal computation detected"
 - **Cause:** A computed property or effect is writing to a signal that it synchronously reads.
@@ -27,10 +27,10 @@
 
 ## 2. DevTools & Debugging Support
 
-Aether provides real-time state and component tree inspection:
+Gati provides real-time state and component tree inspection:
 
 ```typescript
-import { initDevTools } from '@aether/devtools';
+import { initDevTools } from '@gati/devtools';
 
 // Initialize in development mode
 if (process.env.NODE_ENV !== 'production') {

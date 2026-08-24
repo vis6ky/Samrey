@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/forms - Dynamic ARIA Attributes Generator
+ * @gati/forms - Dynamic ARIA Attributes Generator
  */
 
 export interface AriaBindingAttributes {

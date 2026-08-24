@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Project Detail & Task Management View
- * Native Aether Reactive View with project-scoped tasks, status filtering, and task creation
+ * Gati Project Manager — Project Detail & Task Management View
+ * Native Gati Reactive View with project-scoped tasks, status filtering, and task creation
  */
 
-import { el, For, Show } from '@aether/runtime';
+import { el, For, Show } from '@gati/runtime';
 import { store, filteredTasks } from '../state.js';
 import { TaskItem } from '../components/TaskItem.js';
 

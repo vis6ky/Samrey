@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Hydration & SSR Final Gate
+ * @gati/monorepo - Phase 24 Hydration & SSR Final Gate
  * Validates SSR string rendering, stream rendering, hydration stability, and owner cleanup.
  */
 

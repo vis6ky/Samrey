@@ -1,7 +1,7 @@
-# Aether Framework: Comprehensive Implementation Audit (Phases 0–8)
+# Gati Framework: Comprehensive Implementation Audit (Phases 0–8)
 
 **Audit Date**: August 20, 2026  
-**Auditor**: Aether Framework Architecture & Quality Assurance Engine  
+**Auditor**: Gati Framework Architecture & Quality Assurance Engine  
 **Document**: `docs/PHASE_0_8_AUDIT.md`  
 **Repository State**: Monorepo Workspace (11 Packages, 5 Examples, 6 Specification Documents)  
 **Test Suite**: 17 Test Suites, 48 Unit Tests (100% Passing)  
@@ -11,10 +11,10 @@
 
 ## 1. Executive Summary
 
-This document presents an exhaustive, line-by-line audit of the **Aether Framework** codebase spanning **Phases 0 through 8**. Rather than accepting documentation claims or previous conversation records at face value, this audit evaluates the actual physical source code, package manifests, AST/runtime implementations, security boundaries, and test suites currently in the repository.
+This document presents an exhaustive, line-by-line audit of the **Gati Framework** codebase spanning **Phases 0 through 8**. Rather than accepting documentation claims or previous conversation records at face value, this audit evaluates the actual physical source code, package manifests, AST/runtime implementations, security boundaries, and test suites currently in the repository.
 
 ### Summary Verdict
-The foundational architecture of Aether is **sound, functional, and well-structured**. The monorepo layout, fine-grained push-pull reactivity engine, security sanitizers, server-side rendering pipeline, and HTTP resource management are fully implemented and verified with passing unit tests. 
+The foundational architecture of Gati is **sound, functional, and well-structured**. The monorepo layout, fine-grained push-pull reactivity engine, security sanitizers, server-side rendering pipeline, and HTTP resource management are fully implemented and verified with passing unit tests. 
 
 However, critical functional gaps exist in the **compiler/template parser** (currently using regex-based slot extraction rather than a full JSX/HTML AST parser) and **control flow runtime** (where `<Show>` contains a structural placeholder that does not manipulate sibling DOM nodes, and `<For>` keyed list reconciliation is not yet implemented).
 
@@ -31,17 +31,17 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ### Monorepo Topology & DAG Structure
 ```
-@aether/reactivity   ◄─── (Zero dependencies)
-@aether/security     ◄─── (Zero dependencies)
-@aether/compiler     ◄─── depends on @aether/security
-@aether/runtime      ◄─── depends on @aether/reactivity, @aether/security
-@aether/router       ◄─── depends on @aether/reactivity, @aether/security
-@aether/http         ◄─── depends on @aether/reactivity
-@aether/forms        ◄─── depends on @aether/reactivity
-@aether/ssr          ◄─── depends on @aether/reactivity, @aether/security
-@aether/testing      ◄─── depends on @aether/reactivity
-@aether/devtools     ◄─── (Zero dependencies)
-@aether/cli          ◄─── depends on @aether/compiler
+@gati/reactivity   ◄─── (Zero dependencies)
+@gati/security     ◄─── (Zero dependencies)
+@gati/compiler     ◄─── depends on @gati/security
+@gati/runtime      ◄─── depends on @gati/reactivity, @gati/security
+@gati/router       ◄─── depends on @gati/reactivity, @gati/security
+@gati/http         ◄─── depends on @gati/reactivity
+@gati/forms        ◄─── depends on @gati/reactivity
+@gati/ssr          ◄─── depends on @gati/reactivity, @gati/security
+@gati/testing      ◄─── depends on @gati/reactivity
+@gati/devtools     ◄─── (Zero dependencies)
+@gati/cli          ◄─── depends on @gati/compiler
 ```
 *Verification*: Strict Directed Acyclic Graph (DAG) is maintained with zero circular dependencies across packages.
 
@@ -84,7 +84,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ---
 
-### Phase 2: Reactivity Engine (`@aether/reactivity`)
+### Phase 2: Reactivity Engine (`@gati/reactivity`)
 * **Status**: **COMPLETE** (100%)
 * **Key Components Verified**:
   * **Signals (`signal.ts`)**: Fine-grained push-pull implementation with version clocks and subscriber tracking.
@@ -97,7 +97,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ---
 
-### Phase 3: Compiler Architecture & AIR (`@aether/compiler`)
+### Phase 3: Compiler Architecture & AIR (`@gati/compiler`)
 * **Status**: **PARTIALLY IMPLEMENTED** (65%)
 * **Implemented**:
   * `air.ts`: Clean intermediate representation schema (`AIRStaticNode`, `AIRDynamicTextNode`, `AIRDynamicAttrNode`, `AIRDynamicEventNode`, `AIRTemplateUnit`).
@@ -109,7 +109,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ---
 
-### Phase 4: Template Engine & JSX (`@aether/runtime`)
+### Phase 4: Template Engine & JSX (`@gati/runtime`)
 * **Status**: **PARTIALLY IMPLEMENTED** (60%)
 * **Implemented**:
   * `template.ts`: High-performance static HTML template factory utilizing native browser `document.createElement('template')` and `cloneNode(true)`.
@@ -120,7 +120,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ---
 
-### Phase 5: DOM Runtime & Reconciler (`@aether/runtime`)
+### Phase 5: DOM Runtime & Reconciler (`@gati/runtime`)
 * **Status**: **COMPLETE** (90%)
 * **Implemented**:
   * Direct reactive DOM bindings: `bindText(node, getter)`, `bindAttr(element, name, getter)`, `bindClass(element, className, getter)`.
@@ -133,15 +133,15 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 ### Phase 6: Router, HTTP, Forms & Standard Schema
 * **Status**: **COMPLETE** (90%)
 * **Implemented**:
-  * **Router (`@aether/router`)**: Signal-driven router with parameterized route matching (`/users/:id`), active link helpers, and browser History API integration.
-  * **HTTP (`@aether/http`)**: `createResource` with status tracking (`idle`, `pending`, `success`, `error`), automatic `AbortController` cancellation, `HttpClient` wrapper, and in-flight request deduplication (`RequestCache`).
-  * **Forms (`@aether/forms`)**: Reactive field state (`value`, `error`, `touched`, `dirty`), automatic ARIA attributes (`aria-invalid`, `aria-errormessage`, `aria-required`), and form submit lifecycle.
+  * **Router (`@gati/router`)**: Signal-driven router with parameterized route matching (`/users/:id`), active link helpers, and browser History API integration.
+  * **HTTP (`@gati/http`)**: `createResource` with status tracking (`idle`, `pending`, `success`, `error`), automatic `AbortController` cancellation, `HttpClient` wrapper, and in-flight request deduplication (`RequestCache`).
+  * **Forms (`@gati/forms`)**: Reactive field state (`value`, `error`, `touched`, `dirty`), automatic ARIA attributes (`aria-invalid`, `aria-errormessage`, `aria-required`), and form submit lifecycle.
 * **Minor Gap**:
   * `StandardSchemaV1` interface is declared in `standard-schema.ts`, but `createForm` does not yet invoke `config.schema['~standard'].validate()` directly when a schema object is supplied.
 
 ---
 
-### Phase 7: Server Rendering, Hydration & SSG (`@aether/ssr`)
+### Phase 7: Server Rendering, Hydration & SSG (`@gati/ssr`)
 * **Status**: **COMPLETE** (95%)
 * **Implemented**:
   * **String & Streaming SSR**: `renderToString` with full HTML shell composition and `renderToStream` using standard Web `ReadableStream`.
@@ -157,9 +157,9 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 ### Phase 8: Testing, Tooling, DevTools & CLI
 * **Status**: **COMPLETE** (90%)
 * **Implemented**:
-  * **Testing (`@aether/testing`)**: `renderTest()` with automatic reactive root disposal and `fireEvent()` synthetic event dispatchers.
-  * **CLI (`@aether/cli`)**: `aetherVitePlugin` for file transformation and `auditSource` for static security and accessibility linting.
-  * **DevTools (`@aether/devtools`)**: `GraphInspector` for signal topology snapshots and `DevToolsBridge` for window postMessage telemetry.
+  * **Testing (`@gati/testing`)**: `renderTest()` with automatic reactive root disposal and `fireEvent()` synthetic event dispatchers.
+  * **CLI (`@gati/cli`)**: `aetherVitePlugin` for file transformation and `auditSource` for static security and accessibility linting.
+  * **DevTools (`@gati/devtools`)**: `GraphInspector` for signal topology snapshots and `DevToolsBridge` for window postMessage telemetry.
 
 ---
 
@@ -196,4 +196,4 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 
 ## 7. Conclusion
 
-The Aether framework codebase possesses an enterprise-grade architectural foundation with robust security defenses, zero-VDOM reactivity, comprehensive SSR/SSG streaming capabilities, and a 100% green test suite. Completing the control flow reconciler (`<Show>`, `<For>`) and upgrading the template compiler to a full AST parser will advance the framework to complete production readiness.
+The Gati framework codebase possesses an enterprise-grade architectural foundation with robust security defenses, zero-VDOM reactivity, comprehensive SSR/SSG streaming capabilities, and a 100% green test suite. Completing the control flow reconciler (`<Show>`, `<For>`) and upgrading the template compiler to a full AST parser will advance the framework to complete production readiness.

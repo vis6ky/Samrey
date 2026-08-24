@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Phased Roadmap View
+ * @gati/doc - Native Gati Phased Roadmap View
  */
 
-import { el, For } from '@aether/runtime';
+import { el, For } from '@gati/runtime';
 import { ROADMAP_PHASES, DEFERRED_FEATURES } from '../data/roadmapData.js';
 import { icon } from '../lib/icons.js';
 

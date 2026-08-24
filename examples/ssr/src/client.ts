@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/example-ssr - Client Hydration Entrypoint
+ * @gati/example-ssr - Client Hydration Entrypoint
  */
 
-import { signal, effect } from '@aether/reactivity';
-import { hydrate, deserializeHydrationState } from '@aether/ssr';
+import { signal, effect } from '@gati/reactivity';
+import { hydrate, deserializeHydrationState } from '@gati/ssr';
 import { App } from './app.js';
 
 function mountClient() {
@@ -13,7 +13,7 @@ function mountClient() {
 
   // Hydrate initial state
   const state = deserializeHydrationState<Record<string, unknown>>();
-  console.log('[Aether Client] Hydrated State from Server:', state);
+  console.log('[Gati Client] Hydrated State from Server:', state);
 
   // Initialize interactive client counter
   const count = signal(0);

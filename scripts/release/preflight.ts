@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Preflight Verification
+ * @gati/monorepo - Release Preflight Verification
  */
 
 import * as fs from 'node:fs';
@@ -81,7 +81,7 @@ export function runPreflight(): PreflightResult {
       success = false;
     }
   }
-  diagnostics.push(`Found ${packagesFound}/${PACKAGES.length} @aether/* packages`);
+  diagnostics.push(`Found ${packagesFound}/${PACKAGES.length} @gati/* packages`);
 
   // 5. Tooling Readiness (TypeScript, Vite, ESBuild)
   let toolsReady = true;
@@ -118,7 +118,7 @@ export function runPreflight(): PreflightResult {
 }
 
 if (process.argv[1]?.endsWith('preflight.ts') || process.argv[1]?.endsWith('preflight.js')) {
-  console.log('▲ Aether Release Preflight Check\n');
+  console.log('▲ Gati Release Preflight Check\n');
   const result = runPreflight();
   for (const diag of result.diagnostics) {
     console.log(`  • ${diag}`);

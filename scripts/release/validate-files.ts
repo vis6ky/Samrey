@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Tarball & Published File Whitelist Validation
+ * @gati/monorepo - Release Tarball & Published File Whitelist Validation
  */
 
 import * as path from 'node:path';
@@ -87,7 +87,7 @@ export function inspectPublishedFiles(): { packages: PackageFileInspection[]; al
 }
 
 if (process.argv[1]?.endsWith('validate-files.ts') || process.argv[1]?.endsWith('validate-files.js')) {
-  console.log('▲ Aether Tarball & Published File Whitelist Audit\n');
+  console.log('▲ Gati Tarball & Published File Whitelist Audit\n');
   const { packages, allValid } = inspectPublishedFiles();
   for (const pkg of packages) {
     console.log(`  • ${pkg.packageName.padEnd(22)}: ${pkg.entryCount} files, ${pkg.packageSizeKb} kB tarball (${pkg.unpackedSizeKb} kB unpacked) -> ${pkg.isValid ? 'CLEAN' : 'DIRTY'}`);

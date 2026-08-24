@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - Static Site Generation (SSG) Engine
+ * @gati/ssr - Static Site Generation (SSG) Engine
  */
 
 import { renderToString, RenderToStringOptions } from './stream.js';

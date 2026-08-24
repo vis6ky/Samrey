@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Unified Task Board View
- * Native Aether View with multi-column status lanes, priority filters, and search
+ * Gati Project Manager — Unified Task Board View
+ * Native Gati View with multi-column status lanes, priority filters, and search
  */
 
-import { el, For, Show } from '@aether/runtime';
+import { el, For, Show } from '@gati/runtime';
 import { store, filteredTasks } from '../state.js';
 import { TaskItem } from '../components/TaskItem.js';
 import { TaskStatus } from '../types.js';

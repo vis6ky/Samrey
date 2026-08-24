@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Root Application Shell built 100% with Native Aether Primitives
+ * @gati/doc - Root Application Shell built 100% with Native Gati Primitives
  */
 
-import { el, Show } from '@aether/runtime';
-import { signal, effect } from '@aether/reactivity';
+import { el, Show } from '@gati/runtime';
+import { signal, effect } from '@gati/reactivity';
 import { Header } from './components/Header.js';
 import { CompetitiveView } from './components/CompetitiveView.js';
 import { CompilerVisualizer } from './components/CompilerVisualizer.js';
@@ -173,8 +173,8 @@ export function App(): HTMLElement {
   const footer = el('footer', { class: 'border-t border-slate-200 bg-white py-6 mt-12' },
     el('div', { class: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2' },
       el('div', { class: 'flex items-center space-x-2' },
-        el('span', { class: 'font-mono font-bold text-slate-800' }, 'Aether Framework'),
-        el('span', null, '· 100% Native Aether Monorepo & UI Implementation')
+        el('span', { class: 'font-mono font-bold text-slate-800' }, 'Gati Framework'),
+        el('span', null, '· 100% Native Gati Monorepo & UI Implementation')
       ),
       el('div', { class: 'flex items-center space-x-4 font-mono text-[11px]' },
         el('span', null, 'Zero-eval · No VDOM · Fine-Grained Reactive Signals'),

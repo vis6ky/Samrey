@@ -1,8 +1,8 @@
-# Aether Framework — Error Codes Reference
+# Gati Framework — Error Codes Reference
 
-> **Aether v1.0.0-rc.1 Standard Diagnostic Error System**
+> **Gati v1.0.0-rc.1 Standard Diagnostic Error System**
 
-Aether features a centralized, deterministic error model with structured codes (`AETH-xxx`). Every error emitted by Aether provides:
+Gati features a centralized, deterministic error model with structured codes (`AETH-xxx`). Every error emitted by Gati provides:
 1. **Stable Error Code**: Machine-readable identifier with category prefix.
 2. **Human-Readable Message**: Clear, concise statement of what went wrong.
 3. **Actionable Explanation**: Root-cause architectural or runtime diagnosis.
@@ -15,15 +15,15 @@ Aether features a centralized, deterministic error model with structured codes (
 
 | Code Range | Category | Package / Subsystem |
 | :--- | :--- | :--- |
-| `AETH-001` – `AETH-099` | CLI & Project Tooling | `@aether/cli` |
-| `AETH-101` – `AETH-199` | Compiler & Parsing | `@aether/compiler` |
-| `AETH-201` – `AETH-299` | Security & Accessibility | `@aether/security`, `@aether/compiler` |
-| `AETH-301` – `AETH-399` | Reactivity & Runtime | `@aether/reactivity`, `@aether/runtime` |
-| `AETH-401` – `AETH-499` | Router & Navigation | `@aether/router` |
-| `AETH-501` – `AETH-599` | Forms & Validation | `@aether/forms` |
-| `AETH-601` – `AETH-699` | HTTP & Data Fetching | `@aether/http` |
-| `AETH-701` – `AETH-799` | SSR & Hydration | `@aether/ssr` |
-| `AETH-801` – `AETH-899` | DevTools & Testing | `@aether/devtools`, `@aether/testing` |
+| `AETH-001` – `AETH-099` | CLI & Project Tooling | `@gati/cli` |
+| `AETH-101` – `AETH-199` | Compiler & Parsing | `@gati/compiler` |
+| `AETH-201` – `AETH-299` | Security & Accessibility | `@gati/security`, `@gati/compiler` |
+| `AETH-301` – `AETH-399` | Reactivity & Runtime | `@gati/reactivity`, `@gati/runtime` |
+| `AETH-401` – `AETH-499` | Router & Navigation | `@gati/router` |
+| `AETH-501` – `AETH-599` | Forms & Validation | `@gati/forms` |
+| `AETH-601` – `AETH-699` | HTTP & Data Fetching | `@gati/http` |
+| `AETH-701` – `AETH-799` | SSR & Hydration | `@gati/ssr` |
+| `AETH-801` – `AETH-899` | DevTools & Testing | `@gati/devtools`, `@gati/testing` |
 
 ---
 
@@ -67,12 +67,12 @@ Aether features a centralized, deterministic error model with structured codes (
   ```tsx
   // ❌ Error
   <div>
-    <p>Welcome to Aether
+    <p>Welcome to Gati
   </div>
 
   // ✅ Fix
   <div>
-    <p>Welcome to Aether</p>
+    <p>Welcome to Gati</p>
   </div>
   ```
 - **Suggestion**: Check for missing closing tags or self-closing syntax (e.g., `<input />`, `<br />`, `<Component />`).
@@ -276,9 +276,9 @@ Aether features a centralized, deterministic error model with structured codes (
 #### `AETH-801`: DevTools Bridge Connection Failure
 - **Message**: `[AETH-801] DevTools bridge connection failure`
 - **Explanation**: DevTools could not attach to the global window hook or serialize the reactive dependency graph.
-- **Suggestion**: Verify that `@aether/devtools` is initialized after the runtime mounts.
+- **Suggestion**: Verify that `@gati/devtools` is initialized after the runtime mounts.
 
 #### `AETH-802`: Test Component Mount Failure
 - **Message**: `[AETH-802] Test container or component invalid`
 - **Explanation**: The testing harness `mountTestComponent()` was passed a null container or invalid component function.
-- **Suggestion**: Ensure `render()` in `@aether/testing` receives a valid component callback `() => <Component />`.
+- **Suggestion**: Ensure `render()` in `@gati/testing` receives a valid component callback `() => <Component />`.

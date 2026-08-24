@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchPath, createRouter, matchRoutes } from '../src/index.js';
 
-describe('@aether/router', () => {
+describe('@gati/router', () => {
   it('matches static and parameterized routes correctly', () => {
     assert.deepEqual(matchPath('/users/:id', '/users/42'), { id: '42' });
     assert.deepEqual(matchPath('/posts/:category/:slug', '/posts/tech/aether-alpha'), {

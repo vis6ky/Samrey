@@ -1,14 +1,14 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Glitch-Free Reactivity Graph Simulator
+ * @gati/doc - Native Gati Glitch-Free Reactivity Graph Simulator
  */
 
-import { el, For } from '@aether/runtime';
-import { signal, computed } from '@aether/reactivity';
+import { el, For } from '@gati/runtime';
+import { signal, computed } from '@gati/reactivity';
 import { icon } from '../lib/icons.js';
 
 export function ReactivityVisualizer(): HTMLElement {
-  // Real Native Aether Reactive Signals & Computed Nodes
+  // Real Native Gati Reactive Signals & Computed Nodes
   const signalA = signal<number>(5);
   const signalB = signal<number>(3);
   const clock = signal<number>(1);
@@ -96,7 +96,7 @@ export function ReactivityVisualizer(): HTMLElement {
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' }, 'Glitch-Free Reactive Graph Simulator'),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
-          'Simulate Aether’s O(1) transaction clock, dynamic dependency tracking, and atomic batching. Experience how the classic Diamond Dependency problem is resolved with exactly one evaluation pass and zero intermediate glitch states.'
+          'Simulate Gati’s O(1) transaction clock, dynamic dependency tracking, and atomic batching. Experience how the classic Diamond Dependency problem is resolved with exactly one evaluation pass and zero intermediate glitch states.'
         )
       ),
       el('div', { class: 'flex items-center space-x-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700 font-mono text-xs' },
@@ -294,7 +294,7 @@ export function ReactivityVisualizer(): HTMLElement {
       el('span', null, 'Why This Beats React & Angular Zone.js')
     ),
     el('p', { class: 'text-xs text-slate-600 leading-relaxed' },
-      'React re-runs the entire component body on state change. Zone.js runs top-down dirty checking across the DOM. Aether only visits nodes whose dependency version clocks have changed, achieving true O(1) mutation throughput.'
+      'React re-runs the entire component body on state change. Zone.js runs top-down dirty checking across the DOM. Gati only visits nodes whose dependency version clocks have changed, achieving true O(1) mutation throughput.'
     )
   );
   rightCol.appendChild(noteBox);

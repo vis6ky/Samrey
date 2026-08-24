@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Application Header Component
+ * @gati/task-studio - Application Header Component
  */
 
-import { el } from '@aether/runtime';
-import { Signal, signal } from '@aether/reactivity';
+import { el } from '@gati/runtime';
+import { Signal, signal } from '@gati/reactivity';
 import { tasksState, setTaskSearch } from '../state/tasks.store.js';
 import { settings } from '../state/settings.store.js';
 import { Button } from './ui/Button.js';
@@ -57,7 +57,7 @@ export function Header(props: HeaderProps): HTMLElement {
         el('span', { class: 'text-sm font-bold text-slate-900 tracking-tight' }, 'Task Studio'),
         el('span', { class: 'text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium' }, 'v1.0.0 Stable')
       ),
-      el('p', { class: 'text-[11px] text-slate-500' }, 'Production Aether Web Platform')
+      el('p', { class: 'text-[11px] text-slate-500' }, 'Production Gati Web Platform')
     )
   );
   leftSection.appendChild(brand);

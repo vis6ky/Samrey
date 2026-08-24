@@ -2,10 +2,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString, createSSRContext } from '../src/index.js';
 
-describe('@aether/ssr - Server Side Rendering', () => {
+describe('@gati/ssr - Server Side Rendering', () => {
   it('renders safe static HTML document with title, head metadata, and hydration scripts', async () => {
     const ctx = createSSRContext();
-    ctx.setTitle('Aether Dashboard');
+    ctx.setTitle('Gati Dashboard');
     ctx.addMeta({ name: 'description', content: 'Ultra-fast reactive framework' });
 
     const html = await renderToString(
@@ -17,7 +17,7 @@ describe('@aether/ssr - Server Side Rendering', () => {
     );
 
     assert.ok(html.includes('<!DOCTYPE html>'));
-    assert.ok(html.includes('<title>Aether Dashboard</title>'));
+    assert.ok(html.includes('<title>Gati Dashboard</title>'));
     assert.ok(html.includes('<meta name="description" content="Ultra-fast reactive framework">'));
     assert.ok(html.includes('<main><h1 class="heading">Dashboard</h1><p>Active Users: 42</p></main>'));
     assert.ok(html.includes('__AETHER_EVENTS__'));

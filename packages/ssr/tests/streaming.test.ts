@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStream, createSSRContext } from '../src/index.js';
 
-describe('@aether/ssr - Streaming HTML Renderer', () => {
+describe('@gati/ssr - Streaming HTML Renderer', () => {
   it('streams complete HTML document chunks via ReadableStream', async () => {
     const stream = renderToStream(
       () => '<section class="hero"><h1>Streaming Fast</h1><p>Real-time edge rendering</p></section>',

@@ -29,15 +29,15 @@ function generateStarterProject(projectName, options = {}) {
       type: "module",
       scripts,
       dependencies: {
-        "@aether/compiler": "^1.0.0",
-        "@aether/reactivity": "^1.0.0",
-        "@aether/runtime": "^1.0.0",
-        ...templateType !== "minimal" ? { "@aether/router": "^1.0.0" } : {},
-        ...templateType === "ssr" || templateType === "ssg" ? { "@aether/ssr": "^1.0.0" } : {},
-        "@aether/devtools": "^1.0.0"
+        "@gati/compiler": "^1.0.0",
+        "@gati/reactivity": "^1.0.0",
+        "@gati/runtime": "^1.0.0",
+        ...templateType !== "minimal" ? { "@gati/router": "^1.0.0" } : {},
+        ...templateType === "ssr" || templateType === "ssg" ? { "@gati/ssr": "^1.0.0" } : {},
+        "@gati/devtools": "^1.0.0"
       },
       devDependencies: {
-        "@aether/cli": "^1.0.0",
+        "@gati/cli": "^1.0.0",
         typescript: "^5.0.0",
         vite: "^5.0.0"
       }
@@ -63,7 +63,7 @@ function generateStarterProject(projectName, options = {}) {
     2
   );
   const viteConfig = `import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@aether/cli';
+import { aetherVitePlugin } from '@gati/cli';
 
 export default defineConfig({
   plugins: [aetherVitePlugin()],
@@ -77,7 +77,7 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${projectName} - Aether App</title>
+    <title>${projectName} - Gati App</title>
   </head>
   <body>
     <div id="app"><!--ssr-outlet--></div>
@@ -86,14 +86,14 @@ export default defineConfig({
 </html>
 `;
   if (templateType === "minimal") {
-    const minimalApp = `import { signal } from '@aether/reactivity';
+    const minimalApp = `import { signal } from '@gati/reactivity';
 
 export function App() {
   const count = signal(0);
   return (
     <main style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
       <h1>${projectName}</h1>
-      <p>Minimal Aether Application</p>
+      <p>Minimal Gati Application</p>
       <div style="margin-top: 1rem;">
         <button type="button" onClick={() => count.value--}>-</button>
         <span style="margin: 0 1rem; font-weight: bold;">{count.value}</span>
@@ -103,7 +103,7 @@ export function App() {
   );
 }
 `;
-    const minimalEntry = `import { mount } from '@aether/runtime';
+    const minimalEntry = `import { mount } from '@gati/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');
@@ -113,7 +113,7 @@ if (root) {
 `;
     const minimalTest = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { signal } from '@aether/reactivity';
+import { signal } from '@gati/reactivity';
 
 describe('${projectName} Minimal Tests', () => {
   it('updates signal state', () => {
@@ -131,7 +131,7 @@ describe('${projectName} Minimal Tests', () => {
       "index.html": indexHtml,
       "README.md": `# ${projectName}
 
-Minimal Aether Application.
+Minimal Gati Application.
 `,
       ".gitignore": `node_modules/
 dist/
@@ -144,8 +144,8 @@ coverage/
       "tests/app.test.ts": minimalTest
     };
   }
-  const appTsx = `import { signal } from '@aether/reactivity';
-import { Router, Route, Link } from '@aether/router';
+  const appTsx = `import { signal } from '@gati/reactivity';
+import { Router, Route, Link } from '@gati/router';
 import { Header } from './components/Header.js';
 import { HomeView } from './views/HomeView.js';
 import { AboutView } from './views/AboutView.js';
@@ -164,7 +164,7 @@ export function App() {
   );
 }
 `;
-  const headerTsx = `import { Link } from '@aether/router';
+  const headerTsx = `import { Link } from '@gati/router';
 
 export function Header(props: { title: string }) {
   return (
@@ -180,7 +180,7 @@ export function Header(props: { title: string }) {
   );
 }
 `;
-  const counterTsx = `import { signal } from '@aether/reactivity';
+  const counterTsx = `import { signal } from '@gati/reactivity';
 
 export function Counter() {
   const count = signal(0);
@@ -204,7 +204,7 @@ export function Counter() {
 export function HomeView() {
   return (
     <section class="page home-page">
-      <h2>Welcome to your Aether Application</h2>
+      <h2>Welcome to your Gati Application</h2>
       <p>Fine-grained reactive performance with zero virtual DOM overhead.</p>
       <Counter />
     </section>
@@ -214,13 +214,13 @@ export function HomeView() {
   const aboutViewTsx = `export function AboutView() {
   return (
     <section class="page about-page">
-      <h2>About Aether Framework</h2>
+      <h2>About Gati Framework</h2>
       <p>Built for unmatched developer ergonomics, security sandboxing, and ultra-fast SSR.</p>
     </section>
   );
 }
 `;
-  const entryClientTsx = `import { mount } from '@aether/runtime';
+  const entryClientTsx = `import { mount } from '@gati/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');
@@ -228,14 +228,14 @@ if (root) {
   mount(() => <App />, root);
 }
 `;
-  const entryServerTsx = `import { renderToString } from '@aether/ssr';
+  const entryServerTsx = `import { renderToString } from '@gati/ssr';
 import { App } from './App.js';
 
 export function render(url: string) {
   return renderToString(() => <App />);
 }
 `;
-  const ssgBuildTs = `import { generateStaticSite } from '@aether/ssr';
+  const ssgBuildTs = `import { generateStaticSite } from '@gati/ssr';
 import { App } from './src/App.js';
 
 async function buildSSG() {
@@ -255,7 +255,7 @@ async function buildSSG() {
   </body>
 </html>\`,
     renderRoute: async (route) => {
-      const { renderToString } = await import('@aether/ssr');
+      const { renderToString } = await import('@gati/ssr');
       return renderToString(() => <App />);
     }
   });
@@ -266,7 +266,7 @@ buildSSG().catch(console.error);
 `;
   const testTsx = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { signal } from '@aether/reactivity';
+import { signal } from '@gati/reactivity';
 
 describe('${projectName} Component Suite', () => {
   it('increments reactive counter signal', () => {
@@ -279,7 +279,7 @@ describe('${projectName} Component Suite', () => {
 `;
   const readmeMd = `# ${projectName}
 
-Built with [Aether Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
+Built with [Gati Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 
@@ -353,7 +353,7 @@ async function runCreateCommand(options) {
   if (!validation.valid) {
     return {
       success: false,
-      message: `[Aether Create Error] ${validation.error}`,
+      message: `[Gati Create Error] ${validation.error}`,
       exitCode: 1
     };
   }
@@ -381,14 +381,14 @@ async function runCreateCommand(options) {
     }
     return {
       success: true,
-      message: `[Aether] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
+      message: `[Gati] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
       exitCode: 0,
       data: { filesCreated: Object.keys(files).length, targetDir }
     };
   } catch (err) {
     return {
       success: false,
-      message: `[Aether Create Failed] Could not create project files: ${err.message}`,
+      message: `[Gati Create Failed] Could not create project files: ${err.message}`,
       exitCode: 1
     };
   }
@@ -401,13 +401,13 @@ async function runDevCommand(options = {}) {
   if (port < 1 || port > 65535) {
     return {
       success: false,
-      message: `[Aether Dev Error] Invalid port ${port}. Port must be between 1 and 65535.`,
+      message: `[Gati Dev Error] Invalid port ${port}. Port must be between 1 and 65535.`,
       exitCode: 1
     };
   }
   const devUrl = `http://${host}:${port}`;
   const banner = [
-    `  \u25B2 Aether Development Server`,
+    `  \u25B2 Gati Development Server`,
     `  \u279C Local:   ${devUrl}/`,
     `  \u279C DevTools: Enabled (Bridge active on window.__AETHER_DEVTOOLS_BRIDGE__)`,
     `  \u279C HMR:     Fine-grained reactive signal updates enabled`,
@@ -484,8 +484,8 @@ function generateModuleCode(templates, componentBody) {
     neededImports.add("template");
   }
   const importList = Array.from(neededImports).join(", ");
-  return `// Generated by Aether Compiler AOT
-import { ${importList} } from '@aether/runtime';
+  return `// Generated by Gati Compiler AOT
+import { ${importList} } from '@gati/runtime';
 
 ${hoisted}
 
@@ -657,7 +657,7 @@ function generateSourceFrame(source, line, column, length = 1, contextLines = 2)
   }
   return output.join("\n");
 }
-var AetherCompilerError = class extends Error {
+var GatiCompilerError = class extends Error {
   code;
   filename;
   line;
@@ -670,7 +670,7 @@ var AetherCompilerError = class extends Error {
   constructor(options) {
     const def = ERROR_REGISTRY[options.code] || {
       code: options.code,
-      title: "Aether Compiler Error",
+      title: "Gati Compiler Error",
       defaultExplanation: "An error occurred during compilation.",
       defaultSuggestion: "Review the template code around this location."
     };
@@ -691,7 +691,7 @@ ${sourceFrame ? `${sourceFrame}
 ` : ""}Explanation: ${explanation}
 Suggestion:  ${suggestion}`;
     super(formatted);
-    this.name = "AetherCompilerError";
+    this.name = "GatiCompilerError";
     this.code = options.code;
     this.filename = options.filename;
     this.line = line;
@@ -862,7 +862,7 @@ var TemplateParser = class {
     const diagStr = `[${code}] [${pos.line}:${pos.column}] ${msg}`;
     this.diagnostics.push(diagStr);
     this.errors.push(
-      new AetherCompilerError({
+      new GatiCompilerError({
         code,
         message: msg,
         source: this.source,
@@ -1481,7 +1481,7 @@ async function runBuildCommand(options = {}) {
   const sampleTemplate = '<div class="app"><header><h1>Title</h1></header><main>{content}</main></div>';
   const compiled = compileTemplate(sampleTemplate);
   const report = [
-    `  \u25B2 Aether Production Build`,
+    `  \u25B2 Gati Production Build`,
     `  \u279C Mode:         ${targetMode}`,
     `  \u279C Output Dir:   ${outDir}`,
     `  \u279C Static Hoist: ${compiled.templates.length} template strings hoisted`,
@@ -1507,7 +1507,7 @@ async function runPreviewCommand(options = {}) {
   const host = options.host ? "0.0.0.0" : "localhost";
   const outDir = options.outDir || "dist";
   const message = [
-    `  \u25B2 Aether Production Preview Server`,
+    `  \u25B2 Gati Production Preview Server`,
     `  \u279C Local:   http://${host}:${port}/`,
     `  \u279C Serving: ${outDir}`,
     `  \u279C Mode:    Production static preview with HTTP caching headers`,
@@ -1529,7 +1529,7 @@ async function runPreviewCommand(options = {}) {
 async function runTestCommand(options = {}) {
   const fileCount = options.files?.length || 1;
   const summary = [
-    `  \u25B2 Aether Test Runner`,
+    `  \u25B2 Gati Test Runner`,
     `  \u279C Executing tests across ${fileCount} suite(s)`,
     `  \u279C Reactivity assertions: Active`,
     `  \u279C SSR stream verification: Active`,
@@ -1588,7 +1588,7 @@ async function runAuditCommand(options = {}) {
   }
   const passed = totalViolations === 0 || !options.strict;
   const reportText = [
-    `  \u25B2 Aether Security & A11y Audit`,
+    `  \u25B2 Gati Security & A11y Audit`,
     `  \u279C Files Scanned:      ${sources.length}`,
     `  \u279C Violations Found:   ${totalViolations}`,
     `  \u279C Security Sandbox:   CSP & XSS Context Verified`,
@@ -1639,7 +1639,7 @@ async function runAnalyzeCommand(options = {}) {
     };
   }
   const report = [
-    `  \u25B2 Aether Application Analytics & Diagnostics`,
+    `  \u25B2 Gati Application Analytics & Diagnostics`,
     `  \u279C Bundle Footprint:   ${analysisData.bundleSizeKb} KB (${analysisData.gzipSizeKb} KB gzip)`,
     `  \u279C Reactive Topology:  ${analysisData.reactivityGraph.signalsCount} signals, ${analysisData.reactivityGraph.computedsCount} computeds, ${analysisData.reactivityGraph.effectsCount} effects`,
     `  \u279C Static Hoisting:    ${analysisData.compilerOptimization.staticRatioPercent}% of templates hoisted statically`,
@@ -1661,7 +1661,7 @@ function scaffoldArtifact(type, name) {
   const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
   const camelName = name.charAt(0).toLowerCase() + name.slice(1);
   if (type === "component") {
-    const code2 = `import { signal } from '@aether/reactivity';
+    const code2 = `import { signal } from '@gati/reactivity';
 
 export interface ${pascalName}Props {
   title?: string;
@@ -1726,7 +1726,7 @@ describe('${pascalName}View Route', () => {
     };
   }
   if (type === "store") {
-    const code2 = `import { signal, computed } from '@aether/reactivity';
+    const code2 = `import { signal, computed } from '@gati/reactivity';
 
 export function create${pascalName}Store(initialState: Record<string, unknown> = {}) {
   const state = signal(initialState);
@@ -1764,7 +1764,7 @@ describe('create${pascalName}Store', () => {
       testCode: testCode2
     };
   }
-  const code = `import { signal } from '@aether/reactivity';
+  const code = `import { signal } from '@gati/reactivity';
 
 export function create${pascalName}Resource(fetcher: () => Promise<unknown>) {
   const data = signal<unknown>(null);
@@ -1811,14 +1811,14 @@ async function runGenerateCommand(options) {
   if (!validTypes.includes(options.type)) {
     return {
       success: false,
-      message: `[Aether Generate Error] Unknown generator type "${options.type}". Supported types: ${validTypes.join(", ")}`,
+      message: `[Gati Generate Error] Unknown generator type "${options.type}". Supported types: ${validTypes.join(", ")}`,
       exitCode: 1
     };
   }
   if (!options.name || options.name.trim().length === 0) {
     return {
       success: false,
-      message: `[Aether Generate Error] Artifact name is required. Example: aether generate component Button`,
+      message: `[Gati Generate Error] Artifact name is required. Example: aether generate component Button`,
       exitCode: 1
     };
   }
@@ -1826,7 +1826,7 @@ async function runGenerateCommand(options) {
   if (cleanName.includes("..") || cleanName.includes("/") || cleanName.includes("\\") || !/^[a-zA-Z0-9_-]+$/.test(cleanName)) {
     return {
       success: false,
-      message: `[Aether Generate Error] Invalid artifact name "${options.name}". Path traversal characters and path separators are forbidden.`,
+      message: `[Gati Generate Error] Invalid artifact name "${options.name}". Path traversal characters and path separators are forbidden.`,
       exitCode: 1
     };
   }
@@ -1855,7 +1855,7 @@ async function runGenerateCommand(options) {
   } catch (err) {
     return {
       success: false,
-      message: `[Aether Generate Error] Could not write files: ${err.message}`,
+      message: `[Gati Generate Error] Could not write files: ${err.message}`,
       exitCode: 1
     };
   }
@@ -1864,16 +1864,16 @@ async function runGenerateCommand(options) {
 // src/runner.ts
 var CLI_VERSION = "1.0.0";
 var HELP_TEXT = `
-Aether Framework CLI v${CLI_VERSION}
+Gati Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
 
 USAGE:
   $ aether <command> [options]
 
 COMMANDS:
-  create <name>        Initialize a new production Aether starter project
+  create <name>        Initialize a new production Gati starter project
   dev                  Start the high-performance local dev server with DevTools
-  build                Compile and bundle Aether application for production
+  build                Compile and bundle Gati application for production
   preview              Serve production bundle locally for previewing
   test                 Execute application test suites
   audit                Run static security, CSP & a11y accessibility audit
@@ -1922,7 +1922,7 @@ async function runCLI(args2) {
       if (!name) {
         return {
           success: false,
-          message: "[Aether Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]",
+          message: "[Gati Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]",
           exitCode: 1
         };
       }
@@ -1932,7 +1932,7 @@ async function runCLI(args2) {
       if (!validTemplates.includes(templateVal)) {
         return {
           success: false,
-          message: `[Aether Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(", ")}.`,
+          message: `[Gati Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(", ")}.`,
           exitCode: 1
         };
       }
@@ -1978,7 +1978,7 @@ async function runCLI(args2) {
       if (!type || !name) {
         return {
           success: false,
-          message: "[Aether Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>",
+          message: "[Gati Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>",
           exitCode: 1
         };
       }
@@ -1987,7 +1987,7 @@ async function runCLI(args2) {
     default: {
       return {
         success: false,
-        message: `[Aether Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
+        message: `[Gati Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
         exitCode: 1
       };
     }
@@ -2006,79 +2006,79 @@ runCLI(args).then((result) => {
   }
   process.exit(result.exitCode);
 }).catch((err) => {
-  console.error("[Aether Fatal Error]", err);
+  console.error("[Gati Fatal Error]", err);
   process.exit(1);
 });
 /**
  * @license Apache-2.0
- * @aether/cli - Production Starter Project Generator
+ * @gati/cli - Production Starter Project Generator
  * Provides complete, runnable TypeScript templates with SSR, Routing, Reactivity, and Testing.
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether create" Command
+ * @gati/cli - "aether create" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether dev" Command
+ * @gati/cli - "aether dev" Command
  */
 /**
  * @license Apache-2.0
- * @aether/compiler - Contextual Security Classifier
+ * @gati/compiler - Contextual Security Classifier
  */
 /**
  * @license Apache-2.0
- * @aether/compiler - Static Template Hoisting & Codegen
+ * @gati/compiler - Static Template Hoisting & Codegen
  */
 /**
  * @license Apache-2.0
- * @aether/compiler - Compile-Time Static Analysis & Constant Folding
+ * @gati/compiler - Compile-Time Static Analysis & Constant Folding
  */
 /**
  * @license Apache-2.0
- * @aether/compiler - Structured Error Code System & Source Code Framing
+ * @gati/compiler - Structured Error Code System & Source Code Framing
  */
 /**
  * @license Apache-2.0
- * @aether/security - URI & HTML Sanitizers
+ * @gati/security - URI & HTML Sanitizers
  */
 /**
  * @license Apache-2.0
- * @aether/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
+ * @gati/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether build" Command
+ * @gati/cli - "aether build" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether preview" Command
+ * @gati/cli - "aether preview" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether test" Command
+ * @gati/cli - "aether test" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - Security & Accessibility Static Auditor
+ * @gati/cli - Security & Accessibility Static Auditor
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether audit" Command
+ * @gati/cli - "aether audit" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether analyze" Command
+ * @gati/cli - "aether analyze" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - "aether generate" Command
+ * @gati/cli - "aether generate" Command
  */
 /**
  * @license Apache-2.0
- * @aether/cli - CLI Command Line Dispatcher & Runner
+ * @gati/cli - CLI Command Line Dispatcher & Runner
  */
 /**
  * @license Apache-2.0
- * @aether/cli - Binary Entrypoint
+ * @gati/cli - Binary Entrypoint
  */

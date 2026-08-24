@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Application Settings View
+ * @gati/task-studio - Application Settings View
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { settings, updateSettings, resetSettings } from '../state/settings.store.js';
 import { taskService } from '../api/task-service.js';
 import { loadTasks } from '../state/tasks.store.js';

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Development-Only Runtime Diagnostics System
+ * @gati/runtime - Development-Only Runtime Diagnostics System
  * Tree-shakable in production builds.
  */
 
@@ -129,7 +129,7 @@ export function reportReactiveGraphWarning(message: string, details?: Record<str
 export function reportUnnecessaryUpdate(signalName: string, value: unknown): void {
   if (!isDev) return;
 
-  const msg = `[Aether Dev] Signal "${signalName}" was updated with an identical value: ${JSON.stringify(value)}. Consider using strict equality checking or untrack().`;
+  const msg = `[Gati Dev] Signal "${signalName}" was updated with an identical value: ${JSON.stringify(value)}. Consider using strict equality checking or untrack().`;
   if (typeof console !== 'undefined' && typeof console.debug === 'function') {
     console.debug(msg);
   }
@@ -148,7 +148,7 @@ export function reportUnnecessaryUpdate(signalName: string, value: unknown): voi
 export function reportRouterError(path: string, reason: string): void {
   if (!isDev) return;
 
-  const msg = `[Aether Router] Navigation error at "${path}": ${reason}`;
+  const msg = `[Gati Router] Navigation error at "${path}": ${reason}`;
   if (typeof console !== 'undefined' && typeof console.error === 'function') {
     console.error(msg);
   }
@@ -167,7 +167,7 @@ export function reportRouterError(path: string, reason: string): void {
 export function reportResourceError(resourceName: string, error: unknown): void {
   if (!isDev) return;
 
-  const msg = `[Aether Resource] Resource "${resourceName}" failed: ${error instanceof Error ? error.message : String(error)}`;
+  const msg = `[Gati Resource] Resource "${resourceName}" failed: ${error instanceof Error ? error.message : String(error)}`;
   if (typeof console !== 'undefined' && typeof console.error === 'function') {
     console.error(msg);
   }

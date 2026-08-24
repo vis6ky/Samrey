@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/devtools - Owner & Effect Lifecycle Inspector
+ * @gati/devtools - Owner & Effect Lifecycle Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

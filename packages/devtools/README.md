@@ -1,22 +1,22 @@
-# @aether/devtools
+# @gati/devtools
 
 Runtime DevTools bridge, reactive graph inspection hooks, and transaction event telemetry.
 
 ## Purpose
 
-`@aether/devtools` provides introspection hooks for debugging Aether applications. It tracks signal dependency graphs, transaction clock ticks, component mount hierarchies, and emits telemetry to the browser DevTools extension.
+`@gati/devtools` provides introspection hooks for debugging Gati applications. It tracks signal dependency graphs, transaction clock ticks, component mount hierarchies, and emits telemetry to the browser DevTools extension.
 
 ## Installation
 
 ```bash
-npm install -D @aether/devtools @aether/reactivity
+npm install -D @gati/devtools @gati/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { initDevtools, getGraphSnapshot } from '@aether/devtools';
-import { signal, effect } from '@aether/reactivity';
+import { initDevtools, getGraphSnapshot } from '@gati/devtools';
+import { signal, effect } from '@gati/reactivity';
 
 // 1. Initialize devtools bridge
 const devtools = initDevtools({ enableLogging: true });
@@ -49,6 +49,6 @@ Zero-overhead in production builds when tree-shaken. DevTools messaging strictly
 
 ## Related Packages
 
-- `@aether/reactivity` — Target reactive signals engine.
-- `@aether/runtime` — Target component tree.
+- `@gati/reactivity` — Target reactive signals engine.
+- `@gati/runtime` — Target component tree.
 

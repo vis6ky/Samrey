@@ -2,12 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   TemplateParser,
-  AetherCompilerError,
+  GatiCompilerError,
   generateSourceFrame,
-  formatAetherDiagnostic
+  formatGatiDiagnostic
 } from '../src/index.js';
 
-describe('@aether/compiler - Structured Error Code System & Source Framing', () => {
+describe('@gati/compiler - Structured Error Code System & Source Framing', () => {
   it('generates accurate multi-line source code frames with pointer indicator', () => {
     const source = `const x = 1;\n<div class="test">\n  <span>{unclosed\n</div>`;
     const frame = generateSourceFrame(source, 3, 10, 8);
@@ -79,7 +79,7 @@ describe('@aether/compiler - Structured Error Code System & Source Framing', () 
   });
 
   it('formats human-readable diagnostic messages with code, file, line, column, frame, explanation and suggestion', () => {
-    const err = new AetherCompilerError({
+    const err = new GatiCompilerError({
       code: 'AETH-102',
       filename: 'src/components/UserProfile.tsx',
       line: 2,
@@ -89,7 +89,7 @@ describe('@aether/compiler - Structured Error Code System & Source Framing', () 
       suggestion: 'Add closing "}" to complete the expression.'
     });
 
-    const formatted = formatAetherDiagnostic(err);
+    const formatted = formatGatiDiagnostic(err);
     assert.ok(formatted.includes('[AETH-102]'));
     assert.ok(formatted.includes('src/components/UserProfile.tsx:2:15'));
     assert.ok(formatted.includes('User: {profile.name'));

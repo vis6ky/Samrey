@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Report Generator & Final Sign-Off Orchestrator
+ * @gati/monorepo - Release Report Generator & Final Sign-Off Orchestrator
  */
 
 import * as fs from 'node:fs';
@@ -44,7 +44,7 @@ export async function generateAllReleaseReports(): Promise<boolean> {
   // 1. RELEASE_PREFLIGHT.md
   fs.writeFileSync(
     path.join(releaseDir, 'RELEASE_PREFLIGHT.md'),
-    `# Aether Framework — Release Preflight Report
+    `# Gati Framework — Release Preflight Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -58,7 +58,7 @@ ${preflight.diagnostics.map(d => `- ${d}`).join('\n')}
   // 2. PACKAGE_VERIFICATION.md
   fs.writeFileSync(
     path.join(releaseDir, 'PACKAGE_VERIFICATION.md'),
-    `# Aether Framework — Package Manifest Verification Report
+    `# Gati Framework — Package Manifest Verification Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -76,11 +76,11 @@ ${pkgVal.packages.map(p => `| \`${p.packageName}\` | ${p.version} | ${p.license}
   // 3. FRAMEWORK_PURITY_REPORT.md
   fs.writeFileSync(
     path.join(releaseDir, 'FRAMEWORK_PURITY_REPORT.md'),
-    `# Aether Framework — Zero Foreign Framework Purity Report
+    `# Gati Framework — Zero Foreign Framework Purity Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
-**Architectural Mandate:** "Aether Must Use Aether"  
+**Architectural Mandate:** "Gati Must Use Gati"  
 **Purity Status:** PASS (100% Zero-Foreign-Framework Compliance)  
 
 ## 1. Prohibited Framework Audit Summary
@@ -94,14 +94,14 @@ The following foreign UI and state management frameworks were scanned across all
 - **Foreign Component Framework Imports Found:** 0
 
 ## 2. Package Dependency Audit
-All 11 packages depend exclusively on other native \`@aether/*\` modules or minimal Node.js standard libraries.
+All 11 packages depend exclusively on other native \`@gati/*\` modules or minimal Node.js standard libraries.
 `
   );
 
   // 4. NPM_CONSUMER_REPORT.md
   fs.writeFileSync(
     path.join(releaseDir, 'NPM_CONSUMER_REPORT.md'),
-    `# Aether Framework — Clean-Room NPM Consumer Verification Report
+    `# Gati Framework — Clean-Room NPM Consumer Verification Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -121,7 +121,7 @@ All 11 packages depend exclusively on other native \`@aether/*\` modules or mini
   // 5. STARTER_TEMPLATE_REPORT.md
   fs.writeFileSync(
     path.join(releaseDir, 'STARTER_TEMPLATE_REPORT.md'),
-    `# Aether Framework — CLI Starter Template Verification Report
+    `# Gati Framework — CLI Starter Template Verification Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -132,14 +132,14 @@ All 11 packages depend exclusively on other native \`@aether/*\` modules or mini
 
 | Template Name | Target Architecture | Generated Files | Foreign Dependencies | Status |
 | :--- | :--- | :--- | :--- | :--- |
-${smokeVal.templatesTested.map(t => `| \`${t.name}\` | Native Aether | ${t.filesCount} | 0 | **${t.success ? 'PASS' : 'FAIL'}** |`).join('\n')}
+${smokeVal.templatesTested.map(t => `| \`${t.name}\` | Native Gati | ${t.filesCount} | 0 | **${t.success ? 'PASS' : 'FAIL'}** |`).join('\n')}
 `
   );
 
   // 6. PRODUCTION_SMOKE_TEST.md
   fs.writeFileSync(
     path.join(releaseDir, 'PRODUCTION_SMOKE_TEST.md'),
-    `# Aether Framework — Production Smoke Test Matrix
+    `# Gati Framework — Production Smoke Test Matrix
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -155,7 +155,7 @@ ${smokeVal.diagnostics.map(d => `- ${d}`).join('\n')}
   // 7. RELEASE_SIGNOFF.md
   fs.writeFileSync(
     path.join(releaseDir, 'RELEASE_SIGNOFF.md'),
-    `# Aether Framework — General Availability (GA) v1.0.0 Release Sign-Off
+    `# Gati Framework — General Availability (GA) v1.0.0 Release Sign-Off
 
 **Target Version:** 1.0.0  
 **Release Tag:** \`latest\`  
@@ -168,9 +168,9 @@ ${smokeVal.diagnostics.map(d => `- ${d}`).join('\n')}
 - [x] License uniformity verified (\`Apache-2.0\` on all packages)
 - [x] Public API exports verified against \`docs/PUBLIC_API.md\` (100% frozen)
 - [x] Clean-room consumer executed without errors in isolated environment
-- [x] Zero foreign framework dependencies verified across codebase ("Aether Must Use Aether")
+- [x] Zero foreign framework dependencies verified across codebase ("Gati Must Use Gati")
 - [x] CLI starter templates generated and validated (4/4 templates)
-- [x] Task Studio production application verified using native Aether components and reactivity
+- [x] Task Studio production application verified using native Gati components and reactivity
 - [x] All 236 monorepo tests passing with 0 failures
 `
   );
@@ -178,7 +178,7 @@ ${smokeVal.diagnostics.map(d => `- ${d}`).join('\n')}
   // 8. ROLLBACK.md
   fs.writeFileSync(
     path.join(releaseDir, 'ROLLBACK.md'),
-    `# Aether Framework — Release Rollback & Emergency Incident Protocol
+    `# Gati Framework — Release Rollback & Emergency Incident Protocol
 
 **Target Version:** 1.0.0  
 **License:** Apache-2.0  
@@ -194,15 +194,15 @@ Therefore, rollback follows the standard industry release channel protocol:
 ### Scenario A: Incorrect Dist-Tag
 Fix by repointing the dist-tag immediately:
 \`\`\`bash
-npm dist-tag add @aether/cli@0.9.0 latest
-npm dist-tag add @aether/runtime@0.9.0 latest
+npm dist-tag add @gati/cli@0.9.0 latest
+npm dist-tag add @gati/runtime@0.9.0 latest
 \`\`\`
 
 ### Scenario B: Critical Bug in Production Release (\`1.0.0\`)
 1. Increment version to \`1.0.1\`, patch the issue, and publish to the \`latest\` channel.
 2. If necessary, deprecate the affected package version:
 \`\`\`bash
-npm deprecate @aether/runtime@1.0.0 "Critical patch in 1.0.1, please update"
+npm deprecate @gati/runtime@1.0.0 "Critical patch in 1.0.1, please update"
 \`\`\`
 
 ### Scenario C: Partial Publication Interruption
@@ -215,7 +215,7 @@ If a network failure occurs during multi-package publish:
   // 9. PHASE_24_RELEASE_HEALTH_REPORT.md
   fs.writeFileSync(
     path.join(releaseDir, 'PHASE_24_RELEASE_HEALTH_REPORT.md'),
-    `# Aether Framework — Phase 24 Release Health Report
+    `# Gati Framework — Phase 24 Release Health Report
 
 **Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
@@ -223,7 +223,7 @@ If a network failure occurs during multi-package publish:
 **Release Readiness Gate Status:** ALL GATES PASSED (10/10)  
 
 ## Executive Summary
-All 11 packages comprising the Aether Framework have passed all automated validation pipelines, dependency topology checks, clean-room consumer smoke tests, SSR/streaming hydration gates, memory leak stress gates, and public API parity checks.
+All 11 packages comprising the Gati Framework have passed all automated validation pipelines, dependency topology checks, clean-room consumer smoke tests, SSR/streaming hydration gates, memory leak stress gates, and public API parity checks.
 
 - **Packages:** 11/11 Validated & Hardened
 - **Reactivity & DOM Runtime:** 100% Pass (Push-pull glitched-free signals, zero VDOM overhead)
@@ -236,11 +236,11 @@ All 11 packages comprising the Aether Framework have passed all automated valida
   // 10. PHASE_24_FINAL_CERTIFICATION.md
   fs.writeFileSync(
     path.join(releaseDir, 'PHASE_24_FINAL_CERTIFICATION.md'),
-    `# Aether Framework v1.0.0
+    `# Gati Framework v1.0.0
 ## Phase 24 General Availability (GA) Final Release Certification
 
 ### Architectural Mandate
-"Aether Must Use Aether" — 100% Compliant
+"Gati Must Use Gati" — 100% Compliant
 
 ### Package Count
 11
@@ -270,7 +270,7 @@ PASS (Isolated execution without symlinks)
 PASS (Zero-eval, prototype pollution protection, CSRF & XSS prevention)
 
 ### Documentation & Native UI
-PASS (Aether-native documentation portal & Task Studio)
+PASS (Gati-native documentation portal & Task Studio)
 
 ### Framework Purity
 PASS (Zero React, Vue, Angular, Svelte, Solid, Preact, Lit, or foreign UI runtime libraries)
@@ -288,7 +288,7 @@ AETHER FRAMEWORK v1.0.0 — GENERAL AVAILABILITY (GA) CERTIFIED
 }
 
 if (process.argv[1]?.endsWith('release-report.ts') || process.argv[1]?.endsWith('release-report.js')) {
-  console.log('▲ Aether Release Report Generation\n');
+  console.log('▲ Gati Release Report Generation\n');
   generateAllReleaseReports().then(success => {
     console.log(`\nRelease Report Generation: ${success ? 'PASSED' : 'FAILED'}`);
     if (!success) process.exit(1);

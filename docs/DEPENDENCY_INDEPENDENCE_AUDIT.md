@@ -1,4 +1,4 @@
-# Aether Framework: Dependency Independence Audit Report
+# Gati Framework: Dependency Independence Audit Report
 
 **Date:** August 20, 2026  
 **Version:** `1.0.0-rc.1`  
@@ -9,11 +9,11 @@
 
 ## Executive Summary
 
-An exhaustive read-only dependency audit was conducted across all 11 `@aether/*` framework packages, the root monorepo manifest, build tooling, lockfile representations, and an isolated external consumer project.
+An exhaustive read-only dependency audit was conducted across all 11 `@gati/*` framework packages, the root monorepo manifest, build tooling, lockfile representations, and an isolated external consumer project.
 
 ### Audit Verdict: **CONDITIONAL PASS**
-- **Aether Core Framework (`packages/*`)**: **100% PURE & INDEPENDENT**. All 11 framework packages have **zero** direct, transitive, or peer dependencies on React, React-DOM, Vue, Angular, Svelte, Solid, Preact, Lit, or any other competing UI framework.
-- **Root Repository Application (`src/*`)**: The root application is an interactive documentation portal and architectural specification browser crafted with React 19 and Tailwind CSS to power the AI Studio preview environment. It does not leak into the published `@aether/*` distribution packages.
+- **Gati Core Framework (`packages/*`)**: **100% PURE & INDEPENDENT**. All 11 framework packages have **zero** direct, transitive, or peer dependencies on React, React-DOM, Vue, Angular, Svelte, Solid, Preact, Lit, or any other competing UI framework.
+- **Root Repository Application (`src/*`)**: The root application is an interactive documentation portal and architectural specification browser crafted with React 19 and Tailwind CSS to power the AI Studio preview environment. It does not leak into the published `@gati/*` distribution packages.
 - **External Consumer Verification**: Verified in an isolated, external environment with zero third-party UI framework dependencies.
 
 ---
@@ -22,56 +22,56 @@ An exhaustive read-only dependency audit was conducted across all 11 `@aether/*`
 
 ### Package Manifest Analysis (`packages/*/package.json`)
 
-All 11 packages have zero external production runtime dependencies. They only depend on sibling `@aether/*` packages or have zero dependencies:
+All 11 packages have zero external production runtime dependencies. They only depend on sibling `@gati/*` packages or have zero dependencies:
 
 ```
-@aether/reactivity (v1.0.0-rc.1)
+@gati/reactivity (v1.0.0-rc.1)
   └── [Zero Dependencies]
 
-@aether/security (v1.0.0-rc.1)
+@gati/security (v1.0.0-rc.1)
   └── [Zero Dependencies]
 
-@aether/runtime (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  └── @aether/security (^1.0.0-rc.1)
+@gati/runtime (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  └── @gati/security (^1.0.0-rc.1)
 
-@aether/compiler (v1.0.0-rc.1)
-  └── @aether/security (^1.0.0-rc.1)
+@gati/compiler (v1.0.0-rc.1)
+  └── @gati/security (^1.0.0-rc.1)
 
-@aether/router (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  ├── @aether/runtime (^1.0.0-rc.1)
-  └── @aether/security (^1.0.0-rc.1)
+@gati/router (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  ├── @gati/runtime (^1.0.0-rc.1)
+  └── @gati/security (^1.0.0-rc.1)
 
-@aether/http (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  └── @aether/security (^1.0.0-rc.1)
+@gati/http (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  └── @gati/security (^1.0.0-rc.1)
 
-@aether/forms (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  └── @aether/runtime (^1.0.0-rc.1)
+@gati/forms (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  └── @gati/runtime (^1.0.0-rc.1)
 
-@aether/ssr (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  └── @aether/security (^1.0.0-rc.1)
+@gati/ssr (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  └── @gati/security (^1.0.0-rc.1)
 
-@aether/testing (v1.0.0-rc.1)
-  ├── @aether/reactivity (^1.0.0-rc.1)
-  └── @aether/runtime (^1.0.0-rc.1)
+@gati/testing (v1.0.0-rc.1)
+  ├── @gati/reactivity (^1.0.0-rc.1)
+  └── @gati/runtime (^1.0.0-rc.1)
 
-@aether/devtools (v1.0.0-rc.1)
-  └── @aether/reactivity (^1.0.0-rc.1)
+@gati/devtools (v1.0.0-rc.1)
+  └── @gati/reactivity (^1.0.0-rc.1)
 
-@aether/cli (v1.0.0-rc.1)
-  └── @aether/compiler (^1.0.0-rc.1)
+@gati/cli (v1.0.0-rc.1)
+  └── @gati/compiler (^1.0.0-rc.1)
 ```
 
 ### Dependency Classification Taxonomy
 
-1. **Framework Runtime Dependencies**: **0 external dependencies** across all 11 `@aether/*` packages.
+1. **Framework Runtime Dependencies**: **0 external dependencies** across all 11 `@gati/*` packages.
 2. **Build/Dev Dependencies**: Node.js toolchain (`typescript`, `tsx`, `esbuild`, `@types/node`).
 3. **Documentation/Demo Dependencies**: Root application (`src/*`) dependencies (`react`, `react-dom`, `lucide-react`, `motion`, `react-markdown`, `remark-gfm`, `@tailwindcss/vite`, `@vitejs/plugin-react`).
-4. **Example Application Dependencies**: Zero external dependencies (only `@aether/*` packages).
+4. **Example Application Dependencies**: Zero external dependencies (only `@gati/*` packages).
 5. **Test-Only Dependencies**: Built-in Node test runner (`node:test`, `node:assert/strict`).
 
 ---
@@ -101,17 +101,17 @@ An exhaustive regex and AST scan was conducted across all **77 production source
 
 | Package | Version | Production Dependencies | Dev Dependencies | Peer Dependencies | Competing Framework Dependency | Independent |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `@aether/reactivity` | `1.0.0-rc.1` | None | None | None | None | **YES** |
-| `@aether/security` | `1.0.0-rc.1` | None | None | None | None | **YES** |
-| `@aether/runtime` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/security` | None | None | None | **YES** |
-| `@aether/compiler` | `1.0.0-rc.1` | `@aether/security` | None | None | None | **YES** |
-| `@aether/router` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/runtime`, `@aether/security` | None | None | None | **YES** |
-| `@aether/http` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/security` | None | None | None | **YES** |
-| `@aether/forms` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/runtime` | None | None | None | **YES** |
-| `@aether/ssr` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/security` | None | None | None | **YES** |
-| `@aether/testing` | `1.0.0-rc.1` | `@aether/reactivity`, `@aether/runtime` | None | None | None | **YES** |
-| `@aether/devtools` | `1.0.0-rc.1` | `@aether/reactivity` | None | None | None | **YES** |
-| `@aether/cli` | `1.0.0-rc.1` | `@aether/compiler` | None | None | None | **YES** |
+| `@gati/reactivity` | `1.0.0-rc.1` | None | None | None | None | **YES** |
+| `@gati/security` | `1.0.0-rc.1` | None | None | None | None | **YES** |
+| `@gati/runtime` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
+| `@gati/compiler` | `1.0.0-rc.1` | `@gati/security` | None | None | None | **YES** |
+| `@gati/router` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime`, `@gati/security` | None | None | None | **YES** |
+| `@gati/http` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
+| `@gati/forms` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime` | None | None | None | **YES** |
+| `@gati/ssr` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
+| `@gati/testing` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime` | None | None | None | **YES** |
+| `@gati/devtools` | `1.0.0-rc.1` | `@gati/reactivity` | None | None | None | **YES** |
+| `@gati/cli` | `1.0.0-rc.1` | `@gati/compiler` | None | None | None | **YES** |
 
 ---
 
@@ -140,45 +140,45 @@ The root `package.json` contains dependencies required to run the interactive do
 
 Every package was packed into an isolated directory and unpacked/inspected:
 
-- `aether-reactivity-1.0.0-rc.1.tgz` (7.3 kB)
-- `aether-runtime-1.0.0-rc.1.tgz` (10.1 kB)
-- `aether-compiler-1.0.0-rc.1.tgz` (16.0 kB)
-- `aether-router-1.0.0-rc.1.tgz` (5.8 kB)
-- `aether-http-1.0.0-rc.1.tgz` (6.1 kB)
-- `aether-forms-1.0.0-rc.1.tgz` (6.6 kB)
-- `aether-security-1.0.0-rc.1.tgz` (7.7 kB)
-- `aether-ssr-1.0.0-rc.1.tgz` (13.5 kB)
-- `aether-testing-1.0.0-rc.1.tgz` (5.0 kB)
-- `aether-devtools-1.0.0-rc.1.tgz` (9.5 kB)
-- `aether-cli-1.0.0-rc.1.tgz` (26.2 kB)
+- `gati-reactivity-1.0.0-rc.1.tgz` (7.3 kB)
+- `gati-runtime-1.0.0-rc.1.tgz` (10.1 kB)
+- `gati-compiler-1.0.0-rc.1.tgz` (16.0 kB)
+- `gati-router-1.0.0-rc.1.tgz` (5.8 kB)
+- `gati-http-1.0.0-rc.1.tgz` (6.1 kB)
+- `gati-forms-1.0.0-rc.1.tgz` (6.6 kB)
+- `gati-security-1.0.0-rc.1.tgz` (7.7 kB)
+- `gati-ssr-1.0.0-rc.1.tgz` (13.5 kB)
+- `gati-testing-1.0.0-rc.1.tgz` (5.0 kB)
+- `gati-devtools-1.0.0-rc.1.tgz` (9.5 kB)
+- `gati-cli-1.0.0-rc.1.tgz` (26.2 kB)
 
 ### Tarball Findings
 1. **Zero External Runtime Dependencies**: Packed tarballs contain only their own source code, README, LICENSE, and manifest.
 2. **Zero Competing Frameworks**: No React, Vue, Angular, Svelte, or Solid runtime code is bundled into any tarball.
-3. **Clean Installation**: Installing any `@aether/*` package outside this repository installs only `@aether/*` peer modules.
+3. **Clean Installation**: Installing any `@gati/*` package outside this repository installs only `@gati/*` peer modules.
 
 ---
 
 ## Audit 6 — Clean Consumer Test (100% Independent)
 
-A completely clean, external directory was created at `/tmp/aether-independent-consumer`.
+A completely clean, external directory was created at `/tmp/gati-independent-consumer`.
 
 ### Setup
-Installed **ONLY** the 8 packed `@aether/*` tarballs:
-- `@aether/reactivity`
-- `@aether/runtime`
-- `@aether/compiler`
-- `@aether/router`
-- `@aether/http`
-- `@aether/forms`
-- `@aether/security`
-- `@aether/ssr`
+Installed **ONLY** the 8 packed `@gati/*` tarballs:
+- `@gati/reactivity`
+- `@gati/runtime`
+- `@gati/compiler`
+- `@gati/router`
+- `@gati/http`
+- `@gati/forms`
+- `@gati/security`
+- `@gati/ssr`
 
 **Explicitly Excluded**: `react`, `react-dom`, `vue`, `angular`, `svelte`, `solid-js`, `preact`.
 
 ### Executed Application Verification Matrix
 
-| # | Feature | Aether Primitive / API | Verification Result |
+| # | Feature | Gati Primitive / API | Verification Result |
 | :--- | :--- | :--- | :--- |
 | 1 | **Signal** | `signal(1)` -> `count.set(5)` | ✅ PASS |
 | 2 | **Computed** | `computed(() => count.value * 2)` | ✅ PASS |
@@ -218,10 +218,10 @@ Inspected lockfile entries for competing frameworks:
 **CONDITIONAL PASS — Framework packages are independent but root demo/development application uses another framework.**
 
 ### Analysis & Next Steps (When Dogfooding):
-1. **Framework Independence**: The core framework (`packages/*`) is already **100% independent**. Developers installing `@aether/*` packages via npm get an ultra-lightweight, zero-dependency, pure framework.
+1. **Framework Independence**: The core framework (`packages/*`) is already **100% independent**. Developers installing `@gati/*` packages via npm get an ultra-lightweight, zero-dependency, pure framework.
 2. **Root Website Separation**: The root folder (`src/`) is currently a React 19 documentation portal for AI Studio preview.
 3. **Future Dogfooding Plan**:
-   - Once Aether CLI and Vite plugin (`@aether/cli`) are deployed to production projects, the documentation viewer can optionally be ported to dogfood native Aether components (`@aether/runtime`, `@aether/router`, and `@aether/compiler`).
+   - Once Gati CLI and Vite plugin (`@gati/cli`) are deployed to production projects, the documentation viewer can optionally be ported to dogfood native Gati components (`@gati/runtime`, `@gati/router`, and `@gati/compiler`).
    - For now, no changes are required to `packages/*` as they are completely decoupled and independent.
 
 ---

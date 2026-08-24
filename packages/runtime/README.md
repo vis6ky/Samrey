@@ -1,29 +1,29 @@
-# @aether/runtime
+# @gati/runtime
 
 Direct DOM rendering engine, reactive hole bindings, declarative control flow, and lifecycle management with zero Virtual DOM.
 
 ## Purpose
 
-`@aether/runtime` provides the core rendering and component system for Aether applications. It executes components exactly once to construct direct DOM trees and attaches fine-grained signal subscriptions to dynamic text and attribute slots.
+`@gati/runtime` provides the core rendering and component system for Gati applications. It executes components exactly once to construct direct DOM trees and attaches fine-grained signal subscriptions to dynamic text and attribute slots.
 
 ## Installation
 
 ```bash
-npm install @aether/runtime @aether/reactivity
+npm install @gati/runtime @gati/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { el, Show, For, mount } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, Show, For, mount } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 
 function App() {
   const count = signal(0);
   const items = signal(['Alpha', 'Beta', 'Gamma']);
 
   return el('div', { class: 'app-container' },
-    el('h1', null, 'Aether Runtime Application'),
+    el('h1', null, 'Gati Runtime Application'),
     el('button', {
       type: 'button',
       onClick: () => { count.value++; }
@@ -74,7 +74,7 @@ Automatic HTML attribute sanitization and URL validation for `href`, `src`, and 
 
 ## Related Packages
 
-- `@aether/reactivity` — Fine-grained signals engine powering runtime bindings.
-- `@aether/router` — Declarative routing for Aether applications.
-- `@aether/ssr` — Server-Side Rendering and hydration.
+- `@gati/reactivity` — Fine-grained signals engine powering runtime bindings.
+- `@gati/router` — Declarative routing for Gati applications.
+- `@gati/ssr` — Server-Side Rendering and hydration.
 

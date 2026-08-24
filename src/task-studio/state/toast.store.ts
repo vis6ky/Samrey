@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Reactive Toast Notification Store
+ * @gati/task-studio - Reactive Toast Notification Store
  */
 
-import { signal, ReadonlySignal } from '@aether/reactivity';
+import { signal, ReadonlySignal } from '@gati/reactivity';
 import { ToastMessage } from '../types.js';
 
 const toastsSignal = signal<ToastMessage[]>([]);

@@ -1,8 +1,8 @@
-# Aether Server-Side Rendering (SSR) & Client Hydration Architecture
+# Gati Server-Side Rendering (SSR) & Client Hydration Architecture
 
 ## Overview
 
-Aether provides a first-class, high-performance isomorphic rendering architecture. It supports Server-Side Rendering (SSR), Static Site Generation (SSG), fine-grained client hydration, streaming HTML, and robust security guardrails against XSS and secret credential leakage.
+Gati provides a first-class, high-performance isomorphic rendering architecture. It supports Server-Side Rendering (SSR), Static Site Generation (SSG), fine-grained client hydration, streaming HTML, and robust security guardrails against XSS and secret credential leakage.
 
 ```
 Server (Node / Edge)
@@ -25,13 +25,13 @@ Interactive Application
 ## 1. Architectural Principles
 
 ### Direct Template Hoisting & Zero VDOM
-Unlike traditional Virtual DOM frameworks that reconstruct an entire synthetic tree on both server and client, Aether renders semantic HTML directly on the server and attaches fine-grained reactive subscriptions (`effect`, `signal`) in-place during client hydration.
+Unlike traditional Virtual DOM frameworks that reconstruct an entire synthetic tree on both server and client, Gati renders semantic HTML directly on the server and attaches fine-grained reactive subscriptions (`effect`, `signal`) in-place during client hydration.
 
 ### Zero-Waterfall Server Data Hydration
 When components use `createServerData(key, loader)`, data is fetched concurrently during the server render pass. The resolved values are embedded into a secure, Unicode-escaped `<script id="__AETHER_STATE__">` tag. On boot, client signals synchronously read the cached state with **zero additional client-side network roundtrips**.
 
 ### Zero-Overhead Inline Event Delegator
-To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Aether injects a ~200-byte capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__AETHER_EVENTS__` and immediately replayed to the hydrated DOM nodes upon `hydrate()`.
+To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Gati injects a ~200-byte capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__AETHER_EVENTS__` and immediately replayed to the hydrated DOM nodes upon `hydrate()`.
 
 ---
 
@@ -41,7 +41,7 @@ To eliminate the "uncanny valley" (where the page is visible but unresponsive be
 Renders an application component tree to a full, valid HTML document:
 
 ```typescript
-import { renderToString, createSSRContext } from '@aether/ssr';
+import { renderToString, createSSRContext } from '@gati/ssr';
 import { App } from './app.js';
 
 const html = await renderToString(App, {
@@ -55,7 +55,7 @@ const html = await renderToString(App, {
 Streams HTML chunks incrementally using web-standard `ReadableStream<Uint8Array>`:
 
 ```typescript
-import { renderToStream } from '@aether/ssr';
+import { renderToStream } from '@gati/ssr';
 
 const stream = renderToStream(App, {
   title: 'Real-time Streaming Page'
@@ -71,10 +71,10 @@ return new Response(stream, {
 
 ## 3. Static Site Generation (SSG)
 
-Aether's `generateStaticSite` engine compiles route manifests into pre-rendered static `.html` files, dynamic parameterized paths, and automated XML sitemaps:
+Gati's `generateStaticSite` engine compiles route manifests into pre-rendered static `.html` files, dynamic parameterized paths, and automated XML sitemaps:
 
 ```typescript
-import { generateStaticSite, StaticRouteConfig } from '@aether/ssr';
+import { generateStaticSite, StaticRouteConfig } from '@gati/ssr';
 
 const routes: StaticRouteConfig[] = [
   { path: '/', component: () => '<h1>Home</h1>' },
@@ -92,7 +92,7 @@ const routes: StaticRouteConfig[] = [
 const result = await generateStaticSite(routes, {
   outDir: 'dist/static',
   generateSitemap: true,
-  baseUrl: 'https://aether.dev'
+  baseUrl: 'https://gati.dev'
 });
 ```
 
@@ -101,7 +101,7 @@ const result = await generateStaticSite(routes, {
 ## 4. Security Model & Secret Leakage Prevention
 
 ### Automated Secret Stripping (`SecretGuard`)
-Server state frequently contains sensitive environment variables or database objects. To prevent accidental credential exposure, Aether's `stripSecrets` engine scans state payloads recursively and strips keys matching sensitive patterns:
+Server state frequently contains sensitive environment variables or database objects. To prevent accidental credential exposure, Gati's `stripSecrets` engine scans state payloads recursively and strips keys matching sensitive patterns:
 - Passwords (`password`, `passwordHash`, `salt`)
 - Secret keys and API keys (`apiKey`, `clientSecret`, `secretKey`, `serviceRole`)
 - Authentication tokens (`bearer`, `jwt`, `token`, `session`, `cookie`)
@@ -121,7 +121,7 @@ During client hydration, `safeJsonParse` revives data while scrubbing `__proto__
 ## 5. Client Hydration Engine
 
 ```typescript
-import { hydrate, deserializeHydrationState } from '@aether/ssr';
+import { hydrate, deserializeHydrationState } from '@gati/ssr';
 import { App } from './app.js';
 
 const state = deserializeHydrationState();

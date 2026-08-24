@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - Main Entry Point
+ * @gati/compiler - Main Entry Point
  */
 
 export * from './air.js';

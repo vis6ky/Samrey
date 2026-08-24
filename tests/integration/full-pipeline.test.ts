@@ -75,7 +75,7 @@ class MockDOMElement {
   }
 }
 
-describe('Aether Full Pipeline End-to-End Integration', () => {
+describe('Gati Full Pipeline End-to-End Integration', () => {
   it('executes full end-to-end pipeline: Compiler -> AST -> AIR -> Codegen -> Reactivity -> Runtime -> Security', () => {
     // 1. Source Template
     const rawTemplate = `
@@ -119,8 +119,8 @@ describe('Aether Full Pipeline End-to-End Integration', () => {
     const sanitizedHref = computed(() => sanitizeUri(user.profileUrl.value));
     assert.equal(sanitizedHref.value, 'about:blank'); // Blocked!
 
-    user.profileUrl.value = 'https://aether.dev/users/alice';
-    assert.equal(sanitizedHref.value, 'https://aether.dev/users/alice'); // Safe
+    user.profileUrl.value = 'https://gati.dev/users/alice';
+    assert.equal(sanitizedHref.value, 'https://gati.dev/users/alice'); // Safe
   });
 
   it('runs complete realistic application: Components, Show, For, Router, HTTP, Standard Schema Forms, SSR and Hydration', async () => {

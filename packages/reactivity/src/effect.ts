@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Effect Side-Effect Primitive
+ * @gati/reactivity - Effect Side-Effect Primitive
  */
 
 import { Dependency, Subscriber } from './types.js';
@@ -29,7 +29,7 @@ export function effect(fn: () => void | (() => void)): () => void {
         try {
           userCleanup();
         } catch (err) {
-          console.error('[Aether Reactivity] Error during effect cleanup:', err);
+          console.error('[Gati Reactivity] Error during effect cleanup:', err);
         }
         userCleanup = undefined;
       }
@@ -58,7 +58,7 @@ export function effect(fn: () => void | (() => void)): () => void {
       try {
         userCleanup();
       } catch (err) {
-        console.error('[Aether Reactivity] Error during effect cleanup:', err);
+        console.error('[Gati Reactivity] Error during effect cleanup:', err);
       }
     }
     for (const source of node.sources) {

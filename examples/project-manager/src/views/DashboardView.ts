@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Dashboard Overview View
- * Native Aether Runtime View with computed metrics and reactive summaries
+ * Gati Project Manager — Dashboard Overview View
+ * Native Gati Runtime View with computed metrics and reactive summaries
  */
 
-import { el, For, Show } from '@aether/runtime';
+import { el, For, Show } from '@gati/runtime';
 import { store, projectMetrics, filteredTasks } from '../state.js';
 import { ProjectCard } from '../components/ProjectCard.js';
 import { TaskItem } from '../components/TaskItem.js';

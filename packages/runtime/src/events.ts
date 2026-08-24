@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Delegated & Direct Event Binding
+ * @gati/runtime - Delegated & Direct Event Binding
  */
 
-import { onCleanup } from '@aether/reactivity';
+import { onCleanup } from '@gati/reactivity';
 
 export function on(
   element: EventTarget,

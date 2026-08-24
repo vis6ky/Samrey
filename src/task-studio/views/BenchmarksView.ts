@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Live Keyed DOM Reconciliation & Performance Benchmarks
+ * @gati/task-studio - Live Keyed DOM Reconciliation & Performance Benchmarks
  */
 
-import { el, For, Show } from '@aether/runtime';
-import { signal, batch } from '@aether/reactivity';
+import { el, For, Show } from '@gati/runtime';
+import { signal, batch } from '@gati/reactivity';
 import { Card } from '../components/ui/Card.js';
 import { Button } from '../components/ui/Button.js';
 
@@ -39,7 +39,7 @@ export function BenchmarksView(): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-cyan-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-cyan-500 animate-pulse' }),
-      el('span', null, 'Aether Fine-Grained Keyed Reconciliation Engine')
+      el('span', null, 'Gati Fine-Grained Keyed Reconciliation Engine')
     ),
     el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'DOM & Reactivity Performance Benchmarks'),
     el(

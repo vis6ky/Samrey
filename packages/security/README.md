@@ -1,15 +1,15 @@
-# @aether/security
+# @gati/security
 
 Zero-trust contextual sanitization, W3C Trusted Types policy management, prototype pollution defense, SSR serialization escaping, and anti-CSRF token verification.
 
 ## Purpose
 
-`@aether/security` provides defense-in-depth security utilities designed specifically for modern web applications and reactive frameworks. It guarantees protection against Cross-Site Scripting (XSS), prototype pollution, URI scheme injection, and CSRF attacks.
+`@gati/security` provides defense-in-depth security utilities designed specifically for modern web applications and reactive frameworks. It guarantees protection against Cross-Site Scripting (XSS), prototype pollution, URI scheme injection, and CSRF attacks.
 
 ## Installation
 
 ```bash
-npm install @aether/security
+npm install @gati/security
 ```
 
 ## Quick Example
@@ -23,7 +23,7 @@ import {
   safeJsonStringify,
   createCsrfToken,
   validateCsrfToken
-} from '@aether/security';
+} from '@gati/security';
 
 // 1. Sanitize HTML
 const clean = sanitizeHtml('<script>alert(1)</script><p>Safe content</p>');
@@ -36,8 +36,8 @@ const url = sanitizeUrl('javascript:alert(document.cookie)');
 const isOk = isSafeUrl('https://example.com'); // true
 
 // 3. Prototype Pollution Defense
-const obj = safeJsonParse('{"__proto__": {"polluted": true}, "name": "Aether"}');
-console.log(obj.name); // "Aether"
+const obj = safeJsonParse('{"__proto__": {"polluted": true}, "name": "Gati"}');
+console.log(obj.name); // "Gati"
 console.log(({} as any).polluted); // undefined
 
 // 4. Safe JSON Serialization for SSR
@@ -71,7 +71,7 @@ Zero-eval execution model. All inputs are contextually parsed and escaped withou
 
 ## Related Packages
 
-- `@aether/runtime` — Uses `@aether/security` for safe attribute binding.
-- `@aether/ssr` — Uses `@aether/security` for SSR state hydration serialization.
-- `@aether/forms` — Form validation with CSRF integration.
+- `@gati/runtime` — Uses `@gati/security` for safe attribute binding.
+- `@gati/ssr` — Uses `@gati/security` for SSR state hydration serialization.
+- `@gati/forms` — Form validation with CSRF integration.
 

@@ -1,8 +1,8 @@
-# Aether Framework — Zero Foreign Framework Purity Report
+# Gati Framework — Zero Foreign Framework Purity Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
-**Architectural Mandate:** "Aether Must Use Aether"  
+**Architectural Mandate:** "Gati Must Use Gati"  
 **Purity Status:** PASS (100% Zero-Foreign-Framework Compliance)  
 
 ## 1. Prohibited Framework Audit Summary
@@ -16,4 +16,4 @@ The following foreign UI and state management frameworks were scanned across all
 - **Foreign Component Framework Imports Found:** 0
 
 ## 2. Package Dependency Audit
-All 11 packages depend exclusively on other native `@aether/*` modules or minimal Node.js standard libraries.
+All 11 packages depend exclusively on other native `@gati/*` modules or minimal Node.js standard libraries.

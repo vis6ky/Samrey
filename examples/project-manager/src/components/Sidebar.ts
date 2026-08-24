@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Sidebar Navigation Component
- * 100% Native Aether Runtime with Signal-driven active route tracking
+ * Gati Project Manager — Sidebar Navigation Component
+ * 100% Native Gati Runtime with Signal-driven active route tracking
  */
 
-import { el, For, Show } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, For, Show } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { isSidebarCollapsed, store } from '../state.js';
 
 export interface NavItem {
@@ -106,8 +106,8 @@ export function Sidebar(props: {
         el(
           'div',
           { class: 'space-y-1' },
-          el('div', { class: 'font-mono text-slate-400' }, 'Aether v1.0.0-rc.1'),
-          el('div', { class: 'text-slate-500' }, '100% Pure Aether Primitives')
+          el('div', { class: 'font-mono text-slate-400' }, 'Gati v1.0.0-rc.1'),
+          el('div', { class: 'text-slate-500' }, '100% Pure Gati Primitives')
         ),
       fallback: () => el('div', { class: 'text-center font-mono text-xs text-slate-600' }, 'Æ')
     })

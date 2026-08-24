@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/http - Reactive Resource Primitive
+ * @gati/http - Reactive Resource Primitive
  */
 
-import { signal, computed, onCleanup } from '@aether/reactivity';
+import { signal, computed, onCleanup } from '@gati/reactivity';
 import { Resource, ResourceStatus } from './types.js';
 
 export function createResource<T>(

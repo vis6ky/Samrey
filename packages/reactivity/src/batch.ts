@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Transaction Batching & Dependency Tracking
+ * @gati/reactivity - Transaction Batching & Dependency Tracking
  */
 
 import { Subscriber, Dependency } from './types.js';

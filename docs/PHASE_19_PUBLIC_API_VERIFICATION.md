@@ -1,9 +1,9 @@
-# Aether Framework — Phase 19 Public API Export Verification Report
+# Gati Framework — Phase 19 Public API Export Verification Report
 Target Version: 1.0.0-rc.1
 License: Apache-2.0
 
 ## Executive Summary
-This document provides an exhaustive, automated verification of all public APIs across the 11 `@aether/*` packages in the monorepo, compared directly against `docs/PUBLIC_API.md`.
+This document provides an exhaustive, automated verification of all public APIs across the 11 `@gati/*` packages in the monorepo, compared directly against `docs/PUBLIC_API.md`.
 
 All public symbols were loaded, invoked, and validated in an isolated clean-room consumer environment.
 
@@ -11,7 +11,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
 
 ## Package Verification Matrix
 
-### 1. `@aether/reactivity`
+### 1. `@gati/reactivity`
 - **Status:** PASS
 - **Exports Verified:**
   - `signal` (Signal constructor)
@@ -28,7 +28,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `useContext` (Context value consumer)
   - `createOwner`, `getOwner`, `runWithOwner`, `onCleanup`
 
-### 2. `@aether/runtime`
+### 2. `@gati/runtime`
 - **Status:** PASS
 - **Exports Verified:**
   - `el` (Fine-grained DOM / Headless node builder)
@@ -48,7 +48,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `onMount`, `onCleanup`, `onError`
   - `createComponent`
 
-### 3. `@aether/security`
+### 3. `@gati/security`
 - **Status:** PASS
 - **Exports Verified:**
   - `sanitizeHtml` / `sanitizeHtmlString` (AST tag/attribute sanitizer)
@@ -60,22 +60,22 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `safeJsonStringify` / `escapeForScriptPayload` (XSS-safe JSON stringifier)
   - `createCsrfToken` (Cryptographically random CSRF generator)
   - `validateCsrfToken` (Timing-safe constant-time CSRF validator)
-  - `TrustedTypesPolicy` / `getAetherTrustedPolicy` (W3C Trusted Types provider)
+  - `TrustedTypesPolicy` / `getGatiTrustedPolicy` (W3C Trusted Types provider)
 
-### 4. `@aether/compiler`
+### 4. `@gati/compiler`
 - **Status:** PASS
 - **Exports Verified:**
-  - `compileTemplate` (Aether template to AIR & JS compiler)
+  - `compileTemplate` (Gati template to AIR & JS compiler)
   - `parseTemplate` (Recursive-descent template parser)
   - `buildAIR` / `buildAIRFromAST` (Intermediate representation builder)
   - `generateCode` / `generateModuleCode` (JS Code generator)
   - `classifySecurityNode` / `classifyBindingContext` (Security context classifier)
   - `lintAccessibility` / `lintA11y` (Static accessibility linter)
-  - `AetherCompilerError` (Structured compiler error class)
+  - `GatiCompilerError` (Structured compiler error class)
   - `generateSourceFrame` (Source code frame generator)
   - `ERROR_REGISTRY` (Standard compiler and runtime error definitions)
 
-### 5. `@aether/router`
+### 5. `@gati/router`
 - **Status:** PASS
 - **Exports Verified:**
   - `createRouter` (Router state machine and navigation engine)
@@ -88,7 +88,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `useRouter`, `useParams`, `useLocation`, `useSearchParams`
   - `createBrowserHistory`, `createMemoryHistory`
 
-### 6. `@aether/http`
+### 6. `@gati/http`
 - **Status:** PASS
 - **Exports Verified:**
   - `createResource` (Reactive async resource manager)
@@ -96,7 +96,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `createHttpCache` (In-memory TTL HTTP cache with cache invalidation)
   - `HttpError` (HTTP response error class)
 
-### 7. `@aether/forms`
+### 7. `@gati/forms`
 - **Status:** PASS
 - **Exports Verified:**
   - `createForm` (Reactive schema form manager)
@@ -104,7 +104,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `validateSchema` (Standard Schema ~v1 executor)
   - `getAccessibleFieldProps` (ARIA & accessibility attributes generator)
 
-### 8. `@aether/ssr`
+### 8. `@gati/ssr`
 - **Status:** PASS
 - **Exports Verified:**
   - `renderToString` (Async SSR HTML renderer with state serialization)
@@ -115,7 +115,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `serializeStateForHydration` / `escapeJsonState` (Script injection safe JSON state tag builder)
   - `createSSRContext`, `runWithSSRContext`, `resolveSSRContext`
 
-### 9. `@aether/testing`
+### 9. `@gati/testing`
 - **Status:** PASS
 - **Exports Verified:**
   - `renderTestComponent` (Isolated container test renderer)
@@ -124,23 +124,23 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `cleanupAllTestContainers` (Test container disposal coordinator)
   - `createMockResource` (Test HTTP resource mock builder)
 
-### 10. `@aether/devtools`
+### 10. `@gati/devtools`
 - **Status:** PASS
 - **Exports Verified:**
-  - `DevToolsBridge`, `aetherDevToolsBridge`, `AetherDevToolsBridge`
+  - `DevToolsBridge`, `aetherDevToolsBridge`, `GatiDevToolsBridge`
   - `initDevTools` (Origin-locked DevTools initializer)
   - `GraphInspector`, `ReactiveGraphInspector` (Signal dependency graph inspector)
   - `ComponentInspector` (Component hierarchy inspector)
   - `PerformanceInspector`, `PerfInspector` (Fine-grained update profiler)
   - `NetworkInspector`, `FormInspector`, `RouterInspector`
 
-### 11. `@aether/cli`
+### 11. `@gati/cli`
 - **Status:** PASS
 - **Exports Verified:**
   - `runCLI` (Command-line interface runner)
   - `generateStarterProject` (Template generator: ssr, spa, minimal, ssg)
   - `aetherVitePlugin` (Vite compiler integration plugin)
-  - `runAetherAudit` (Security and accessibility auditor)
+  - `runGatiAudit` (Security and accessibility auditor)
   - `CLI_VERSION` (Version constant = '1.0.0-rc.1')
 
 ---

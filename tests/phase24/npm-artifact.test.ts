@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 NPM Artifact Certification
+ * @gati/monorepo - Phase 24 NPM Artifact Certification
  * Packs and verifies all 11 npm tarballs for correct file contents, permissions, licenses, and metadata.
  */
 
@@ -58,7 +58,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
       const pkgPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
       const manifest = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
-      assert.strictEqual(manifest.name, `@aether/${pkg}`);
+      assert.strictEqual(manifest.name, `@gati/${pkg}`);
       assert.strictEqual(manifest.version, '1.0.0');
       assert.strictEqual(manifest.license, 'Apache-2.0');
       assert.ok(manifest.repository, 'repository must be defined');

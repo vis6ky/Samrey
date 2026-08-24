@@ -1,17 +1,17 @@
-# Aether Framework — Phase 11 Security Threat Model, Penetration Testing & Hardening Audit
+# Gati Framework — Phase 11 Security Threat Model, Penetration Testing & Hardening Audit
 
 ## Executive Summary
 
-Phase 11 establishes a comprehensive threat model, adversarial penetration testing framework, fuzzing suite, and security hardening layer across the entire Aether monorepo (`@aether/security`, `@aether/compiler`, `@aether/runtime`, `@aether/reactivity`, `@aether/router`, `@aether/ssr`, `@aether/forms`, `@aether/http`, `@aether/devtools`, and `@aether/cli`).
+Phase 11 establishes a comprehensive threat model, adversarial penetration testing framework, fuzzing suite, and security hardening layer across the entire Gati monorepo (`@gati/security`, `@gati/compiler`, `@gati/runtime`, `@gati/reactivity`, `@gati/router`, `@gati/ssr`, `@gati/forms`, `@gati/http`, `@gati/devtools`, and `@gati/cli`).
 
 > **Security Posture & Non-Claim Notice**:  
-> In accordance with security engineering best practices, **Aether does not claim to be "100% secure" or invulnerable**. No software system can guarantee total immunity against all present and future exploits. The goal of Phase 11 is discovering vulnerabilities, implementing rigorous defense-in-depth mitigations, fuzzing critical subsystems, and hardening attack surfaces against common and advanced web exploit primitives.
+> In accordance with security engineering best practices, **Gati does not claim to be "100% secure" or invulnerable**. No software system can guarantee total immunity against all present and future exploits. The goal of Phase 11 is discovering vulnerabilities, implementing rigorous defense-in-depth mitigations, fuzzing critical subsystems, and hardening attack surfaces against common and advanced web exploit primitives.
 
 ---
 
 ## 1. Threat Model & Architecture
 
-Aether processes untrusted data across multiple distinct lifecycle stages:
+Gati processes untrusted data across multiple distinct lifecycle stages:
 1. **Compilation Time**: Parsing untrusted developer templates or dynamic JSX-like templates into Abstract Interface Representation (AIR) and JavaScript code.
 2. **SSR / Server Serialization**: Rendering component trees into static HTML and serializing reactive state dictionaries into hydration script tags.
 3. **Client-Side Hydration**: Reconnecting client reactivity graphs to server-rendered DOM nodes and replaying queued user interaction events.
@@ -45,7 +45,7 @@ Aether processes untrusted data across multiple distinct lifecycle stages:
 
 ## 3. Penetration Testing & Fuzzing Verification
 
-Two dedicated adversarial test suites have been added to `@aether/security`:
+Two dedicated adversarial test suites have been added to `@gati/security`:
 
 ### 1. Adversarial Penetration Suite (`adversarial-penetration.test.ts`)
 Executes targeted exploit payloads for all 9 primary vulnerability categories:
@@ -89,4 +89,4 @@ All 122 unit, integration, adversarial, fuzzing, and end-to-end tests pass clean
 
 1. **Third-Party Dependencies**: Continuous auditing via `npm audit` and lockfile pinning to prevent supply chain injection.
 2. **CSP (Content Security Policy)**: Production applications are advised to enforce strict Content Security Policy headers (including `require-trusted-types-for 'script'` and `object-src 'none'`).
-3. **User-Supplied Raw HTML**: Applications that genuinely require unescaped rich HTML should use DOMPurify in conjunction with Aether's Trusted Types policy.
+3. **User-Supplied Raw HTML**: Applications that genuinely require unescaped rich HTML should use DOMPurify in conjunction with Gati's Trusted Types policy.

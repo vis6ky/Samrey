@@ -1,9 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createResource, RequestCache } from '../src/index.js';
-import { signal } from '@aether/reactivity';
+import { signal } from '@gati/reactivity';
 
-describe('@aether/http', () => {
+describe('@gati/http', () => {
   it('handles createResource state transitions and data loading', async () => {
     const userId = signal(1);
 

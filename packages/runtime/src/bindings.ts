@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Fine-Grained Reactive DOM Slot Binders
+ * @gati/runtime - Fine-Grained Reactive DOM Slot Binders
  */
 
-import { effect } from '@aether/reactivity';
-import { sanitizeUri, sanitizeCssStyle } from '@aether/security';
+import { effect } from '@gati/reactivity';
+import { sanitizeUri, sanitizeCssStyle } from '@gati/security';
 
 const DANGEROUS_ATTR_NAMES = new Set([
   'innerhtml',
@@ -40,7 +40,7 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
 
   // Defend against arbitrary inline event handler injection and direct HTML injection via setAttribute
   if (DANGEROUS_ATTR_NAMES.has(lowerName) || lowerName.startsWith('on')) {
-    console.warn(`[Aether Security Warning] Refusing to bind dangerous attribute "${attrName}". Use dedicated event bindings or trusted primitives.`);
+    console.warn(`[Gati Security Warning] Refusing to bind dangerous attribute "${attrName}". Use dedicated event bindings or trusted primitives.`);
     return;
   }
 
@@ -73,7 +73,7 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
         try {
           element.setAttribute(attrName, nextStr);
         } catch (err) {
-          console.warn(`[Aether Runtime] Failed to set attribute "${attrName}":`, err);
+          console.warn(`[Gati Runtime] Failed to set attribute "${attrName}":`, err);
         }
       }
     }

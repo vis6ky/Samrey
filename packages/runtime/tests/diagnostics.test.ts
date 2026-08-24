@@ -12,9 +12,9 @@ import {
   clearDevDiagnosticHistory,
   For
 } from '../src/index.js';
-import { signal } from '@aether/reactivity';
+import { signal } from '@gati/reactivity';
 
-describe('@aether/runtime - Development Diagnostics', () => {
+describe('@gati/runtime - Development Diagnostics', () => {
   it('captures and emits dev diagnostics to registered listeners', () => {
     clearDevDiagnosticHistory();
     const captured: any[] = [];

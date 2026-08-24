@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release License & Legal Header Validation
+ * @gati/monorepo - Release License & Legal Header Validation
  */
 
 import * as fs from 'node:fs';
@@ -37,14 +37,14 @@ export function validateLicense(): LicenseValidationResult {
   for (const pkg of PACKAGES) {
     const pkgDir = path.join(process.cwd(), 'packages', pkg);
     const hasLicense = fs.existsSync(path.join(pkgDir, 'LICENSE')) || rootLicenseExists;
-    packageLicensesPresent[`@aether/${pkg}`] = hasLicense;
+    packageLicensesPresent[`@gati/${pkg}`] = hasLicense;
 
     // Check package manifest
     const manifestPath = path.join(pkgDir, 'package.json');
     if (fs.existsSync(manifestPath)) {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
       if (manifest.license !== 'Apache-2.0') {
-        missingLicenseHeaders.push(`@aether/${pkg} manifest license is not Apache-2.0`);
+        missingLicenseHeaders.push(`@gati/${pkg} manifest license is not Apache-2.0`);
       }
     }
 
@@ -77,7 +77,7 @@ export function validateLicense(): LicenseValidationResult {
 }
 
 if (process.argv[1]?.endsWith('validate-license.ts') || process.argv[1]?.endsWith('validate-license.js')) {
-  console.log('▲ Aether License & Legal Header Audit\n');
+  console.log('▲ Gati License & Legal Header Audit\n');
   const result = validateLicense();
   console.log(`  Root LICENSE file: ${result.rootLicenseExists ? 'PRESENT (Apache-2.0)' : 'MISSING'}`);
   console.log(`  Source files audited: ${result.sourceFilesChecked}`);

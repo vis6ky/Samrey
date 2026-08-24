@@ -7,7 +7,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Core Architecture',
     context: 'React-style VDOM diffing requires continuous memory allocation for virtual node trees, triggers recursive re-renders of child components, and mandates complex manual memoization (useMemo/useCallback).',
-    decision: 'Aether adopts a Fine-Grained Push-Pull Signal Graph where component functions execute ONCE during initialization to construct the reactive graph. Signals update target DOM nodes directly with zero VDOM overhead.',
+    decision: 'Gati adopts a Fine-Grained Push-Pull Signal Graph where component functions execute ONCE during initialization to construct the reactive graph. Signals update target DOM nodes directly with zero VDOM overhead.',
     consequences: {
       positive: [
         'Eliminates stale closures, hook rules, and dependency arrays',
@@ -26,7 +26,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'DOM Rendering Engine',
     context: 'Creating DOM elements imperatively via document.createElement() in JavaScript loops is significantly slower than cloning pre-parsed HTML fragments in browser C++ engines.',
-    decision: 'The Aether compiler will extract all static HTML subtrees into module-scoped <template> elements and emit native cloneNode(true) calls with direct sibling traversal paths for dynamic slot patching.',
+    decision: 'The Gati compiler will extract all static HTML subtrees into module-scoped <template> elements and emit native cloneNode(true) calls with direct sibling traversal paths for dynamic slot patching.',
     consequences: {
       positive: [
         '3x to 5x faster initial mount throughput compared to sequential JS DOM creation calls',
@@ -44,7 +44,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Security Architecture',
     context: 'In-browser dynamic expression compilation with new Function() or eval() introduces critical XSS attack vectors and violates strict enterprise Content Security Policies (script-src self).',
-    decision: 'Aether core packages strictly forbid any usage of eval(), new Function(), or dynamic script tag execution. All expressions are compiled Ahead-of-Time. Dynamic HTML rendering is restricted to an explicit <SafeHtml> component backed by a cryptographically sealed Trusted Types policy.',
+    decision: 'Gati core packages strictly forbid any usage of eval(), new Function(), or dynamic script tag execution. All expressions are compiled Ahead-of-Time. Dynamic HTML rendering is restricted to an explicit <SafeHtml> component backed by a cryptographically sealed Trusted Types policy.',
     consequences: {
       positive: [
         'Full compatibility with strict Content Security Policy without unsafe-eval or unsafe-inline',
@@ -62,7 +62,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Form Management',
     context: 'Form validation in modern TypeScript is fragmented across Zod, Valibot, ArkType, and Yup. Proprietary validation syntax introduces redundant learning curves and vendor lock-in.',
-    decision: 'Aether forms natively implement the Standard Schema Specification (~standard). Any schema from Zod v3.24+, Valibot v1+, or ArkType works out-of-the-box with full TypeScript inference, automatic aria-invalid bindings, and async action validation.',
+    decision: 'Gati forms natively implement the Standard Schema Specification (~standard). Any schema from Zod v3.24+, Valibot v1+, or ArkType works out-of-the-box with full TypeScript inference, automatic aria-invalid bindings, and async action validation.',
     consequences: {
       positive: [
         'Zero vendor lock-in and instant compatibility with existing enterprise schema libraries',
@@ -80,7 +80,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'SSR & Hydration',
     context: 'Traditional SSR hydration forces the browser to download the full JS bundle, re-execute the entire component hierarchy, and build an in-memory VDOM before attaching event listeners, causing the "Uncanny Valley".',
-    decision: 'Aether implements Out-of-Order Streaming SSR combined with Resumable Micro-Hydration. A 200-byte root listener delegates events immediately, and components resume from serialized Unicode JSON payloads without re-executing initialization logic.',
+    decision: 'Gati implements Out-of-Order Streaming SSR combined with Resumable Micro-Hydration. A 200-byte root listener delegates events immediately, and components resume from serialized Unicode JSON payloads without re-executing initialization logic.',
     consequences: {
       positive: [
         'Near-zero Time-to-Interactive (TTI); user interactions during loading are buffered and replayed without dropped clicks',
@@ -98,7 +98,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Repository Architecture',
     context: 'Monolithic frameworks bloat client bundles and introduce circular dependencies that hinder tree-shaking and independent package versioning.',
-    decision: 'Aether is structured as a monorepo of 12 distinct packages organized in a strict Directed Acyclic Graph (DAG). Foundational packages (@aether/reactivity, @aether/security) have zero internal dependencies.',
+    decision: 'Gati is structured as a monorepo of 12 distinct packages organized in a strict Directed Acyclic Graph (DAG). Foundational packages (@gati/reactivity, @gati/security) have zero internal dependencies.',
     consequences: {
       positive: [
         'Enables high tree-shakeability; applications only pay bundle cost for the packages they import',
@@ -116,7 +116,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Data Fetching',
     context: 'Using React useEffect for data fetching causes request waterfalls, race conditions, forgotten AbortControllers, and complex loading state coordination.',
-    decision: 'Aether provides first-class createResource() and route-level loader() primitives with built-in status flags (idle, pending, success, error), request deduplication, and automatic AbortController lifecycle management.',
+    decision: 'Gati provides first-class createResource() and route-level loader() primitives with built-in status flags (idle, pending, success, error), request deduplication, and automatic AbortController lifecycle management.',
     consequences: {
       positive: [
         'Guaranteed cancellation of stale network requests when component scopes unmount',
@@ -134,7 +134,7 @@ export const ARCHITECTURE_DECISION_RECORDS: ADR[] = [
     status: 'Accepted',
     category: 'Compiler & Verification',
     context: 'Accessibility flaws and XSS vulnerabilities are often discovered late in production audits rather than during the development feedback loop.',
-    decision: 'The @aether/compiler statically verifies WAI-ARIA authoring practices, missing alt attributes, unsafe URL protocols in href/src, and unescaped HTML injections at build-time with immediate IDE diagnostics.',
+    decision: 'The @gati/compiler statically verifies WAI-ARIA authoring practices, missing alt attributes, unsafe URL protocols in href/src, and unescaped HTML injections at build-time with immediate IDE diagnostics.',
     consequences: {
       positive: [
         'Prevents common accessibility and security regressions before code can be committed or deployed',

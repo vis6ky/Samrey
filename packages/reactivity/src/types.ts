@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Types & Core Interfaces
+ * @gati/reactivity - Types & Core Interfaces
  */
 
 export interface ReactiveNode {

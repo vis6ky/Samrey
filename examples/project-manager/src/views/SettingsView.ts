@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Settings & Workspace Configuration View
- * Native Aether View with reactive settings toggles
+ * Gati Project Manager — Settings & Workspace Configuration View
+ * Native Gati View with reactive settings toggles
  */
 
-import { el } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { notify } from '../state.js';
 
 export function SettingsView(): HTMLElement {
@@ -20,7 +20,7 @@ export function SettingsView(): HTMLElement {
     'div',
     null,
     el('h2', { class: 'text-2xl font-bold text-slate-900 tracking-tight' }, 'Workspace Settings'),
-    el('p', { class: 'text-xs text-slate-500 mt-1' }, 'Preferences and ecosystem options for Aether Project Manager.')
+    el('p', { class: 'text-xs text-slate-500 mt-1' }, 'Preferences and ecosystem options for Gati Project Manager.')
   );
 
   // Settings Card
@@ -68,7 +68,7 @@ export function SettingsView(): HTMLElement {
       el(
         'div',
         null,
-        el('h4', { class: 'text-sm font-bold text-slate-800' }, 'Aether DevTools Bridge Connection'),
+        el('h4', { class: 'text-sm font-bold text-slate-800' }, 'Gati DevTools Bridge Connection'),
         el('p', { class: 'text-xs text-slate-500 mt-0.5' }, 'Enable live reactive graph topology inspections and time-travel debugging.')
       ),
       el('input', {

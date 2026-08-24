@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Navigation Bar Component
- * 100% Native Aether Runtime with Signal-driven Search & Auth State
+ * Gati Project Manager — Navigation Bar Component
+ * 100% Native Gati Runtime with Signal-driven Search & Auth State
  */
 
-import { el, Show } from '@aether/runtime';
+import { el, Show } from '@gati/runtime';
 import { store, isSidebarCollapsed, globalSearchQuery, notify } from '../state.js';
 import { SecurityBadge } from './SecurityBadge.js';
 
@@ -33,7 +33,7 @@ export function Navbar(): HTMLElement {
       'div',
       { class: 'flex items-center gap-2' },
       el('div', { class: 'w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs' }, 'Æ'),
-      el('h1', { class: 'text-base font-bold text-slate-900 hidden sm:block tracking-tight' }, 'Aether Project Manager')
+      el('h1', { class: 'text-base font-bold text-slate-900 hidden sm:block tracking-tight' }, 'Gati Project Manager')
     )
   );
 

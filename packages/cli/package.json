@@ -1,16 +1,16 @@
 {
-  "name": "@aether/cli",
+  "name": "@gati/cli",
   "version": "1.0.0",
-  "description": "Command-line tool, Vite plugin integration, and static security/a11y auditor for Aether applications.",
+  "description": "Command-line tool, Vite plugin integration, and static security/a11y auditor for Gati applications.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aether-framework/aether.git",
+    "url": "git+https://github.com/gati-framework/aether.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://aether.dev",
+  "homepage": "https://gati.dev",
   "bugs": {
-    "url": "https://github.com/aether-framework/aether/issues"
+    "url": "https://github.com/gati-framework/aether/issues"
   },
   "keywords": [
     "aether",
@@ -43,14 +43,15 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts",
-    "build": "esbuild src/bin.ts --bundle --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=bin/aether.js",
+    "build": "esbuild src/bin.ts --bundle --alias:@gati/compiler=../compiler/src/index.ts --alias:@gati/security=../security/src/index.ts --alias:@gati/reactivity=../reactivity/src/index.ts --alias:@gati/runtime=../runtime/src/index.ts --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=bin/gati.js && cp bin/gati.js bin/aether.js",
     "prepack": "npm run build"
   },
   "bin": {
-    "aether": "./bin/aether.js"
+    "gati": "./bin/gati.js",
+    "aether": "./bin/gati.js"
   },
   "dependencies": {
-    "@aether/compiler": "^1.0.0"
+    "@gati/compiler": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"

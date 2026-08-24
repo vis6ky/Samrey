@@ -14,7 +14,7 @@ import {
   DevToolsEvent
 } from '../src/index.js';
 
-describe('@aether/devtools - Extended Inspection Suite', () => {
+describe('@gati/devtools - Extended Inspection Suite', () => {
   it('strictly redacts sensitive keys, tokens, and passwords in payloads', () => {
     assert.equal(isSensitiveKey('password'), true);
     assert.equal(isSensitiveKey('authToken'), true);

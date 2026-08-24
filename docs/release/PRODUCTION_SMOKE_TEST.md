@@ -1,11 +1,11 @@
-# Aether Framework — Production Smoke Test Matrix
+# Gati Framework — Production Smoke Test Matrix
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
 **Status:** PASS  
 
 ## Smoke Test Diagnostics
-- Packaging all 11 @aether/* modules into release tarballs...
+- Packaging all 11 @gati/* modules into release tarballs...
 - Creating clean-room consumer at /tmp/aether-public-consumer...
 - Installing packed .tgz archives into isolated consumer directory...
 - Executing clean-room runtime test...
@@ -18,4 +18,4 @@
 - Project Manager public API verification: PASSED (4 active projects loaded)
 - Performing recursive Zero Foreign Framework AST scan...
 
-**Total Verification Time:** 9.16s
+**Total Verification Time:** 13.88s

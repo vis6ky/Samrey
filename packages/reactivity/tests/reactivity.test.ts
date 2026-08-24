@@ -11,7 +11,7 @@ import {
   createStore
 } from '../src/index.js';
 
-describe('@aether/reactivity', () => {
+describe('@gati/reactivity', () => {
   it('updates signals and notifies computed values', () => {
     const count = signal(0);
     const double = computed(() => count.value * 2);

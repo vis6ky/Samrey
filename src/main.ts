@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Monorepo Entry Point
+ * @gati/doc - Native Gati Monorepo Entry Point
  */
 
-import { mount } from '@aether/runtime';
+import { mount } from '@gati/runtime';
 import { App } from './App.js';
 import './index.css';
 

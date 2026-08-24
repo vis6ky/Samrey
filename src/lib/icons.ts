@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/icons - Pure Native SVG Icon Factory
+ * @gati/icons - Pure Native SVG Icon Factory
  * Zero external framework dependencies. Generates accessible, scalable SVG elements directly.
  */
 
-import { svgEl } from '@aether/runtime';
+import { svgEl } from '@gati/runtime';
 
 export type IconName =
   | 'layers'

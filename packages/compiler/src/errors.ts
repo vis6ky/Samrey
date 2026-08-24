@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - Structured Error Code System & Source Code Framing
+ * @gati/compiler - Structured Error Code System & Source Code Framing
  */
 
 export interface SourceLocationInfo {
@@ -11,7 +11,7 @@ export interface SourceLocationInfo {
   length?: number;
 }
 
-export type AetherErrorCode =
+export type GatiErrorCode =
   | 'AETH-101' // Unclosed Tag
   | 'AETH-102' // Invalid Expression / Unclosed Interpolation
   | 'AETH-103' // Missing Required Directive Prop (e.g. <For> missing 'each' or 'key')
@@ -29,13 +29,13 @@ export type AetherErrorCode =
   | 'AETH-501'; // Forms: Standard Schema Validation Error
 
 export interface ErrorDefinition {
-  code: AetherErrorCode;
+  code: GatiErrorCode;
   title: string;
   defaultExplanation: string;
   defaultSuggestion: string;
 }
 
-export const ERROR_REGISTRY: Record<AetherErrorCode, ErrorDefinition> = {
+export const ERROR_REGISTRY: Record<GatiErrorCode, ErrorDefinition> = {
   'AETH-101': {
     code: 'AETH-101',
     title: 'Unclosed HTML/JSX Tag',
@@ -169,8 +169,8 @@ export function generateSourceFrame(
   return output.join('\n');
 }
 
-export interface AetherDiagnosticOptions {
-  code: AetherErrorCode;
+export interface GatiDiagnosticOptions {
+  code: GatiErrorCode;
   message?: string;
   source?: string;
   filename?: string;
@@ -182,8 +182,8 @@ export interface AetherDiagnosticOptions {
   suggestion?: string;
 }
 
-export class AetherCompilerError extends Error {
-  public readonly code: AetherErrorCode;
+export class GatiCompilerError extends Error {
+  public readonly code: GatiErrorCode;
   public readonly filename?: string;
   public readonly line: number;
   public readonly column: number;
@@ -193,10 +193,10 @@ export class AetherCompilerError extends Error {
   public readonly suggestion: string;
   public readonly sourceFrame?: string;
 
-  constructor(options: AetherDiagnosticOptions) {
+  constructor(options: GatiDiagnosticOptions) {
     const def = ERROR_REGISTRY[options.code] || {
       code: options.code,
-      title: 'Aether Compiler Error',
+      title: 'Gati Compiler Error',
       defaultExplanation: 'An error occurred during compilation.',
       defaultSuggestion: 'Review the template code around this location.'
     };
@@ -216,7 +216,7 @@ export class AetherCompilerError extends Error {
     const formatted = `[${options.code}] ${title} at ${locStr}\n\n${sourceFrame ? `${sourceFrame}\n\n` : ''}Explanation: ${explanation}\nSuggestion:  ${suggestion}`;
 
     super(formatted);
-    this.name = 'AetherCompilerError';
+    this.name = 'GatiCompilerError';
     this.code = options.code;
     this.filename = options.filename;
     this.line = line;
@@ -229,10 +229,10 @@ export class AetherCompilerError extends Error {
   }
 }
 
-export function formatAetherDiagnostic(err: AetherCompilerError | AetherDiagnosticOptions): string {
-  if (err instanceof AetherCompilerError) {
+export function formatGatiDiagnostic(err: GatiCompilerError | GatiDiagnosticOptions): string {
+  if (err instanceof GatiCompilerError) {
     return err.message;
   }
-  const instance = new AetherCompilerError(err);
+  const instance = new GatiCompilerError(err);
   return instance.message;
 }

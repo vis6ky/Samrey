@@ -1,11 +1,11 @@
-# Aether Router Example
+# Gati Router Example
 
 Demonstrates fine-grained reactive routing with parameterized segment matching, route transitions, and open-redirect sanitization.
 
 ## Code Overview
 
 ```typescript
-import { createRouter } from '@aether/router';
+import { createRouter } from '@gati/router';
 
 const router = createRouter({
   initialPath: '/users/42',

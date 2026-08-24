@@ -23,7 +23,7 @@ function findTestFiles(dir: string): string[] {
 }
 
 async function main() {
-  console.log('🔍 Running Aether Monorepo Test Suites...');
+  console.log('🔍 Running Gati Monorepo Test Suites...');
   const testFiles = [
     ...findTestFiles(resolve('packages')),
     ...findTestFiles(resolve('tests'))

@@ -1,21 +1,21 @@
-# Aether Framework — Public API Authoritative Reference
+# Gati Framework — Public API Authoritative Reference
 
-> **Aether v1.0.0 Formal API Contract & Package Specification**
+> **Gati v1.0.0 Formal API Contract & Package Specification**
 
-This document serves as the authoritative Public API contract for all 11 packages comprising the Aether Framework.
+This document serves as the authoritative Public API contract for all 11 packages comprising the Gati Framework.
 
 ---
 
 ## Architectural Principles
 
-1. **Standalone Purity**: Aether uses only Aether. Zero runtime dependencies on external frameworks (React, Vue, Angular, Svelte, Solid, Preact, Lit, etc.).
+1. **Standalone Purity**: Gati uses only Gati. Zero runtime dependencies on external frameworks (React, Vue, Angular, Svelte, Solid, Preact, Lit, etc.).
 2. **Fine-Grained Reactivity**: Signal graph propagation without Virtual DOM diffing. DOM nodes are created once and updated directly via signal subscriptions.
 3. **Deterministic Type Safety**: TypeScript-first architecture with strict generic inference and full IDE autocomplete.
 4. **Security by Default**: Automatic URI sanitization, template XSS defense, prototype pollution scrubbing, and SSR secret stripping.
 
 ---
 
-## 1. `@aether/reactivity`
+## 1. `@gati/reactivity`
 
 Fine-grained reactive foundation and state management.
 
@@ -71,7 +71,7 @@ export interface Context<T> {
 
 ---
 
-## 2. `@aether/runtime`
+## 2. `@gati/runtime`
 
 Direct DOM instantiation, reactive bindings, lifecycle hooks, and control flow.
 
@@ -99,7 +99,7 @@ Direct DOM instantiation, reactive bindings, lifecycle hooks, and control flow.
 
 ---
 
-## 3. `@aether/security`
+## 3. `@gati/security`
 
 Zero-trust sanitization, CSP enforcement, URI scheme verification, and anti-forgery.
 
@@ -119,27 +119,27 @@ Zero-trust sanitization, CSP enforcement, URI scheme verification, and anti-forg
 
 ---
 
-## 4. `@aether/compiler`
+## 4. `@gati/compiler`
 
-Aether Intermediate Representation (AIR), security AST classifier, a11y linter, and code generation.
+Gati Intermediate Representation (AIR), security AST classifier, a11y linter, and code generation.
 
 ### Public Exports
 
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
 | `compileTemplate(source, options?)` | Function | Compiles JSX/HTML templates into optimized reactive JavaScript code with static template hoisting. | Node / Universal |
-| `parseTemplate(source, options?)` | Function | Parses template syntax into an Aether AST. | Node / Universal |
-| `buildAIR(ast, options?)` | Function | Transforms AST into Aether Intermediate Representation (AIR). | Node / Universal |
+| `parseTemplate(source, options?)` | Function | Parses template syntax into an Gati AST. | Node / Universal |
+| `buildAIR(ast, options?)` | Function | Transforms AST into Gati Intermediate Representation (AIR). | Node / Universal |
 | `generateCode(air, options?)` | Function | Emits production JavaScript code with cloneNode calls and targeted signal bindings. | Node / Universal |
 | `classifySecurityNode(node)` | Function | Classifies AST nodes for dynamic security risks. | Node / Universal |
 | `lintAccessibility(ast)` | Function | Audits AST nodes against WCAG AA accessibility standards. | Node / Universal |
-| `AetherCompilerError` | Class | Structured compiler error class with source frames. | Node / Universal |
+| `GatiCompilerError` | Class | Structured compiler error class with source frames. | Node / Universal |
 | `generateSourceFrame(src, l, c)` | Function | Generates a terminal-friendly visual code pointer frame. | Node / Universal |
 | `ERROR_REGISTRY` | Constant | Catalog of compiler and framework error definitions. | Node / Universal |
 
 ---
 
-## 5. `@aether/router`
+## 5. `@gati/router`
 
 Declarative client-side and SSR-compatible routing with zero dependencies.
 
@@ -160,7 +160,7 @@ Declarative client-side and SSR-compatible routing with zero dependencies.
 
 ---
 
-## 6. `@aether/http`
+## 6. `@gati/http`
 
 Declarative asynchronous resource management and typed HTTP client.
 
@@ -187,7 +187,7 @@ export interface ResourceReturn<T> {
 
 ---
 
-## 7. `@aether/forms`
+## 7. `@gati/forms`
 
 Standard Schema (`~standard` v1) form state, dirty tracking, and accessible ARIA attributes.
 
@@ -202,7 +202,7 @@ Standard Schema (`~standard` v1) form state, dirty tracking, and accessible ARIA
 
 ---
 
-## 8. `@aether/ssr`
+## 8. `@gati/ssr`
 
 Server-Side Rendering, Streaming HTML, Secret Stripping, and Static Site Generation (SSG).
 
@@ -210,8 +210,8 @@ Server-Side Rendering, Streaming HTML, Secret Stripping, and Static Site Generat
 
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
-| `renderToString(fn, options?)` | Function | Renders an Aether component tree into static HTML with state hydration tags. | Server / Node |
-| `renderToStream(fn, options?)` | Function | Renders an Aether component tree into a chunked web `ReadableStream`. | Server / Node |
+| `renderToString(fn, options?)` | Function | Renders an Gati component tree into static HTML with state hydration tags. | Server / Node |
+| `renderToStream(fn, options?)` | Function | Renders an Gati component tree into a chunked web `ReadableStream`. | Server / Node |
 | `generateStaticSite(options)` | Function | Generates static pre-rendered HTML files across a route manifest (SSG). | Server / Node |
 | `hydrateFromSSR(fn, container)` | Function | Reconnects client event listeners and reactive signals to server-rendered HTML. | Browser |
 | `escapeHtml(str: string)` | Function | Escapes raw characters (`&`, `<`, `>`, `"`, `'`) for safe HTML output. | Server / Node |
@@ -220,7 +220,7 @@ Server-Side Rendering, Streaming HTML, Secret Stripping, and Static Site Generat
 
 ---
 
-## 9. `@aether/testing`
+## 9. `@gati/testing`
 
 DOM component mounting, simulated user events, and async testing utilities.
 
@@ -237,7 +237,7 @@ DOM component mounting, simulated user events, and async testing utilities.
 
 ---
 
-## 10. `@aether/devtools`
+## 10. `@gati/devtools`
 
 Visual graph topology inspector, component tree inspector, and performance telemetry.
 
@@ -246,14 +246,14 @@ Visual graph topology inspector, component tree inspector, and performance telem
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
 | `initDevTools(options?)` | Function | Initializes browser window bridge (`window.__AETHER_DEVTOOLS__`). | Browser |
-| `AetherDevToolsBridge` | Class | Core communication bridge between framework runtime and DevTools UI. | Browser |
+| `GatiDevToolsBridge` | Class | Core communication bridge between framework runtime and DevTools UI. | Browser |
 | `ReactiveGraphInspector` | Class | Generates node/edge graph representations of signal dependencies. | Browser |
 | `ComponentInspector` | Class | Inspects active component hierarchy and props. | Browser |
 | `PerfInspector` | Class | Tracks render times, mutation counts, and memory allocation estimates. | Browser |
 
 ---
 
-## 11. `@aether/cli`
+## 11. `@gati/cli`
 
 Project initialization, development server, production builder, preview server, and audit engine.
 
@@ -263,7 +263,7 @@ Project initialization, development server, production builder, preview server, 
 | :--- | :--- | :--- | :--- |
 | `runCLI(args: string[])` | Function | Programmatic CLI entry point executing commands. | Node |
 | `generateStarterProject(name, opts)` | Function | Generates starter project file dictionary for `ssr`, `spa`, `minimal`, or `ssg`. | Node |
-| `aetherVitePlugin(options?)` | Function | Vite plugin compiling `.aether`, `.tsx`, `.jsx` templates via `@aether/compiler`. | Node |
+| `aetherVitePlugin(options?)` | Function | Vite plugin compiling `.aether`, `.tsx`, `.jsx` templates via `@gati/compiler`. | Node |
 | `runCreateCommand(options)` | Function | Executes `aether create <name>`. | Node |
 | `runDevCommand(options)` | Function | Executes `aether dev`. | Node |
 | `runBuildCommand(options)` | Function | Executes `aether build`. | Node |

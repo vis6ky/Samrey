@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Accessible Task Card Component
+ * @gati/task-studio - Accessible Task Card Component
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { TaskItem } from '../types.js';
 import { Badge } from './ui/Badge.js';
 import { toggleTaskStatusAction } from '../state/tasks.store.js';

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Standard Schema Form Handlers
- * Powered 100% by @aether/forms with Standard Schema (~standard v1)
+ * Gati Project Manager — Standard Schema Form Handlers
+ * Powered 100% by @gati/forms with Standard Schema (~standard v1)
  */
 
-import { createForm, createField, getAccessibleFieldProps } from '@aether/forms';
+import { createForm, createField, getAccessibleFieldProps } from '@gati/forms';
 import { Project, Task } from './types.js';
 
 // Project Form Schema
