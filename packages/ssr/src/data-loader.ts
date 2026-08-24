@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - Server-Side Data Loading & Hydration Cache
+ * @gati/ssr - Server-Side Data Loading & Hydration Cache
  */
 
-import { signal, Signal, ReadonlySignal } from '@aether/reactivity';
+import { signal, Signal, ReadonlySignal } from '@gati/reactivity';
 import { getSSRContext } from './context.js';
 import { deserializeHydrationState } from './serializer.js';
 

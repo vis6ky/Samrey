@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Compiler & IR Pipeline Visualizer
+ * @gati/doc - Native Gati Compiler & IR Pipeline Visualizer
  */
 
-import { el, Show, For } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, Show, For } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { icon } from '../lib/icons.js';
 
 export interface Preset {
@@ -23,7 +23,7 @@ export const PRESETS: Preset[] = [
     id: 'counter',
     name: 'Counter & Dynamic Text Binding',
     description: 'Demonstrates single component execution, static HTML template extraction, and fine-grained text hole patching.',
-    tsxCode: `import { signal, computed } from '@aether/reactivity';
+    tsxCode: `import { signal, computed } from '@gati/reactivity';
 
 export function Counter(props: { initial?: number }) {
   const count = signal(props.initial ?? 0);
@@ -54,8 +54,8 @@ export function Counter(props: { initial?: number }) {
       { expression: 'double.value', context: 'HTML TextNode', rule: 'Compiled to node.textContent = val', passed: true },
       { expression: '() => count.value++', context: 'EventListener', rule: 'Delegated root listener event subscription', passed: true }
     ],
-    compiledJs: `import { template as _tmpl, bindText as _bindText, on as _on } from '@aether/runtime';
-import { signal, computed } from '@aether/reactivity';
+    compiledJs: `import { template as _tmpl, bindText as _bindText, on as _on } from '@gati/runtime';
+import { signal, computed } from '@gati/reactivity';
 
 // 1. Static HTML Hoisted once at module load
 const _tmpl$1 = _tmpl(\`<div class="counter-box" id="widget-1"><h3 class="title">Counter: </h3><p class="subtitle">Double: </p><button type="button">Increment</button></div>\`);
@@ -121,8 +121,8 @@ export function Counter(props) {
       { expression: 'props.username', context: 'HTML TextNode', rule: 'Direct textContent escaping', passed: true },
       { expression: 'props.userWebsite', context: 'URI Attribute (href)', rule: 'Blocked javascript:/data: schemes via sanitizeUri()', passed: true }
     ],
-    compiledJs: `import { template as _tmpl, bindText as _bindText, bindAttr as _bindAttr } from '@aether/runtime';
-import { sanitizeUri as _sanitizeUri } from '@aether/security';
+    compiledJs: `import { template as _tmpl, bindText as _bindText, bindAttr as _bindAttr } from '@gati/runtime';
+import { sanitizeUri as _sanitizeUri } from '@gati/security';
 
 const _tmpl$2 = _tmpl(\`<div class="profile-card"><h4>User: </h4><a target="_blank" rel="noopener noreferrer">Visit Website</a></div>\`);
 
@@ -162,7 +162,7 @@ export function CompilerVisualizer(): HTMLElement {
       el('div', null,
         el('div', { class: 'inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-800 text-cyan-300 text-xs font-mono mb-2' },
           icon('code', 'w-3.5 h-3.5'),
-          el('span', null, 'Aether Intermediate Representation (AIR) Engine')
+          el('span', null, 'Gati Intermediate Representation (AIR) Engine')
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' }, 'Compiler Pipeline & Codegen Simulator'),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },

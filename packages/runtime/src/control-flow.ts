@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Reactive Control Flow Primitives (<Show>, <For>)
+ * @gati/runtime - Reactive Control Flow Primitives (<Show>, <For>)
  */
 
-import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@aether/reactivity';
+import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@gati/reactivity';
 import { reportDuplicateKey } from './diagnostics.js';
 import { el, text } from './dom.js';
 import { createComponent } from './component.js';

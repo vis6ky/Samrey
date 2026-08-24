@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/cli - Binary Entrypoint
+ * @gati/cli - Binary Entrypoint
  */
 
 import { runCLI } from './runner.js';
@@ -17,6 +17,6 @@ runCLI(args).then((result) => {
   }
   process.exit(result.exitCode);
 }).catch((err) => {
-  console.error('[Aether Fatal Error]', err);
+  console.error('[Gati Fatal Error]', err);
   process.exit(1);
 });

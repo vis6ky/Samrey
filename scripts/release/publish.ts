@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Publisher & Registry Dispatcher
+ * @gati/monorepo - Release Publisher & Registry Dispatcher
  */
 
 import { execSync } from 'node:child_process';
@@ -91,7 +91,7 @@ export function runPublish(options: PublishOptions = {}): PublishResult {
   const publishedPackages: string[] = [];
   try {
     for (const pkgName of topologicalOrder) {
-      const pkg = pkgName.replace('@aether/', '');
+      const pkg = pkgName.replace('@gati/', '');
       const cmd = `npm publish --access public --tag ${tag}`;
       execSync(cmd, { cwd: `packages/${pkg}`, stdio: 'inherit' });
       publishedPackages.push(pkgName);
@@ -118,7 +118,7 @@ export function runPublish(options: PublishOptions = {}): PublishResult {
 }
 
 if (process.argv[1]?.endsWith('publish.ts') || process.argv[1]?.endsWith('publish.js')) {
-  console.log('▲ Aether Package Publishing Pipeline\n');
+  console.log('▲ Gati Package Publishing Pipeline\n');
   const args = process.argv.slice(2);
   const isDryRun = args.includes('--dry-run');
   const isLatest = args.includes('--tag') && args[args.indexOf('--tag') + 1] === 'latest';

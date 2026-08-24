@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Reactive Application Settings Store
+ * @gati/task-studio - Reactive Application Settings Store
  */
 
-import { signal, ReadonlySignal } from '@aether/reactivity';
+import { signal, ReadonlySignal } from '@gati/reactivity';
 import { AppSettings } from '../types.js';
 
 const initialSettings: AppSettings = {

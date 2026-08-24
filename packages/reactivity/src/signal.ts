@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Signal Primitive
+ * @gati/reactivity - Signal Primitive
  */
 
 import { Dependency, Signal, Subscriber } from './types.js';

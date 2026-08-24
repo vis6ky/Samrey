@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - HTML String & Streaming Renderer
+ * @gati/ssr - HTML String & Streaming Renderer
  */
 
 import { serializeStateForHydration } from './serializer.js';
 import { getDelegatedEventScript } from './hydration.js';
 import { createSSRContext, runWithSSRContext, resolveSSRContext, SSRContext } from './context.js';
-import { escapeHtmlText } from '@aether/security';
+import { escapeHtmlText } from '@gati/security';
 
 export interface RenderToStringOptions {
   title?: string;
@@ -26,7 +26,7 @@ export interface RenderToStreamOptions extends RenderToStringOptions {
 }
 
 /**
- * Renders an Aether application or component function to a complete HTML string.
+ * Renders an Gati application or component function to a complete HTML string.
  * Automatically resolves server data loaders, handles error boundaries, and serializes state safely.
  */
 export async function renderToString(
@@ -72,7 +72,7 @@ export async function renderToString(
   });
 
   const delegatorScript = getDelegatedEventScript(options.events);
-  const title = options.title || ctx.head.title || 'Aether Application';
+  const title = options.title || ctx.head.title || 'Gati Application';
   const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
   const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';
   const metaTags = ctx.head.meta.map((m) => `<meta ${m.name ? `name="${m.name}"` : `property="${m.property}"`} content="${m.content}">`).join('\n  ');
@@ -97,7 +97,7 @@ export async function renderToString(
 }
 
 /**
- * Streams an Aether application HTML response in real-time using standard Web ReadableStreams.
+ * Streams an Gati application HTML response in real-time using standard Web ReadableStreams.
  */
 export function renderToStream(
   app: (() => unknown) | string,
@@ -112,7 +112,7 @@ export function renderToStream(
         controller.enqueue(encoder.encode(chunk));
       };
 
-      const title = options.title || ctx.head.title || 'Aether Application';
+      const title = options.title || ctx.head.title || 'Gati Application';
       const delegatorScript = getDelegatedEventScript(options.events);
       const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
       const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';

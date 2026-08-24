@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Search Modal with Fine-Grained Reactive Filtering
+ * @gati/doc - Native Gati Search Modal with Fine-Grained Reactive Filtering
  */
 
-import { el, Show, For } from '@aether/runtime';
-import { signal, computed, Signal } from '@aether/reactivity';
+import { el, Show, For } from '@gati/runtime';
+import { signal, computed, Signal } from '@gati/reactivity';
 import { icon, IconName } from '../lib/icons.js';
 import { ARCHITECTURE_DECISION_RECORDS } from '../data/adrData.js';
 import { SECURITY_THREATS } from '../data/securityData.js';
@@ -183,7 +183,7 @@ export function SearchModal(props: {
           el('span', null, '↵ Select'),
           el('span', null, 'ESC Close')
         ),
-        el('span', null, 'Aether Global Index')
+        el('span', null, 'Gati Global Index')
       );
       modalBox.appendChild(modalFooter);
 

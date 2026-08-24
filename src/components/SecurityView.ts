@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Security Model & Threat Neutralization View
+ * @gati/doc - Native Gati Security Model & Threat Neutralization View
  */
 
-import { el, For } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, For } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { SECURITY_THREATS } from '../data/securityData.js';
 import { SecurityThreat } from '../types.js';
 import { icon } from '../lib/icons.js';
@@ -63,7 +63,7 @@ export function SecurityView(): HTMLElement {
           el('span', null, 'Level 1 Defense-in-Depth Specification')
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' },
-          'Aether Security Model & Threat Neutralization'
+          'Gati Security Model & Threat Neutralization'
         ),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
           'Zero-Trust Input architecture. The compiler statically enforces contextual encoding, W3C Trusted Types, zero-eval execution, and script-tag breakout immunity during SSR serialization.'
@@ -156,7 +156,7 @@ export function SecurityView(): HTMLElement {
       ),
       el('div', { class: 'flex items-center space-x-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 font-semibold' },
         icon('shield-check', 'w-4 h-4 text-emerald-600'),
-        el('span', null, 'Aether Immune')
+        el('span', null, 'Gati Immune')
       )
     ),
 
@@ -209,7 +209,7 @@ export function SecurityView(): HTMLElement {
 
     // Neutralizer Output Simulation
     el('div', { class: 'space-y-2' },
-      el('span', { class: 'text-xs font-bold uppercase tracking-wider text-emerald-700' }, 'Aether Runtime & Compiler Response'),
+      el('span', { class: 'text-xs font-bold uppercase tracking-wider text-emerald-700' }, 'Gati Runtime & Compiler Response'),
       el('div', { class: 'bg-slate-950 text-emerald-400 p-4 rounded-xl font-mono text-xs leading-relaxed whitespace-pre-wrap' },
         () => simulatedDefenseResult.value || activeThreat.value.aetherDefense
       )

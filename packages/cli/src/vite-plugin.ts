@@ -1,16 +1,16 @@
 /**
  * @license Apache-2.0
- * @aether/cli - Vite / Rollup Compiler Plugin
+ * @gati/cli - Vite / Rollup Compiler Plugin
  */
 
-import { compileTemplate } from '@aether/compiler';
+import { compileTemplate } from '@gati/compiler';
 
-export interface AetherPluginOptions {
+export interface GatiPluginOptions {
   include?: string[];
   exclude?: string[];
 }
 
-export function aetherVitePlugin(options: AetherPluginOptions = {}) {
+export function aetherVitePlugin(options: GatiPluginOptions = {}) {
   return {
     name: 'vite-plugin-aether',
     transform(code: string, id: string) {

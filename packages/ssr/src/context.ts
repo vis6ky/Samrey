@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/ssr - Request-Scoped SSR Context
+ * @gati/ssr - Request-Scoped SSR Context
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';

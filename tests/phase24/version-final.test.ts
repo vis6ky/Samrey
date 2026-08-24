@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Version Final Gate
+ * @gati/monorepo - Phase 24 Version Final Gate
  * Validates version consistency across all 11 package.json files, root manifest, and CLI constants.
  */
 
@@ -28,18 +28,18 @@ describe('Phase 24 — Version Final Gate', () => {
     assert.strictEqual(result.rootVersion, '1.0.0');
 
     for (const pkg of PACKAGES) {
-      assert.strictEqual(result.packageVersions[`@aether/${pkg}`], '1.0.0');
+      assert.strictEqual(result.packageVersions[`@gati/${pkg}`], '1.0.0');
     }
   });
 
-  it('3. Verifies all internal @aether/* dependencies specify ^1.0.0', () => {
+  it('3. Verifies all internal @gati/* dependencies specify ^1.0.0', () => {
     for (const pkg of PACKAGES) {
       const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
       const deps = manifest.dependencies || {};
 
       for (const [depName, depVer] of Object.entries(deps)) {
-        if (depName.startsWith('@aether/')) {
+        if (depName.startsWith('@gati/')) {
           assert.strictEqual(
             depVer,
             '^1.0.0',

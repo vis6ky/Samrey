@@ -1,9 +1,9 @@
-# Aether Framework — Release Verification Checklist
+# Gati Framework — Release Verification Checklist
 
 **Target Version: 1.0.0-rc.1**  
 *Maintainer Release Sign-Off Guide*
 
-This checklist ensures strict quality, security, and build integrity before publishing any Aether release to the public registry.
+This checklist ensures strict quality, security, and build integrity before publishing any Gati release to the public registry.
 
 ---
 

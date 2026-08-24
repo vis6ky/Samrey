@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createField, createForm, computeAriaAttributes, StandardSchemaV1 } from '../src/index.js';
 
-describe('@aether/forms', () => {
+describe('@gati/forms', () => {
   it('tracks field value, dirty, and error state reactively', () => {
     const emailField = createField('email', '', (val) => {
       if (!val.includes('@')) return 'Invalid email address';
@@ -21,7 +21,7 @@ describe('@aether/forms', () => {
     assert.equal(emailField.error.value, 'Invalid email address');
     assert.equal(emailField.aria.value['aria-invalid'], true);
 
-    emailField.setValue('team@aether.dev');
+    emailField.setValue('team@gati.dev');
     assert.equal(emailField.error.value, null);
     assert.equal(emailField.aria.value['aria-invalid'], undefined);
   });

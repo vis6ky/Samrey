@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { TemplateParser, compileTemplate } from '@aether/compiler';
-import { evaluateConstantExpression } from '@aether/compiler/src/static-analyzer.js';
+import { TemplateParser, compileTemplate } from '@gati/compiler';
+import { evaluateConstantExpression } from '@gati/compiler/src/static-analyzer.js';
 import { 
   sanitizeUri, 
   sanitizeRedirectUri, 
@@ -10,8 +10,8 @@ import {
   escapeHtmlText, 
   escapeForScriptPayload 
 } from '../src/index.ts';
-import { serializeStateForHydration, deserializeHydrationState, safeJsonParse } from '@aether/ssr';
-import { matchPath } from '@aether/router/src/matcher.js';
+import { serializeStateForHydration, deserializeHydrationState, safeJsonParse } from '@gati/ssr';
+import { matchPath } from '@gati/router/src/matcher.js';
 
 describe('Security Fuzzing Suite', () => {
   describe('Template Parser & Compiler Fuzzing', () => {

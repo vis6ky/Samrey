@@ -1,4 +1,4 @@
-# Aether Framework — Migration & Upgrade Guide
+# Gati Framework — Migration & Upgrade Guide
 
 **Current Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
@@ -15,19 +15,19 @@ Update your `package.json` dependencies to `^1.0.0-rc.1`:
 ```json
 {
   "dependencies": {
-    "@aether/reactivity": "^1.0.0-rc.1",
-    "@aether/runtime": "^1.0.0-rc.1",
-    "@aether/security": "^1.0.0-rc.1",
-    "@aether/router": "^1.0.0-rc.1",
-    "@aether/forms": "^1.0.0-rc.1",
-    "@aether/http": "^1.0.0-rc.1",
-    "@aether/ssr": "^1.0.0-rc.1"
+    "@gati/reactivity": "^1.0.0-rc.1",
+    "@gati/runtime": "^1.0.0-rc.1",
+    "@gati/security": "^1.0.0-rc.1",
+    "@gati/router": "^1.0.0-rc.1",
+    "@gati/forms": "^1.0.0-rc.1",
+    "@gati/http": "^1.0.0-rc.1",
+    "@gati/ssr": "^1.0.0-rc.1"
   },
   "devDependencies": {
-    "@aether/cli": "^1.0.0-rc.1",
-    "@aether/compiler": "^1.0.0-rc.1",
-    "@aether/testing": "^1.0.0-rc.1",
-    "@aether/devtools": "^1.0.0-rc.1"
+    "@gati/cli": "^1.0.0-rc.1",
+    "@gati/compiler": "^1.0.0-rc.1",
+    "@gati/testing": "^1.0.0-rc.1",
+    "@gati/devtools": "^1.0.0-rc.1"
   }
 }
 ```
@@ -37,20 +37,20 @@ Update your `package.json` dependencies to `^1.0.0-rc.1`:
 ## 2. API Standardization Notes
 
 1. **Signals & Computed Access:**
-   - In Aether, signal and computed values are accessed via `.value`:
+   - In Gati, signal and computed values are accessed via `.value`:
      ```ts
      const count = signal(0);
      console.log(count.value); // 0
      count.value = 1;
      ```
 2. **Standard Schema Forms:**
-   - `@aether/forms` integrates with Standard Schema (~v1) validators (Zod, Valibot, ArkType).
+   - `@gati/forms` integrates with Standard Schema (~v1) validators (Zod, Valibot, ArkType).
    - Form fields expose reactive `.value` signals:
      ```ts
      const form = createForm({
-       initialValues: { name: 'Aether' }
+       initialValues: { name: 'Gati' }
      });
-     console.log(form.fields.name.value.value); // 'Aether'
+     console.log(form.fields.name.value.value); // 'Gati'
      ```
 3. **Control Flow Components:**
    - Use direct-DOM control flow components (`Show`, `For`, `Switch`, `Match`, `ErrorBoundary`):

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - New Task View
+ * @gati/task-studio - New Task View
  */
 
-import { el } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { createTaskAction } from '../state/tasks.store.js';
 import { TaskFormValues } from '../types.js';
 import { TaskForm } from '../components/TaskForm.js';
@@ -45,7 +45,7 @@ export function NewTaskView(props: NewTaskViewProps): HTMLElement {
   const formCard = Card(
     {
       title: 'Task Details',
-      subtitle: 'Validated with Standard Schema (~v1) on @aether/forms',
+      subtitle: 'Validated with Standard Schema (~v1) on @gati/forms',
       padding: 'md'
     },
     TaskForm({

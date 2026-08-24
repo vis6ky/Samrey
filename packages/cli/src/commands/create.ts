@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/cli - "aether create" Command
+ * @gati/cli - "aether create" Command
  */
 
 import * as fs from 'node:fs';
@@ -41,7 +41,7 @@ export async function runCreateCommand(options: CreateCommandOptions): Promise<C
   if (!validation.valid) {
     return {
       success: false,
-      message: `[Aether Create Error] ${validation.error}`,
+      message: `[Gati Create Error] ${validation.error}`,
       exitCode: 1
     };
   }
@@ -74,14 +74,14 @@ export async function runCreateCommand(options: CreateCommandOptions): Promise<C
 
     return {
       success: true,
-      message: `[Aether] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
+      message: `[Gati] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
       exitCode: 0,
       data: { filesCreated: Object.keys(files).length, targetDir }
     };
   } catch (err: any) {
     return {
       success: false,
-      message: `[Aether Create Failed] Could not create project files: ${err.message}`,
+      message: `[Gati Create Failed] Could not create project files: ${err.message}`,
       exitCode: 1
     };
   }

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/router - Types
+ * @gati/router - Types
  */
 
-import { ReadonlySignal } from '@aether/reactivity';
+import { ReadonlySignal } from '@gati/reactivity';
 
 export interface RouteRecord<TData = unknown> {
   path: string;

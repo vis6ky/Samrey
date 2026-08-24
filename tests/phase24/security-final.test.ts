@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Security Final Gate
+ * @gati/monorepo - Phase 24 Security Final Gate
  * Validates XSS protection, SSR JSON escaping, safe URL validation, CSRF tokens, Trusted Types, and zero secret leaks.
  */
 

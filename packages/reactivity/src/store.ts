@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Deep Store with Hermetic Prototype Defense
+ * @gati/reactivity - Deep Store with Hermetic Prototype Defense
  */
 
 import { signal } from './signal.js';

@@ -1,22 +1,22 @@
-# @aether/http
+# @gati/http
 
 Reactive data fetching primitive, automatic in-flight deduplication cache, retry policies, and typed HTTP client.
 
 ## Purpose
 
-`@aether/http` provides seamless asynchronous resource fetching tightly integrated with Aether signals. It handles abort signals, loading/error states, caching, and suspense integration out of the box.
+`@gati/http` provides seamless asynchronous resource fetching tightly integrated with Gati signals. It handles abort signals, loading/error states, caching, and suspense integration out of the box.
 
 ## Installation
 
 ```bash
-npm install @aether/http @aether/reactivity
+npm install @gati/http @gati/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { createResource, HttpClient } from '@aether/http';
-import { signal } from '@aether/reactivity';
+import { createResource, HttpClient } from '@gati/http';
+import { signal } from '@gati/reactivity';
 
 const userId = signal('1');
 
@@ -52,6 +52,6 @@ Supports automatic CSRF header injection, origin validation, and timeout guarant
 
 ## Related Packages
 
-- `@aether/reactivity` — Signal engine driving resource triggers.
-- `@aether/runtime` — Suspense and ErrorBoundary integration.
+- `@gati/reactivity` — Signal engine driving resource triggers.
+- `@gati/runtime` — Suspense and ErrorBoundary integration.
 

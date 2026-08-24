@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Root Application Shell
- * 100% Native Aether Independent Consumer App
+ * Gati Project Manager — Root Application Shell
+ * 100% Native Gati Independent Consumer App
  */
 
-import { el, Show, Switch, Match, ErrorBoundary } from '@aether/runtime';
-import { signal, effect } from '@aether/reactivity';
+import { el, Show, Switch, Match, ErrorBoundary } from '@gati/runtime';
+import { signal, effect } from '@gati/reactivity';
 import { Navbar } from './components/Navbar.js';
 import { Sidebar } from './components/Sidebar.js';
 import { NotificationToast } from './components/NotificationToast.js';

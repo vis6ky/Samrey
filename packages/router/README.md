@@ -1,22 +1,22 @@
-# @aether/router
+# @gati/router
 
 Fine-grained reactive routing engine with nested routes, parameterized matching, route guards, async loaders, and zero full-page re-renders.
 
 ## Purpose
 
-`@aether/router` provides client-side and universal routing built entirely on Aether reactive signals. Navigating between routes updates only the dynamic route view outlet rather than tearing down the root application shell.
+`@gati/router` provides client-side and universal routing built entirely on Gati reactive signals. Navigating between routes updates only the dynamic route view outlet rather than tearing down the root application shell.
 
 ## Installation
 
 ```bash
-npm install @aether/router @aether/reactivity @aether/runtime
+npm install @gati/router @gati/reactivity @gati/runtime
 ```
 
 ## Quick Example
 
 ```ts
-import { createRouter, Link, RouterOutlet } from '@aether/router';
-import { el } from '@aether/runtime';
+import { createRouter, Link, RouterOutlet } from '@gati/router';
+import { el } from '@gati/runtime';
 
 const routes = [
   { path: '/', component: () => el('h1', null, 'Home View') },
@@ -58,7 +58,7 @@ Sanitizes navigation targets against `javascript:` injection and prevents open r
 
 ## Related Packages
 
-- `@aether/runtime` — Renders route components into the DOM.
-- `@aether/reactivity` — Drives reactive routing state.
-- `@aether/ssr` — Server-side route matching and pre-rendering.
+- `@gati/runtime` — Renders route components into the DOM.
+- `@gati/reactivity` — Drives reactive routing state.
+- `@gati/ssr` — Server-side route matching and pre-rendering.
 

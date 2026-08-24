@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Reactive State Store & Computed Derivations
- * Powered 100% by @aether/reactivity (signals, computed, store, produce, reconcile, batch)
+ * Gati Project Manager — Reactive State Store & Computed Derivations
+ * Powered 100% by @gati/reactivity (signals, computed, store, produce, reconcile, batch)
  */
 
-import { signal, computed, createStore, batch, produce } from '@aether/reactivity';
+import { signal, computed, createStore, batch, produce } from '@gati/reactivity';
 import { Project, Task, AuthUser, NotificationItem, ProjectFilterState, TaskFilterState } from './types.js';
 import { ProjectManagerApi, currentCsrfToken } from './api.js';
 

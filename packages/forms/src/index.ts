@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/forms - Main Entry Point
+ * @gati/forms - Main Entry Point
  */
 
 export * from './standard-schema.js';

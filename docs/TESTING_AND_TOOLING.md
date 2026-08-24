@@ -1,15 +1,15 @@
-# Testing & Developer Tooling in Aether
+# Testing & Developer Tooling in Gati
 
-## 1. Testing Utilities (`@aether/testing`)
+## 1. Testing Utilities (`@gati/testing`)
 
-`@aether/testing` provides isolated component mounting harnesses, automatic microtask signal flushing, and memory leak assertion utilities.
+`@gati/testing` provides isolated component mounting harnesses, automatic microtask signal flushing, and memory leak assertion utilities.
 
 ### Component Mounting & Reactive Testing
 
 ```typescript
-import { mount, flushReactivity } from '@aether/testing';
-import { signal } from '@aether/reactivity';
-import { template, bindText } from '@aether/runtime';
+import { mount, flushReactivity } from '@gati/testing';
+import { signal } from '@gati/reactivity';
+import { template, bindText } from '@gati/runtime';
 
 function TestCounter(countSignal: any) {
   const tmpl = template(`<div>Count: <span id="count"></span></div>`);
@@ -33,9 +33,9 @@ wrapper.dispose();
 
 ---
 
-## 2. Developer Tools Bridge (`@aether/devtools`)
+## 2. Developer Tools Bridge (`@gati/devtools`)
 
-`@aether/devtools` provides a lightweight, origin-gated inspection bridge for browser extensions and debugging tools.
+`@gati/devtools` provides a lightweight, origin-gated inspection bridge for browser extensions and debugging tools.
 
 ### Features
 - **Topological Graph Inspection**: Visualizes nodes, dependents, dependencies, and transaction clocks.
@@ -44,9 +44,9 @@ wrapper.dispose();
 
 ---
 
-## 3. Command Line Interface (`@aether/cli`)
+## 3. Command Line Interface (`@gati/cli`)
 
-The `@aether/cli` package supplies scaffolding, compilation plugins, and static security/accessibility audits.
+The `@gati/cli` package supplies scaffolding, compilation plugins, and static security/accessibility audits.
 
 ### CLI Commands
 

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/router - Active Link Utilities
+ * @gati/router - Active Link Utilities
  */
 
 import { RouterInstance } from './types.js';
-import { sanitizeUri } from '@aether/security';
+import { sanitizeUri } from '@gati/security';
 
 export function createLink(router: RouterInstance, to: string) {
   const safeTo = sanitizeUri(to);

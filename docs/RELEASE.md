@@ -1,27 +1,27 @@
-# Aether Framework — Release & Publishing Guide
+# Gati Framework — Release & Publishing Guide
 
 **Target Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
 **Registry:** `https://registry.npmjs.org/`  
-**Architectural Invariant:** "Aether Must Use Aether"  
+**Architectural Invariant:** "Gati Must Use Gati"  
 
 ---
 
 ## 1. Release Architecture & Pipeline Overview
 
-Aether is released as an atomic suite of 11 independent scoped packages under the `@aether` organization:
+Gati is released as an atomic suite of 11 independent scoped packages under the `@aether` organization:
 
-- `@aether/reactivity` — Fine-grained signal and dependency tracking engine
-- `@aether/runtime` — Direct-DOM reactive rendering runtime and control flow
-- `@aether/security` — Context-aware HTML sanitization and safe URI enforcement
-- `@aether/compiler` — AIR template parser, analyzer, optimizer, and code generator
-- `@aether/router` — Client and memory pushState router with typed matching
-- `@aether/http` — Reactive resource caching and HTTP client
-- `@aether/forms` — Standard Schema form management with accessible field controllers
-- `@aether/ssr` — Server-side HTML string rendering, streaming, and hydration state serialization
-- `@aether/testing` — DOM container rendering and asynchronous test utilities
-- `@aether/devtools` — Reactive graph inspection and performance profiling bridge
-- `@aether/cli` — Scaffolding CLI, Vite plugin, and security/a11y linter
+- `@gati/reactivity` — Fine-grained signal and dependency tracking engine
+- `@gati/runtime` — Direct-DOM reactive rendering runtime and control flow
+- `@gati/security` — Context-aware HTML sanitization and safe URI enforcement
+- `@gati/compiler` — AIR template parser, analyzer, optimizer, and code generator
+- `@gati/router` — Client and memory pushState router with typed matching
+- `@gati/http` — Reactive resource caching and HTTP client
+- `@gati/forms` — Standard Schema form management with accessible field controllers
+- `@gati/ssr` — Server-side HTML string rendering, streaming, and hydration state serialization
+- `@gati/testing` — DOM container rendering and asynchronous test utilities
+- `@gati/devtools` — Reactive graph inspection and performance profiling bridge
+- `@gati/cli` — Scaffolding CLI, Vite plugin, and security/a11y linter
 
 ---
 

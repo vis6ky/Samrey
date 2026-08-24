@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Accessible Select Component
+ * @gati/task-studio - Accessible Select Component
  */
 
-import { el, Show } from '@aether/runtime';
-import { Signal, ReadonlySignal } from '@aether/reactivity';
+import { el, Show } from '@gati/runtime';
+import { Signal, ReadonlySignal } from '@gati/reactivity';
 
 export interface SelectOption {
   value: string;

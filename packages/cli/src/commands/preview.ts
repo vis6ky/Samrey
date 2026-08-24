@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/cli - "aether preview" Command
+ * @gati/cli - "aether preview" Command
  */
 
 import { CommandResult } from './create.js';
@@ -18,7 +18,7 @@ export async function runPreviewCommand(options: PreviewCommandOptions = {}): Pr
   const outDir = options.outDir || 'dist';
 
   const message = [
-    `  ▲ Aether Production Preview Server`,
+    `  ▲ Gati Production Preview Server`,
     `  ➜ Local:   http://${host}:${port}/`,
     `  ➜ Serving: ${outDir}`,
     `  ➜ Mode:    Production static preview with HTTP caching headers`,

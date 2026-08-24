@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Main Entry Point
+ * @gati/runtime - Main Entry Point
  */
 
 export * from './template.js';

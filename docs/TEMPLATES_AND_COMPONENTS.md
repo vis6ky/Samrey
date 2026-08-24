@@ -1,15 +1,15 @@
-# Templates & Components in Aether
+# Templates & Components in Gati
 
 ## 1. The Template Cloning Model
 
-Aether avoids Virtual DOM trees entirely. When you write markup in an Aether application, the compiler Ahead-of-Time separates the markup into:
+Gati avoids Virtual DOM trees entirely. When you write markup in an Gati application, the compiler Ahead-of-Time separates the markup into:
 1. **A static HTML skeleton**: Hoisted as a constant template string.
 2. **Dynamic hole bindings**: Precise child path walks (e.g. `[0, 1]`) targeting dynamic texts, attributes, or event listeners.
 
 At runtime, `template(htmlString)` creates an `<template>` element once. Every subsequent component instantiation calls native C++ `cloneNode(true)`, creating real DOM trees orders of magnitude faster than `document.createElement()` trees.
 
 ```typescript
-import { template } from '@aether/runtime';
+import { template } from '@gati/runtime';
 
 const cardTemplate = template(`
   <article class="user-card">
@@ -23,11 +23,11 @@ const cardTemplate = template(`
 
 ## 2. Component Composition
 
-Components in Aether are plain JavaScript functions that accept `props` and return real DOM `Node` instances.
+Components in Gati are plain JavaScript functions that accept `props` and return real DOM `Node` instances.
 
 ```typescript
-import { template, bindText } from '@aether/runtime';
-import { Signal } from '@aether/reactivity';
+import { template, bindText } from '@gati/runtime';
+import { Signal } from '@gati/reactivity';
 
 interface CardProps {
   title: string | (() => string);
@@ -61,7 +61,7 @@ export function Card(props: CardProps): HTMLElement {
 
 ## 3. Dynamic Bindings
 
-The `@aether/runtime` package provides surgical binding functions:
+The `@gati/runtime` package provides surgical binding functions:
 
 - `bindText(node, getter)`: Updates the `textContent` of a Text node or Element only when `getter()` changes.
 - `bindAttr(element, name, getter)`: Updates attribute or property. Automatically blocks dangerous attributes like `innerHTML`, `srcdoc`, or inline `on*` event handlers.

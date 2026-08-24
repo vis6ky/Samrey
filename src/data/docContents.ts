@@ -16,7 +16,7 @@ export const DOCS_REGISTRY: DocEntry[] = [
 
 **Author**: Lead Framework Architect  
 **Status**: Approved Architectural Baseline  
-**Target**: Production-Grade Frontend Framework ("Aether")  
+**Target**: Production-Grade Frontend Framework ("Gati")  
 **Scope**: Deep Technical Comparative Evaluation of React, Angular, Vue, Svelte, and Solid across 22 architectural dimensions.
 
 ---
@@ -36,7 +36,7 @@ To ensure academic and engineering rigor, all limitations, tradeoffs, and issues
 
 ## 2. In-Depth Multi-Framework Comparative Matrix
 
-| Architectural Dimension | React (v19 + RSC) | Angular (v18/19 Ivy + Signals) | Vue (v3.5 Composition) | Svelte (v5 Runes) | Solid (v1.9 / SolidStart) | Proposed Aether Architecture |
+| Architectural Dimension | React (v19 + RSC) | Angular (v18/19 Ivy + Signals) | Vue (v3.5 Composition) | Svelte (v5 Runes) | Solid (v1.9 / SolidStart) | Proposed Gati Architecture |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1. Rendering Architecture** | Virtual DOM diffing (Fiber tree reconciliation) | Incremental DOM / Ivy bytecode instructions | Hybrid Virtual DOM with Block Trees & Patch Flags | Compiler-generated direct DOM surgical mutations | Direct DOM mutations via compiled static <template> clones | Static <template> clone hoisting with fine-grained DOM slot bindings |
 | **2. Reactivity Model** | Coarse-grained component re-execution triggered by setState/dispatch | Hybrid: Angular Signals (push-pull) + optional Zone.js dirty checking | Fine-grained Proxy-based reactive graph (ref, reactive) | Fine-grained Runes ($state, $derived, $effect) via AST transform | Fine-grained Signals (createSignal, createMemo, createEffect) | Glitch-free topological push-pull Signals graph with O(1) dirty flagging |
@@ -53,7 +53,7 @@ To ensure academic and engineering rigor, all limitations, tradeoffs, and issues
 
 ---
 
-## 3. Key Architectural Learnings for Aether
+## 3. Key Architectural Learnings for Gati
 
 1. **Abandon the Virtual DOM**: Solid and Svelte 5 prove that direct DOM mutations driven by fine-grained signals outperform VDOM diffing in memory, initial render, and update speed.
 2. **Execute Components ONCE**: Running component functions once to set up the reactive graph eliminates the entire class of stale closures, hook rules, and memoization ceremonies.
@@ -68,7 +68,7 @@ To ensure academic and engineering rigor, all limitations, tradeoffs, and issues
     title: 'Security Model',
     filename: 'docs/SECURITY_MODEL.md',
     summary: 'Zero-trust architecture with context-aware sanitization, W3C Trusted Types, zero-eval runtime, and safe SSR serialization.',
-    content: `# Security Model: Aether Frontend Framework
+    content: `# Security Model: Gati Frontend Framework
 
 **Document**: docs/SECURITY_MODEL.md  
 **Classification**: Core Architecture Specification  
@@ -78,7 +78,7 @@ To ensure academic and engineering rigor, all limitations, tradeoffs, and issues
 
 ## 1. Executive Summary & Security Principles
 
-Aether is engineered from the ground up on the principle of Zero-Trust Input and Security-by-Default. Unlike legacy frameworks where security is treated as a runtime add-on or delegated to developer discipline, Aether integrates contextual security boundaries directly into the Compiler Pipeline, Reactivity Engine, Hydration Serializer, and HTTP Client.
+Gati is engineered from the ground up on the principle of Zero-Trust Input and Security-by-Default. Unlike legacy frameworks where security is treated as a runtime add-on or delegated to developer discipline, Gati integrates contextual security boundaries directly into the Compiler Pipeline, Reactivity Engine, Hydration Serializer, and HTTP Client.
 
 ### Core Security Tenets
 1. **Zero-eval Runtime Guarantee**: No eval(), new Function(), or dynamic string-to-code execution in any core package. Full compatibility with the strictest Content Security Policy (script-src 'self').
@@ -91,7 +91,7 @@ Aether is engineered from the ground up on the principle of Zero-Trust Input and
 
 ## 2. Context-Aware Sanitization Pipeline
 
-A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the mismatch between the sanitization strategy and the execution context. Aether's compiler classifies every dynamic binding into one of five distinct contexts:
+A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the mismatch between the sanitization strategy and the execution context. Gati's compiler classifies every dynamic binding into one of five distinct contexts:
 
 * **HTML Text Content**: Compiled to node.textContent = value. Native browser text node assignment. Never invokes HTML parsers or innerHTML.
 * **Safe Attributes**: Compiled to node.setAttribute(key, value). Direct DOM property/attribute mapping. Zero template string interpolation.
@@ -105,7 +105,7 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
     title: 'Architecture Specification',
     filename: 'docs/ARCHITECTURE.md',
     summary: 'Complete technical specification of all 12 monorepo packages, compiler pipeline, reactive graph, and runtime engine.',
-    content: `# Architectural Specification: Aether Frontend Framework
+    content: `# Architectural Specification: Gati Frontend Framework
 
 **Document**: docs/ARCHITECTURE.md  
 **Version**: 1.0.0-Draft  
@@ -116,7 +116,7 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
 
 ## 1. Executive Summary & Design Philosophy
 
-Aether is a high-performance, TypeScript-native frontend framework designed to provide fine-grained reactivity, zero Virtual DOM overhead, compiler-first optimization, and security-by-default.
+Gati is a high-performance, TypeScript-native frontend framework designed to provide fine-grained reactivity, zero Virtual DOM overhead, compiler-first optimization, and security-by-default.
 
 ### Core Tenets
 1. **Components Execute Once**: Component functions run exactly once to build the reactive graph. They never re-execute on state changes.
@@ -129,7 +129,7 @@ Aether is a high-performance, TypeScript-native frontend framework designed to p
 
 ## 2. Monorepo Topology & Package Architecture
 
-Aether is organized as an acyclic, modular monorepo containing 12 cohesive packages:
+Gati is organized as an acyclic, modular monorepo containing 12 cohesive packages:
 
 * packages/compiler (AOT Parser, IR Generator, Optimizer & Code Generator)
 * packages/runtime (Component Lifecycle, Template Cloning, DOM Hydrator & Mount Engine)
@@ -149,11 +149,11 @@ Aether is organized as an acyclic, modular monorepo containing 12 cohesive packa
     title: 'Architecture Decision Records (ADRs)',
     filename: 'docs/TECHNICAL_DECISIONS.md',
     summary: 'Formal ADR-001 through ADR-008 documenting architectural decisions, tradeoffs, and justifications.',
-    content: `# Architecture Decision Records (ADRs): Aether Framework
+    content: `# Architecture Decision Records (ADRs): Gati Framework
 
 **Document**: docs/TECHNICAL_DECISIONS.md  
 **Status**: Formal Architectural Standard  
-**Framework**: Aether  
+**Framework**: Gati  
 
 ---
 
@@ -178,13 +178,13 @@ Aether is organized as an acyclic, modular monorepo containing 12 cohesive packa
 
 **Document**: docs/ROADMAP.md  
 **Status**: Approved Phasing Baseline  
-**Framework**: Aether  
+**Framework**: Gati  
 
 ---
 
 ## 1. Executive Phasing Strategy
 
-To ensure architectural integrity, stability, and maintainability, Aether follows a strict Gate-Checked Multi-Phase Implementation Plan. No subsequent phase begins until the preceding phase passes all automated verification gates, security audits, and performance thresholds.
+To ensure architectural integrity, stability, and maintainability, Gati follows a strict Gate-Checked Multi-Phase Implementation Plan. No subsequent phase begins until the preceding phase passes all automated verification gates, security audits, and performance thresholds.
 
 * **Phase 0**: Specification, Threat Modeling & Architectural Baselines (COMPLETED)
 * **Phase 1**: Core Reactivity Engine & Standalone DOM Renderer

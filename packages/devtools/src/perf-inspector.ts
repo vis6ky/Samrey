@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/devtools - Performance & Render Timings Inspector
+ * @gati/devtools - Performance & Render Timings Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

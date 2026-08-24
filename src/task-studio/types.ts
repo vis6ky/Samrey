@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Domain & Application Types
+ * @gati/task-studio - Domain & Application Types
  */
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';

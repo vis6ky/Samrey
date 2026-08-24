@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/forms - Reactive Field State
+ * @gati/forms - Reactive Field State
  */
 
-import { signal, computed, ReadonlySignal } from '@aether/reactivity';
+import { signal, computed, ReadonlySignal } from '@gati/reactivity';
 import { computeAriaAttributes, AriaBindingAttributes } from './aria.js';
 import { Validator } from './standard-schema.js';
 

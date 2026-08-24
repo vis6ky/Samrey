@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Project Card Component
- * Native Aether Reactive Component with dynamic progress bar and actions
+ * Gati Project Manager — Project Card Component
+ * Native Gati Reactive Component with dynamic progress bar and actions
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 import { Project } from '../types.js';
 import { removeProject } from '../state.js';
 

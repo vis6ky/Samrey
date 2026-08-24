@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/forms - Form Container Controller with Standard Schema (~v1) Support
+ * @gati/forms - Form Container Controller with Standard Schema (~v1) Support
  */
 
-import { signal, computed, ReadonlySignal } from '@aether/reactivity';
+import { signal, computed, ReadonlySignal } from '@gati/reactivity';
 import { createField, FieldState } from './field.js';
 import { StandardSchemaV1, Validator } from './standard-schema.js';
 

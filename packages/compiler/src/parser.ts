@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
+ * @gati/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
  */
 
 import {
@@ -27,8 +27,8 @@ import {
 import { classifyBindingContext } from './security-classifier.js';
 import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
-import { AetherCompilerError, AetherErrorCode } from './errors.js';
-import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@aether/security';
+import { GatiCompilerError, GatiErrorCode } from './errors.js';
+import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@gati/security';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
@@ -66,11 +66,11 @@ export interface ParseOptions {
 export interface ParseResult {
   ast: ASTRootNode;
   diagnostics: string[];
-  errors: AetherCompilerError[];
+  errors: GatiCompilerError[];
 }
 
 /**
- * High-Performance Recursive-Descent Parser for Aether templates/JSX.
+ * High-Performance Recursive-Descent Parser for Gati templates/JSX.
  * Optimized with ASCII lookup tables, bulk location tracking, and zero unnecessary allocations.
  */
 export class TemplateParser {
@@ -81,7 +81,7 @@ export class TemplateParser {
   private lineStartOffset: number = 0;
   private filename?: string;
   private diagnostics: string[] = [];
-  private errors: AetherCompilerError[] = [];
+  private errors: GatiCompilerError[] = [];
 
   constructor(source: string, options?: ParseOptions) {
     this.source = source;
@@ -114,7 +114,7 @@ export class TemplateParser {
     };
   }
 
-  public getStructuredErrors(): AetherCompilerError[] {
+  public getStructuredErrors(): GatiCompilerError[] {
     return this.errors;
   }
 
@@ -158,14 +158,14 @@ export class TemplateParser {
   private recordDiagnostic(
     msg: string,
     pos = this.getPosition(),
-    code: AetherErrorCode = 'AETH-102',
+    code: GatiErrorCode = 'AETH-102',
     explanation?: string,
     suggestion?: string
   ): void {
     const diagStr = `[${code}] [${pos.line}:${pos.column}] ${msg}`;
     this.diagnostics.push(diagStr);
     this.errors.push(
-      new AetherCompilerError({
+      new GatiCompilerError({
         code,
         message: msg,
         source: this.source,

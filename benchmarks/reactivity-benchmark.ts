@@ -25,7 +25,7 @@ export function runReactivityBenchmark(iterations = 100_000): { durationMs: numb
 }
 
 if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes('reactivity-benchmark')) {
-  console.log('Running Aether Reactivity Benchmark (100,000 iterations)...');
+  console.log('Running Gati Reactivity Benchmark (100,000 iterations)...');
   const res = runReactivityBenchmark(100_000);
   console.log(`Completed in ${res.durationMs.toFixed(2)}ms (${res.opsPerSec.toLocaleString()} ops/sec)`);
 }

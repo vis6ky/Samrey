@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Post-Publication Registry Verification
+ * @gati/monorepo - Post-Publication Registry Verification
  */
 
 import { execSync } from 'node:child_process';
@@ -32,7 +32,7 @@ export function verifyRegistryPackages(): { packages: RegistryVerificationResult
   let registryOnline = false;
 
   for (const pkg of PACKAGES) {
-    const pkgName = `@aether/${pkg}`;
+    const pkgName = `@gati/${pkg}`;
     try {
       const out = execSync(`npm view ${pkgName} --json`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
       const data = JSON.parse(out);
@@ -59,7 +59,7 @@ export function verifyRegistryPackages(): { packages: RegistryVerificationResult
 }
 
 if (process.argv[1]?.endsWith('verify-registry.ts') || process.argv[1]?.endsWith('verify-registry.js')) {
-  console.log('▲ Aether NPM Registry Verification\n');
+  console.log('▲ Gati NPM Registry Verification\n');
   const { packages, registryOnline } = verifyRegistryPackages();
   console.log(`  Registry Status: ${registryOnline ? 'LIVE ACCESS AVAILABLE' : 'SIMULATION MODE (Offline / Unauthenticated)'}\n`);
 

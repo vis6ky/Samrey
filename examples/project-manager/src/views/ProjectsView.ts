@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Projects List & Filtering View
- * Native Aether View with search, category filtering, and sorting
+ * Gati Project Manager — Projects List & Filtering View
+ * Native Gati View with search, category filtering, and sorting
  */
 
-import { el, For, Show } from '@aether/runtime';
+import { el, For, Show } from '@gati/runtime';
 import { store, filteredProjects } from '../state.js';
 import { ProjectCard } from '../components/ProjectCard.js';
 

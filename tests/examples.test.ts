@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Aether Framework — Examples Verification Test Suite
+ * Gati Framework — Examples Verification Test Suite
  */
 
 import { describe, it } from 'node:test';
@@ -17,7 +17,7 @@ import { generateStaticSite } from '../packages/ssr/src/index.js';
 import { App } from '../examples/ssr/src/app.js';
 import { routes } from '../examples/ssg/src/pages.js';
 
-describe('Aether Runnable Examples Suite', () => {
+describe('Gati Runnable Examples Suite', () => {
   it('runs basic counter example cleanly', () => {
     const res = runCounterExample();
     assert.ok(res.root);
@@ -39,8 +39,8 @@ describe('Aether Runnable Examples Suite', () => {
     assert.ok(form.fields.password);
     assert.equal(form.fields.email.value(), '');
 
-    form.fields.email.setValue('lead@aether.dev');
-    assert.equal(form.fields.email.value(), 'lead@aether.dev');
+    form.fields.email.setValue('lead@gati.dev');
+    assert.equal(form.fields.email.value(), 'lead@gati.dev');
   });
 
   it('runs HTTP async resource fetching example', async () => {
@@ -48,20 +48,20 @@ describe('Aether Runnable Examples Suite', () => {
     assert.equal(res.status, 'success');
     assert.ok(res.post);
     assert.equal(res.post.id, 1);
-    assert.equal(res.post.title, 'Fine-Grained Reactivity in Aether');
+    assert.equal(res.post.title, 'Fine-Grained Reactivity in Gati');
   });
 
   it('runs streaming SSR example with Unicode state escaping', async () => {
     const html = await runSsrExample();
     assert.ok(typeof html === 'string');
-    assert.ok(html.includes('Aether SSR App'));
+    assert.ok(html.includes('Gati SSR App'));
     assert.ok(html.includes('Lead Architect'));
     assert.ok(html.includes('__AETHER_STATE__'));
   });
 
   it('runs full SSR application example with metadata and context', async () => {
     const ctx = createSSRContext({ initialRole: 'admin' });
-    ctx.setTitle('Aether SSR Test');
+    ctx.setTitle('Gati SSR Test');
     ctx.addMeta({ name: 'viewport', content: 'width=device-width' });
 
     const html = await renderToString(App, {
@@ -69,9 +69,9 @@ describe('Aether Runnable Examples Suite', () => {
       clientScript: '/static/client.js'
     });
 
-    assert.ok(html.includes('Aether SSR Application'));
+    assert.ok(html.includes('Gati SSR Application'));
     assert.ok(html.includes('Interactive Counter'));
-    assert.ok(html.includes('<title>Aether SSR Test</title>'));
+    assert.ok(html.includes('<title>Gati SSR Test</title>'));
     assert.ok(html.includes('/static/client.js'));
   });
 
@@ -80,14 +80,14 @@ describe('Aether Runnable Examples Suite', () => {
       outDir: './dist/test-ssg-output',
       writeFiles: false,
       generateSitemap: true,
-      baseUrl: 'https://aether.dev'
+      baseUrl: 'https://gati.dev'
     });
 
     assert.equal(result.totalPages, 5);
     assert.equal(result.pages.length, 5);
     assert.ok(result.sitemapXml);
-    assert.ok(result.sitemapXml.includes('https://aether.dev/'));
-    assert.ok(result.sitemapXml.includes('https://aether.dev/docs'));
+    assert.ok(result.sitemapXml.includes('https://gati.dev/'));
+    assert.ok(result.sitemapXml.includes('https://gati.dev/docs'));
   });
 
   it('runs hydration and event replay example', () => {

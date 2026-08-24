@@ -1,4 +1,4 @@
-# Aether Framework v1.0.0 — Final Release Checklist
+# Gati Framework v1.0.0 — Final Release Checklist
 
 **Target Version:** 1.0.0 (General Availability)  
 **Audit Date:** 2026-08-24  
@@ -13,17 +13,17 @@
 - Inter-package dependency version references pinned to `^1.0.0`: **PASS**
 
 ### Packages
-- `@aether/reactivity` manifest and exports verified: **PASS**
-- `@aether/runtime` manifest and exports verified: **PASS**
-- `@aether/security` manifest and exports verified: **PASS**
-- `@aether/compiler` manifest and exports verified: **PASS**
-- `@aether/router` manifest and exports verified: **PASS**
-- `@aether/http` manifest and exports verified: **PASS**
-- `@aether/forms` manifest and exports verified: **PASS**
-- `@aether/ssr` manifest and exports verified: **PASS**
-- `@aether/testing` manifest and exports verified: **PASS**
-- `@aether/devtools` manifest and exports verified: **PASS**
-- `@aether/cli` manifest and binary bundle verified: **PASS**
+- `@gati/reactivity` manifest and exports verified: **PASS**
+- `@gati/runtime` manifest and exports verified: **PASS**
+- `@gati/security` manifest and exports verified: **PASS**
+- `@gati/compiler` manifest and exports verified: **PASS**
+- `@gati/router` manifest and exports verified: **PASS**
+- `@gati/http` manifest and exports verified: **PASS**
+- `@gati/forms` manifest and exports verified: **PASS**
+- `@gati/ssr` manifest and exports verified: **PASS**
+- `@gati/testing` manifest and exports verified: **PASS**
+- `@gati/devtools` manifest and exports verified: **PASS**
+- `@gati/cli` manifest and binary bundle verified: **PASS**
 
 ### Public API
 - Formal contract verification against `docs/PUBLIC_API.md`: **PASS**
@@ -36,11 +36,11 @@
 - Zero external frontend UI runtime dependencies (React, Vue, Svelte, Solid, etc.): **PASS**
 - Correct dependency topological ordering and zero circular dependencies: **PASS**
 
-### Aether-Native UI
-- Documentation application navigation and layout 100% Aether-native: **PASS**
-- Search modal and Command Palette 100% Aether-native: **PASS**
-- Interactive Playground and Architecture Explorer 100% Aether-native: **PASS**
-- Benchmark UI and Security Lab 100% Aether-native: **PASS**
+### Gati-Native UI
+- Documentation application navigation and layout 100% Gati-native: **PASS**
+- Search modal and Command Palette 100% Gati-native: **PASS**
+- Interactive Playground and Architecture Explorer 100% Gati-native: **PASS**
+- Benchmark UI and Security Lab 100% Gati-native: **PASS**
 - Native SVG icon primitives without external icon packages: **PASS**
 
 ### Documentation

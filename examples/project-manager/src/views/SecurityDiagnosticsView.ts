@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Security Diagnostics & Adversarial Sandbox View
- * Powered 100% by @aether/security with real sanitization tests
+ * Gati Project Manager — Security Diagnostics & Adversarial Sandbox View
+ * Powered 100% by @gati/security with real sanitization tests
  */
 
-import { el, Show, For } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
-import { sanitizeHtml, sanitizeUrl, isSafeUrl, safeJsonParse, validateCsrfToken } from '@aether/security';
+import { el, Show, For } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
+import { sanitizeHtml, sanitizeUrl, isSafeUrl, safeJsonParse, validateCsrfToken } from '@gati/security';
 import { ProjectManagerApi, currentCsrfToken } from '../api.js';
 
 export function SecurityDiagnosticsView(): HTMLElement {
@@ -70,7 +70,7 @@ export function SecurityDiagnosticsView(): HTMLElement {
     'div',
     { class: 'bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4' },
     el('h3', { class: 'text-base font-bold text-slate-800' }, 'Interactive Sanitizer Sandbox'),
-    el('p', { class: 'text-xs text-slate-500' }, 'Type hostile payloads below to witness real-time neutralization by @aether/security.'),
+    el('p', { class: 'text-xs text-slate-500' }, 'Type hostile payloads below to witness real-time neutralization by @gati/security.'),
     el(
       'div',
       { class: 'grid grid-cols-1 md:grid-cols-2 gap-4' },

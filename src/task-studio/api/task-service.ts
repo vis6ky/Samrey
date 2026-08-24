@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Task Data Service with @aether/http
+ * @gati/task-studio - Task Data Service with @gati/http
  */
 
 import { TaskItem, TaskActivityLog, TaskFormValues } from '../types.js';

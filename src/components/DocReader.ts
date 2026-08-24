@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @aether/doc - Native Aether Documentation Reader
+ * @gati/doc - Native Gati Documentation Reader
  */
 
-import { el, For } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, For } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import { DOCS_REGISTRY, DocEntry } from '../data/docContents.js';
-import { renderMarkdownToAetherDOM } from '../lib/markdown.js';
+import { renderMarkdownToGatiDOM } from '../lib/markdown.js';
 import { icon } from '../lib/icons.js';
 
 export function DocReader(): HTMLElement {
@@ -44,7 +44,7 @@ export function DocReader(): HTMLElement {
           el('span', null, 'Full Specification Documents')
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' },
-          'Aether Architectural Documentation Suite'
+          'Gati Architectural Documentation Suite'
         ),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
           'Inspect and export the complete markdown technical specifications generated in the ',
@@ -139,7 +139,7 @@ export function DocReader(): HTMLElement {
     el('div', {
       class: 'prose-container text-sm leading-relaxed overflow-y-auto max-h-[750px] pr-2'
     },
-      () => renderMarkdownToAetherDOM(selectedDoc.value.content)
+      () => renderMarkdownToGatiDOM(selectedDoc.value.content)
     )
   );
 

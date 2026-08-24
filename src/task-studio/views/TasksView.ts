@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Tasks Management View
+ * @gati/task-studio - Tasks Management View
  */
 
-import { el, For, Show } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { el, For, Show } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 import {
   tasksState,
   setTaskFilter,

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 24 Public API Freeze Certification
+ * @gati/monorepo - Phase 24 Public API Freeze Certification
  * Verifies that 100% of public exports match the v1.0.0 frozen API contract.
  */
 
@@ -9,7 +9,7 @@ import * as assert from 'node:assert/strict';
 import { validatePublicAPIExports } from '../../scripts/release/validate-exports.js';
 
 describe('Phase 24 — Public API Freeze Gate', () => {
-  it('1. Audits all 11 @aether/* packages against docs/PUBLIC_API.md', async () => {
+  it('1. Audits all 11 @gati/* packages against docs/PUBLIC_API.md', async () => {
     const { results, allValid } = await validatePublicAPIExports();
     assert.strictEqual(results.length, 11, 'Must audit all 11 packages');
     for (const res of results) {
@@ -72,7 +72,7 @@ describe('Phase 24 — Public API Freeze Gate', () => {
     const mod = await import('../../packages/compiler/src/index.js');
     const expected = [
       'compileTemplate', 'parseTemplate', 'buildAIR', 'generateCode',
-      'classifySecurityNode', 'lintAccessibility', 'AetherCompilerError',
+      'classifySecurityNode', 'lintAccessibility', 'GatiCompilerError',
       'generateSourceFrame', 'ERROR_REGISTRY'
     ];
     for (const exp of expected) {

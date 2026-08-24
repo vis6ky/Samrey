@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - Aether Intermediate Representation (AIR) AST Definitions
+ * @gati/compiler - Gati Intermediate Representation (AIR) AST Definitions
  */
 
 export * from './ast.js';

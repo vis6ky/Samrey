@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateStaticSite, StaticRouteConfig } from '../src/index.js';
 
-describe('@aether/ssr - Static Site Generation (SSG)', () => {
+describe('@gati/ssr - Static Site Generation (SSG)', () => {
   it('generates static HTML pages for fixed and dynamic routes', async () => {
     const routes: StaticRouteConfig[] = [
       {
@@ -19,7 +19,7 @@ describe('@aether/ssr - Static Site Generation (SSG)', () => {
         path: '/blog/:slug',
         component: () => '<article class="post"><h1>Blog Post</h1></article>',
         getStaticPaths: () => [
-          { params: { slug: 'launching-aether' }, title: 'Launching Aether' },
+          { params: { slug: 'launching-aether' }, title: 'Launching Gati' },
           { params: { slug: 'reactivity-deep-dive' }, title: 'Reactivity Deep Dive' }
         ]
       }
@@ -28,7 +28,7 @@ describe('@aether/ssr - Static Site Generation (SSG)', () => {
     const result = await generateStaticSite(routes, {
       writeFiles: false,
       generateSitemap: true,
-      baseUrl: 'https://aether.dev'
+      baseUrl: 'https://gati.dev'
     });
 
     assert.equal(result.totalPages, 4);
@@ -45,7 +45,7 @@ describe('@aether/ssr - Static Site Generation (SSG)', () => {
     assert.ok(homePage?.html.includes('<h1>Home</h1>'));
 
     assert.ok(result.sitemapXml);
-    assert.ok(result.sitemapXml?.includes('https://aether.dev/blog/launching-aether'));
-    assert.ok(result.sitemapXml?.includes('https://aether.dev/about'));
+    assert.ok(result.sitemapXml?.includes('https://gati.dev/blog/launching-aether'));
+    assert.ok(result.sitemapXml?.includes('https://gati.dev/about'));
   });
 });

@@ -1,4 +1,4 @@
-# Aether Framework — Clean-Room NPM Consumer Verification Report
+# Gati Framework — Clean-Room NPM Consumer Verification Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  

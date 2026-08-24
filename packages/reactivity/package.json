@@ -1,16 +1,16 @@
 {
-  "name": "@aether/reactivity",
+  "name": "@gati/reactivity",
   "version": "1.0.0",
   "description": "Fine-grained push-pull topological signal engine with versioned transaction clocks and Owner cleanup hierarchy.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aether-framework/aether.git",
+    "url": "git+https://github.com/gati-framework/aether.git",
     "directory": "packages/reactivity"
   },
-  "homepage": "https://aether.dev",
+  "homepage": "https://gati.dev",
   "bugs": {
-    "url": "https://github.com/aether-framework/aether/issues"
+    "url": "https://github.com/gati-framework/aether/issues"
   },
   "keywords": [
     "aether",

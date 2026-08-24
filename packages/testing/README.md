@@ -1,23 +1,23 @@
-# @aether/testing
+# @gati/testing
 
 Deterministic unit testing utilities, component test harnesses, reactivity microtask flushers, and DOM event simulators.
 
 ## Purpose
 
-`@aether/testing` provides ergonomic utilities for testing Aether components and signals in simulated or headless browser environments without relying on external testing framework plugins.
+`@gati/testing` provides ergonomic utilities for testing Gati components and signals in simulated or headless browser environments without relying on external testing framework plugins.
 
 ## Installation
 
 ```bash
-npm install -D @aether/testing @aether/runtime @aether/reactivity
+npm install -D @gati/testing @gati/runtime @gati/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { renderTest, fireEvent, flushReactivity } from '@aether/testing';
-import { el } from '@aether/runtime';
-import { signal } from '@aether/reactivity';
+import { renderTest, fireEvent, flushReactivity } from '@gati/testing';
+import { el } from '@gati/runtime';
+import { signal } from '@gati/reactivity';
 
 function Counter() {
   const count = signal(0);
@@ -58,6 +58,6 @@ Safely handles isolated unmounting to prevent DOM leakage and timer retention be
 
 ## Related Packages
 
-- `@aether/runtime` — Target component rendering system.
-- `@aether/reactivity` — State engine tested with reactivity flushers.
+- `@gati/runtime` — Target component rendering system.
+- `@gati/reactivity` — State engine tested with reactivity flushers.
 

@@ -2,7 +2,7 @@
 
 **Author**: Lead Framework Architect  
 **Status**: Approved Architectural Baseline  
-**Target**: Production-Grade Frontend Framework ("Aether")  
+**Target**: Production-Grade Frontend Framework ("Gati")  
 **Scope**: Deep Technical Comparative Evaluation of React, Angular, Vue, Svelte, and Solid across 22 architectural dimensions.
 
 ---
@@ -22,7 +22,7 @@ To ensure academic and engineering rigor, all limitations, tradeoffs, and issues
 
 ## 2. In-Depth Multi-Framework Comparative Matrix
 
-| Architectural Dimension | React (v19 + RSC) | Angular (v18/19 Ivy + Signals) | Vue (v3.5 Composition) | Svelte (v5 Runes) | Solid (v1.9 / SolidStart) | Proposed Aether Architecture |
+| Architectural Dimension | React (v19 + RSC) | Angular (v18/19 Ivy + Signals) | Vue (v3.5 Composition) | Svelte (v5 Runes) | Solid (v1.9 / SolidStart) | Proposed Gati Architecture |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1. Rendering Architecture** | Virtual DOM diffing (Fiber tree reconciliation) | Incremental DOM / Ivy bytecode instructions | Hybrid Virtual DOM with Block Trees & Patch Flags | Compiler-generated direct DOM surgical mutations | Direct DOM mutations via compiled static `<template>` clones | Static `<template>` clone hoisting with fine-grained DOM slot bindings |
 | **2. Reactivity Model** | Coarse-grained component re-execution triggered by `setState`/dispatch | Hybrid: Angular Signals (push-pull) + optional Zone.js dirty checking | Fine-grained `Proxy`-based reactive graph (`ref`, `reactive`) | Fine-grained Runes (`$state`, `$derived`, `$effect`) via AST transform | Fine-grained Signals (`createSignal`, `createMemo`, `createEffect`) | Glitch-free topological push-pull Signals graph with O(1) dirty flagging |
@@ -182,7 +182,7 @@ SolidJS utilizes **JSX compilation to native DOM operations** powered by a pure 
 
 ---
 
-## 4. Key Architectural Learnings for Aether
+## 4. Key Architectural Learnings for Gati
 
 1. **Abandon the Virtual DOM**: Solid and Svelte 5 prove that direct DOM mutations driven by fine-grained signals outperform VDOM diffing in memory, initial render, and update speed.
 2. **Execute Components ONCE**: Running component functions once to set up the reactive graph eliminates the entire class of stale closures, hook rules, and memoization ceremonies.

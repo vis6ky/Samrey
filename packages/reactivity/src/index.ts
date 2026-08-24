@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/reactivity - Main Entry Point
+ * @gati/reactivity - Main Entry Point
  */
 
 export * from './types.js';

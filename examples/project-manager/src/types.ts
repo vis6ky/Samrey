@@ -1,7 +1,7 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Type Contracts & Standard Schema Definitions
- * 100% Native Aether Independent Consumer Application
+ * Gati Project Manager — Type Contracts & Standard Schema Definitions
+ * 100% Native Gati Independent Consumer Application
  */
 
 export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';

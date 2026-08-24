@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/runtime - Single-Execution Component Instantiator
+ * @gati/runtime - Single-Execution Component Instantiator
  */
 
-import { createRoot, createOwner, runWithOwner, Owner, onCleanup } from '@aether/reactivity';
+import { createRoot, createOwner, runWithOwner, Owner, onCleanup } from '@gati/reactivity';
 
 export type Component<P = Record<string, unknown>> = (props: P) => Node | Node[];
 
@@ -12,7 +12,7 @@ export function onMount(fn: () => void): void {
     try {
       fn();
     } catch (err) {
-      console.error('[Aether Runtime] Error in onMount hook:', err);
+      console.error('[Gati Runtime] Error in onMount hook:', err);
     }
   });
 }
@@ -41,7 +41,7 @@ export function mount(componentFn: () => Node | Node[], container: HTMLElement):
   };
 }
 
-export { onCleanup } from '@aether/reactivity';
+export { onCleanup } from '@gati/reactivity';
 
 export function onError(fn: (err: unknown) => void): void {
   // Registers error boundary callback within local owner scope

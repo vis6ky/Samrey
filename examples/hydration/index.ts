@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Aether Framework — Hydration & Event Replay Example
+ * Gati Framework — Hydration & Event Replay Example
  */
 
 import {

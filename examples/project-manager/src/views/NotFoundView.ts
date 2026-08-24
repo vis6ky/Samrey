@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — 404 Route Not Found View
+ * Gati Project Manager — 404 Route Not Found View
  */
 
-import { el } from '@aether/runtime';
+import { el } from '@gati/runtime';
 
 export function NotFoundView(props: { onNavigate: (path: string) => void }): HTMLElement {
   return el(
@@ -11,7 +11,7 @@ export function NotFoundView(props: { onNavigate: (path: string) => void }): HTM
     { class: 'max-w-md mx-auto text-center py-16 space-y-4' },
     el('div', { class: 'text-5xl font-mono font-bold text-indigo-600' }, '404'),
     el('h2', { class: 'text-xl font-bold text-slate-900' }, 'Page Not Found'),
-    el('p', { class: 'text-xs text-slate-500' }, 'The requested resource does not exist in this Aether Project Manager session.'),
+    el('p', { class: 'text-xs text-slate-500' }, 'The requested resource does not exist in this Gati Project Manager session.'),
     el(
       'button',
       {

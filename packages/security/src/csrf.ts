@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/security - Anti-CSRF Token Generation & Verification
+ * @gati/security - Anti-CSRF Token Generation & Verification
  */
 
 /**

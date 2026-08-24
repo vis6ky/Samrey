@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/router - Main Entry Point
+ * @gati/router - Main Entry Point
  */
 
 export * from './types.js';

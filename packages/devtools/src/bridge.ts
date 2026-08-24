@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/devtools - DevTools Bridge & Event Emitter
+ * @gati/devtools - DevTools Bridge & Event Emitter
  */
 
 import { sanitizePayload } from './sanitizer.js';
@@ -91,7 +91,7 @@ export class DevToolsBridge {
       try {
         listener(event);
       } catch (err) {
-        console.error('[Aether DevTools] Listener error:', err);
+        console.error('[Gati DevTools] Listener error:', err);
       }
     }
 

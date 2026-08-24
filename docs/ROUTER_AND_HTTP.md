@@ -1,13 +1,13 @@
-# Router & HTTP in Aether
+# Router & HTTP in Gati
 
-## 1. Reactive Routing (`@aether/router`)
+## 1. Reactive Routing (`@gati/router`)
 
-`@aether/router` provides client and server routing driven by fine-grained signals. Route transitions do not re-render the whole page; only the outlet and parameter bindings update.
+`@gati/router` provides client and server routing driven by fine-grained signals. Route transitions do not re-render the whole page; only the outlet and parameter bindings update.
 
 ### Defining Routes & Router Instance
 
 ```typescript
-import { createRouter } from '@aether/router';
+import { createRouter } from '@gati/router';
 
 const router = createRouter([
   {
@@ -42,14 +42,14 @@ The router automatically runs all navigation targets through `sanitizeRedirectUr
 
 ---
 
-## 2. Reactive Data Fetching (`@aether/http`)
+## 2. Reactive Data Fetching (`@gati/http`)
 
-`@aether/http` integrates async HTTP requests seamlessly into Aether's reactive dependency graph.
+`@gati/http` integrates async HTTP requests seamlessly into Gati's reactive dependency graph.
 
 ### `createResource` Primitive
 
 ```typescript
-import { createResource, HttpClient } from '@aether/http';
+import { createResource, HttpClient } from '@gati/http';
 
 interface User {
   id: string;

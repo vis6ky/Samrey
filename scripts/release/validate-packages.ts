@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Release Package Manifest Validation
+ * @gati/monorepo - Release Package Manifest Validation
  */
 
 import * as fs from 'node:fs';
@@ -42,7 +42,7 @@ export function validateAllPackages(expectedVersion = '1.0.0'): { packages: Pack
 
     if (!fs.existsSync(pkgPath)) {
       results.push({
-        packageName: `@aether/${pkg}`,
+        packageName: `@gati/${pkg}`,
         version: 'missing',
         license: 'missing',
         hasPublishConfig: false,
@@ -59,7 +59,7 @@ export function validateAllPackages(expectedVersion = '1.0.0'): { packages: Pack
     const manifest = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
     // Check Name
-    const expectedName = `@aether/${pkg}`;
+    const expectedName = `@gati/${pkg}`;
     if (manifest.name !== expectedName) {
       errors.push(`Expected name "${expectedName}", found "${manifest.name}"`);
     }
@@ -124,7 +124,7 @@ export function validateAllPackages(expectedVersion = '1.0.0'): { packages: Pack
     }
 
     results.push({
-      packageName: manifest.name || `@aether/${pkg}`,
+      packageName: manifest.name || `@gati/${pkg}`,
       version: manifest.version || 'unknown',
       license: manifest.license || 'unknown',
       hasPublishConfig,
@@ -140,7 +140,7 @@ export function validateAllPackages(expectedVersion = '1.0.0'): { packages: Pack
 }
 
 if (process.argv[1]?.endsWith('validate-packages.ts') || process.argv[1]?.endsWith('validate-packages.js')) {
-  console.log('▲ Aether Package Manifest Hardening Audit\n');
+  console.log('▲ Gati Package Manifest Hardening Audit\n');
   const { packages, allValid } = validateAllPackages();
   for (const pkg of packages) {
     console.log(`  • ${pkg.packageName}@${pkg.version} [${pkg.license}] -> ${pkg.isValid ? 'VALID' : 'INVALID'}`);

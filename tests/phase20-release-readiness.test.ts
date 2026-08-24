@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 20 Public Release Readiness & npm Publication Validation Suite
+ * @gati/monorepo - Phase 20 Public Release Readiness & npm Publication Validation Suite
  */
 
 import { describe, it } from 'node:test';
@@ -9,20 +9,20 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
-// Aether Native Modules
+// Gati Native Modules
 import { signal, computed, effect, batch, untrack, createStore, produce, reconcile, createMemo, createRoot, createContext, useContext } from '../packages/reactivity/src/index.js';
 import { el, svg, fragment, text, mount, hydrate, Show, For, Switch, Match, ErrorBoundary, Dynamic, Portal, Suspense, onMount, onCleanup, onError, createComponent } from '../packages/runtime/src/index.js';
 import { sanitizeHtml, sanitizeUrl, sanitizeAttribute, escapeHtmlText, isSafeUrl, safeJsonParse, safeJsonStringify, createCsrfToken, validateCsrfToken, TrustedTypesPolicy } from '../packages/security/src/index.js';
-import { compileTemplate, parseTemplate, buildAIR, generateCode, classifySecurityNode, lintAccessibility, AetherCompilerError, generateSourceFrame, ERROR_REGISTRY } from '../packages/compiler/src/index.js';
+import { compileTemplate, parseTemplate, buildAIR, generateCode, classifySecurityNode, lintAccessibility, GatiCompilerError, generateSourceFrame, ERROR_REGISTRY } from '../packages/compiler/src/index.js';
 import { createRouter, matchPath, matchRoute, matchRoutes, createLink, Router, Route, Link, useRouter, useParams, useLocation, useSearchParams, createBrowserHistory, createMemoryHistory } from '../packages/router/src/index.js';
 import { createResource, httpClient, createHttpCache, HttpError } from '../packages/http/src/index.js';
 import { createForm, createField, validateSchema, getAccessibleFieldProps } from '../packages/forms/src/index.js';
 import { renderToString, renderToStream, generateStaticSite, sanitizeSsrState, stripSecrets, serializeStateForHydration, escapeJsonState, hydrateFromSSR } from '../packages/ssr/src/index.js';
 import { renderTestComponent, fireEvent, waitFor, cleanupAllTestContainers, createMockResource } from '../packages/testing/src/index.js';
-import { DevToolsBridge, aetherDevToolsBridge, AetherDevToolsBridge, initDevTools, GraphInspector, ReactiveGraphInspector, PerformanceInspector, PerfInspector } from '../packages/devtools/src/index.js';
-import { runCLI, generateStarterProject, aetherVitePlugin, runAetherAudit, CLI_VERSION } from '../packages/cli/src/index.js';
+import { DevToolsBridge, aetherDevToolsBridge, GatiDevToolsBridge, initDevTools, GraphInspector, ReactiveGraphInspector, PerformanceInspector, PerfInspector } from '../packages/devtools/src/index.js';
+import { runCLI, generateStarterProject, aetherVitePlugin, runGatiAudit, CLI_VERSION } from '../packages/cli/src/index.js';
 
-describe('Aether Phase 20 — Public Release & npm Publication Readiness', () => {
+describe('Gati Phase 20 — Public Release & npm Publication Readiness', () => {
   const PACKAGES = [
     'reactivity',
     'runtime',
@@ -56,7 +56,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
         };
 
         for (const f of FORBIDDEN) {
-          assert.ok(!deps[f], `Forbidden dependency "${f}" found in @aether/${pkg} package.json`);
+          assert.ok(!deps[f], `Forbidden dependency "${f}" found in @gati/${pkg} package.json`);
         }
       }
 
@@ -70,7 +70,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
             if (fs.statSync(fullPath).isFile() && (file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js'))) {
               const content = fs.readFileSync(fullPath, 'utf8');
               for (const f of ['from \'react\'', 'from "react"', 'from \'vue\'', 'from "vue"', 'from \'@angular', 'from \'svelte\'', 'from \'solid-js\'']) {
-                assert.ok(!content.includes(f), `Foreign import "${f}" found in @aether/${pkg}/src/${file}`);
+                assert.ok(!content.includes(f), `Foreign import "${f}" found in @gati/${pkg}/src/${file}`);
               }
             }
           }
@@ -83,16 +83,16 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
     it('verifies all 11 package manifests have version 1.0.0-rc.1, Apache-2.0, repository metadata, and correct exports', () => {
       for (const pkg of PACKAGES) {
         const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
-        assert.ok(fs.existsSync(manifestPath), `Manifest missing for @aether/${pkg}`);
+        assert.ok(fs.existsSync(manifestPath), `Manifest missing for @gati/${pkg}`);
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-        assert.equal(manifest.name, `@aether/${pkg}`);
+        assert.equal(manifest.name, `@gati/${pkg}`);
         assert.equal(manifest.version, '1.0.0');
         assert.equal(manifest.license, 'Apache-2.0');
-        assert.ok(manifest.repository, `Missing repository in @aether/${pkg}`);
-        assert.ok(manifest.description, `Missing description in @aether/${pkg}`);
-        assert.ok(manifest.exports, `Missing exports in @aether/${pkg}`);
-        assert.ok(manifest.files, `Missing files in @aether/${pkg}`);
+        assert.ok(manifest.repository, `Missing repository in @gati/${pkg}`);
+        assert.ok(manifest.description, `Missing description in @gati/${pkg}`);
+        assert.ok(manifest.exports, `Missing exports in @gati/${pkg}`);
+        assert.ok(manifest.files, `Missing files in @gati/${pkg}`);
 
         if (pkg === 'cli') {
           assert.ok(manifest.bin && manifest.bin.aether, 'CLI must have bin.aether field');
@@ -156,7 +156,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
       assert.equal(typeof generateCode, 'function');
       assert.equal(typeof classifySecurityNode, 'function');
       assert.equal(typeof lintAccessibility, 'function');
-      assert.ok(AetherCompilerError, 'AetherCompilerError must exist');
+      assert.ok(GatiCompilerError, 'GatiCompilerError must exist');
       assert.equal(typeof generateSourceFrame, 'function');
       assert.ok(ERROR_REGISTRY, 'ERROR_REGISTRY must exist');
 
@@ -208,7 +208,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
       // DevTools
       assert.ok(DevToolsBridge, 'DevToolsBridge must exist');
       assert.ok(aetherDevToolsBridge, 'aetherDevToolsBridge must exist');
-      assert.ok(AetherDevToolsBridge, 'AetherDevToolsBridge must exist');
+      assert.ok(GatiDevToolsBridge, 'GatiDevToolsBridge must exist');
       assert.equal(typeof initDevTools, 'function');
       assert.ok(GraphInspector, 'GraphInspector must exist');
       assert.ok(ReactiveGraphInspector, 'ReactiveGraphInspector must exist');
@@ -219,7 +219,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
       assert.equal(typeof runCLI, 'function');
       assert.equal(typeof generateStarterProject, 'function');
       assert.equal(typeof aetherVitePlugin, 'function');
-      assert.equal(typeof runAetherAudit, 'function');
+      assert.equal(typeof runGatiAudit, 'function');
       assert.equal(CLI_VERSION, '1.0.0');
     });
   });
@@ -268,7 +268,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
       };
 
       for (const tarball of tarballs) {
-        const pkgName = tarball.replace(/^aether-/, '@aether/').replace(/-1\.0\.0.*\.tgz$/, '');
+        const pkgName = tarball.replace(/^aether-/, '@gati/').replace(/-1\.0\.0.*\.tgz$/, '');
         consumerManifest.dependencies[pkgName] = path.join(tarballDir, tarball);
       }
 
@@ -282,12 +282,12 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
 
       // Run isolated consumer smoke script
       const consumerScript = `
-        import { signal, computed } from '@aether/reactivity';
-        import { sanitizeHtml, sanitizeUrl } from '@aether/security';
-        import { createRouter } from '@aether/router';
-        import { createForm, createField } from '@aether/forms';
-        import { renderToString } from '@aether/ssr';
-        import { el } from '@aether/runtime';
+        import { signal, computed } from '@gati/reactivity';
+        import { sanitizeHtml, sanitizeUrl } from '@gati/security';
+        import { createRouter } from '@gati/router';
+        import { createForm, createField } from '@gati/forms';
+        import { renderToString } from '@gati/ssr';
+        import { el } from '@gati/runtime';
 
         const count = signal(10);
         const double = computed(() => count.value * 2);
@@ -303,13 +303,13 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
         if (router.currentPath.value !== '/') throw new Error('Router path mismatch');
 
         const form = createForm({
-          initialValues: { name: 'Aether Consumer' },
+          initialValues: { name: 'Gati Consumer' },
           onSubmit: async () => {}
         });
-        if (form.fields.name.value.value !== 'Aether Consumer') throw new Error('Form initialization failed');
+        if (form.fields.name.value.value !== 'Gati Consumer') throw new Error('Form initialization failed');
 
-        const html = await renderToString(() => el('div', { id: 'test' }, 'Aether Consumer Ready'));
-        if (!html.includes('Aether Consumer Ready')) throw new Error('SSR renderToString failed');
+        const html = await renderToString(() => el('div', { id: 'test' }, 'Gati Consumer Ready'));
+        if (!html.includes('Gati Consumer Ready')) throw new Error('SSR renderToString failed');
 
         console.log('CLEAN_ROOM_CONSUMER_SUCCESS');
       `;
@@ -357,7 +357,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
 
       for (const pkg of PACKAGES) {
         const pkgLicense = path.join(process.cwd(), 'packages', pkg, 'LICENSE');
-        assert.ok(fs.existsSync(pkgLicense), `LICENSE missing in @aether/${pkg}`);
+        assert.ok(fs.existsSync(pkgLicense), `LICENSE missing in @gati/${pkg}`);
       }
     });
   });
@@ -372,7 +372,7 @@ describe('Aether Phase 20 — Public Release & npm Publication Readiness', () =>
         assert.ok(files['src/App.tsx'] || files['src/entry-client.tsx'] || files['src/App.ts'] || files['src/main.ts'], `Template ${tmpl} missing entry file`);
 
         const manifest = JSON.parse(files['package.json']);
-        assert.ok(manifest.dependencies['@aether/reactivity'] || manifest.dependencies['@aether/runtime'], `Template ${tmpl} missing Aether runtime dependencies`);
+        assert.ok(manifest.dependencies['@gati/reactivity'] || manifest.dependencies['@gati/runtime'], `Template ${tmpl} missing Gati runtime dependencies`);
         assert.ok(!manifest.dependencies['react'], `Template ${tmpl} must not have react dependency`);
         assert.ok(!manifest.dependencies['vue'], `Template ${tmpl} must not have vue dependency`);
       }

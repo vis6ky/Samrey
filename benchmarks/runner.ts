@@ -13,7 +13,7 @@ import { runMemoryBenchmarks } from './memory/memory.bench.js';
 
 export async function runAllBenchmarks(targetCategory?: string) {
   console.log('=====================================================');
-  console.log('🚀 Aether Framework - Performance Baseline & Benchmark');
+  console.log('🚀 Gati Framework - Performance Baseline & Benchmark');
   console.log('=====================================================');
   console.log(`Node: ${process.version}`);
   console.log(`Platform: ${process.platform} (${process.arch})`);

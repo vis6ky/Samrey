@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/monorepo - Phase 21 Public Release Execution & npm Publication Validation Suite
+ * @gati/monorepo - Phase 21 Public Release Execution & npm Publication Validation Suite
  */
 
 import { describe, it } from 'node:test';
@@ -21,11 +21,11 @@ import { verifyRegistryPackages } from '../scripts/release/verify-registry.js';
 import { runSmokeTest } from '../scripts/release/smoke-test.js';
 import { generateAllReleaseReports } from '../scripts/release/release-report.js';
 
-describe('Aether Phase 21 — Public Release Execution & Registry Verification', () => {
+describe('Gati Phase 21 — Public Release Execution & Registry Verification', () => {
   it('1. Preflight Pipeline Verification', () => {
     const preflight = runPreflight();
     assert.ok(preflight.toolsReady, 'Tooling must be ready');
-    assert.strictEqual(preflight.packagesFound, 11, 'All 11 @aether/* packages must be present');
+    assert.strictEqual(preflight.packagesFound, 11, 'All 11 @gati/* packages must be present');
     assert.ok(preflight.success, 'Preflight check must succeed');
   });
 

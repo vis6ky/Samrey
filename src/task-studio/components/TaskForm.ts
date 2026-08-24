@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Accessible Task Form Component with Standard Schema (~v1)
+ * @gati/task-studio - Accessible Task Form Component with Standard Schema (~v1)
  */
 
-import { el, Show } from '@aether/runtime';
-import { createForm, StandardSchemaV1 } from '@aether/forms';
+import { el, Show } from '@gati/runtime';
+import { createForm, StandardSchemaV1 } from '@gati/forms';
 import { TaskFormValues, TaskPriority, TaskCategory } from '../types.js';
 import { Button } from './ui/Button.js';
 import { Input } from './ui/Input.js';

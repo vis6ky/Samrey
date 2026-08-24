@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @aether/example-ssr - Application Component
+ * @gati/example-ssr - Application Component
  */
 
-import { signal } from '@aether/reactivity';
-import { createServerData } from '@aether/ssr';
+import { signal } from '@gati/reactivity';
+import { createServerData } from '@gati/ssr';
 
 export interface UserFeedItem {
   id: string;
@@ -30,7 +30,7 @@ export function App() {
   return `
   <div class="max-w-3xl mx-auto p-6 font-sans bg-slate-900 text-slate-100 rounded-xl shadow-2xl border border-slate-800">
     <header class="border-b border-slate-800 pb-4 mb-6">
-      <h1 class="text-3xl font-bold tracking-tight text-cyan-400">Aether SSR Application</h1>
+      <h1 class="text-3xl font-bold tracking-tight text-cyan-400">Gati SSR Application</h1>
       <p class="text-slate-400 text-sm mt-1">Isomorphic Server Rendering with Zero-Waterfall Client Hydration</p>
     </header>
 

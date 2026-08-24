@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @aether/compiler - Abstract Syntax Tree (AST) Definitions
+ * @gati/compiler - Abstract Syntax Tree (AST) Definitions
  */
 
 import { SecurityContext } from './air.js';

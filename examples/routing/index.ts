@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Aether Framework — Routing Example
+ * Gati Framework — Routing Example
  */
 
 import { signal } from '../../packages/reactivity/src/index.js';

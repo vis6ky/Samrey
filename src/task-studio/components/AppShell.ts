@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Master Application Shell
+ * @gati/task-studio - Master Application Shell
  */
 
-import { el, Show } from '@aether/runtime';
-import { signal, effect } from '@aether/reactivity';
-import { createRouter, RouteRecord } from '@aether/router';
+import { el, Show } from '@gati/runtime';
+import { signal, effect } from '@gati/reactivity';
+import { createRouter, RouteRecord } from '@gati/router';
 import { Header } from './Header.js';
 import { Sidebar } from './Sidebar.js';
 import { ToastContainer } from './ui/ToastContainer.js';

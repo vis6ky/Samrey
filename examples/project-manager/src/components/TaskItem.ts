@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Aether Project Manager — Task Item Component
- * Native Aether Reactive Component with status toggle, priority indicator, and optimistic updates
+ * Gati Project Manager — Task Item Component
+ * Native Gati Reactive Component with status toggle, priority indicator, and optimistic updates
  */
 
-import { el, Show, For } from '@aether/runtime';
+import { el, Show, For } from '@gati/runtime';
 import { Task } from '../types.js';
 import { toggleTaskStatus, removeTask } from '../state.js';
 

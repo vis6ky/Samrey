@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @aether/task-studio - Reactive Dashboard Statistics & Metrics Component
+ * @gati/task-studio - Reactive Dashboard Statistics & Metrics Component
  */
 
-import { el, For } from '@aether/runtime';
+import { el, For } from '@gati/runtime';
 import { tasksState } from '../state/tasks.store.js';
 
 export function DashboardStats(): HTMLElement {
