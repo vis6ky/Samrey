@@ -1,4 +1,4 @@
-# Architectural Specification: Gati Frontend Framework
+# Architectural Specification: Samrey Frontend Framework
 
 **Document**: `docs/ARCHITECTURE.md`  
 **Version**: 1.0.0-Draft  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary & Design Philosophy
 
-**Gati** is a high-performance, TypeScript-native frontend framework designed to provide **fine-grained reactivity**, **zero Virtual DOM overhead**, **compiler-first optimization**, and **security-by-default**.
+**Samrey** is a high-performance, TypeScript-native frontend framework designed to provide **fine-grained reactivity**, **zero Virtual DOM overhead**, **compiler-first optimization**, and **security-by-default**.
 
 ### Core Tenets
 1. **Components Execute Once**: Component functions run exactly once to build the reactive graph. They never re-execute on state changes.
@@ -22,7 +22,7 @@
 
 ## 2. Monorepo Topology & Package Architecture
 
-Gati is organized as an acyclic, modular monorepo containing 12 cohesive packages:
+Samrey is organized as an acyclic, modular monorepo containing 12 cohesive packages:
 
 ```
 packages/
@@ -43,40 +43,40 @@ packages/
 
 ```
                             ┌────────────────┐
-                            │    @gati/cli │
+                            │    @samrey/cli │
                             └───────┬────────┘
                                     │ (build time)
                                     ▼
                           ┌──────────────────┐
-                          │ @gati/compiler │
+                          │ @samrey/compiler │
                           └─────────┬────────┘
                                     │
     ┌───────────────────────────────┴───────────────────────────────┐
     │                                                               │
     ▼                                                               ▼
 ┌──────────────────┐                                      ┌──────────────────┐
-│  @gati/router  │                                      │   @gati/ssr    │
+│  @samrey/router  │                                      │   @samrey/ssr    │
 └────────┬─────────┘                                      └────────┬─────────┘
          │                                                         │
          ▼                                                         ▼
 ┌──────────────────┐      ┌──────────────────┐            ┌──────────────────┐
-│  @gati/forms   │─────>│   @gati/http   │            │ @gati/security │
+│  @samrey/forms   │─────>│   @samrey/http   │            │ @samrey/security │
 └────────┬─────────┘      └────────┬─────────┘            └────────┬─────────┘
          │                         │                               │
          └─────────────┬───────────┴───────────────────────────────┘
                        │
                        ▼
             ┌─────────────────────┐
-            │   @gati/runtime   │
+            │   @samrey/runtime   │
             └──────────┬──────────┘
                        │
                        ▼
             ┌─────────────────────┐
-            │ @gati/reactivity  │
+            │ @samrey/reactivity  │
             └─────────────────────┘
 ```
 
-*Note: `@gati/reactivity` and `@gati/security` are zero-dependency foundational packages at the base of the runtime hierarchy.*
+*Note: `@samrey/reactivity` and `@samrey/security` are zero-dependency foundational packages at the base of the runtime hierarchy.*
 
 ---
 
@@ -84,7 +84,7 @@ packages/
 
 ### 3.1 Compiler Architecture & Pipeline
 
-The Gati compiler (`@gati/compiler`) transforms TypeScript JSX / template source code into direct imperative DOM instructions and reactive signal subscriptions.
+The Samrey compiler (`@samrey/compiler`) transforms TypeScript JSX / template source code into direct imperative DOM instructions and reactive signal subscriptions.
 
 ```
 [TypeScript / TSX Source]
@@ -100,7 +100,7 @@ The Gati compiler (`@gati/compiler`) transforms TypeScript JSX / template source
       - Lint A11y attributes at compile-time
           │
           ▼
-   3. Gati Intermediate Representation (AIR)
+   3. Samrey Intermediate Representation (AIR)
       - Structure representation with indexed dynamic slots
           │
           ▼
@@ -117,7 +117,7 @@ The Gati compiler (`@gati/compiler`) transforms TypeScript JSX / template source
 
 ---
 
-### 3.2 Gati Intermediate Representation (AIR) Specification
+### 3.2 Samrey Intermediate Representation (AIR) Specification
 
 The AIR represents the structured layout of a component, separating immutable DOM subtrees from dynamic reactive attachment points.
 
@@ -147,10 +147,10 @@ export type SecurityContext = 'safe-attr' | 'uri-attr' | 'css-prop' | 'trusted-h
 
 ### 3.3 Template Syntax & Component Model
 
-Gati components are written in standard TypeScript JSX (TSX). Unlike React, the function executes **only once** when mounted.
+Samrey components are written in standard TypeScript JSX (TSX). Unlike React, the function executes **only once** when mounted.
 
 ```tsx
-import { signal, computed, onCleanup } from '@gati/reactivity';
+import { signal, computed, onCleanup } from '@samrey/reactivity';
 
 interface CounterProps {
   initialCount?: number;
@@ -190,7 +190,7 @@ export function Counter(props: CounterProps) {
 
 #### Compiled Output (Generated Code)
 ```javascript
-import { template as _template, bindText as _bindText, on as _on } from '@gati/runtime';
+import { template as _template, bindText as _bindText, on as _on } from '@samrey/runtime';
 
 const _tmpl$ = _template(`<div class="counter-card" id="counter-widget"><h3>Counter: </h3><p>Double: </p><button type="button" aria-label="Increment Counter">Increment</button></div>`);
 
@@ -213,9 +213,9 @@ export function Counter(props) {
 
 ---
 
-### 3.4 Reactive Engine (`@gati/reactivity`)
+### 3.4 Reactive Engine (`@samrey/reactivity`)
 
-Gati's reactivity engine implements a **Push-Pull Graph** with **Topological Ordering** and **Automatic Batching**:
+Samrey's reactivity engine implements a **Push-Pull Graph** with **Topological Ordering** and **Automatic Batching**:
 
 ```
         ┌─────────────┐
@@ -239,7 +239,7 @@ Gati's reactivity engine implements a **Push-Pull Graph** with **Topological Ord
 
 ---
 
-### 3.5 DOM Renderer (`@gati/runtime`)
+### 3.5 DOM Renderer (`@samrey/runtime`)
 
 * **Template Pooling**: Static HTML is stored in `<template>` tags parsed natively by browser C++ engines once, then instantiated via `template.content.cloneNode(true)`.
 * **Zero-Reconciliation Static Anchors**: Conditional branches (`<Show>`) and dynamic lists (`<For>`) use lightweight DOM `Comment` nodes as surgical anchors.
@@ -247,9 +247,9 @@ Gati's reactivity engine implements a **Push-Pull Graph** with **Topological Ord
 
 ---
 
-### 3.6 Router Architecture (`@gati/router`)
+### 3.6 Router Architecture (`@samrey/router`)
 
-Gati includes a first-class, type-safe router:
+Samrey includes a first-class, type-safe router:
 
 * **File-Based & Code-Based Routes**: Seamless support for both directory-driven route trees and declarative JSX route definitions.
 * **Parallel & Nested Layouts**: Layouts persist state and do not re-render when child sub-routes change.
@@ -259,7 +259,7 @@ Gati includes a first-class, type-safe router:
 
 ---
 
-### 3.7 HTTP & Data Architecture (`@gati/http`)
+### 3.7 HTTP & Data Architecture (`@samrey/http`)
 
 * **Resource Signals**: `createResource(fetcher)` creates a reactive signal that tracks `{ data, loading, error, mutate, refetch }`.
 * **Deduplication & Cache Invalidation**: Concurrent identical requests are merged into a single network flight. Tag-based cache invalidation integrates with router actions.
@@ -267,7 +267,7 @@ Gati includes a first-class, type-safe router:
 
 ---
 
-### 3.8 Form Architecture (`@gati/forms`)
+### 3.8 Form Architecture (`@samrey/forms`)
 
 * **Standard Schema Compliance**: Natively supports any validation schema implementing the Standard Schema specification (Zod, Valibot, ArkType) with zero adapters.
 * **Compile-Time A11y Auto-Wiring**: Automatically sets `aria-invalid`, `aria-describedby` (pointing to error message IDs), and `aria-required`.
@@ -275,7 +275,7 @@ Gati includes a first-class, type-safe router:
 
 ---
 
-### 3.9 SSR & Resumable Hydration Architecture (`@gati/ssr`)
+### 3.9 SSR & Resumable Hydration Architecture (`@samrey/ssr`)
 
 ```
 [Server Request] ──> [Run Loaders in Parallel] ──> [Stream Out Shell HTML]
@@ -297,16 +297,16 @@ Gati includes a first-class, type-safe router:
 
 ### 3.10 CLI & DevTools Architecture
 
-* **`@gati/cli`**: Provides instant Vite plugins (`vite-plugin-aether`), TypeScript type generation for file routes, and compile-time A11y/security audits (`aether audit`).
-* **`@gati/devtools`**: Communicates over a structured window postMessage protocol to inspect the live Signal dependency graph, profile computation timings, and trigger time-travel state rollbacks.
+* **`@samrey/cli`**: Provides instant Vite plugins (`vite-plugin-aether`), TypeScript type generation for file routes, and compile-time A11y/security audits (`aether audit`).
+* **`@samrey/devtools`**: Communicates over a structured window postMessage protocol to inspect the live Signal dependency graph, profile computation timings, and trigger time-travel state rollbacks.
 
 ---
 
 ## 4. Comprehensive Testing Strategy
 
-The Gati framework enforces testing across 5 rigorous tiers:
+The Samrey framework enforces testing across 5 rigorous tiers:
 
-1. **Unit Testing (`@gati/testing`)**: Fine-grained reactive graph unit tests verifying topological ordering, cycle rejection, batching, and memory disposal.
+1. **Unit Testing (`@samrey/testing`)**: Fine-grained reactive graph unit tests verifying topological ordering, cycle rejection, batching, and memory disposal.
 2. **Compiler Snapshot & AST Validation**: 1,000+ tests asserting exact IR and JS output for all syntax and security permutations.
 3. **Security Fuzzing Suite**: Automated fuzzing testing against XSS payload databases (OWASP Top 10, Polyglots, SVG vectors, and Prototype Pollution attacks).
 4. **W3C DOM & A11y Conformance Tests**: Verifies complete compliance with HTML5 specs and WAI-ARIA 1.2 authoring practices.
@@ -318,10 +318,10 @@ The Gati framework enforces testing across 5 rigorous tiers:
 
 1. **Component Initialization vs. Re-render Simplicity**:
    * *Tradeoff*: Because component functions execute only once, developers cannot place non-reactive local variables directly inside the component body and expect them to update on state change.
-   * *Mitigation*: The Gati compiler provides immediate diagnostic warnings if an un-wrapped local variable is used in reactive contexts.
+   * *Mitigation*: The Samrey compiler provides immediate diagnostic warnings if an un-wrapped local variable is used in reactive contexts.
 2. **Ahead-of-Time Compilation Requirement**:
-   * *Tradeoff*: Gati requires a build step (Vite / Rollup / esbuild) and does not support on-the-fly in-browser template compilation with `eval`.
+   * *Tradeoff*: Samrey requires a build step (Vite / Rollup / esbuild) and does not support on-the-fly in-browser template compilation with `eval`.
    * *Justification*: Eliminating runtime compilation enforces strict CSP, minimizes bundle size, and prevents template injection XSS vulnerabilities completely.
 3. **Reactive Graph Memory Allocation**:
    * *Tradeoff*: Creating granular signal subscriber links requires more individual object allocations than a single large Virtual DOM tree.
-   * *Optimization*: Gati uses packed 32-bit bitmasks and reusable node pools to minimize memory fragmentation and GC overhead.
+   * *Optimization*: Samrey uses packed 32-bit bitmasks and reusable node pools to minimize memory fragmentation and GC overhead.

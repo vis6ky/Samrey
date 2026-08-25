@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/reactivity - Computed Derived Primitive
+ * @samrey/reactivity - Computed Derived Primitive
  */
 
 import { Dependency, ReadonlySignal, Subscriber } from './types.js';

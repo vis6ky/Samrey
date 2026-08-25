@@ -1,4 +1,4 @@
-# Gati Framework — Final Release Candidate Independent Hostile Audit
+# Samrey Framework — Final Release Candidate Independent Hostile Audit
 
 **Date:** August 20, 2026  
 **Target Version:** `v1.0.0-rc.1`  
@@ -9,7 +9,7 @@
 
 ## Executive Summary & Audit Overview
 
-This document presents the findings of an exhaustive, independent, hostile audit of the **Gati Framework** across its entire codebase, test suites, compiler pipeline, reactivity core, security guarantees, SSR subsystem, and packaging structure.
+This document presents the findings of an exhaustive, independent, hostile audit of the **Samrey Framework** across its entire codebase, test suites, compiler pipeline, reactivity core, security guarantees, SSR subsystem, and packaging structure.
 
 The audit was conducted strictly against real repository sources, zero assumptions, and zero mock simulations.
 
@@ -28,27 +28,27 @@ The audit was conducted strictly against real repository sources, zero assumptio
 
 ## 1. Repository Reality Check
 
-All 11 packages declared in the Gati monorepo were directly verified in `/packages/*`:
+All 11 packages declared in the Samrey monorepo were directly verified in `/packages/*`:
 
 | Package Directory | NPM Package Name | Version | Type | Entry Points |
 | :--- | :--- | :--- | :--- | :--- |
-| `/packages/reactivity` | `@gati/reactivity` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/security` | `@gati/security` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/compiler` | `@gati/compiler` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/runtime` | `@gati/runtime` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/router` | `@gati/router` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/http` | `@gati/http` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/forms` | `@gati/forms` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/ssr` | `@gati/ssr` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/testing` | `@gati/testing` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/devtools` | `@gati/devtools` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/cli` | `@gati/cli` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: aether`) |
+| `/packages/reactivity` | `@samrey/reactivity` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/security` | `@samrey/security` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/compiler` | `@samrey/compiler` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/runtime` | `@samrey/runtime` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/router` | `@samrey/router` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/http` | `@samrey/http` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/forms` | `@samrey/forms` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/ssr` | `@samrey/ssr` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/testing` | `@samrey/testing` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/devtools` | `@samrey/devtools` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/cli` | `@samrey/cli` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: aether`) |
 
 ### Dependency Graph & Circular Dependency Audit
 - **Reactivity & Security**: Core zero-dependency base layer. No circular imports.
-- **Compiler**: Depends solely on `@gati/security` for template and script sanitization.
-- **Runtime**: Depends on `@gati/reactivity` and `@gati/security`.
-- **SSR**: Depends on `@gati/security` and `@gati/reactivity`.
+- **Compiler**: Depends solely on `@samrey/security` for template and script sanitization.
+- **Runtime**: Depends on `@samrey/reactivity` and `@samrey/security`.
+- **SSR**: Depends on `@samrey/security` and `@samrey/reactivity`.
 - **Forms / Router / HTTP**: Downstream domain packages consuming reactivity and security.
 - **Cycle Analysis**: Graph topological sort confirms **0 cyclic dependency edges**.
 
@@ -90,7 +90,7 @@ A direct AST and regex scan across all package sources and compiled production b
 
 ## 4. Compiler & Template Engine Audit
 
-The Gati compiler pipeline (`packages/compiler/src/`) was tested with malformed, adversarial, and deeply nested inputs:
+The Samrey compiler pipeline (`packages/compiler/src/`) was tested with malformed, adversarial, and deeply nested inputs:
 
 1. **Unclosed Tags & Mismatched Elements**: The HTML parser generates safe AST node boundaries or throws clean semantic diagnostic errors rather than unhandled panics.
 2. **Attribute Injection**: Attribute values containing unquoted strings or quotes are safely normalized into hole descriptors and escaped via `escapeHtmlAttribute`.
@@ -140,7 +140,7 @@ The `<For>` keyed list reconciliation engine (`packages/runtime/src/control-flow
 
 ## 8. Security Hardening & Adversarial Penetration Test
 
-The `@gati/security` and `@gati/ssr` security layers were tested against known web attack vectors:
+The `@samrey/security` and `@samrey/ssr` security layers were tested against known web attack vectors:
 
 | Attack Vector | Input / Payload | Defense Applied | Result |
 | :--- | :--- | :--- | :--- |
@@ -157,7 +157,7 @@ The `@gati/security` and `@gati/ssr` security layers were tested against known w
 
 ## 9. SSR Streaming, SSG & Resumable Hydration
 
-The `@gati/ssr` package was audited for server rendering and client hydration:
+The `@samrey/ssr` package was audited for server rendering and client hydration:
 
 1. **Streaming SSR**: `renderToStream` utilizes standard Web Streams (`ReadableStream`), streaming HTML chunks progressively with error boundary handling.
 2. **SSG Multi-Page Generation**: `generateStaticSite` correctly emits prerendered HTML files across parameterized route collections.
@@ -168,10 +168,10 @@ The `@gati/ssr` package was audited for server rendering and client hydration:
 
 ## 10. Router & HTTP Resources
 
-1. **Router (`@gati/router`)**:
+1. **Router (`@samrey/router`)**:
    - Parameter extraction (`/users/:id`) resolves cleanly.
    - Navigation safely blocks external protocol redirection and protocol-relative paths (`//evil.com`).
-2. **HTTP (`@gati/http`)**:
+2. **HTTP (`@samrey/http`)**:
    - `createResource` supports synchronous caching, reactive loading states, and automatic request deduplication.
    - Request cancellation integrates with `AbortController` signals during component disposal.
 
@@ -230,14 +230,14 @@ A strict repository scan confirmed **0 occurrences** of `TODO`, `FIXME`, `NotImp
 ## 16. Licensing & Metadata
 
 - **License**: Uniform `Apache-2.0` across repository root and all 11 package manifests.
-- **Author**: "Gati Framework Team"
+- **Author**: "Samrey Framework Team"
 - **Keywords**: Cleanly declared across all packages for NPM indexing.
 
 ---
 
 ## Release Candidate Scoring & Risk Matrix
 
-| Risk Category | Severity | Likelihood | Mitigation in Gati |
+| Risk Category | Severity | Likelihood | Mitigation in Samrey |
 | :--- | :--- | :--- | :--- |
 | **XSS / HTML Injection** | High | Low | Default HTML attribute/text escaping + Trusted Types |
 | **SSR Secret Leakage** | High | Low | Automated recursive Secret Guard in state serializer |
@@ -251,6 +251,6 @@ A strict repository scan confirmed **0 occurrences** of `TODO`, `FIXME`, `NotImp
 
 ## Final Verdict
 
-The Gati Framework codebase is exceptionally well-engineered, adhering strictly to its core principles of fine-grained reactivity, direct DOM compilation, Zero-Eval security, and zero virtual DOM overhead.
+The Samrey Framework codebase is exceptionally well-engineered, adhering strictly to its core principles of fine-grained reactivity, direct DOM compilation, Zero-Eval security, and zero virtual DOM overhead.
 
 **VERDICT: APPROVED FOR v1.0.0-rc.1 RELEASE.**

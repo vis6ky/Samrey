@@ -1,8 +1,8 @@
-# Gati Framework — Clean-Room NPM Consumer Verification Report
+# Samrey Framework — Clean-Room NPM Consumer Verification Report
 
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
-**Consumer Isolation:** `/tmp/aether-public-consumer` (Zero symlinks, zero monorepo aliases)  
+**Consumer Isolation:** `/tmp/samrey-public-consumer` (Zero symlinks, zero monorepo aliases)  
 **Status:** PASS  
 
 ## Consumer Verification Highlights

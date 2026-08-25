@@ -1,15 +1,15 @@
-# Testing & Developer Tooling in Gati
+# Testing & Developer Tooling in Samrey
 
-## 1. Testing Utilities (`@gati/testing`)
+## 1. Testing Utilities (`@samrey/testing`)
 
-`@gati/testing` provides isolated component mounting harnesses, automatic microtask signal flushing, and memory leak assertion utilities.
+`@samrey/testing` provides isolated component mounting harnesses, automatic microtask signal flushing, and memory leak assertion utilities.
 
 ### Component Mounting & Reactive Testing
 
 ```typescript
-import { mount, flushReactivity } from '@gati/testing';
-import { signal } from '@gati/reactivity';
-import { template, bindText } from '@gati/runtime';
+import { mount, flushReactivity } from '@samrey/testing';
+import { signal } from '@samrey/reactivity';
+import { template, bindText } from '@samrey/runtime';
 
 function TestCounter(countSignal: any) {
   const tmpl = template(`<div>Count: <span id="count"></span></div>`);
@@ -33,9 +33,9 @@ wrapper.dispose();
 
 ---
 
-## 2. Developer Tools Bridge (`@gati/devtools`)
+## 2. Developer Tools Bridge (`@samrey/devtools`)
 
-`@gati/devtools` provides a lightweight, origin-gated inspection bridge for browser extensions and debugging tools.
+`@samrey/devtools` provides a lightweight, origin-gated inspection bridge for browser extensions and debugging tools.
 
 ### Features
 - **Topological Graph Inspection**: Visualizes nodes, dependents, dependencies, and transaction clocks.
@@ -44,9 +44,9 @@ wrapper.dispose();
 
 ---
 
-## 3. Command Line Interface (`@gati/cli`)
+## 3. Command Line Interface (`@samrey/cli`)
 
-The `@gati/cli` package supplies scaffolding, compilation plugins, and static security/accessibility audits.
+The `@samrey/cli` package supplies scaffolding, compilation plugins, and static security/accessibility audits.
 
 ### CLI Commands
 

@@ -1,6 +1,6 @@
-# Gati Framework — Complete API Reference
+# Samrey Framework — Complete API Reference
 
-## `@gati/reactivity`
+## `@samrey/reactivity`
 
 ### `signal<T>(initialValue: T): Signal<T>`
 Creates a mutable signal holding a value of type `T`.
@@ -26,7 +26,7 @@ Registers a cleanup handler for the active Owner.
 
 ---
 
-## `@gati/compiler`
+## `@samrey/compiler`
 
 ### `compileTemplate(source: string, options?: CompileOptions): CompileResult`
 Parses JSX/HTML template markup into AIR representation, hoists static subtrees, and generates runtime code with source maps.
@@ -36,7 +36,7 @@ Statically categorizes attribute or text bindings (HTML, URI, SafeAttr, CSS).
 
 ---
 
-## `@gati/runtime`
+## `@samrey/runtime`
 
 ### `template(htmlString: string): () => Node`
 Returns a factory function that clones the pre-parsed HTML template via `cloneNode(true)`.
@@ -58,7 +58,7 @@ Keyed list differential reconciliation component.
 
 ---
 
-## `@gati/security`
+## `@samrey/security`
 
 ### `escapeHtmlText(str: string): string`
 Context-aware HTML escaping for text nodes (`&`, `<`, `>`, `"`, `'`).
@@ -77,7 +77,7 @@ Generates entropy-backed CSRF tokens and verifies them via constant-time compari
 
 ---
 
-## `@gati/router`
+## `@samrey/router`
 
 ### `createRouter(routes: RouteRecord[], initialPath?: string): RouterInstance`
 Creates a reactive router instance.
@@ -93,7 +93,7 @@ Evaluates a collection of route records to find the first matching route and ext
 
 ---
 
-## `@gati/http`
+## `@samrey/http`
 
 ### `createResource<T>(fetcher: () => Promise<T>): Resource<T>`
 ### `createResource<T, S>(source: () => S, fetcher: (val: S) => Promise<T>): Resource<T>`
@@ -104,7 +104,7 @@ Zero-dependency HTTP client wrapper with built-in URL sanitization.
 
 ---
 
-## `@gati/forms`
+## `@samrey/forms`
 
 ### `createForm(options: FormOptions): FormInstance`
 Initializes reactive form state with field validation and Standard Schema compliance.
@@ -114,7 +114,7 @@ Binds form state to DOM input with automatic ARIA attributes.
 
 ---
 
-## `@gati/ssr`
+## `@samrey/ssr`
 
 ### `renderToString(app: () => unknown, options?: RenderToStringOptions): Promise<string>`
 Renders application to complete HTML string with resolved data loaders.

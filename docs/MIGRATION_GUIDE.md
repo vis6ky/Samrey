@@ -1,6 +1,6 @@
-# Migration Guide to Gati
+# Migration Guide to Samrey
 
-This guide assists engineering teams migrating applications from React, SolidJS, or Svelte to Gati.
+This guide assists engineering teams migrating applications from React, SolidJS, or Svelte to Samrey.
 
 ---
 
@@ -8,11 +8,11 @@ This guide assists engineering teams migrating applications from React, SolidJS,
 
 ### Mental Model Shift
 - **React**: Components re-run top-to-bottom on every state update. Hooks must obey strict rules of call order.
-- **Gati**: Components run once during initialization. State updates directly mutate specific DOM nodes without re-executing component bodies.
+- **Samrey**: Components run once during initialization. State updates directly mutate specific DOM nodes without re-executing component bodies.
 
 ### Comparison Table
 
-| Feature | React | Gati |
+| Feature | React | Samrey |
 | :--- | :--- | :--- |
 | State | `useState(0)` | `signal(0)` |
 | Derived State | `useMemo(() => ...)` | `computed(() => ...)` |
@@ -26,15 +26,15 @@ This guide assists engineering teams migrating applications from React, SolidJS,
 
 ## 2. Migrating from SolidJS
 
-If you are coming from SolidJS, Gati's fine-grained reactive model will feel familiar, with key differences in security and compiler architecture:
+If you are coming from SolidJS, Samrey's fine-grained reactive model will feel familiar, with key differences in security and compiler architecture:
 
-- **Security Model**: Gati embeds W3C Trusted Types policies and strict context-aware URI/CSS sanitization directly into the compiler and runtime.
-- **SSR Hydration**: Gati uses zero-overhead delegated event capture (`getDelegatedEventScript`) and deep secret protection (`stripSecrets`) to prevent server credential leakage.
-- **Standard Schema**: `@gati/forms` natively supports Standard Schema validators without additional adapters.
+- **Security Model**: Samrey embeds W3C Trusted Types policies and strict context-aware URI/CSS sanitization directly into the compiler and runtime.
+- **SSR Hydration**: Samrey uses zero-overhead delegated event capture (`getDelegatedEventScript`) and deep secret protection (`stripSecrets`) to prevent server credential leakage.
+- **Standard Schema**: `@samrey/forms` natively supports Standard Schema validators without additional adapters.
 
 ---
 
 ## 3. Migrating from Svelte
 
 - Svelte relies on compiler-generated `.svelte` files and let bindings (`let count = 0; count += 1`).
-- Gati uses standard TypeScript `.tsx` or template strings with explicit signal objects (`count.value++`), ensuring universal IDE intellisense and standard ES Module distribution.
+- Samrey uses standard TypeScript `.tsx` or template strings with explicit signal objects (`count.value++`), ensuring universal IDE intellisense and standard ES Module distribution.

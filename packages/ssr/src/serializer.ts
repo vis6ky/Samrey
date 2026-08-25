@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - Unicode Safe State Serialization & Validation
+ * @samrey/ssr - Unicode Safe State Serialization & Validation
  */
 
-import { escapeForScriptPayload } from '@gati/security';
+import { escapeForScriptPayload } from '@samrey/security';
 import { stripSecrets, SecretGuardOptions } from './secret-guard.js';
 
 export interface SerializeOptions extends SecretGuardOptions {
@@ -87,7 +87,7 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
       const res = options.validator(parsed);
       if (typeof res === 'boolean') {
         if (!res) {
-          console.warn(`[Gati SSR] Hydration state failed custom validator. Using fallback.`);
+          console.warn(`[Samrey SSR] Hydration state failed custom validator. Using fallback.`);
           return fallback;
         }
         return parsed;
@@ -95,7 +95,7 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
 
       if (!res.success) {
         const errMsg = 'error' in res ? res.error : 'Validation failed';
-        console.warn(`[Gati SSR] Hydration state validation error:`, errMsg);
+        console.warn(`[Samrey SSR] Hydration state validation error:`, errMsg);
         return fallback;
       }
 
@@ -104,7 +104,7 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
 
     return parsed;
   } catch (err) {
-    console.error('[Gati SSR] Failed to parse hydration state payload (malformed or corrupted JSON):', err);
+    console.error('[Samrey SSR] Failed to parse hydration state payload (malformed or corrupted JSON):', err);
     return fallback;
   }
 }

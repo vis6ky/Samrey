@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/example-ssr - Node / Express SSR Server
+ * @samrey/example-ssr - Node / Express SSR Server
  */
 
 import express from 'express';
-import { renderToString, createSSRContext } from '@gati/ssr';
+import { renderToString, createSSRContext } from '@samrey/ssr';
 import { App } from './app.js';
 
 const app = express();
@@ -17,12 +17,12 @@ app.get('/', async (req, res) => {
   try {
     const ctx = createSSRContext({
       serverTimestamp: new Date().toISOString(),
-      // The secretGuard in @gati/ssr will automatically strip any accidentally passed secret:
+      // The secretGuard in @samrey/ssr will automatically strip any accidentally passed secret:
       apiKey: 'sk_secret_should_not_leak_to_client'
     });
 
-    ctx.setTitle('Gati SSR Demo');
-    ctx.addMeta({ name: 'description', content: 'Gati SSR with state hydration' });
+    ctx.setTitle('Samrey SSR Demo');
+    ctx.addMeta({ name: 'description', content: 'Samrey SSR with state hydration' });
 
     const html = await renderToString(App, {
       context: ctx,
@@ -40,7 +40,7 @@ app.get('/', async (req, res) => {
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
-    console.log(`[Gati SSR Server] Running on http://localhost:${port}`);
+    console.log(`[Samrey SSR Server] Running on http://localhost:${port}`);
   });
 }
 

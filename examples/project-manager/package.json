@@ -1,5 +1,5 @@
 {
-  "name": "aether-project-manager",
+  "name": "samrey-project-manager",
   "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
@@ -10,17 +10,17 @@
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@gati/reactivity": "^1.0.0-rc.1",
-    "@gati/runtime": "^1.0.0-rc.1",
-    "@gati/router": "^1.0.0-rc.1",
-    "@gati/forms": "^1.0.0-rc.1",
-    "@gati/http": "^1.0.0-rc.1",
-    "@gati/security": "^1.0.0-rc.1",
-    "@gati/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^1.0.0-rc.1",
+    "@samrey/runtime": "^1.0.0-rc.1",
+    "@samrey/router": "^1.0.0-rc.1",
+    "@samrey/forms": "^1.0.0-rc.1",
+    "@samrey/http": "^1.0.0-rc.1",
+    "@samrey/security": "^1.0.0-rc.1",
+    "@samrey/ssr": "^1.0.0-rc.1"
   },
   "devDependencies": {
-    "@gati/cli": "^1.0.0-rc.1",
-    "@gati/testing": "^1.0.0-rc.1",
+    "@samrey/cli": "^1.0.0-rc.1",
+    "@samrey/testing": "^1.0.0-rc.1",
     "typescript": "^5.8.0"
   }
 }

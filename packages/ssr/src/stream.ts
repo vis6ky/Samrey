@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - HTML String & Streaming Renderer
+ * @samrey/ssr - HTML String & Streaming Renderer
  */
 
 import { serializeStateForHydration } from './serializer.js';
 import { getDelegatedEventScript } from './hydration.js';
 import { createSSRContext, runWithSSRContext, resolveSSRContext, SSRContext } from './context.js';
-import { escapeHtmlText } from '@gati/security';
+import { escapeHtmlText } from '@samrey/security';
 
 export interface RenderToStringOptions {
   title?: string;
@@ -26,7 +26,7 @@ export interface RenderToStreamOptions extends RenderToStringOptions {
 }
 
 /**
- * Renders an Gati application or component function to a complete HTML string.
+ * Renders an Samrey application or component function to a complete HTML string.
  * Automatically resolves server data loaders, handles error boundaries, and serializes state safely.
  */
 export async function renderToString(
@@ -62,7 +62,7 @@ export async function renderToString(
     if (options.errorBoundary) {
       bodyHtml = options.errorBoundary(errorObj);
     } else {
-      bodyHtml = `<div class="aether-ssr-error" role="alert"><h1>Application Error</h1><pre>${escapeHtmlText(errorObj.message)}</pre></div>`;
+      bodyHtml = `<div class="samrey-ssr-error" role="alert"><h1>Application Error</h1><pre>${escapeHtmlText(errorObj.message)}</pre></div>`;
     }
   }
 
@@ -72,7 +72,7 @@ export async function renderToString(
   });
 
   const delegatorScript = getDelegatedEventScript(options.events);
-  const title = options.title || ctx.head.title || 'Gati Application';
+  const title = options.title || ctx.head.title || 'Samrey Application';
   const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
   const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';
   const metaTags = ctx.head.meta.map((m) => `<meta ${m.name ? `name="${m.name}"` : `property="${m.property}"`} content="${m.content}">`).join('\n  ');
@@ -97,7 +97,7 @@ export async function renderToString(
 }
 
 /**
- * Streams an Gati application HTML response in real-time using standard Web ReadableStreams.
+ * Streams an Samrey application HTML response in real-time using standard Web ReadableStreams.
  */
 export function renderToStream(
   app: (() => unknown) | string,
@@ -112,7 +112,7 @@ export function renderToStream(
         controller.enqueue(encoder.encode(chunk));
       };
 
-      const title = options.title || ctx.head.title || 'Gati Application';
+      const title = options.title || ctx.head.title || 'Samrey Application';
       const delegatorScript = getDelegatedEventScript(options.events);
       const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
       const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';
@@ -153,7 +153,7 @@ export function renderToStream(
         ctx.setError(errorObj, 500);
         bodyContent = options.errorBoundary
           ? options.errorBoundary(errorObj)
-          : `<div class="aether-ssr-error" role="alert"><h2>Stream Error</h2><p>${escapeHtmlText(errorObj.message)}</p></div>`;
+          : `<div class="samrey-ssr-error" role="alert"><h2>Stream Error</h2><p>${escapeHtmlText(errorObj.message)}</p></div>`;
       }
 
       send(bodyContent);

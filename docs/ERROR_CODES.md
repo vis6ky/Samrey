@@ -1,8 +1,8 @@
-# Gati Framework — Error Codes Reference
+# Samrey Framework — Error Codes Reference
 
-> **Gati v1.0.0-rc.1 Standard Diagnostic Error System**
+> **Samrey v1.0.0-rc.1 Standard Diagnostic Error System**
 
-Gati features a centralized, deterministic error model with structured codes (`AETH-xxx`). Every error emitted by Gati provides:
+Samrey features a centralized, deterministic error model with structured codes (`AETH-xxx`). Every error emitted by Samrey provides:
 1. **Stable Error Code**: Machine-readable identifier with category prefix.
 2. **Human-Readable Message**: Clear, concise statement of what went wrong.
 3. **Actionable Explanation**: Root-cause architectural or runtime diagnosis.
@@ -15,15 +15,15 @@ Gati features a centralized, deterministic error model with structured codes (`A
 
 | Code Range | Category | Package / Subsystem |
 | :--- | :--- | :--- |
-| `AETH-001` – `AETH-099` | CLI & Project Tooling | `@gati/cli` |
-| `AETH-101` – `AETH-199` | Compiler & Parsing | `@gati/compiler` |
-| `AETH-201` – `AETH-299` | Security & Accessibility | `@gati/security`, `@gati/compiler` |
-| `AETH-301` – `AETH-399` | Reactivity & Runtime | `@gati/reactivity`, `@gati/runtime` |
-| `AETH-401` – `AETH-499` | Router & Navigation | `@gati/router` |
-| `AETH-501` – `AETH-599` | Forms & Validation | `@gati/forms` |
-| `AETH-601` – `AETH-699` | HTTP & Data Fetching | `@gati/http` |
-| `AETH-701` – `AETH-799` | SSR & Hydration | `@gati/ssr` |
-| `AETH-801` – `AETH-899` | DevTools & Testing | `@gati/devtools`, `@gati/testing` |
+| `AETH-001` – `AETH-099` | CLI & Project Tooling | `@samrey/cli` |
+| `AETH-101` – `AETH-199` | Compiler & Parsing | `@samrey/compiler` |
+| `AETH-201` – `AETH-299` | Security & Accessibility | `@samrey/security`, `@samrey/compiler` |
+| `AETH-301` – `AETH-399` | Reactivity & Runtime | `@samrey/reactivity`, `@samrey/runtime` |
+| `AETH-401` – `AETH-499` | Router & Navigation | `@samrey/router` |
+| `AETH-501` – `AETH-599` | Forms & Validation | `@samrey/forms` |
+| `AETH-601` – `AETH-699` | HTTP & Data Fetching | `@samrey/http` |
+| `AETH-701` – `AETH-799` | SSR & Hydration | `@samrey/ssr` |
+| `AETH-801` – `AETH-899` | DevTools & Testing | `@samrey/devtools`, `@samrey/testing` |
 
 ---
 
@@ -67,12 +67,12 @@ Gati features a centralized, deterministic error model with structured codes (`A
   ```tsx
   // ❌ Error
   <div>
-    <p>Welcome to Gati
+    <p>Welcome to Samrey
   </div>
 
   // ✅ Fix
   <div>
-    <p>Welcome to Gati</p>
+    <p>Welcome to Samrey</p>
   </div>
   ```
 - **Suggestion**: Check for missing closing tags or self-closing syntax (e.g., `<input />`, `<br />`, `<Component />`).
@@ -276,9 +276,9 @@ Gati features a centralized, deterministic error model with structured codes (`A
 #### `AETH-801`: DevTools Bridge Connection Failure
 - **Message**: `[AETH-801] DevTools bridge connection failure`
 - **Explanation**: DevTools could not attach to the global window hook or serialize the reactive dependency graph.
-- **Suggestion**: Verify that `@gati/devtools` is initialized after the runtime mounts.
+- **Suggestion**: Verify that `@samrey/devtools` is initialized after the runtime mounts.
 
 #### `AETH-802`: Test Component Mount Failure
 - **Message**: `[AETH-802] Test container or component invalid`
 - **Explanation**: The testing harness `mountTestComponent()` was passed a null container or invalid component function.
-- **Suggestion**: Ensure `render()` in `@gati/testing` receives a valid component callback `() => <Component />`.
+- **Suggestion**: Ensure `render()` in `@samrey/testing` receives a valid component callback `() => <Component />`.

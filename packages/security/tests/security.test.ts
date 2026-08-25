@@ -11,10 +11,10 @@ import {
   escapeHtmlText,
   generateCsrfToken,
   verifyCsrfToken,
-  getGatiTrustedPolicy
+  getSamreyTrustedPolicy
 } from '../src/index.ts';
 
-describe('@gati/security', () => {
+describe('@samrey/security', () => {
   it('blocks javascript: URLs and dangerous schemes', () => {
     assert.equal(sanitizeUri('javascript:alert(1)'), 'about:blank');
     assert.equal(sanitizeUri('   JAVASCRIPT:alert(1)  '), 'about:blank');
@@ -64,7 +64,7 @@ describe('@gati/security', () => {
     assert.equal(sanitizeUri('/dashboard'), '/dashboard');
     assert.equal(sanitizeUri('./subpath'), './subpath');
     assert.equal(sanitizeUri('#section'), '#section');
-    assert.equal(sanitizeUri('mailto:support@gati.dev'), 'mailto:support@gati.dev');
+    assert.equal(sanitizeUri('mailto:support@samrey.dev'), 'mailto:support@samrey.dev');
     assert.equal(sanitizeUri('tel:+1234567890'), 'tel:+1234567890');
   });
 
@@ -108,7 +108,7 @@ describe('@gati/security', () => {
   });
 
   it('provides Trusted Types policy or fallback', () => {
-    const policy = getGatiTrustedPolicy();
+    const policy = getSamreyTrustedPolicy();
     assert.ok(policy !== null);
     const safeHtml = policy.createHTML('<b>Safe Content</b>');
     assert.equal(safeHtml, '<b>Safe Content</b>');

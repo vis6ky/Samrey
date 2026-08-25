@@ -1,4 +1,4 @@
-# Gati Framework — Runnable Examples
+# Samrey Framework — Runnable Examples
 
 Working, runnable, verified examples demonstrating core framework capabilities:
 

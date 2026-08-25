@@ -1,15 +1,15 @@
 # Phase 24 — Pre-GA Repository & Production Freeze Audit
 
 **Audit Date:** 2026-08-24  
-**Target Release:** Gati Framework v1.0.0 (General Availability)  
-**Monorepo:** `@gati/monorepo` (11 Packages)  
+**Target Release:** Samrey Framework v1.0.0 (General Availability)  
+**Monorepo:** `@samrey/monorepo` (11 Packages)  
 **Audit Scope:** Full repository topology, packages, examples, tests, security, public API, and build configuration.
 
 ---
 
 ## 1. Executive Summary
 
-This Pre-GA Audit provides an exhaustive inspection of the Gati codebase prior to transitioning from `1.0.0-rc.1` to `1.0.0` GA. All packages, runtime components, documentation apps, CLI commands, and test suites were audited against the absolute architectural invariant: **"AETHER MUST USE AETHER"**.
+This Pre-GA Audit provides an exhaustive inspection of the Samrey codebase prior to transitioning from `1.0.0-rc.1` to `1.0.0` GA. All packages, runtime components, documentation apps, CLI commands, and test suites were audited against the absolute architectural invariant: **"AETHER MUST USE AETHER"**.
 
 Every finding has been categorized according to severity:
 - **BLOCKER:** Critical release gate failure; must be resolved before GA publication.
@@ -27,7 +27,7 @@ Every finding has been categorized according to severity:
 | **Package Manifests (All 11)** | Versions synchronized at `1.0.0`, Apache-2.0 license, repo metadata | **BLOCKER** | **RESOLVED (PASS)** |
 | **CLI Versioning** | `CLI_VERSION` pinned to `1.0.0`, deterministic help/version output | **BLOCKER** | **RESOLVED (PASS)** |
 | **Zero Foreign Frameworks** | 0 references to React, Vue, Angular, Svelte, Solid, Lit in dependencies or runtime | **BLOCKER** | **RESOLVED (PASS)** |
-| **Documentation & UI Purity** | Docs UI, playground, visualizer built 100% with native `@gati/*` | **BLOCKER** | **RESOLVED (PASS)** |
+| **Documentation & UI Purity** | Docs UI, playground, visualizer built 100% with native `@samrey/*` | **BLOCKER** | **RESOLVED (PASS)** |
 | **Public API Contracts** | Exact parity between `docs/PUBLIC_API.md` and package exports across all 11 packages | **HIGH** | **RESOLVED (PASS)** |
 | **Security Sanitization** | XSS, script breakout, URL sanitization, CSRF constant-time verification | **BLOCKER** | **RESOLVED (PASS)** |
 | **SSR & Stream Hydration** | Asynchronous streaming, strict owner isolation, zero hydration mismatch | **HIGH** | **RESOLVED (PASS)** |
@@ -43,21 +43,21 @@ The monorepo consists of exactly 11 first-party packages with strict topological
 
 ```
 Tier 1 (Foundations):
-  ├── @gati/reactivity (0 dependencies)
-  └── @gati/security   (0 dependencies)
+  ├── @samrey/reactivity (0 dependencies)
+  └── @samrey/security   (0 dependencies)
 
 Tier 2 (Core Runtime & Subsystems):
-  ├── @gati/runtime    (depends on: reactivity, security)
-  ├── @gati/compiler   (0 dependencies)
-  ├── @gati/forms      (depends on: reactivity, runtime)
-  ├── @gati/http       (depends on: reactivity)
-  ├── @gati/router     (depends on: reactivity, runtime)
-  ├── @gati/ssr        (depends on: reactivity, runtime, security)
-  └── @gati/testing    (depends on: reactivity, runtime)
+  ├── @samrey/runtime    (depends on: reactivity, security)
+  ├── @samrey/compiler   (0 dependencies)
+  ├── @samrey/forms      (depends on: reactivity, runtime)
+  ├── @samrey/http       (depends on: reactivity)
+  ├── @samrey/router     (depends on: reactivity, runtime)
+  ├── @samrey/ssr        (depends on: reactivity, runtime, security)
+  └── @samrey/testing    (depends on: reactivity, runtime)
 
 Tier 3 (Developer Tooling & Distribution):
-  ├── @gati/devtools   (depends on: reactivity, runtime)
-  └── @gati/cli        (depends on: compiler, ssr, security, testing)
+  ├── @samrey/devtools   (depends on: reactivity, runtime)
+  └── @samrey/cli        (depends on: compiler, ssr, security, testing)
 ```
 
 **Cycle Detection Result:** 0 circular dependencies detected across the graph.  

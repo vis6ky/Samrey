@@ -1,11 +1,11 @@
-# Gati Router Example
+# Samrey Router Example
 
 Demonstrates fine-grained reactive routing with parameterized segment matching, route transitions, and open-redirect sanitization.
 
 ## Code Overview
 
 ```typescript
-import { createRouter } from '@gati/router';
+import { createRouter } from '@samrey/router';
 
 const router = createRouter({
   initialPath: '/users/42',

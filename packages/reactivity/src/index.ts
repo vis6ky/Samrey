@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/reactivity - Main Entry Point
+ * @samrey/reactivity - Main Entry Point
  */
 
 export * from './types.js';

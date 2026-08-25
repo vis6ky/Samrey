@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Application Header Component
+ * @samrey/task-studio - Application Header Component
  */
 
-import { el } from '@gati/runtime';
-import { Signal, signal } from '@gati/reactivity';
+import { el } from '@samrey/runtime';
+import { Signal, signal } from '@samrey/reactivity';
 import { tasksState, setTaskSearch } from '../state/tasks.store.js';
 import { settings } from '../state/settings.store.js';
 import { Button } from './ui/Button.js';
@@ -57,7 +57,7 @@ export function Header(props: HeaderProps): HTMLElement {
         el('span', { class: 'text-sm font-bold text-slate-900 tracking-tight' }, 'Task Studio'),
         el('span', { class: 'text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium' }, 'v1.0.0 Stable')
       ),
-      el('p', { class: 'text-[11px] text-slate-500' }, 'Production Gati Web Platform')
+      el('p', { class: 'text-[11px] text-slate-500' }, 'Production Samrey Web Platform')
     )
   );
   leftSection.appendChild(brand);

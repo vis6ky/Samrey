@@ -135,7 +135,7 @@ export const DIMENSIONS: DimensionItem[] = [
       details: 'Transforms JSX markup into native template element string literals and effect bindings with sibling traversal paths.'
     },
     aether: {
-      summary: 'Gati Intermediate Representation (AIR) with AOT Security & A11y Verification',
+      summary: 'Samrey Intermediate Representation (AIR) with AOT Security & A11y Verification',
       architecturalSolution: 'Multi-pass compiler generates an intermediate representation (AIR), hoists static templates, classifies security contexts (URI, HTML, CSS), lints accessibility, and emits zero-overhead JS.'
     }
   },
@@ -268,7 +268,7 @@ export const DIMENSIONS: DimensionItem[] = [
     },
     aether: {
       summary: 'Built-in Standard Schema Forms (Zod/Valibot/ArkType) + Auto-ARIA Wiring',
-      architecturalSolution: 'First-class @gati/forms natively validates schemas conforming to the Standard Schema spec. Automatically computes aria-invalid, aria-describedby, and supports progressive enhancement POST actions.'
+      architecturalSolution: 'First-class @samrey/forms natively validates schemas conforming to the Standard Schema spec. Automatically computes aria-invalid, aria-describedby, and supports progressive enhancement POST actions.'
     }
   },
   {
@@ -301,7 +301,7 @@ export const DIMENSIONS: DimensionItem[] = [
     },
     aether: {
       summary: 'Type-Safe Dual Router (File-Based & Code-Based) with Streaming Loaders',
-      architecturalSolution: 'Built-in @gati/router supporting both filesystem route discovery and type-safe JSX routes. Features automatic prefetching on link hover/viewport, nested layouts, and View Transitions API.'
+      architecturalSolution: 'Built-in @samrey/router supporting both filesystem route discovery and type-safe JSX routes. Features automatic prefetching on link hover/viewport, nested layouts, and View Transitions API.'
     }
   }
 ];

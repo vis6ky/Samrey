@@ -1,24 +1,24 @@
 # Phase 18 — Real-World Developer Adoption, Production Readiness & Ecosystem Validation
 
-**Gati Framework v1.0.0-rc.1 Release Candidate Validation Report**
+**Samrey Framework v1.0.0-rc.1 Release Candidate Validation Report**
 
 ---
 
 ## 1. Executive Summary & Architectural Mandate Compliance
 
-This report documents the end-to-end execution of **Phase 18: Real-World Developer Adoption, Production Readiness & Ecosystem Validation** for Gati Framework v1.0.0-rc.1.
+This report documents the end-to-end execution of **Phase 18: Real-World Developer Adoption, Production Readiness & Ecosystem Validation** for Samrey Framework v1.0.0-rc.1.
 
-### Absolute Architectural Rule: "Gati Must Use Gati"
+### Absolute Architectural Rule: "Samrey Must Use Samrey"
 Throughout this phase, the architectural mandate was enforced with zero compromises:
 - **Zero Foreign Frameworks**: No React, React DOM, Vue, Angular, Svelte, Solid, Preact, Lit, Redux, Zustand, MobX, or third-party UI component/icon/styling libraries were introduced or imported.
-- **Native Primitives Only**: 100% of the newly built consumer application (**Gati Project Manager**), all test suites, and all starter templates rely strictly on `@gati/*` packages.
+- **Native Primitives Only**: 100% of the newly built consumer application (**Samrey Project Manager**), all test suites, and all starter templates rely strictly on `@samrey/*` packages.
 - **Isolated Consumer Simulation**: Built and validated a standalone example (`examples/project-manager`) demonstrating a clean external developer experience without internal monorepo dependencies or private symbols.
 
 ---
 
-## 2. Real-World Application Implementation: "Gati Project Manager"
+## 2. Real-World Application Implementation: "Samrey Project Manager"
 
-A production-grade, full-lifecycle task and project management application was engineered in `/examples/project-manager` using exclusively public `@gati/*` APIs:
+A production-grade, full-lifecycle task and project management application was engineered in `/examples/project-manager` using exclusively public `@samrey/*` APIs:
 
 ```
 examples/project-manager/
@@ -42,19 +42,19 @@ examples/project-manager/
 
 ### Key Functional Capabilities
 1. **Unidirectional Reactive State Flow**:
-   - Central state managed via `@gati/reactivity` stores with recursive deep reactivity.
+   - Central state managed via `@samrey/reactivity` stores with recursive deep reactivity.
    - Optimistic UI updates with rollback on network failure.
    - Fine-grained derived metrics (`projectMetrics`, `filteredProjects`, `filteredTasks`) computing completion rates, active project counts, and priority filters.
 2. **Accessible Standard Schema Forms**:
    - Implemented `~standard v1` form schemas with synchronous/asynchronous validation.
-   - Computed ARIA bindings (`aria-invalid`, `aria-describedby`, `aria-required`) via `@gati/forms`.
+   - Computed ARIA bindings (`aria-invalid`, `aria-describedby`, `aria-required`) via `@samrey/forms`.
 3. **Zero-Trust Security Shield**:
-   - Automatic HTML entity escaping and script sanitization via `@gati/security`.
+   - Automatic HTML entity escaping and script sanitization via `@samrey/security`.
    - Insecure URI protocol neutralization (`javascript:`, `data:text/html`, `vbscript:`).
    - Nonce-based CSRF token generation and validation on state mutations.
    - Prototype pollution defense (`__proto__`, `constructor`, `prototype`).
 4. **Isomorphic SSR & Static Generation**:
-   - Clean HTML compilation using `@gati/ssr` `renderToString` and `generateStaticSite`.
+   - Clean HTML compilation using `@samrey/ssr` `renderToString` and `generateStaticSite`.
    - Zero hydration mismatch markers and automatic sensitive secret stripping.
 
 ---
@@ -65,12 +65,12 @@ During external developer simulation, several public API surfaces were hardened 
 
 | Package | Hardened Public APIs / Capabilities |
 | :--- | :--- |
-| **`@gati/security`** | Added `createCsrfToken`, `validateCsrfToken`, `sanitizeHtml`, `sanitizeUrl`, `isSafeUrl`, `sanitizeAttribute`, `safeJsonStringify` exports |
-| **`@gati/http`** | Added `createHttpCache`, `createHttpClient`, `httpClient` singleton instance export |
-| **`@gati/reactivity`** | Added deep nested reactive store proxying, `produce`, `reconcile` immutable helpers |
-| **`@gati/forms`** | Exported `getAccessibleFieldProps`, added `handleSubmit` alias on form instance |
-| **`@gati/runtime`** | Added declarative control flow components: `Switch`, `Match`, and `ErrorBoundary` |
-| **`@gati/testing`** | Added `renderTestComponent`, `waitFor`, `cleanupAllTestContainers`, `createMockResource` |
+| **`@samrey/security`** | Added `createCsrfToken`, `validateCsrfToken`, `sanitizeHtml`, `sanitizeUrl`, `isSafeUrl`, `sanitizeAttribute`, `safeJsonStringify` exports |
+| **`@samrey/http`** | Added `createHttpCache`, `createHttpClient`, `httpClient` singleton instance export |
+| **`@samrey/reactivity`** | Added deep nested reactive store proxying, `produce`, `reconcile` immutable helpers |
+| **`@samrey/forms`** | Exported `getAccessibleFieldProps`, added `handleSubmit` alias on form instance |
+| **`@samrey/runtime`** | Added declarative control flow components: `Switch`, `Match`, and `ErrorBoundary` |
+| **`@samrey/testing`** | Added `renderTestComponent`, `waitFor`, `cleanupAllTestContainers`, `createMockResource` |
 
 ---
 
@@ -107,4 +107,4 @@ CLI commands (`aether create`, `aether dev`, `aether build`, `aether preview`, `
 - **TypeScript Typecheck (`tsc --noEmit`)**: 0 errors across 11 packages and examples
 - **Build Compilation**: Succeeded with production bundle targets
 
-**Gati Framework v1.0.0-rc.1 is fully verified, self-hosting, secure, and production ready.**
+**Samrey Framework v1.0.0-rc.1 is fully verified, self-hosting, secure, and production ready.**

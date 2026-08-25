@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/runtime - Fine-Grained Reactive DOM Slot Binders
+ * @samrey/runtime - Fine-Grained Reactive DOM Slot Binders
  */
 
-import { effect } from '@gati/reactivity';
-import { sanitizeUri, sanitizeCssStyle } from '@gati/security';
+import { effect } from '@samrey/reactivity';
+import { sanitizeUri, sanitizeCssStyle } from '@samrey/security';
 
 const DANGEROUS_ATTR_NAMES = new Set([
   'innerhtml',
@@ -40,7 +40,7 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
 
   // Defend against arbitrary inline event handler injection and direct HTML injection via setAttribute
   if (DANGEROUS_ATTR_NAMES.has(lowerName) || lowerName.startsWith('on')) {
-    console.warn(`[Gati Security Warning] Refusing to bind dangerous attribute "${attrName}". Use dedicated event bindings or trusted primitives.`);
+    console.warn(`[Samrey Security Warning] Refusing to bind dangerous attribute "${attrName}". Use dedicated event bindings or trusted primitives.`);
     return;
   }
 
@@ -73,7 +73,7 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
         try {
           element.setAttribute(attrName, nextStr);
         } catch (err) {
-          console.warn(`[Gati Runtime] Failed to set attribute "${attrName}":`, err);
+          console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
         }
       }
     }

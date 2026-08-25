@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/security - URI & HTML Sanitizers
+ * @samrey/security - URI & HTML Sanitizers
  */
 
 const SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
@@ -217,7 +217,7 @@ export function stripSecrets<T>(
       if (isSensitiveKey(key, options.additionalKeys)) {
         if (options.strict) {
           throw new Error(
-            `[Gati Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
+            `[Samrey Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
           );
         }
         if (options.onSecretFound) {

@@ -1,16 +1,16 @@
 {
-  "name": "@gati/runtime",
+  "name": "@samrey/runtime",
   "version": "1.0.0",
-  "description": "Component lifecycle, static <template> cloning, and surgical DOM hole binding engine for Gati.",
+  "description": "Component lifecycle, static <template> cloning, and surgical DOM hole binding engine for Samrey.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gati-framework/aether.git",
+    "url": "git+https://github.com/samrey-framework/aether.git",
     "directory": "packages/runtime"
   },
-  "homepage": "https://gati.dev",
+  "homepage": "https://samrey.dev",
   "bugs": {
-    "url": "https://github.com/gati-framework/aether/issues"
+    "url": "https://github.com/samrey-framework/aether/issues"
   },
   "keywords": [
     "aether",
@@ -44,8 +44,8 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@gati/reactivity": "^1.0.0",
-    "@gati/security": "^1.0.0"
+    "@samrey/reactivity": "^1.0.0",
+    "@samrey/security": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"

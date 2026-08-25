@@ -1,4 +1,4 @@
-# Gati Framework: Phase 8.5 Independent Verification Report
+# Samrey Framework: Phase 8.5 Independent Verification Report
 
 **Audit Date**: August 20, 2026  
 **Document Target**: `docs/PHASE_8_5_VERIFICATION.md`  
@@ -79,7 +79,7 @@
 - **HTML & Attribute Sanitization**: Escapes quotes (`&quot;`), apostrophes (`&#39;`), ampersands (`&amp;`), and strips dangerous inline tags (`<script>`, `<iframe>`, `onerror=`).
 - **Secret Guard**: `packages/ssr/src/secret-guard.ts` recursively strips 19 sensitive credential keys (`apiKey`, `passwordHash`, `jwtToken`, `database_url`, `bearer`, etc.) or throws in strict mode.
 - **Prototype Pollution Defense**: `safeJsonParse` and store proxies reject `__proto__`, `constructor`, and `prototype` mutations.
-- **CSRF & Trusted Types**: Constant-time token verification (`crypto.timingSafeEqual`) and W3C Trusted Types policy integration (`getGatiTrustedPolicy`).
+- **CSRF & Trusted Types**: Constant-time token verification (`crypto.timingSafeEqual`) and W3C Trusted Types policy integration (`getSamreyTrustedPolicy`).
 
 ### 6. End-to-End Pipeline Execution Verification
 - **Implementation**: `tests/integration/full-pipeline.test.ts`.

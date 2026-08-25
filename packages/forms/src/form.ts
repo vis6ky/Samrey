@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/forms - Form Container Controller with Standard Schema (~v1) Support
+ * @samrey/forms - Form Container Controller with Standard Schema (~v1) Support
  */
 
-import { signal, computed, ReadonlySignal } from '@gati/reactivity';
+import { signal, computed, ReadonlySignal } from '@samrey/reactivity';
 import { createField, FieldState } from './field.js';
 import { StandardSchemaV1, Validator } from './standard-schema.js';
 

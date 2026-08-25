@@ -1,7 +1,7 @@
 /**
  * @license Apache-2.0
- * @gati/tests - Lifecycle, Memory, and High-Throughput Stress Benchmarks
- * Hardens Gati v1.0.0-rc.1 against memory leaks, owner leaks, and signal cycles.
+ * @samrey/tests - Lifecycle, Memory, and High-Throughput Stress Benchmarks
+ * Hardens Samrey v1.0.0-rc.1 against memory leaks, owner leaks, and signal cycles.
  */
 
 import { describe, it } from 'node:test';
@@ -13,7 +13,7 @@ import { runPreviewCommand } from '../packages/cli/src/commands/preview.js';
 import { runCLI } from '../packages/cli/src/runner.js';
 import { generateStarterProject } from '../packages/cli/src/starter-template.js';
 
-describe('Gati Phase 17 - Lifecycle, Owner & Memory Stress Test Suite', () => {
+describe('Samrey Phase 17 - Lifecycle, Owner & Memory Stress Test Suite', () => {
   it('handles 1,000 mount/update/unmount cycles with 100% owner and effect cleanup', () => {
     let cleanupsExecuted = 0;
     let effectExecutions = 0;
@@ -127,7 +127,7 @@ describe('Gati Phase 17 - Lifecycle, Owner & Memory Stress Test Suite', () => {
   });
 });
 
-describe('Gati Phase 17 - Starter Template & CLI Validation Suite', () => {
+describe('Samrey Phase 17 - Starter Template & CLI Validation Suite', () => {
   it('generates valid production files for all 4 starter templates (ssr, spa, minimal, ssg)', () => {
     const templates = ['ssr', 'spa', 'minimal', 'ssg'] as const;
 
@@ -141,11 +141,11 @@ describe('Gati Phase 17 - Starter Template & CLI Validation Suite', () => {
 
       const pkg = JSON.parse(files['package.json']);
       assert.equal(pkg.name, `test-app-${t}`);
-      assert.ok(pkg.dependencies['@gati/reactivity']);
-      assert.ok(pkg.dependencies['@gati/runtime']);
+      assert.ok(pkg.dependencies['@samrey/reactivity']);
+      assert.ok(pkg.dependencies['@samrey/runtime']);
 
       if (t === 'ssr' || t === 'ssg') {
-        assert.ok(pkg.dependencies['@gati/ssr'], `Template ${t} must depend on @gati/ssr`);
+        assert.ok(pkg.dependencies['@samrey/ssr'], `Template ${t} must depend on @samrey/ssr`);
         assert.ok(files['src/entry-server.tsx'], `Template ${t} must have src/entry-server.tsx`);
       }
 
@@ -160,7 +160,7 @@ describe('Gati Phase 17 - Starter Template & CLI Validation Suite', () => {
     assert.equal(validateProjectName('../evil-path').valid, false);
     assert.equal(validateProjectName('/absolute/path').valid, false);
     assert.equal(validateProjectName('my-clean-app-123').valid, true);
-    assert.equal(validateProjectName('@myorg/aether-starter').valid, true);
+    assert.equal(validateProjectName('@myorg/samrey-starter').valid, true);
   });
 
   it('executes dry-run CLI commands without errors', async () => {
@@ -174,7 +174,7 @@ describe('Gati Phase 17 - Starter Template & CLI Validation Suite', () => {
 
     const cliHelpRes = await runCLI(['--help']);
     assert.equal(cliHelpRes.success, true);
-    assert.ok(cliHelpRes.message.includes('Gati Framework CLI'));
+    assert.ok(cliHelpRes.message.includes('Samrey Framework CLI'));
 
     const cliVersionRes = await runCLI(['--version']);
     assert.equal(cliVersionRes.success, true);

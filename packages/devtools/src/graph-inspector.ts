@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/devtools - Reactive Graph Topology & Signal Inspector
+ * @samrey/devtools - Reactive Graph Topology & Signal Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

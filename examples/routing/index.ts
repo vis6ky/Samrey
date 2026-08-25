@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Gati Framework — Routing Example
+ * Samrey Framework — Routing Example
  */
 
 import { signal } from '../../packages/reactivity/src/index.js';

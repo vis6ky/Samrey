@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/reactivity - Owner Scoped Disposal Hierarchy
+ * @samrey/reactivity - Owner Scoped Disposal Hierarchy
  */
 
 import { Owner, Context } from './types.js';
@@ -28,7 +28,7 @@ export function createOwner(parent = currentOwner): Owner {
         try {
           this.cleanups[i]();
         } catch (err) {
-          console.error('[Gati Reactivity] Error during cleanup:', err);
+          console.error('[Samrey Reactivity] Error during cleanup:', err);
         }
       }
       this.cleanups.length = 0;
@@ -74,7 +74,7 @@ export function onCleanup(fn: () => void): void {
 }
 
 export function createContext<T>(defaultValue?: T): Context<T> {
-  const id = Symbol('Gati_Context');
+  const id = Symbol('Samrey_Context');
   return {
     id,
     defaultValue,

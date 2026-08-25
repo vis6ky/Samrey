@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 NPM Artifact Certification
+ * @samrey/monorepo - Phase 24 NPM Artifact Certification
  * Packs and verifies all 11 npm tarballs for correct file contents, permissions, licenses, and metadata.
  */
 
@@ -18,7 +18,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
   ];
 
   it('1. Packs all 11 packages and verifies SHA256 checksums', () => {
-    const tarballDir = path.join('/tmp', 'aether-p24-tarballs');
+    const tarballDir = path.join('/tmp', 'samrey-p24-tarballs');
     const packed = packAllPackages(tarballDir);
 
     assert.strictEqual(packed.length, 11, 'Must produce 11 tarballs');
@@ -30,7 +30,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
   });
 
   it('2. Inspects tarball contents to confirm zero leaks of test/benchmark/secret files', () => {
-    const tarballDir = path.join('/tmp', 'aether-p24-tarballs');
+    const tarballDir = path.join('/tmp', 'samrey-p24-tarballs');
     const files = fs.readdirSync(tarballDir).filter(f => f.endsWith('.tgz'));
 
     assert.strictEqual(files.length, 11, 'Expected 11 .tgz archives');
@@ -58,7 +58,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
       const pkgPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
       const manifest = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
-      assert.strictEqual(manifest.name, `@gati/${pkg}`);
+      assert.strictEqual(manifest.name, `@samrey/${pkg}`);
       assert.strictEqual(manifest.version, '1.0.0');
       assert.strictEqual(manifest.license, 'Apache-2.0');
       assert.ok(manifest.repository, 'repository must be defined');

@@ -1,22 +1,22 @@
-# @gati/forms
+# @samrey/forms
 
 Type-safe reactive form container, Standard Schema validation, fine-grained field tracking, and automated ARIA accessibility attributes.
 
 ## Purpose
 
-`@gati/forms` manages complex form state and validation without triggering component re-renders. Every form field is backed by fine-grained signals (`value`, `errors`, `touched`, `dirty`, `validating`) and auto-generates accessible ARIA attributes.
+`@samrey/forms` manages complex form state and validation without triggering component re-renders. Every form field is backed by fine-grained signals (`value`, `errors`, `touched`, `dirty`, `validating`) and auto-generates accessible ARIA attributes.
 
 ## Installation
 
 ```bash
-npm install @gati/forms @gati/reactivity @gati/runtime
+npm install @samrey/forms @samrey/reactivity @samrey/runtime
 ```
 
 ## Quick Example
 
 ```ts
-import { createForm, validators } from '@gati/forms';
-import { el } from '@gati/runtime';
+import { createForm, validators } from '@samrey/forms';
+import { el } from '@samrey/runtime';
 
 const form = createForm({
   initialValues: {
@@ -58,6 +58,6 @@ Automatic input sanitization, prototype pollution protection on nested fields, a
 
 ## Related Packages
 
-- `@gati/reactivity` — Drives per-field reactive signals.
-- `@gati/runtime` — DOM element binding helpers.
+- `@samrey/reactivity` — Drives per-field reactive signals.
+- `@samrey/runtime` — DOM element binding helpers.
 

@@ -1,7 +1,7 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 Documentation Native UI Certification Test
- * Strictly verifies the "Gati Must Use Gati" architectural invariant.
+ * @samrey/monorepo - Phase 24 Documentation Native UI Certification Test
+ * Strictly verifies the "Samrey Must Use Samrey" architectural invariant.
  */
 
 import { describe, it } from 'node:test';
@@ -21,13 +21,13 @@ import { SecurityView } from '../../src/components/SecurityView.js';
 import { ArchitectureView } from '../../src/components/ArchitectureView.js';
 import { AppShell } from '../../src/task-studio/components/AppShell.js';
 
-function isGatiElement(node: unknown): boolean {
+function isSamreyElement(node: unknown): boolean {
   if (!node || typeof node !== 'object') return false;
   if (typeof HTMLElement !== 'undefined' && node instanceof HTMLElement) return true;
   return (node as any).nodeType === 1 && typeof (node as any).tagName === 'string';
 }
 
-describe('Phase 24 — Documentation UI Native Gati Certification', () => {
+describe('Phase 24 — Documentation UI Native Samrey Certification', () => {
   const FORBIDDEN_LIBRARIES = [
     'react', 'react-dom', 'vue', 'angular', 'svelte', 'solid-js', 'preact', 'lit',
     'redux', 'zustand', 'mobx', 'lucide-react', 'framer-motion', 'chakra', 'mui', 'antd',
@@ -55,9 +55,9 @@ describe('Phase 24 — Documentation UI Native Gati Certification', () => {
     scanDir(path.join(process.cwd(), 'src'));
   });
 
-  it('2. Verifies Documentation Shell instantiates cleanly using Gati native el()', () => {
+  it('2. Verifies Documentation Shell instantiates cleanly using Samrey native el()', () => {
     const rootEl = App();
-    assert.ok(isGatiElement(rootEl), 'App root must return a native Gati element');
+    assert.ok(isSamreyElement(rootEl), 'App root must return a native Samrey element');
     assert.ok(rootEl.classList.contains('min-h-screen'), 'Root element has layout styling');
   });
 
@@ -68,41 +68,41 @@ describe('Phase 24 — Documentation UI Native Gati Certification', () => {
       onOpenSearch: () => {}
     });
 
-    assert.ok(isGatiElement(header), 'Header must return an Gati element');
+    assert.ok(isSamreyElement(header), 'Header must return an Samrey element');
     const brand = header.querySelector('h1, span, a');
     assert.ok(brand, 'Header contains brand title');
   });
 
   it('4. Verifies Documentation Viewer and Search Modal native components', () => {
     const reader = DocReader();
-    assert.ok(isGatiElement(reader), 'DocReader must instantiate as an Gati element');
+    assert.ok(isSamreyElement(reader), 'DocReader must instantiate as an Samrey element');
 
     const searchModal = SearchModal({
       isOpen: { value: true } as any,
       activeTab: { value: 'docs' } as any
     });
-    assert.ok(isGatiElement(searchModal), 'SearchModal must instantiate as an Gati element');
+    assert.ok(isSamreyElement(searchModal), 'SearchModal must instantiate as an Samrey element');
   });
 
   it('5. Verifies Interactive Visualizers (Reactivity, Compiler, Security, Architecture)', () => {
     const compVis = CompilerVisualizer();
-    assert.ok(isGatiElement(compVis), 'CompilerVisualizer must instantiate as an Gati element');
+    assert.ok(isSamreyElement(compVis), 'CompilerVisualizer must instantiate as an Samrey element');
 
     const reactVis = ReactivityVisualizer();
-    assert.ok(isGatiElement(reactVis), 'ReactivityVisualizer must instantiate as an Gati element');
+    assert.ok(isSamreyElement(reactVis), 'ReactivityVisualizer must instantiate as an Samrey element');
 
     const secView = SecurityView();
-    assert.ok(isGatiElement(secView), 'SecurityView must instantiate as an Gati element');
+    assert.ok(isSamreyElement(secView), 'SecurityView must instantiate as an Samrey element');
 
     const archView = ArchitectureView();
-    assert.ok(isGatiElement(archView), 'ArchitectureView must instantiate as an Gati element');
+    assert.ok(isSamreyElement(archView), 'ArchitectureView must instantiate as an Samrey element');
 
     const compView = CompetitiveView();
-    assert.ok(isGatiElement(compView), 'CompetitiveView must instantiate as an Gati element');
+    assert.ok(isSamreyElement(compView), 'CompetitiveView must instantiate as an Samrey element');
   });
 
   it('6. Verifies Task Studio AppShell native component', () => {
     const taskStudio = AppShell();
-    assert.ok(isGatiElement(taskStudio), 'Task Studio AppShell must instantiate as an Gati element');
+    assert.ok(isSamreyElement(taskStudio), 'Task Studio AppShell must instantiate as an Samrey element');
   });
 });

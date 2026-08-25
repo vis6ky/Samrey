@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Tasks Management View
+ * @samrey/task-studio - Tasks Management View
  */
 
-import { el, For, Show } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For, Show } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import {
   tasksState,
   setTaskFilter,

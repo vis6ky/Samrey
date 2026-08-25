@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Standard Schema Form Handlers
- * Powered 100% by @gati/forms with Standard Schema (~standard v1)
+ * Samrey Project Manager — Standard Schema Form Handlers
+ * Powered 100% by @samrey/forms with Standard Schema (~standard v1)
  */
 
-import { createForm, createField, getAccessibleFieldProps } from '@gati/forms';
+import { createForm, createField, getAccessibleFieldProps } from '@samrey/forms';
 import { Project, Task } from './types.js';
 
 // Project Form Schema
@@ -23,7 +23,7 @@ export function createProjectForm(
   const schema = {
     '~standard': {
       version: 1 as const,
-      vendor: 'aether-forms',
+      vendor: 'samrey-forms',
       validate: (input: unknown) => {
         const val = (input || {}) as Partial<ProjectFormData>;
         const issues: Array<{ message: string; path?: string[] }> = [];
@@ -90,7 +90,7 @@ export function createTaskForm(
   const schema = {
     '~standard': {
       version: 1 as const,
-      vendor: 'aether-forms',
+      vendor: 'samrey-forms',
       validate: (input: unknown) => {
         const val = (input || {}) as Partial<TaskFormData>;
         const issues: Array<{ message: string; path?: string[] }> = [];

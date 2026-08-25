@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/devtools - DevTools Bridge & Event Emitter
+ * @samrey/devtools - DevTools Bridge & Event Emitter
  */
 
 import { sanitizePayload } from './sanitizer.js';
@@ -91,13 +91,13 @@ export class DevToolsBridge {
       try {
         listener(event);
       } catch (err) {
-        console.error('[Gati DevTools] Listener error:', err);
+        console.error('[Samrey DevTools] Listener error:', err);
       }
     }
 
     if (typeof window !== 'undefined' && typeof window.postMessage === 'function') {
       try {
-        window.postMessage({ source: 'aether-devtools-bridge', ...event }, this.targetOrigin);
+        window.postMessage({ source: 'samrey-devtools-bridge', ...event }, this.targetOrigin);
       } catch {
         // Ignore iframe postMessage failures
       }

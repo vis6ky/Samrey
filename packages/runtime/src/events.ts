@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/runtime - Delegated & Direct Event Binding
+ * @samrey/runtime - Delegated & Direct Event Binding
  */
 
-import { onCleanup } from '@gati/reactivity';
+import { onCleanup } from '@samrey/reactivity';
 
 export function on(
   element: EventTarget,

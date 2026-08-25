@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/forms - Dynamic ARIA Attributes Generator
+ * @samrey/forms - Dynamic ARIA Attributes Generator
  */
 
 export interface AriaBindingAttributes {

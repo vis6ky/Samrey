@@ -1,22 +1,22 @@
-# @gati/devtools
+# @samrey/devtools
 
 Runtime DevTools bridge, reactive graph inspection hooks, and transaction event telemetry.
 
 ## Purpose
 
-`@gati/devtools` provides introspection hooks for debugging Gati applications. It tracks signal dependency graphs, transaction clock ticks, component mount hierarchies, and emits telemetry to the browser DevTools extension.
+`@samrey/devtools` provides introspection hooks for debugging Samrey applications. It tracks signal dependency graphs, transaction clock ticks, component mount hierarchies, and emits telemetry to the browser DevTools extension.
 
 ## Installation
 
 ```bash
-npm install -D @gati/devtools @gati/reactivity
+npm install -D @samrey/devtools @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { initDevtools, getGraphSnapshot } from '@gati/devtools';
-import { signal, effect } from '@gati/reactivity';
+import { initDevtools, getGraphSnapshot } from '@samrey/devtools';
+import { signal, effect } from '@samrey/reactivity';
 
 // 1. Initialize devtools bridge
 const devtools = initDevtools({ enableLogging: true });
@@ -49,6 +49,6 @@ Zero-overhead in production builds when tree-shaken. DevTools messaging strictly
 
 ## Related Packages
 
-- `@gati/reactivity` — Target reactive signals engine.
-- `@gati/runtime` — Target component tree.
+- `@samrey/reactivity` — Target reactive signals engine.
+- `@samrey/runtime` — Target component tree.
 

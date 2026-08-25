@@ -1,16 +1,16 @@
 {
-  "name": "@gati/http",
+  "name": "@samrey/http",
   "version": "1.0.0",
-  "description": "Reactive resource data fetching, automatic request deduplication, cache tags, and fetch client for Gati.",
+  "description": "Reactive resource data fetching, automatic request deduplication, cache tags, and fetch client for Samrey.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gati-framework/aether.git",
+    "url": "git+https://github.com/samrey-framework/aether.git",
     "directory": "packages/http"
   },
-  "homepage": "https://gati.dev",
+  "homepage": "https://samrey.dev",
   "bugs": {
-    "url": "https://github.com/gati-framework/aether/issues"
+    "url": "https://github.com/samrey-framework/aether/issues"
   },
   "keywords": [
     "aether",
@@ -45,8 +45,8 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@gati/reactivity": "^1.0.0",
-    "@gati/security": "^1.0.0"
+    "@samrey/reactivity": "^1.0.0",
+    "@samrey/security": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"

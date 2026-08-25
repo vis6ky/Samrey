@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Toast Notification Container
+ * @samrey/task-studio - Accessible Toast Notification Container
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { toasts, removeToast } from '../../state/toast.store.js';
 import { ToastMessage } from '../../types.js';
 

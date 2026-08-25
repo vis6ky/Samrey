@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - CLI Command Line Dispatcher & Runner
+ * @samrey/cli - CLI Command Line Dispatcher & Runner
  */
 
 import { runCreateCommand } from './commands/create.js';
@@ -16,16 +16,16 @@ import { CommandResult } from './commands/create.js';
 export const CLI_VERSION = '1.0.0';
 
 export const HELP_TEXT = `
-Gati Framework CLI v${CLI_VERSION}
+Samrey Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
 
 USAGE:
   $ aether <command> [options]
 
 COMMANDS:
-  create <name>        Initialize a new production Gati starter project
+  create <name>        Initialize a new production Samrey starter project
   dev                  Start the high-performance local dev server with DevTools
-  build                Compile and bundle Gati application for production
+  build                Compile and bundle Samrey application for production
   preview              Serve production bundle locally for previewing
   test                 Execute application test suites
   audit                Run static security, CSP & a11y accessibility audit
@@ -78,7 +78,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!name) {
         return {
           success: false,
-          message: '[Gati Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]',
+          message: '[Samrey Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]',
           exitCode: 1
         };
       }
@@ -88,7 +88,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!validTemplates.includes(templateVal)) {
         return {
           success: false,
-          message: `[Gati Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(', ')}.`,
+          message: `[Samrey Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(', ')}.`,
           exitCode: 1
         };
       }
@@ -141,7 +141,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!type || !name) {
         return {
           success: false,
-          message: '[Gati Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>',
+          message: '[Samrey Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>',
           exitCode: 1
         };
       }
@@ -151,7 +151,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
     default: {
       return {
         success: false,
-        message: `[Gati Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
+        message: `[Samrey Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
         exitCode: 1
       };
     }

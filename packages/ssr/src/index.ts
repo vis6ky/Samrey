@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - Main Entry Point
+ * @samrey/ssr - Main Entry Point
  */
 
 export * from './secret-guard.js';
@@ -14,7 +14,7 @@ export * from './ssg.js';
 import { stripSecrets } from './secret-guard.js';
 import { serializeStateForHydration } from './serializer.js';
 import { hydrate } from './hydration.js';
-import { escapeHtmlText } from '@gati/security';
+import { escapeHtmlText } from '@samrey/security';
 
 export const sanitizeSsrState = stripSecrets;
 export const escapeJsonState = serializeStateForHydration;

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/testing - Component Test Harness
+ * @samrey/testing - Component Test Harness
  */
 
-import { createRoot } from '@gati/reactivity';
+import { createRoot } from '@samrey/reactivity';
 
 export interface TestRenderResult<TNode = unknown> {
   container: TNode;
@@ -40,14 +40,14 @@ export async function waitFor(predicate: () => boolean | Promise<boolean>, timeo
     await new Promise((r) => setTimeout(r, 10));
   }
   if (!(await predicate())) {
-    throw new Error(`[Gati Testing] waitFor timed out after ${timeoutMs}ms`);
+    throw new Error(`[Samrey Testing] waitFor timed out after ${timeoutMs}ms`);
   }
 }
 
 export function cleanupAllTestContainers(): void {
   // Cleans up any remaining test containers in DOM
   if (typeof document !== 'undefined') {
-    const containers = document.querySelectorAll('[data-aether-test-container]');
+    const containers = document.querySelectorAll('[data-samrey-test-container]');
     containers.forEach((c) => c.remove());
   }
 }

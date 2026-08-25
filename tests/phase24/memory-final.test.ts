@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 Memory & Lifecycle Final Gate
+ * @samrey/monorepo - Phase 24 Memory & Lifecycle Final Gate
  * Validates zero memory leaks across 5,000 root creations/disposals and 10,000 batched signal updates.
  */
 
@@ -65,7 +65,7 @@ describe('Phase 24 — Memory & Lifecycle Final Gate', () => {
     const data: any[] = [];
     for (let i = 0; i < 1000; i++) {
       createRoot((dispose) => {
-        const sig = signal({ id: i, payload: new Array(100).fill('aether-signal') });
+        const sig = signal({ id: i, payload: new Array(100).fill('samrey-signal') });
         const dom = el('div', { 'data-id': String(i) }, ['Node ', sig.value.id]);
         data.push(dom);
         dispose();

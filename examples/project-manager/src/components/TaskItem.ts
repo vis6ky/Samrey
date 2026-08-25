@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Task Item Component
- * Native Gati Reactive Component with status toggle, priority indicator, and optimistic updates
+ * Samrey Project Manager — Task Item Component
+ * Native Samrey Reactive Component with status toggle, priority indicator, and optimistic updates
  */
 
-import { el, Show, For } from '@gati/runtime';
+import { el, Show, For } from '@samrey/runtime';
 import { Task } from '../types.js';
 import { toggleTaskStatus, removeTask } from '../state.js';
 

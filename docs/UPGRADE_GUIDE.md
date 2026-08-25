@@ -1,4 +1,4 @@
-# Gati Framework — Migration & Upgrade Guide
+# Samrey Framework — Migration & Upgrade Guide
 
 **Current Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
@@ -15,19 +15,19 @@ Update your `package.json` dependencies to `^1.0.0-rc.1`:
 ```json
 {
   "dependencies": {
-    "@gati/reactivity": "^1.0.0-rc.1",
-    "@gati/runtime": "^1.0.0-rc.1",
-    "@gati/security": "^1.0.0-rc.1",
-    "@gati/router": "^1.0.0-rc.1",
-    "@gati/forms": "^1.0.0-rc.1",
-    "@gati/http": "^1.0.0-rc.1",
-    "@gati/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^1.0.0-rc.1",
+    "@samrey/runtime": "^1.0.0-rc.1",
+    "@samrey/security": "^1.0.0-rc.1",
+    "@samrey/router": "^1.0.0-rc.1",
+    "@samrey/forms": "^1.0.0-rc.1",
+    "@samrey/http": "^1.0.0-rc.1",
+    "@samrey/ssr": "^1.0.0-rc.1"
   },
   "devDependencies": {
-    "@gati/cli": "^1.0.0-rc.1",
-    "@gati/compiler": "^1.0.0-rc.1",
-    "@gati/testing": "^1.0.0-rc.1",
-    "@gati/devtools": "^1.0.0-rc.1"
+    "@samrey/cli": "^1.0.0-rc.1",
+    "@samrey/compiler": "^1.0.0-rc.1",
+    "@samrey/testing": "^1.0.0-rc.1",
+    "@samrey/devtools": "^1.0.0-rc.1"
   }
 }
 ```
@@ -37,20 +37,20 @@ Update your `package.json` dependencies to `^1.0.0-rc.1`:
 ## 2. API Standardization Notes
 
 1. **Signals & Computed Access:**
-   - In Gati, signal and computed values are accessed via `.value`:
+   - In Samrey, signal and computed values are accessed via `.value`:
      ```ts
      const count = signal(0);
      console.log(count.value); // 0
      count.value = 1;
      ```
 2. **Standard Schema Forms:**
-   - `@gati/forms` integrates with Standard Schema (~v1) validators (Zod, Valibot, ArkType).
+   - `@samrey/forms` integrates with Standard Schema (~v1) validators (Zod, Valibot, ArkType).
    - Form fields expose reactive `.value` signals:
      ```ts
      const form = createForm({
-       initialValues: { name: 'Gati' }
+       initialValues: { name: 'Samrey' }
      });
-     console.log(form.fields.name.value.value); // 'Gati'
+     console.log(form.fields.name.value.value); // 'Samrey'
      ```
 3. **Control Flow Components:**
    - Use direct-DOM control flow components (`Show`, `For`, `Switch`, `Match`, `ErrorBoundary`):

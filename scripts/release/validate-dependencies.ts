@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Release Dependency Topology Validation
+ * @samrey/monorepo - Release Dependency Topology Validation
  */
 
 import * as fs from 'node:fs';
@@ -41,7 +41,7 @@ export function validateDependencyTopology(): TopologyResult {
   const invalidWorkspaceRefs: string[] = [];
 
   for (const pkg of PACKAGES) {
-    const pkgName = `@gati/${pkg}`;
+    const pkgName = `@samrey/${pkg}`;
     graph[pkgName] = [];
     const pkgPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
     if (!fs.existsSync(pkgPath)) continue;
@@ -70,8 +70,8 @@ export function validateDependencyTopology(): TopologyResult {
         invalidWorkspaceRefs.push(`Package ${pkgName} has invalid local/workspace reference for "${dep}": "${verStr}"`);
       }
 
-      // If internal @gati/* dependency
-      if (dep.startsWith('@gati/')) {
+      // If internal @samrey/* dependency
+      if (dep.startsWith('@samrey/')) {
         graph[pkgName].push(dep);
       }
     }
@@ -131,7 +131,7 @@ export function validateDependencyTopology(): TopologyResult {
 }
 
 if (process.argv[1]?.endsWith('validate-dependencies.ts') || process.argv[1]?.endsWith('validate-dependencies.js')) {
-  console.log('▲ Gati Dependency Topology & Cycle Audit\n');
+  console.log('▲ Samrey Dependency Topology & Cycle Audit\n');
   const result = validateDependencyTopology();
 
   console.log('  Topological Publishing Order:');

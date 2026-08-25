@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/compiler - Static A11y Verification Pass
+ * @samrey/compiler - Static A11y Verification Pass
  */
 
 export function lintA11y(tag: string, attributes: Record<string, string>): string[] {

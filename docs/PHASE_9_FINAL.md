@@ -5,7 +5,7 @@
 
 ### 1. Overview & Objectives
 
-In Phase 9 (Sub-phases 9A, 9B, 9C, and 9D), the Gati Framework underwent comprehensive performance profiling, algorithmic optimization, memory leak auditing, baseline measurement recording, and CI regression gate automation.
+In Phase 9 (Sub-phases 9A, 9B, 9C, and 9D), the Samrey Framework underwent comprehensive performance profiling, algorithmic optimization, memory leak auditing, baseline measurement recording, and CI regression gate automation.
 
 Key achievements:
 - **Zero Regressions & Exact Semantics**: All 69 test suites pass without regressions.
@@ -14,7 +14,7 @@ Key achievements:
 
 ---
 
-### 2. Compiler Performance (`@gati/compiler`)
+### 2. Compiler Performance (`@samrey/compiler`)
 
 The compiler implements a 3-stage pipeline: **Source -> AST (`TemplateParser`) -> AIR (`buildAIRFromAST`) -> Codegen (`generateModuleCode`)**.
 
@@ -30,7 +30,7 @@ The compiler implements a 3-stage pipeline: **Source -> AST (`TemplateParser`) -
 
 ---
 
-### 3. Reactivity Performance (`@gati/reactivity`)
+### 3. Reactivity Performance (`@samrey/reactivity`)
 
 The reactivity engine provides fine-grained signals, computed values, effects, root disposal hierarchies, and transactional batching.
 
@@ -45,7 +45,7 @@ The reactivity engine provides fine-grained signals, computed values, effects, r
 
 ---
 
-### 4. Runtime DOM Performance (`@gati/runtime`)
+### 4. Runtime DOM Performance (`@samrey/runtime`)
 
 The runtime leverages HTML `<template>` cloning, fine-grained micro dirty-checking, and delegated event listeners.
 
@@ -78,7 +78,7 @@ The runtime leverages HTML `<template>` cloning, fine-grained micro dirty-checki
 
 ---
 
-### 6. SSR & Streaming Performance (`@gati/ssr`)
+### 6. SSR & Streaming Performance (`@samrey/ssr`)
 
 - **`renderToString` (100 nodes)**: 0.029 ms avg (34,848 ops/sec).
 - **`renderToString` (1,000 nodes)**: 0.193 ms avg (5,192 ops/sec).

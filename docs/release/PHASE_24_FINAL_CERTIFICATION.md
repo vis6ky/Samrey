@@ -1,8 +1,8 @@
-# Gati Framework v1.0.0
+# Samrey Framework v1.0.0
 ## Phase 24 General Availability (GA) Final Release Certification
 
 ### Architectural Mandate
-"Gati Must Use Gati" — 100% Compliant
+"Samrey Must Use Samrey" — 100% Compliant
 
 ### Package Count
 11
@@ -32,7 +32,7 @@ PASS (Isolated execution without symlinks)
 PASS (Zero-eval, prototype pollution protection, CSRF & XSS prevention)
 
 ### Documentation & Native UI
-PASS (Gati-native documentation portal & Task Studio)
+PASS (Samrey-native documentation portal & Task Studio)
 
 ### Framework Purity
 PASS (Zero React, Vue, Angular, Svelte, Solid, Preact, Lit, or foreign UI runtime libraries)

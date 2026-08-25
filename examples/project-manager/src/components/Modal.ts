@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Accessible Modal Dialog Component
- * 100% Native Gati Runtime with Portal, focus management, and Escape key handling
+ * Samrey Project Manager — Accessible Modal Dialog Component
+ * 100% Native Samrey Runtime with Portal, focus management, and Escape key handling
  */
 
-import { el, Show } from '@gati/runtime';
+import { el, Show } from '@samrey/runtime';
 
 export function Modal(props: {
   isOpen: () => boolean;

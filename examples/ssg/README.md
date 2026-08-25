@@ -1,6 +1,6 @@
-# Gati SSG Example
+# Samrey SSG Example
 
-This example demonstrates Static Site Generation (SSG) in Gati with parameterized dynamic paths (`getStaticPaths`), automated sitemap (`sitemap.xml`) generation, and state serialization.
+This example demonstrates Static Site Generation (SSG) in Samrey with parameterized dynamic paths (`getStaticPaths`), automated sitemap (`sitemap.xml`) generation, and state serialization.
 
 ## Features
 

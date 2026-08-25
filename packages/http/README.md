@@ -1,22 +1,22 @@
-# @gati/http
+# @samrey/http
 
 Reactive data fetching primitive, automatic in-flight deduplication cache, retry policies, and typed HTTP client.
 
 ## Purpose
 
-`@gati/http` provides seamless asynchronous resource fetching tightly integrated with Gati signals. It handles abort signals, loading/error states, caching, and suspense integration out of the box.
+`@samrey/http` provides seamless asynchronous resource fetching tightly integrated with Samrey signals. It handles abort signals, loading/error states, caching, and suspense integration out of the box.
 
 ## Installation
 
 ```bash
-npm install @gati/http @gati/reactivity
+npm install @samrey/http @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { createResource, HttpClient } from '@gati/http';
-import { signal } from '@gati/reactivity';
+import { createResource, HttpClient } from '@samrey/http';
+import { signal } from '@samrey/reactivity';
 
 const userId = signal('1');
 
@@ -52,6 +52,6 @@ Supports automatic CSRF header injection, origin validation, and timeout guarant
 
 ## Related Packages
 
-- `@gati/reactivity` — Signal engine driving resource triggers.
-- `@gati/runtime` — Suspense and ErrorBoundary integration.
+- `@samrey/reactivity` — Signal engine driving resource triggers.
+- `@samrey/runtime` — Suspense and ErrorBoundary integration.
 

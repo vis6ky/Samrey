@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Project Card Component
- * Native Gati Reactive Component with dynamic progress bar and actions
+ * Samrey Project Manager — Project Card Component
+ * Native Samrey Reactive Component with dynamic progress bar and actions
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { Project } from '../types.js';
 import { removeProject } from '../state.js';
 

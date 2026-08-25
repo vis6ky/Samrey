@@ -1,8 +1,8 @@
-# Gati Framework v1.0.0-rc.1
+# Samrey Framework v1.0.0-rc.1
 ## Phase 21 Public Release Certification
 
 ### Architectural Mandate
-"Gati Must Use Gati"
+"Samrey Must Use Samrey"
 
 ### Package Count
 11

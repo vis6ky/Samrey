@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Master Application Shell
+ * @samrey/task-studio - Master Application Shell
  */
 
-import { el, Show } from '@gati/runtime';
-import { signal, effect } from '@gati/reactivity';
-import { createRouter, RouteRecord } from '@gati/router';
+import { el, Show } from '@samrey/runtime';
+import { signal, effect } from '@samrey/reactivity';
+import { createRouter, RouteRecord } from '@samrey/router';
 import { Header } from './Header.js';
 import { Sidebar } from './Sidebar.js';
 import { ToastContainer } from './ui/ToastContainer.js';
@@ -61,7 +61,7 @@ export function AppShell(initialRoute = '/dashboard'): HTMLElement {
   const isMobileSidebarOpen = signal(false);
 
   const root = el('div', {
-    id: 'aether-task-studio-root',
+    id: 'samrey-task-studio-root',
     class: 'min-h-screen bg-slate-100 text-slate-900 flex flex-col antialiased font-sans'
   });
 

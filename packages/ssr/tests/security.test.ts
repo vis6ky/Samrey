@@ -8,7 +8,7 @@ import {
   isSensitiveKey
 } from '../src/index.js';
 
-describe('@gati/ssr - State Security, Secret Guard & Validation', () => {
+describe('@samrey/ssr - State Security, Secret Guard & Validation', () => {
   it('escapes dangerous script tags, HTML tokens, and line separators', () => {
     const maliciousPayload = {
       comment: '</script><script>alert(document.cookie)</script>',

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/devtools - Component Hierarchy & Tree Inspector
+ * @samrey/devtools - Component Hierarchy & Tree Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

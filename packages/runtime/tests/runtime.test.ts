@@ -8,7 +8,7 @@ import {
   Show, 
   For 
 } from '../src/index.js';
-import { signal, onCleanup } from '@gati/reactivity';
+import { signal, onCleanup } from '@samrey/reactivity';
 
 // Lightweight Test DOM Node structure for pure Node.js environments
 class TestNode {
@@ -69,7 +69,7 @@ class TestNode {
   }
 }
 
-describe('@gati/runtime', () => {
+describe('@samrey/runtime', () => {
   it('creates template factory and clones structure', () => {
     const tmpl = template('<div class="box"><span>Hello</span></div>');
     const node = tmpl();

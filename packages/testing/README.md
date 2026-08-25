@@ -1,23 +1,23 @@
-# @gati/testing
+# @samrey/testing
 
 Deterministic unit testing utilities, component test harnesses, reactivity microtask flushers, and DOM event simulators.
 
 ## Purpose
 
-`@gati/testing` provides ergonomic utilities for testing Gati components and signals in simulated or headless browser environments without relying on external testing framework plugins.
+`@samrey/testing` provides ergonomic utilities for testing Samrey components and signals in simulated or headless browser environments without relying on external testing framework plugins.
 
 ## Installation
 
 ```bash
-npm install -D @gati/testing @gati/runtime @gati/reactivity
+npm install -D @samrey/testing @samrey/runtime @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { renderTest, fireEvent, flushReactivity } from '@gati/testing';
-import { el } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
+import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 function Counter() {
   const count = signal(0);
@@ -58,6 +58,6 @@ Safely handles isolated unmounting to prevent DOM leakage and timer retention be
 
 ## Related Packages
 
-- `@gati/runtime` — Target component rendering system.
-- `@gati/reactivity` — State engine tested with reactivity flushers.
+- `@samrey/runtime` — Target component rendering system.
+- `@samrey/reactivity` — State engine tested with reactivity flushers.
 

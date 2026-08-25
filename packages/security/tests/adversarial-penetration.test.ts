@@ -1,14 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { compileTemplate } from '@gati/compiler';
-import { bindAttr, bindText } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
-import { createRouter } from '@gati/router';
-import { serializeStateForHydration, deserializeHydrationState, stripSecrets } from '@gati/ssr';
-import { aetherDevToolsBridge } from '@gati/devtools';
-import { runCreateCommand } from '@gati/cli/src/commands/create.js';
-import { runGenerateCommand } from '@gati/cli/src/commands/generate.js';
-import { createForm } from '@gati/forms';
+import { compileTemplate } from '@samrey/compiler';
+import { bindAttr, bindText } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
+import { createRouter } from '@samrey/router';
+import { serializeStateForHydration, deserializeHydrationState, stripSecrets } from '@samrey/ssr';
+import { aetherDevToolsBridge } from '@samrey/devtools';
+import { runCreateCommand } from '@samrey/cli/src/commands/create.js';
+import { runGenerateCommand } from '@samrey/cli/src/commands/generate.js';
+import { createForm } from '@samrey/forms';
 import { 
   sanitizeUri, 
   sanitizeRedirectUri, 
@@ -18,7 +18,7 @@ import {
   generateCsrfToken
 } from '../src/index.ts';
 
-describe('Gati Adversarial Security & Penetration Testing Suite', () => {
+describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
   describe('Vulnerability 1: Compiler Constant-Folding XSS & Attribute Breakout', () => {
     it('properly escapes constant-folded HTML strings in text interpolations', () => {
       const template = '<div>{"<script>alert(1)</script>"}</div>';
@@ -162,7 +162,7 @@ describe('Gati Adversarial Security & Penetration Testing Suite', () => {
           database_url: 'postgres://root:secret@db:5432/main'
         },
         publicConfig: {
-          appName: 'Gati App'
+          appName: 'Samrey App'
         }
       };
 
@@ -173,7 +173,7 @@ describe('Gati Adversarial Security & Penetration Testing Suite', () => {
       assert.equal((clean.user as any).jwtToken, undefined);
       assert.equal((clean.user as any).bearerAuth, undefined);
       assert.equal((clean.user as any).database_url, undefined);
-      assert.equal(clean.publicConfig.appName, 'Gati App');
+      assert.equal(clean.publicConfig.appName, 'Samrey App');
     });
   });
 

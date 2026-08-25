@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Unified Task Board View
- * Native Gati View with multi-column status lanes, priority filters, and search
+ * Samrey Project Manager — Unified Task Board View
+ * Native Samrey View with multi-column status lanes, priority filters, and search
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { store, filteredTasks } from '../state.js';
 import { TaskItem } from '../components/TaskItem.js';
 import { TaskStatus } from '../types.js';

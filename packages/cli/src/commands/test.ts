@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether test" Command
+ * @samrey/cli - "aether test" Command
  */
 
 import { CommandResult } from './create.js';
@@ -16,7 +16,7 @@ export async function runTestCommand(options: TestCommandOptions = {}): Promise<
   const fileCount = options.files?.length || 1;
 
   const summary = [
-    `  ▲ Gati Test Runner`,
+    `  ▲ Samrey Test Runner`,
     `  ➜ Executing tests across ${fileCount} suite(s)`,
     `  ➜ Reactivity assertions: Active`,
     `  ➜ SSR stream verification: Active`,

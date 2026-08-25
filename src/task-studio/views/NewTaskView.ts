@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - New Task View
+ * @samrey/task-studio - New Task View
  */
 
-import { el } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { createTaskAction } from '../state/tasks.store.js';
 import { TaskFormValues } from '../types.js';
 import { TaskForm } from '../components/TaskForm.js';
@@ -45,7 +45,7 @@ export function NewTaskView(props: NewTaskViewProps): HTMLElement {
   const formCard = Card(
     {
       title: 'Task Details',
-      subtitle: 'Validated with Standard Schema (~v1) on @gati/forms',
+      subtitle: 'Validated with Standard Schema (~v1) on @samrey/forms',
       padding: 'md'
     },
     TaskForm({

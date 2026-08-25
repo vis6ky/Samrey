@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Reactive Application Settings Store
+ * @samrey/task-studio - Reactive Application Settings Store
  */
 
-import { signal, ReadonlySignal } from '@gati/reactivity';
+import { signal, ReadonlySignal } from '@samrey/reactivity';
 import { AppSettings } from '../types.js';
 
 const initialSettings: AppSettings = {

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/router - Types
+ * @samrey/router - Types
  */
 
-import { ReadonlySignal } from '@gati/reactivity';
+import { ReadonlySignal } from '@samrey/reactivity';
 
 export interface RouteRecord<TData = unknown> {
   path: string;

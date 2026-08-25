@@ -1,4 +1,4 @@
-# Gati Framework — Security Policy & Disclosure
+# Samrey Framework — Security Policy & Disclosure
 
 **Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
@@ -16,7 +16,7 @@
 
 ## 2. Built-in Security Architecture
 
-Gati features a defense-in-depth security model implemented natively in `@gati/security`:
+Samrey features a defense-in-depth security model implemented natively in `@samrey/security`:
 
 - **HTML & SVG Sanitization:** `sanitizeHtml()` contextually parses and strips malicious `<script>`, `<iframe>`, `onerror`, `onload`, and custom inline handlers.
 - **URI Sanitization:** `sanitizeUrl()` blocks `javascript:`, `data:text/html`, and `vbscript:` schemes, returning `about:blank` for unsafe targets.
@@ -29,6 +29,6 @@ Gati features a defense-in-depth security model implemented natively in `@gati/s
 ## 3. Reporting a Vulnerability
 
 To report a vulnerability or security flaw:
-1. Open a private security advisory via GitHub Security Advisories at `https://github.com/gati-framework/aether/security/advisories`.
+1. Open a private security advisory via GitHub Security Advisories at `https://github.com/samrey-framework/aether/security/advisories`.
 2. Do not open public issues for zero-day vulnerabilities.
 3. Vulnerabilities will be triaged within 48 hours and patched in the next release candidate or patch release.

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/benchmarks - SSR & Hydration Performance Suite
+ * @samrey/benchmarks - SSR & Hydration Performance Suite
  */
 
 import { renderToString, createSSRContext, createServerData, getDelegatedEventScript, hydrate } from '../packages/ssr/src/index.js';

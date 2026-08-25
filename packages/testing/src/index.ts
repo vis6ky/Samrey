@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/testing - Main Entry Point
+ * @samrey/testing - Main Entry Point
  */
 
 export * from './harness.js';

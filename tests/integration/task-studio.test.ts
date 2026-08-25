@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/tests - Gati Task Studio Integration & External Consumer Test Suite
+ * @samrey/tests - Samrey Task Studio Integration & External Consumer Test Suite
  */
 
 import { describe, it } from 'node:test';
@@ -29,7 +29,7 @@ import {
 } from '../../src/task-studio/state/tasks.store.js';
 import { TaskItem, TaskFormValues } from '../../src/task-studio/types.js';
 
-describe('Gati Task Studio - End-to-End Application & Consumer Audit', () => {
+describe('Samrey Task Studio - End-to-End Application & Consumer Audit', () => {
   it('1. Task Store State Initialization & Computed Stats', async () => {
     taskService.resetDatabase();
     resetTaskFilters();

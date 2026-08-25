@@ -27,7 +27,7 @@ export interface RegressionReportItem {
 
 export async function runRegressionGate(targetCategory?: string): Promise<{ passed: boolean; report: RegressionReportItem[]; results: BenchmarkResult[] }> {
   console.log('=====================================================');
-  console.log('🔍 Gati Framework - Performance Regression Gate');
+  console.log('🔍 Samrey Framework - Performance Regression Gate');
   console.log('=====================================================\n');
 
   const baselinePath = path.join(process.cwd(), 'benchmarks', 'results.json');

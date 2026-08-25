@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Deterministic Mock REST API Server & Data Seed
+ * @samrey/task-studio - Deterministic Mock REST API Server & Data Seed
  */
 
 import { TaskItem, TaskActivityLog } from '../types.js';
@@ -39,7 +39,7 @@ export const INITIAL_TASKS: TaskItem[] = [
   },
   {
     id: 'task-103',
-    title: 'Standard Schema validation bridge for @gati/forms',
+    title: 'Standard Schema validation bridge for @samrey/forms',
     description: 'Enable synchronous and asynchronous standard schema validation (~v1) with rich field and form-level error tracking.',
     priority: 'high',
     status: 'in-progress',

@@ -1,7 +1,7 @@
-# Gati Framework — NPM Publication Guide & Release Protocol
+# Samrey Framework — NPM Publication Guide & Release Protocol
 
 **Target Release Version:** `1.0.0-rc.1` (and `1.0.0`)  
-**Package Scope:** `@gati/*` (11 packages)  
+**Package Scope:** `@samrey/*` (11 packages)  
 **Registry:** `https://registry.npmjs.org/`  
 **License:** Apache-2.0  
 
@@ -34,53 +34,53 @@ Due to internal package dependencies, packages must be published in strict topol
 
 ### Tier 1: Zero Internal Dependencies
 ```bash
-# 1. @gati/reactivity (Base reactive engine)
+# 1. @samrey/reactivity (Base reactive engine)
 cd packages/reactivity
 npm publish --access public --tag next
 
-# 2. @gati/security (Sanitization & Safe URIs)
+# 2. @samrey/security (Sanitization & Safe URIs)
 cd ../security
 npm publish --access public --tag next
 ```
 
 ### Tier 2: First-Level Dependencies
 ```bash
-# 3. @gati/runtime (Depends on reactivity, security)
+# 3. @samrey/runtime (Depends on reactivity, security)
 cd ../runtime
 npm publish --access public --tag next
 
-# 4. @gati/compiler (Depends on security)
+# 4. @samrey/compiler (Depends on security)
 cd ../compiler
 npm publish --access public --tag next
 
-# 5. @gati/http (Depends on reactivity, security)
+# 5. @samrey/http (Depends on reactivity, security)
 cd ../http
 npm publish --access public --tag next
 
-# 6. @gati/devtools (Depends on reactivity)
+# 6. @samrey/devtools (Depends on reactivity)
 cd ../devtools
 npm publish --access public --tag next
 
-# 7. @gati/ssr (Depends on reactivity, security)
+# 7. @samrey/ssr (Depends on reactivity, security)
 cd ../ssr
 npm publish --access public --tag next
 ```
 
 ### Tier 3: High-Level Modules & Tooling
 ```bash
-# 8. @gati/router (Depends on reactivity, runtime, security)
+# 8. @samrey/router (Depends on reactivity, runtime, security)
 cd ../router
 npm publish --access public --tag next
 
-# 9. @gati/forms (Depends on reactivity, runtime)
+# 9. @samrey/forms (Depends on reactivity, runtime)
 cd ../forms
 npm publish --access public --tag next
 
-# 10. @gati/testing (Depends on reactivity, runtime)
+# 10. @samrey/testing (Depends on reactivity, runtime)
 cd ../testing
 npm publish --access public --tag next
 
-# 11. @gati/cli (Depends on compiler, runtime, ssr)
+# 11. @samrey/cli (Depends on compiler, runtime, ssr)
 cd ../cli
 npm publish --access public --tag next
 ```
@@ -102,17 +102,17 @@ node scripts/publish-packages.mjs --tag rc
 
 | Package | Entry Files | Compressed Tarball Size | Unpacked Size |
 | :--- | :--- | :--- | :--- |
-| `@gati/reactivity` | 11 | 7.65 kB | 24.19 kB |
-| `@gati/runtime` | 11 | 12.31 kB | 44.44 kB |
-| `@gati/security` | 7 | 8.48 kB | 24.37 kB |
-| `@gati/compiler` | 12 | 15.68 kB | 57.68 kB |
-| `@gati/router` | 8 | 6.23 kB | 18.42 kB |
-| `@gati/http` | 8 | 6.14 kB | 18.84 kB |
-| `@gati/forms` | 8 | 6.59 kB | 19.96 kB |
-| `@gati/ssr` | 11 | 13.21 kB | 42.14 kB |
-| `@gati/testing` | 6 | 5.24 kB | 14.15 kB |
-| `@gati/devtools` | 13 | 9.38 kB | 31.26 kB |
-| `@gati/cli` | 18 | 28.37 kB | 110.12 kB |
+| `@samrey/reactivity` | 11 | 7.65 kB | 24.19 kB |
+| `@samrey/runtime` | 11 | 12.31 kB | 44.44 kB |
+| `@samrey/security` | 7 | 8.48 kB | 24.37 kB |
+| `@samrey/compiler` | 12 | 15.68 kB | 57.68 kB |
+| `@samrey/router` | 8 | 6.23 kB | 18.42 kB |
+| `@samrey/http` | 8 | 6.14 kB | 18.84 kB |
+| `@samrey/forms` | 8 | 6.59 kB | 19.96 kB |
+| `@samrey/ssr` | 11 | 13.21 kB | 42.14 kB |
+| `@samrey/testing` | 6 | 5.24 kB | 14.15 kB |
+| `@samrey/devtools` | 13 | 9.38 kB | 31.26 kB |
+| `@samrey/cli` | 18 | 28.37 kB | 110.12 kB |
 
 ---
 
@@ -122,8 +122,8 @@ In the event of an emergency release issue:
 
 ```bash
 # Deprecate specific version with warning
-npm deprecate @gati/runtime@1.0.0-rc.1 "Please upgrade to 1.0.0-rc.2"
+npm deprecate @samrey/runtime@1.0.0-rc.1 "Please upgrade to 1.0.0-rc.2"
 
 # Promote release candidate to latest
-npm dist-tag add @gati/cli@1.0.0 latest
+npm dist-tag add @samrey/cli@1.0.0 latest
 ```

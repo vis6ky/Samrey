@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/runtime - Static HTML Template Hoisting & Cloning
+ * @samrey/runtime - Static HTML Template Hoisting & Cloning
  */
 
 /**

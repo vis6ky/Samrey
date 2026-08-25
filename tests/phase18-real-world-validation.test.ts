@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Gati Framework — Phase 18 Real-World Developer Adoption & Production Validation Suite
+ * Samrey Framework — Phase 18 Real-World Developer Adoption & Production Validation Suite
  */
 
 import { describe, it, beforeEach } from 'node:test';
@@ -80,12 +80,12 @@ import { DashboardView } from '../examples/project-manager/src/views/DashboardVi
 import { ProjectsView } from '../examples/project-manager/src/views/ProjectsView.js';
 import { TaskBoardView } from '../examples/project-manager/src/views/TaskFormView.js';
 
-describe('Gati Phase 18 — Real-World Application & Ecosystem Validation', () => {
+describe('Samrey Phase 18 — Real-World Application & Ecosystem Validation', () => {
   beforeEach(() => {
     cleanupAllTestContainers();
   });
 
-  describe('1. Real-World Application State & CRUD Lifecycle (Gati Project Manager)', () => {
+  describe('1. Real-World Application State & CRUD Lifecycle (Samrey Project Manager)', () => {
     it('initializes real-world data and computes accurate project health metrics', async () => {
       await initializeData();
 
@@ -190,7 +190,7 @@ describe('Gati Phase 18 — Real-World Application & Ecosystem Validation', () =
       assert.ok(nameProps['aria-describedby']);
 
       // Fix values
-      handler.fields.name.setValue('Gati Core Engine');
+      handler.fields.name.setValue('Samrey Core Engine');
       handler.fields.description.setValue('Comprehensive reactive state kernel and scheduler.');
       handler.fields.lead.setValue('Ada Lovelace');
 
@@ -229,7 +229,7 @@ describe('Gati Phase 18 — Real-World Application & Ecosystem Validation', () =
       assert.equal(isSafeUrl('javascript:alert(1)'), false);
       assert.equal(isSafeUrl('data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='), false);
       assert.equal(isSafeUrl('vbscript:msgbox("hello")'), false);
-      assert.equal(isSafeUrl('https://gati-framework.dev/docs'), true);
+      assert.equal(isSafeUrl('https://samrey-framework.dev/docs'), true);
       assert.equal(isSafeUrl('/projects/overview'), true);
 
       assert.equal(sanitizeUrl('javascript:void(0)'), 'about:blank');
@@ -255,7 +255,7 @@ describe('Gati Phase 18 — Real-World Application & Ecosystem Validation', () =
   });
 
   describe('4. Zero-Dependency & Template Architecture Purity Audit', () => {
-    it('verifies all 4 CLI templates generate 100% native Gati files with 0 foreign frameworks', () => {
+    it('verifies all 4 CLI templates generate 100% native Samrey files with 0 foreign frameworks', () => {
       const templates = ['ssr', 'spa', 'minimal', 'ssg'] as const;
       const forbiddenPatterns = [
         'react',
@@ -362,12 +362,12 @@ describe('Gati Phase 18 — Real-World Application & Ecosystem Validation', () =
   });
 
   describe('6. SSR, SSG & Static HTML Generation Matrix', () => {
-    it('renders native Gati Project Manager components to clean static HTML', async () => {
+    it('renders native Samrey Project Manager components to clean static HTML', async () => {
       const ssrOutput = await renderToString(() =>
-        '<div class="project-manager-ssr"><h1>Gati Project Manager v1.0.0</h1><p>Production SSR Render Output</p></div>'
+        '<div class="project-manager-ssr"><h1>Samrey Project Manager v1.0.0</h1><p>Production SSR Render Output</p></div>'
       );
 
-      assert.ok(ssrOutput.includes('Gati Project Manager v1.0.0'));
+      assert.ok(ssrOutput.includes('Samrey Project Manager v1.0.0'));
       assert.ok(ssrOutput.includes('project-manager-ssr'));
       assert.ok(ssrOutput.includes('<!DOCTYPE html>'));
     });

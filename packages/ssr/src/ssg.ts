@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - Static Site Generation (SSG) Engine
+ * @samrey/ssr - Static Site Generation (SSG) Engine
  */
 
 import { renderToString, RenderToStringOptions } from './stream.js';

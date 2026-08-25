@@ -1,4 +1,4 @@
-# Gati Framework: Dependency Independence Audit Report
+# Samrey Framework: Dependency Independence Audit Report
 
 **Date:** August 20, 2026  
 **Version:** `1.0.0-rc.1`  
@@ -9,11 +9,11 @@
 
 ## Executive Summary
 
-An exhaustive read-only dependency audit was conducted across all 11 `@gati/*` framework packages, the root monorepo manifest, build tooling, lockfile representations, and an isolated external consumer project.
+An exhaustive read-only dependency audit was conducted across all 11 `@samrey/*` framework packages, the root monorepo manifest, build tooling, lockfile representations, and an isolated external consumer project.
 
 ### Audit Verdict: **CONDITIONAL PASS**
-- **Gati Core Framework (`packages/*`)**: **100% PURE & INDEPENDENT**. All 11 framework packages have **zero** direct, transitive, or peer dependencies on React, React-DOM, Vue, Angular, Svelte, Solid, Preact, Lit, or any other competing UI framework.
-- **Root Repository Application (`src/*`)**: The root application is an interactive documentation portal and architectural specification browser crafted with React 19 and Tailwind CSS to power the AI Studio preview environment. It does not leak into the published `@gati/*` distribution packages.
+- **Samrey Core Framework (`packages/*`)**: **100% PURE & INDEPENDENT**. All 11 framework packages have **zero** direct, transitive, or peer dependencies on React, React-DOM, Vue, Angular, Svelte, Solid, Preact, Lit, or any other competing UI framework.
+- **Root Repository Application (`src/*`)**: The root application is an interactive documentation portal and architectural specification browser crafted with React 19 and Tailwind CSS to power the AI Studio preview environment. It does not leak into the published `@samrey/*` distribution packages.
 - **External Consumer Verification**: Verified in an isolated, external environment with zero third-party UI framework dependencies.
 
 ---
@@ -22,56 +22,56 @@ An exhaustive read-only dependency audit was conducted across all 11 `@gati/*` f
 
 ### Package Manifest Analysis (`packages/*/package.json`)
 
-All 11 packages have zero external production runtime dependencies. They only depend on sibling `@gati/*` packages or have zero dependencies:
+All 11 packages have zero external production runtime dependencies. They only depend on sibling `@samrey/*` packages or have zero dependencies:
 
 ```
-@gati/reactivity (v1.0.0-rc.1)
+@samrey/reactivity (v1.0.0-rc.1)
   └── [Zero Dependencies]
 
-@gati/security (v1.0.0-rc.1)
+@samrey/security (v1.0.0-rc.1)
   └── [Zero Dependencies]
 
-@gati/runtime (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  └── @gati/security (^1.0.0-rc.1)
+@samrey/runtime (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  └── @samrey/security (^1.0.0-rc.1)
 
-@gati/compiler (v1.0.0-rc.1)
-  └── @gati/security (^1.0.0-rc.1)
+@samrey/compiler (v1.0.0-rc.1)
+  └── @samrey/security (^1.0.0-rc.1)
 
-@gati/router (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  ├── @gati/runtime (^1.0.0-rc.1)
-  └── @gati/security (^1.0.0-rc.1)
+@samrey/router (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  ├── @samrey/runtime (^1.0.0-rc.1)
+  └── @samrey/security (^1.0.0-rc.1)
 
-@gati/http (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  └── @gati/security (^1.0.0-rc.1)
+@samrey/http (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  └── @samrey/security (^1.0.0-rc.1)
 
-@gati/forms (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  └── @gati/runtime (^1.0.0-rc.1)
+@samrey/forms (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  └── @samrey/runtime (^1.0.0-rc.1)
 
-@gati/ssr (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  └── @gati/security (^1.0.0-rc.1)
+@samrey/ssr (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  └── @samrey/security (^1.0.0-rc.1)
 
-@gati/testing (v1.0.0-rc.1)
-  ├── @gati/reactivity (^1.0.0-rc.1)
-  └── @gati/runtime (^1.0.0-rc.1)
+@samrey/testing (v1.0.0-rc.1)
+  ├── @samrey/reactivity (^1.0.0-rc.1)
+  └── @samrey/runtime (^1.0.0-rc.1)
 
-@gati/devtools (v1.0.0-rc.1)
-  └── @gati/reactivity (^1.0.0-rc.1)
+@samrey/devtools (v1.0.0-rc.1)
+  └── @samrey/reactivity (^1.0.0-rc.1)
 
-@gati/cli (v1.0.0-rc.1)
-  └── @gati/compiler (^1.0.0-rc.1)
+@samrey/cli (v1.0.0-rc.1)
+  └── @samrey/compiler (^1.0.0-rc.1)
 ```
 
 ### Dependency Classification Taxonomy
 
-1. **Framework Runtime Dependencies**: **0 external dependencies** across all 11 `@gati/*` packages.
+1. **Framework Runtime Dependencies**: **0 external dependencies** across all 11 `@samrey/*` packages.
 2. **Build/Dev Dependencies**: Node.js toolchain (`typescript`, `tsx`, `esbuild`, `@types/node`).
 3. **Documentation/Demo Dependencies**: Root application (`src/*`) dependencies (`react`, `react-dom`, `lucide-react`, `motion`, `react-markdown`, `remark-gfm`, `@tailwindcss/vite`, `@vitejs/plugin-react`).
-4. **Example Application Dependencies**: Zero external dependencies (only `@gati/*` packages).
+4. **Example Application Dependencies**: Zero external dependencies (only `@samrey/*` packages).
 5. **Test-Only Dependencies**: Built-in Node test runner (`node:test`, `node:assert/strict`).
 
 ---
@@ -101,17 +101,17 @@ An exhaustive regex and AST scan was conducted across all **77 production source
 
 | Package | Version | Production Dependencies | Dev Dependencies | Peer Dependencies | Competing Framework Dependency | Independent |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `@gati/reactivity` | `1.0.0-rc.1` | None | None | None | None | **YES** |
-| `@gati/security` | `1.0.0-rc.1` | None | None | None | None | **YES** |
-| `@gati/runtime` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
-| `@gati/compiler` | `1.0.0-rc.1` | `@gati/security` | None | None | None | **YES** |
-| `@gati/router` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime`, `@gati/security` | None | None | None | **YES** |
-| `@gati/http` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
-| `@gati/forms` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime` | None | None | None | **YES** |
-| `@gati/ssr` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/security` | None | None | None | **YES** |
-| `@gati/testing` | `1.0.0-rc.1` | `@gati/reactivity`, `@gati/runtime` | None | None | None | **YES** |
-| `@gati/devtools` | `1.0.0-rc.1` | `@gati/reactivity` | None | None | None | **YES** |
-| `@gati/cli` | `1.0.0-rc.1` | `@gati/compiler` | None | None | None | **YES** |
+| `@samrey/reactivity` | `1.0.0-rc.1` | None | None | None | None | **YES** |
+| `@samrey/security` | `1.0.0-rc.1` | None | None | None | None | **YES** |
+| `@samrey/runtime` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/security` | None | None | None | **YES** |
+| `@samrey/compiler` | `1.0.0-rc.1` | `@samrey/security` | None | None | None | **YES** |
+| `@samrey/router` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/runtime`, `@samrey/security` | None | None | None | **YES** |
+| `@samrey/http` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/security` | None | None | None | **YES** |
+| `@samrey/forms` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/runtime` | None | None | None | **YES** |
+| `@samrey/ssr` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/security` | None | None | None | **YES** |
+| `@samrey/testing` | `1.0.0-rc.1` | `@samrey/reactivity`, `@samrey/runtime` | None | None | None | **YES** |
+| `@samrey/devtools` | `1.0.0-rc.1` | `@samrey/reactivity` | None | None | None | **YES** |
+| `@samrey/cli` | `1.0.0-rc.1` | `@samrey/compiler` | None | None | None | **YES** |
 
 ---
 
@@ -140,45 +140,45 @@ The root `package.json` contains dependencies required to run the interactive do
 
 Every package was packed into an isolated directory and unpacked/inspected:
 
-- `gati-reactivity-1.0.0-rc.1.tgz` (7.3 kB)
-- `gati-runtime-1.0.0-rc.1.tgz` (10.1 kB)
-- `gati-compiler-1.0.0-rc.1.tgz` (16.0 kB)
-- `gati-router-1.0.0-rc.1.tgz` (5.8 kB)
-- `gati-http-1.0.0-rc.1.tgz` (6.1 kB)
-- `gati-forms-1.0.0-rc.1.tgz` (6.6 kB)
-- `gati-security-1.0.0-rc.1.tgz` (7.7 kB)
-- `gati-ssr-1.0.0-rc.1.tgz` (13.5 kB)
-- `gati-testing-1.0.0-rc.1.tgz` (5.0 kB)
-- `gati-devtools-1.0.0-rc.1.tgz` (9.5 kB)
-- `gati-cli-1.0.0-rc.1.tgz` (26.2 kB)
+- `samrey-reactivity-1.0.0-rc.1.tgz` (7.3 kB)
+- `samrey-runtime-1.0.0-rc.1.tgz` (10.1 kB)
+- `samrey-compiler-1.0.0-rc.1.tgz` (16.0 kB)
+- `samrey-router-1.0.0-rc.1.tgz` (5.8 kB)
+- `samrey-http-1.0.0-rc.1.tgz` (6.1 kB)
+- `samrey-forms-1.0.0-rc.1.tgz` (6.6 kB)
+- `samrey-security-1.0.0-rc.1.tgz` (7.7 kB)
+- `samrey-ssr-1.0.0-rc.1.tgz` (13.5 kB)
+- `samrey-testing-1.0.0-rc.1.tgz` (5.0 kB)
+- `samrey-devtools-1.0.0-rc.1.tgz` (9.5 kB)
+- `samrey-cli-1.0.0-rc.1.tgz` (26.2 kB)
 
 ### Tarball Findings
 1. **Zero External Runtime Dependencies**: Packed tarballs contain only their own source code, README, LICENSE, and manifest.
 2. **Zero Competing Frameworks**: No React, Vue, Angular, Svelte, or Solid runtime code is bundled into any tarball.
-3. **Clean Installation**: Installing any `@gati/*` package outside this repository installs only `@gati/*` peer modules.
+3. **Clean Installation**: Installing any `@samrey/*` package outside this repository installs only `@samrey/*` peer modules.
 
 ---
 
 ## Audit 6 — Clean Consumer Test (100% Independent)
 
-A completely clean, external directory was created at `/tmp/gati-independent-consumer`.
+A completely clean, external directory was created at `/tmp/samrey-independent-consumer`.
 
 ### Setup
-Installed **ONLY** the 8 packed `@gati/*` tarballs:
-- `@gati/reactivity`
-- `@gati/runtime`
-- `@gati/compiler`
-- `@gati/router`
-- `@gati/http`
-- `@gati/forms`
-- `@gati/security`
-- `@gati/ssr`
+Installed **ONLY** the 8 packed `@samrey/*` tarballs:
+- `@samrey/reactivity`
+- `@samrey/runtime`
+- `@samrey/compiler`
+- `@samrey/router`
+- `@samrey/http`
+- `@samrey/forms`
+- `@samrey/security`
+- `@samrey/ssr`
 
 **Explicitly Excluded**: `react`, `react-dom`, `vue`, `angular`, `svelte`, `solid-js`, `preact`.
 
 ### Executed Application Verification Matrix
 
-| # | Feature | Gati Primitive / API | Verification Result |
+| # | Feature | Samrey Primitive / API | Verification Result |
 | :--- | :--- | :--- | :--- |
 | 1 | **Signal** | `signal(1)` -> `count.set(5)` | ✅ PASS |
 | 2 | **Computed** | `computed(() => count.value * 2)` | ✅ PASS |
@@ -218,10 +218,10 @@ Inspected lockfile entries for competing frameworks:
 **CONDITIONAL PASS — Framework packages are independent but root demo/development application uses another framework.**
 
 ### Analysis & Next Steps (When Dogfooding):
-1. **Framework Independence**: The core framework (`packages/*`) is already **100% independent**. Developers installing `@gati/*` packages via npm get an ultra-lightweight, zero-dependency, pure framework.
+1. **Framework Independence**: The core framework (`packages/*`) is already **100% independent**. Developers installing `@samrey/*` packages via npm get an ultra-lightweight, zero-dependency, pure framework.
 2. **Root Website Separation**: The root folder (`src/`) is currently a React 19 documentation portal for AI Studio preview.
 3. **Future Dogfooding Plan**:
-   - Once Gati CLI and Vite plugin (`@gati/cli`) are deployed to production projects, the documentation viewer can optionally be ported to dogfood native Gati components (`@gati/runtime`, `@gati/router`, and `@gati/compiler`).
+   - Once Samrey CLI and Vite plugin (`@samrey/cli`) are deployed to production projects, the documentation viewer can optionally be ported to dogfood native Samrey components (`@samrey/runtime`, `@samrey/router`, and `@samrey/compiler`).
    - For now, no changes are required to `packages/*` as they are completely decoupled and independent.
 
 ---

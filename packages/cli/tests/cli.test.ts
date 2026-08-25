@@ -9,7 +9,7 @@ import {
   scaffoldArtifact
 } from '../src/index.js';
 
-describe('@gati/cli - Comprehensive Developer Experience & Tooling Suite', () => {
+describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () => {
   it('integrates Vite plugin transform hook with compiler', () => {
     const plugin = aetherVitePlugin();
     assert.equal(plugin.name, 'vite-plugin-aether');
@@ -29,7 +29,7 @@ describe('@gati/cli - Comprehensive Developer Experience & Tooling Suite', () =>
   });
 
   it('generates a complete production starter project template with SSR, routing, and reactivity', () => {
-    const files = generateStarterProject('my-aether-app', { template: 'ssr' });
+    const files = generateStarterProject('my-samrey-app', { template: 'ssr' });
 
     assert.ok('package.json' in files);
     assert.ok('tsconfig.json' in files);
@@ -43,10 +43,10 @@ describe('@gati/cli - Comprehensive Developer Experience & Tooling Suite', () =>
     assert.ok('tests/app.test.ts' in files);
 
     const pkg = JSON.parse(files['package.json']!);
-    assert.equal(pkg.name, 'my-aether-app');
-    assert.ok('@gati/reactivity' in pkg.dependencies);
-    assert.ok('@gati/compiler' in pkg.dependencies);
-    assert.ok('@gati/ssr' in pkg.dependencies);
+    assert.equal(pkg.name, 'my-samrey-app');
+    assert.ok('@samrey/reactivity' in pkg.dependencies);
+    assert.ok('@samrey/compiler' in pkg.dependencies);
+    assert.ok('@samrey/ssr' in pkg.dependencies);
   });
 
   it('validates project names strictly for illegal characters and empty strings', () => {
@@ -59,7 +59,7 @@ describe('@gati/cli - Comprehensive Developer Experience & Tooling Suite', () =>
   it('handles "aether --help" and "aether --version" cleanly', async () => {
     const helpResult = await runCLI(['--help']);
     assert.equal(helpResult.exitCode, 0);
-    assert.ok(helpResult.message.includes('Gati Framework CLI'));
+    assert.ok(helpResult.message.includes('Samrey Framework CLI'));
     assert.ok(helpResult.message.includes('create <name>'));
 
     const versionResult = await runCLI(['--version']);
@@ -91,7 +91,7 @@ describe('@gati/cli - Comprehensive Developer Experience & Tooling Suite', () =>
   it('executes "aether build" with production report and static hoisting summary', async () => {
     const result = await runCLI(['build', '--ssr']);
     assert.equal(result.exitCode, 0);
-    assert.ok(result.message.includes('Gati Production Build'));
+    assert.ok(result.message.includes('Samrey Production Build'));
     assert.ok(result.message.includes('SSR + Client Hydration'));
   });
 

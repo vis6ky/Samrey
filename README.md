@@ -1,4 +1,4 @@
-# Gati Framework
+# Samrey Framework
 
 > **The Next-Generation Fine-Grained Reactive Web Framework**  
 > Direct DOM Hole Bindings • Ahead-of-Time Air Compiler • Native Security Primitives • Isomorphic Streaming SSR • Zero Virtual DOM Overhead
@@ -13,18 +13,18 @@
 
 ## Overview
 
-Gati is an isomorphic web framework designed from first principles to deliver extreme runtime execution speed, mathematical reactive consistency, and airtight compile-time security. Unlike traditional Virtual DOM frameworks (React, Vue) that re-render entire component subtrees or diff virtual trees on every state change, Gati compiles templates Ahead-of-Time into static HTML strings cloned via native C++ `cloneNode(true)` and surgical point-to-point DOM bindings.
+Samrey is an isomorphic web framework designed from first principles to deliver extreme runtime execution speed, mathematical reactive consistency, and airtight compile-time security. Unlike traditional Virtual DOM frameworks (React, Vue) that re-render entire component subtrees or diff virtual trees on every state change, Samrey compiles templates Ahead-of-Time into static HTML strings cloned via native C++ `cloneNode(true)` and surgical point-to-point DOM bindings.
 
 ### Core Architectural Highlights
 
-- **Fine-Grained Push-Pull Signal Engine (`@gati/reactivity`)**: Topological dependency ordering with versioned transaction clocks (`globalClock`) guaranteeing zero glitches, zero redundant computations, and automatic owner-based memory reclamation.
-- **Ahead-of-Time AIR Compiler (`@gati/compiler`)**: Translates JSX/HTML templates into Abstract Interface Representation (AIR), hoisting static HTML fragments and computing localized DOM path holes with constant folding.
-- **High-Performance Surgical Runtime (`@gati/runtime`)**: Replaces Virtual DOM diffing with native `cloneNode(true)` cloning and surgical node mutations.
-- **Enterprise Security First (`@gati/security`)**: Zero `eval()`, zero `new Function()`, built-in W3C Trusted Types policy provider, contextual URI sanitization, and secret scrubbing.
-- **Isomorphic Streaming SSR & Resumable Hydration (`@gati/ssr`)**: Streaming HTML renderer over Web Streams (`ReadableStream`), Unicode-safe state serialization, pre-hydration user event queueing, and static site generation (SSG).
-- **Standard Schema Form Validation (`@gati/forms`)**: First-class support for Standard Schema (Zod, Valibot, ArkType) with reactive validation and automated ARIA attributes.
-- **Reactive Networking & Deduplication (`@gati/http`)**: Resource primitive (`createResource`) with in-flight request deduplication, cache tags, and automatic signal synchronization.
-- **Developer Experience & Tooling (`@gati/cli`, `@gati/devtools`, `@gati/testing`)**: Scaffolding CLI, Vite plugin, time-travel reactive inspection bridge, and deterministic DOM test harnesses.
+- **Fine-Grained Push-Pull Signal Engine (`@samrey/reactivity`)**: Topological dependency ordering with versioned transaction clocks (`globalClock`) guaranteeing zero glitches, zero redundant computations, and automatic owner-based memory reclamation.
+- **Ahead-of-Time AIR Compiler (`@samrey/compiler`)**: Translates JSX/HTML templates into Abstract Interface Representation (AIR), hoisting static HTML fragments and computing localized DOM path holes with constant folding.
+- **High-Performance Surgical Runtime (`@samrey/runtime`)**: Replaces Virtual DOM diffing with native `cloneNode(true)` cloning and surgical node mutations.
+- **Enterprise Security First (`@samrey/security`)**: Zero `eval()`, zero `new Function()`, built-in W3C Trusted Types policy provider, contextual URI sanitization, and secret scrubbing.
+- **Isomorphic Streaming SSR & Resumable Hydration (`@samrey/ssr`)**: Streaming HTML renderer over Web Streams (`ReadableStream`), Unicode-safe state serialization, pre-hydration user event queueing, and static site generation (SSG).
+- **Standard Schema Form Validation (`@samrey/forms`)**: First-class support for Standard Schema (Zod, Valibot, ArkType) with reactive validation and automated ARIA attributes.
+- **Reactive Networking & Deduplication (`@samrey/http`)**: Resource primitive (`createResource`) with in-flight request deduplication, cache tags, and automatic signal synchronization.
+- **Developer Experience & Tooling (`@samrey/cli`, `@samrey/devtools`, `@samrey/testing`)**: Scaffolding CLI, Vite plugin, time-travel reactive inspection bridge, and deterministic DOM test harnesses.
 
 ---
 
@@ -33,14 +33,14 @@ Gati is an isomorphic web framework designed from first principles to deliver ex
 ### 1. Installation
 
 ```bash
-npm install @gati/reactivity @gati/runtime @gati/compiler
+npm install @samrey/reactivity @samrey/runtime @samrey/compiler
 ```
 
 ### 2. Hello World Example
 
 ```typescript
-import { signal, computed } from '@gati/reactivity';
-import { template, bindText, bindEvent } from '@gati/runtime';
+import { signal, computed } from '@samrey/reactivity';
+import { template, bindText, bindEvent } from '@samrey/runtime';
 
 function Counter() {
   const count = signal(0);
@@ -74,17 +74,17 @@ document.getElementById('app')?.appendChild(Counter());
 
 | Package | Version | Description |
 | :--- | :--- | :--- |
-| [`@gati/reactivity`](./packages/reactivity) | `0.1.0` | Topological push-pull signal graph, computed signals, effects, and Owner scopes |
-| [`@gati/compiler`](./packages/compiler) | `0.1.0` | Ahead-of-Time AST parser, AIR generator, constant folding & static HTML hoister |
-| [`@gati/runtime`](./packages/runtime) | `0.1.0` | Template cloning, direct DOM hole bindings, control flow (`<Show>`, `<For>`) |
-| [`@gati/security`](./packages/security) | `0.1.0` | W3C Trusted Types, HTML/URI sanitizers, timing-safe CSRF, secret guard |
-| [`@gati/router`](./packages/router) | `0.1.0` | Reactive client/server router with parameterized segments & redirect security |
-| [`@gati/http`](./packages/http) | `0.1.0` | Async `createResource`, in-flight request deduplication, fetch client |
-| [`@gati/forms`](./packages/forms) | `0.1.0` | Standard Schema form engine with reactive validation & ARIA bindings |
-| [`@gati/ssr`](./packages/ssr) | `0.1.0` | Streaming SSR (`ReadableStream`), SSG generator, Unicode serializer & event replay |
-| [`@gati/testing`](./packages/testing) | `0.1.0` | Test component mounting harness, signal flushers, assertion helpers |
-| [`@gati/devtools`](./packages/devtools) | `0.1.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
-| [`@gati/cli`](./packages/cli) | `0.1.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
+| [`@samrey/reactivity`](./packages/reactivity) | `0.1.0` | Topological push-pull signal graph, computed signals, effects, and Owner scopes |
+| [`@samrey/compiler`](./packages/compiler) | `0.1.0` | Ahead-of-Time AST parser, AIR generator, constant folding & static HTML hoister |
+| [`@samrey/runtime`](./packages/runtime) | `0.1.0` | Template cloning, direct DOM hole bindings, control flow (`<Show>`, `<For>`) |
+| [`@samrey/security`](./packages/security) | `0.1.0` | W3C Trusted Types, HTML/URI sanitizers, timing-safe CSRF, secret guard |
+| [`@samrey/router`](./packages/router) | `0.1.0` | Reactive client/server router with parameterized segments & redirect security |
+| [`@samrey/http`](./packages/http) | `0.1.0` | Async `createResource`, in-flight request deduplication, fetch client |
+| [`@samrey/forms`](./packages/forms) | `0.1.0` | Standard Schema form engine with reactive validation & ARIA bindings |
+| [`@samrey/ssr`](./packages/ssr) | `0.1.0` | Streaming SSR (`ReadableStream`), SSG generator, Unicode serializer & event replay |
+| [`@samrey/testing`](./packages/testing) | `0.1.0` | Test component mounting harness, signal flushers, assertion helpers |
+| [`@samrey/devtools`](./packages/devtools) | `0.1.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
+| [`@samrey/cli`](./packages/cli) | `0.1.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
 
 ---
 
@@ -155,4 +155,4 @@ npm run benchmark
 
 ## License
 
-Gati is open-source software licensed under the [Apache-2.0 License](./LICENSE).
+Samrey is open-source software licensed under the [Apache-2.0 License](./LICENSE).

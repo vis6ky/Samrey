@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Dashboard Overview View
- * Native Gati Runtime View with computed metrics and reactive summaries
+ * Samrey Project Manager — Dashboard Overview View
+ * Native Samrey Runtime View with computed metrics and reactive summaries
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { store, projectMetrics, filteredTasks } from '../state.js';
 import { ProjectCard } from '../components/ProjectCard.js';
 import { TaskItem } from '../components/TaskItem.js';

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether analyze" Command
+ * @samrey/cli - "aether analyze" Command
  */
 
 import { CommandResult } from './create.js';
@@ -42,7 +42,7 @@ export async function runAnalyzeCommand(options: AnalyzeCommandOptions = {}): Pr
   }
 
   const report = [
-    `  ▲ Gati Application Analytics & Diagnostics`,
+    `  ▲ Samrey Application Analytics & Diagnostics`,
     `  ➜ Bundle Footprint:   ${analysisData.bundleSizeKb} KB (${analysisData.gzipSizeKb} KB gzip)`,
     `  ➜ Reactive Topology:  ${analysisData.reactivityGraph.signalsCount} signals, ${analysisData.reactivityGraph.computedsCount} computeds, ${analysisData.reactivityGraph.effectsCount} effects`,
     `  ➜ Static Hoisting:    ${analysisData.compilerOptimization.staticRatioPercent}% of templates hoisted statically`,

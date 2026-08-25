@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Application Settings View
+ * @samrey/task-studio - Application Settings View
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { settings, updateSettings, resetSettings } from '../state/settings.store.js';
 import { taskService } from '../api/task-service.js';
 import { loadTasks } from '../state/tasks.store.js';

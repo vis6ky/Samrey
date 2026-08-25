@@ -1,16 +1,16 @@
 {
-  "name": "@gati/forms",
+  "name": "@samrey/forms",
   "version": "1.0.0",
   "description": "Standard Schema integrated reactive form state management, field validation, and automated ARIA attributes.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gati-framework/aether.git",
+    "url": "git+https://github.com/samrey-framework/aether.git",
     "directory": "packages/forms"
   },
-  "homepage": "https://gati.dev",
+  "homepage": "https://samrey.dev",
   "bugs": {
-    "url": "https://github.com/gati-framework/aether/issues"
+    "url": "https://github.com/samrey-framework/aether/issues"
   },
   "keywords": [
     "aether",
@@ -45,8 +45,8 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@gati/reactivity": "^1.0.0",
-    "@gati/runtime": "^1.0.0"
+    "@samrey/reactivity": "^1.0.0",
+    "@samrey/runtime": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/router - Router State Manager
+ * @samrey/router - Router State Manager
  */
 
-import { signal, computed } from '@gati/reactivity';
-import { sanitizeRedirectUri } from '@gati/security';
+import { signal, computed } from '@samrey/reactivity';
+import { sanitizeRedirectUri } from '@samrey/security';
 import { RouteRecord, RouterInstance, RouteMatch } from './types.js';
 import { matchRoutes } from './matcher.js';
 

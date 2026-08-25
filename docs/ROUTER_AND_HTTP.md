@@ -1,13 +1,13 @@
-# Router & HTTP in Gati
+# Router & HTTP in Samrey
 
-## 1. Reactive Routing (`@gati/router`)
+## 1. Reactive Routing (`@samrey/router`)
 
-`@gati/router` provides client and server routing driven by fine-grained signals. Route transitions do not re-render the whole page; only the outlet and parameter bindings update.
+`@samrey/router` provides client and server routing driven by fine-grained signals. Route transitions do not re-render the whole page; only the outlet and parameter bindings update.
 
 ### Defining Routes & Router Instance
 
 ```typescript
-import { createRouter } from '@gati/router';
+import { createRouter } from '@samrey/router';
 
 const router = createRouter([
   {
@@ -42,14 +42,14 @@ The router automatically runs all navigation targets through `sanitizeRedirectUr
 
 ---
 
-## 2. Reactive Data Fetching (`@gati/http`)
+## 2. Reactive Data Fetching (`@samrey/http`)
 
-`@gati/http` integrates async HTTP requests seamlessly into Gati's reactive dependency graph.
+`@samrey/http` integrates async HTTP requests seamlessly into Samrey's reactive dependency graph.
 
 ### `createResource` Primitive
 
 ```typescript
-import { createResource, HttpClient } from '@gati/http';
+import { createResource, HttpClient } from '@samrey/http';
 
 interface User {
   id: string;

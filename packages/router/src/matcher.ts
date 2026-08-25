@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/router - Route Pattern Matcher
+ * @samrey/router - Route Pattern Matcher
  */
 
 import { RouteRecord, RouteMatch } from './types.js';

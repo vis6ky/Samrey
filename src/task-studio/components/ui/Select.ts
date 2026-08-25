@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Select Component
+ * @samrey/task-studio - Accessible Select Component
  */
 
-import { el, Show } from '@gati/runtime';
-import { Signal, ReadonlySignal } from '@gati/reactivity';
+import { el, Show } from '@samrey/runtime';
+import { Signal, ReadonlySignal } from '@samrey/reactivity';
 
 export interface SelectOption {
   value: string;

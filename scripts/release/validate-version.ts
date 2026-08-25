@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Release Version Consistency Validation
+ * @samrey/monorepo - Release Version Consistency Validation
  */
 
 import * as fs from 'node:fs';
@@ -45,9 +45,9 @@ export function validateVersionConsistency(expectedVersion = '1.0.0'): VersionVa
       continue;
     }
     const manifest = JSON.parse(fs.readFileSync(pPath, 'utf8'));
-    packageVersions[`@gati/${pkg}`] = manifest.version;
+    packageVersions[`@samrey/${pkg}`] = manifest.version;
     if (manifest.version !== expectedVersion) {
-      mismatches.push(`@gati/${pkg} version is "${manifest.version}", expected "${expectedVersion}"`);
+      mismatches.push(`@samrey/${pkg} version is "${manifest.version}", expected "${expectedVersion}"`);
     }
 
     // Check internal dependencies version alignment
@@ -56,10 +56,10 @@ export function validateVersionConsistency(expectedVersion = '1.0.0'): VersionVa
       ...(manifest.peerDependencies || {})
     };
     for (const [dep, ver] of Object.entries(allDeps)) {
-      if (dep.startsWith('@gati/')) {
+      if (dep.startsWith('@samrey/')) {
         const expectedPattern = `^${expectedVersion}`;
         if (ver !== expectedVersion && ver !== expectedPattern) {
-          mismatches.push(`@gati/${pkg} has dependency "${dep}": "${ver}", expected "${expectedPattern}" or "${expectedVersion}"`);
+          mismatches.push(`@samrey/${pkg} has dependency "${dep}": "${ver}", expected "${expectedPattern}" or "${expectedVersion}"`);
         }
       }
     }
@@ -75,7 +75,7 @@ export function validateVersionConsistency(expectedVersion = '1.0.0'): VersionVa
 }
 
 if (process.argv[1]?.endsWith('validate-version.ts') || process.argv[1]?.endsWith('validate-version.js')) {
-  console.log('▲ Gati Version Consistency Audit\n');
+  console.log('▲ Samrey Version Consistency Audit\n');
   const result = validateVersionConsistency();
   console.log(`  Target Release Version: ${result.expectedVersion}`);
   console.log(`  Root Monorepo Version:  ${result.rootVersion}`);

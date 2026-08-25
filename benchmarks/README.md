@@ -1,4 +1,4 @@
-# Gati Performance Benchmarks
+# Samrey Performance Benchmarks
 
 Performance benchmark suite for validating non-negotiable performance SLAs:
 

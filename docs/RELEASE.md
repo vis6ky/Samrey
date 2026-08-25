@@ -1,27 +1,27 @@
-# Gati Framework — Release & Publishing Guide
+# Samrey Framework — Release & Publishing Guide
 
 **Target Version:** 1.0.0-rc.1  
 **License:** Apache-2.0  
 **Registry:** `https://registry.npmjs.org/`  
-**Architectural Invariant:** "Gati Must Use Gati"  
+**Architectural Invariant:** "Samrey Must Use Samrey"  
 
 ---
 
 ## 1. Release Architecture & Pipeline Overview
 
-Gati is released as an atomic suite of 11 independent scoped packages under the `@aether` organization:
+Samrey is released as an atomic suite of 11 independent scoped packages under the `@aether` organization:
 
-- `@gati/reactivity` — Fine-grained signal and dependency tracking engine
-- `@gati/runtime` — Direct-DOM reactive rendering runtime and control flow
-- `@gati/security` — Context-aware HTML sanitization and safe URI enforcement
-- `@gati/compiler` — AIR template parser, analyzer, optimizer, and code generator
-- `@gati/router` — Client and memory pushState router with typed matching
-- `@gati/http` — Reactive resource caching and HTTP client
-- `@gati/forms` — Standard Schema form management with accessible field controllers
-- `@gati/ssr` — Server-side HTML string rendering, streaming, and hydration state serialization
-- `@gati/testing` — DOM container rendering and asynchronous test utilities
-- `@gati/devtools` — Reactive graph inspection and performance profiling bridge
-- `@gati/cli` — Scaffolding CLI, Vite plugin, and security/a11y linter
+- `@samrey/reactivity` — Fine-grained signal and dependency tracking engine
+- `@samrey/runtime` — Direct-DOM reactive rendering runtime and control flow
+- `@samrey/security` — Context-aware HTML sanitization and safe URI enforcement
+- `@samrey/compiler` — AIR template parser, analyzer, optimizer, and code generator
+- `@samrey/router` — Client and memory pushState router with typed matching
+- `@samrey/http` — Reactive resource caching and HTTP client
+- `@samrey/forms` — Standard Schema form management with accessible field controllers
+- `@samrey/ssr` — Server-side HTML string rendering, streaming, and hydration state serialization
+- `@samrey/testing` — DOM container rendering and asynchronous test utilities
+- `@samrey/devtools` — Reactive graph inspection and performance profiling bridge
+- `@samrey/cli` — Scaffolding CLI, Vite plugin, and security/a11y linter
 
 ---
 

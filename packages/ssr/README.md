@@ -1,22 +1,22 @@
-# @gati/ssr
+# @samrey/ssr
 
 Universal streaming HTML renderer, Unicode-escaped state serializer, and hydration system.
 
 ## Purpose
 
-`@gati/ssr` enables fast server-rendered HTML delivery with asynchronous streaming and progressive hydration. It generates pure HTML on Node.js/Edge servers and safely embeds serializable state with zero XSS vulnerabilities.
+`@samrey/ssr` enables fast server-rendered HTML delivery with asynchronous streaming and progressive hydration. It generates pure HTML on Node.js/Edge servers and safely embeds serializable state with zero XSS vulnerabilities.
 
 ## Installation
 
 ```bash
-npm install @gati/ssr @gati/runtime @gati/reactivity
+npm install @samrey/ssr @samrey/runtime @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { renderToString, renderToStream, serializeState } from '@gati/ssr';
-import { el } from '@gati/runtime';
+import { renderToString, renderToStream, serializeState } from '@samrey/ssr';
+import { el } from '@samrey/runtime';
 
 function App() {
   return el('div', { class: 'server-app' },
@@ -34,7 +34,7 @@ const scriptTag = serializeState('__AETHER_STATE__', { user: 'Alice', theme: 'da
 
 ## API
 
-- `renderToString(component: () => HTMLElement | Promise<HTMLElement>, options?: SsrOptions): Promise<string>` — Renders an Gati component tree into an HTML string.
+- `renderToString(component: () => HTMLElement | Promise<HTMLElement>, options?: SsrOptions): Promise<string>` — Renders an Samrey component tree into an HTML string.
 - `renderToStream(component: () => HTMLElement, options?: StreamOptions): ReadableStream` — Streams HTML chunks with suspense boundary support.
 - `serializeState(key: string, data: unknown): string` — Serializes JavaScript state into a safe `<script>` tag preventing XSS breakout.
 - `generateHydrationScript(): string` — Generates client bootstrap hydration script for event replay.
@@ -50,7 +50,7 @@ Zero-injection guarantee: Serializes strings and state payloads using strict Uni
 
 ## Related Packages
 
-- `@gati/runtime` — Client hydration counter-part.
-- `@gati/security` — Security primitives for serialization.
-- `@gati/router` — Universal routing on server and client.
+- `@samrey/runtime` — Client hydration counter-part.
+- `@samrey/security` — Security primitives for serialization.
+- `@samrey/router` — Universal routing on server and client.
 

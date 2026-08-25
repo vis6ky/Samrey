@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether build" Command
+ * @samrey/cli - "aether build" Command
  */
 
 import { CommandResult } from './create.js';
-import { compileTemplate } from '@gati/compiler';
+import { compileTemplate } from '@samrey/compiler';
 
 export interface BuildCommandOptions {
   outDir?: string;
@@ -22,7 +22,7 @@ export async function runBuildCommand(options: BuildCommandOptions = {}): Promis
   const compiled = compileTemplate(sampleTemplate);
 
   const report = [
-    `  ▲ Gati Production Build`,
+    `  ▲ Samrey Production Build`,
     `  ➜ Mode:         ${targetMode}`,
     `  ➜ Output Dir:   ${outDir}`,
     `  ➜ Static Hoist: ${compiled.templates.length} template strings hoisted`,

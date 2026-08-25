@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea or capability for Gati Framework
+about: Suggest an idea or capability for Samrey Framework
 title: '[FEATURE] '
 labels: ['enhancement', 'discussion']
 assignees: ''

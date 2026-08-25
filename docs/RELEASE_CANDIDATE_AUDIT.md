@@ -1,4 +1,4 @@
-# Gati Framework — Release Candidate 1.0.0 Audit
+# Samrey Framework — Release Candidate 1.0.0 Audit
 
 **Date:** August 20, 2026  
 **Target Version:** `1.0.0-rc.1`  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-The Gati Framework has successfully concluded all 12 architectural development and verification phases (Phases 0 through 12). Gati has been engineered from first principles as an isomorphic, fine-grained reactive TypeScript web framework featuring Ahead-of-Time template compilation to direct DOM hole bindings, topological glitch-free signal propagation, native W3C security controls (Zero-Eval, Trusted Types, Secret Guard), Standard Schema form validation, streaming SSR, and zero Virtual DOM runtime overhead.
+The Samrey Framework has successfully concluded all 12 architectural development and verification phases (Phases 0 through 12). Samrey has been engineered from first principles as an isomorphic, fine-grained reactive TypeScript web framework featuring Ahead-of-Time template compilation to direct DOM hole bindings, topological glitch-free signal propagation, native W3C security controls (Zero-Eval, Trusted Types, Secret Guard), Standard Schema form validation, streaming SSR, and zero Virtual DOM runtime overhead.
 
 The entire test suite across 38 suites comprising 130 comprehensive tests passes with **0 failures, 0 regressions, and 0 warnings**. All runnable example applications execute deterministically and accurately.
 
@@ -18,17 +18,17 @@ The entire test suite across 38 suites comprising 130 comprehensive tests passes
 
 | Package | Version | Types | ESM | Security / Zero-Eval | Tests Passed | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `@gati/reactivity` | `0.1.0` | `.d.ts` | Yes | Zero-Eval / Glitch-Free | 22/22 | **READY** |
-| `@gati/security` | `0.1.0` | `.d.ts` | Yes | Strict Trusted Types / Timing-Safe CSRF | 18/18 | **READY** |
-| `@gati/compiler` | `0.1.0` | `.d.ts` | Yes | AST / AIR / Constant Folding / Source Maps | 16/16 | **READY** |
-| `@gati/runtime` | `0.1.0` | `.d.ts` | Yes | Direct DOM cloning / Hole bindings / Keyed `<For>` | 14/14 | **READY** |
-| `@gati/router` | `0.1.0` | `.d.ts` | Yes | Parameterized matching / Redirect sanitization | 8/8 | **READY** |
-| `@gati/http` | `0.1.0` | `.d.ts` | Yes | Deduplicated `createResource` / Abort tracking | 6/6 | **READY** |
-| `@gati/forms` | `0.1.0` | `.d.ts` | Yes | Standard Schema / ARIA / Prototype safe | 10/10 | **READY** |
-| `@gati/ssr` | `0.1.0` | `.d.ts` | Yes | Streaming SSR / SSG / Secret Guard / Event Replay | 18/18 | **READY** |
-| `@gati/testing` | `0.1.0` | `.d.ts` | Yes | Component mounting harness / Flushers | 4/4 | **READY** |
-| `@gati/devtools` | `0.1.0` | `.d.ts` | Yes | Origin-gated bridge / Redaction filter | 4/4 | **READY** |
-| `@gati/cli` | `0.1.0` | `.d.ts` | Yes | Project generator / Vite plugin / Static auditor | 10/10 | **READY** |
+| `@samrey/reactivity` | `0.1.0` | `.d.ts` | Yes | Zero-Eval / Glitch-Free | 22/22 | **READY** |
+| `@samrey/security` | `0.1.0` | `.d.ts` | Yes | Strict Trusted Types / Timing-Safe CSRF | 18/18 | **READY** |
+| `@samrey/compiler` | `0.1.0` | `.d.ts` | Yes | AST / AIR / Constant Folding / Source Maps | 16/16 | **READY** |
+| `@samrey/runtime` | `0.1.0` | `.d.ts` | Yes | Direct DOM cloning / Hole bindings / Keyed `<For>` | 14/14 | **READY** |
+| `@samrey/router` | `0.1.0` | `.d.ts` | Yes | Parameterized matching / Redirect sanitization | 8/8 | **READY** |
+| `@samrey/http` | `0.1.0` | `.d.ts` | Yes | Deduplicated `createResource` / Abort tracking | 6/6 | **READY** |
+| `@samrey/forms` | `0.1.0` | `.d.ts` | Yes | Standard Schema / ARIA / Prototype safe | 10/10 | **READY** |
+| `@samrey/ssr` | `0.1.0` | `.d.ts` | Yes | Streaming SSR / SSG / Secret Guard / Event Replay | 18/18 | **READY** |
+| `@samrey/testing` | `0.1.0` | `.d.ts` | Yes | Component mounting harness / Flushers | 4/4 | **READY** |
+| `@samrey/devtools` | `0.1.0` | `.d.ts` | Yes | Origin-gated bridge / Redaction filter | 4/4 | **READY** |
+| `@samrey/cli` | `0.1.0` | `.d.ts` | Yes | Project generator / Vite plugin / Static auditor | 10/10 | **READY** |
 
 ---
 
@@ -64,11 +64,11 @@ Total Execution Time: ~5.3 seconds
 
 ## 5. Security Audit Summary
 
-Gati achieves complete **Zero-Eval** runtime compliance:
+Samrey achieves complete **Zero-Eval** runtime compliance:
 - `eval()` count in codebase: **0**
 - `new Function()` count in codebase: **0**
 - `setTimeout(string)` or `setInterval(string)`: **0**
-- **W3C Trusted Types**: Enforced via `@gati/security` policy factory.
+- **W3C Trusted Types**: Enforced via `@samrey/security` policy factory.
 - **Secret Guard**: Automatic detection and stripping of `apiKey`, `password`, `token`, `bearer`, and `secret` in SSR hydration payloads.
 - **CSRF Defense**: `createCsrfToken()` backed by cryptographic entropy, verified using constant-time comparison (`crypto.timingSafeEqual`).
 - **Prototype Pollution**: `safeJsonParse()` and deep object mergers recursively strip `__proto__`, `constructor`, and `prototype` keys.
@@ -114,14 +114,14 @@ All required documentation guides have been written and reviewed:
 ## 8. Known Limitations
 
 1. **Legacy Browser Support**: Browsers lacking native ES2020 features (e.g. Internet Explorer 11) are intentionally unsupported.
-2. **Dynamic HTML Directives**: Injecting uncurated raw HTML without a Trusted Types policy requires explicit opt-in via `@gati/security` escaping functions.
+2. **Dynamic HTML Directives**: Injecting uncurated raw HTML without a Trusted Types policy requires explicit opt-in via `@samrey/security` escaping functions.
 
 ---
 
 ## 9. Breaking Changes from Prior Concepts
 
 - No Virtual DOM `render()` loops or VNode trees; all templates compile to static strings and direct DOM hole bindings.
-- No `React.useEffect` dependency arrays; Gati's `effect()` automatically tracks signal reads and cleans up through `Owner` hierarchies and `onCleanup()`.
+- No `React.useEffect` dependency arrays; Samrey's `effect()` automatically tracks signal reads and cleans up through `Owner` hierarchies and `onCleanup()`.
 
 ---
 

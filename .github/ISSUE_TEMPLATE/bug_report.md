@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Gati Framework
+about: Create a report to help us improve Samrey Framework
 title: '[BUG] '
 labels: ['bug', 'triage']
 assignees: ''
@@ -9,8 +9,8 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Gati Package & Version**
-- Package: (e.g. `@gati/reactivity`, `@gati/ssr`, `@gati/compiler`)
+**Samrey Package & Version**
+- Package: (e.g. `@samrey/reactivity`, `@samrey/ssr`, `@samrey/compiler`)
 - Version: (e.g. `1.0.0-rc.1`)
 - Node.js / Runtime Version: (e.g. Node 20.10.0, Bun 1.1)
 - Browser (if client-side): (e.g. Chrome 124, Safari 17)

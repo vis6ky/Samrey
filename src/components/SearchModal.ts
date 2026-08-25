@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Search Modal with Fine-Grained Reactive Filtering
+ * @samrey/doc - Native Samrey Search Modal with Fine-Grained Reactive Filtering
  */
 
-import { el, Show, For } from '@gati/runtime';
-import { signal, computed, Signal } from '@gati/reactivity';
+import { el, Show, For } from '@samrey/runtime';
+import { signal, computed, Signal } from '@samrey/reactivity';
 import { icon, IconName } from '../lib/icons.js';
 import { ARCHITECTURE_DECISION_RECORDS } from '../data/adrData.js';
 import { SECURITY_THREATS } from '../data/securityData.js';
@@ -183,7 +183,7 @@ export function SearchModal(props: {
           el('span', null, '↵ Select'),
           el('span', null, 'ESC Close')
         ),
-        el('span', null, 'Gati Global Index')
+        el('span', null, 'Samrey Global Index')
       );
       modalBox.appendChild(modalFooter);
 
@@ -205,7 +205,7 @@ export function SearchModal(props: {
     });
   }
 
-  const container = el('div', { class: 'aether-search-portal' });
+  const container = el('div', { class: 'samrey-search-portal' });
   container.appendChild(modalRoot);
   return container;
 }
