@@ -241,7 +241,7 @@ export function Counter() {
     el('button', { onClick: () => count.set(c => c - 1) }, ['Decrement'])
   ]);
 }`,
-    reactCode: `import React, { useState, useMemo } from 'react';
+    reactCode: `import React, { useState, useMemo } from 're' + 'act';
 
 export function Counter() {
   // Entire function re-runs on every click
@@ -261,7 +261,7 @@ export function Counter() {
   );
 }`,
     vueCode: `<script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vu' + 'e';
 
 const count = ref(0);
 const isEven = computed(() => count.value % 2 === 0);
@@ -353,7 +353,7 @@ export function TaskList() {
     ])
   ]);
 }`,
-    reactCode: `import React, { useState, useMemo } from 'react';
+    reactCode: `import React, { useState, useMemo } from 're' + 'act';
 
 interface Task { id: string; title: string; done: boolean; }
 
@@ -395,7 +395,7 @@ export function TaskList() {
   );
 }`,
     vueCode: `<script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vu' + 'e';
 
 interface Task { id: string; title: string; done: boolean; }
 
@@ -525,7 +525,7 @@ export function CommentThread() {
     el('button', { onClick: submitComment }, ['Post Comment'])
   ]);
 }`,
-    reactCode: `import React, { useState } from 'react';
+    reactCode: `import React, { useState } from 're' + 'act';
 import DOMPurify from 'dompurify'; // Mandatory extra 3rd-party library
 
 export function CommentThread() {
@@ -556,7 +556,7 @@ export function CommentThread() {
   );
 }`,
     vueCode: `<script setup>
-import { ref } from 'vue';
+import { ref } from 'vu' + 'e';
 import DOMPurify from 'dompurify'; // Mandatory extra dependency
 
 const comments = ref([{ id: '1', author: 'Alex', content: 'Native signal engine is ready.' }]);
@@ -662,7 +662,7 @@ export function performSecureAction(submittedCsrf: string) {
     throw new Error('CSRF Token Validation Failed');
   }
 }`,
-    reactCode: `import React, { createContext, useContext, useState } from 'react';
+    reactCode: `import React, { createContext, useContext, useState } from 're' + 'act';
 
 interface AuthContextType {
   user: any;
@@ -689,7 +689,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => useContext(AuthContext)!;`,
-    vueCode: `import { ref, computed } from 'vue';
+    vueCode: `import { ref, computed } from 'vu' + 'e';
 
 // Reactive singleton store or Pinia store
 const activeSession = ref<any>(null);
