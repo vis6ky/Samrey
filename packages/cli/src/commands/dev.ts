@@ -3,6 +3,9 @@
  * @samrey/cli - "samrey dev" Command
  */
 
+import * as http from 'node:http';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { CommandResult } from './create.js';
 
 export interface DevCommandOptions {
@@ -11,6 +14,23 @@ export interface DevCommandOptions {
   open?: boolean;
   dryRun?: boolean;
 }
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.ts': 'text/javascript; charset=utf-8',
+  '.tsx': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.wasm': 'application/wasm'
+};
 
 export async function runDevCommand(options: DevCommandOptions = {}): Promise<CommandResult> {
   const port = options.port || 3000;
@@ -42,10 +62,70 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
     };
   }
 
-  return {
-    success: true,
-    message: banner,
-    exitCode: 0,
-    data: { port, host, devUrl }
-  };
+  // Try launching Vite if present in user workspace
+  try {
+    const viteModule = await import('vite').catch(() => null);
+    if (viteModule && typeof viteModule.createServer === 'function') {
+      const server = await viteModule.createServer({
+        server: {
+          port,
+          host: typeof options.host === 'string' ? options.host : (options.host ? true : undefined)
+        }
+      });
+      await server.listen();
+      console.log(banner);
+      server.printUrls();
+      return {
+        success: true,
+        message: banner,
+        exitCode: 0,
+        data: { port, host, devUrl, mode: 'vite' }
+      };
+    }
+  } catch {
+    // Fall back to built-in dev HTTP server
+  }
+
+  // Native lightweight dev server fallback
+  const rootDir = process.cwd();
+  const server = http.createServer((req, res) => {
+    let reqPath = req.url?.split('?')[0] || '/';
+    if (reqPath === '/') reqPath = '/index.html';
+
+    let filePath = path.join(rootDir, reqPath);
+    if (!fs.existsSync(filePath)) {
+      // SPA Fallback to index.html
+      filePath = path.join(rootDir, 'index.html');
+    }
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': contentType });
+      fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('404 Not Found');
+    }
+  });
+
+  return new Promise((resolve) => {
+    server.listen(port, () => {
+      console.log(banner);
+      resolve({
+        success: true,
+        message: banner,
+        exitCode: 0,
+        data: { port, host, devUrl, mode: 'native' }
+      });
+    });
+
+    server.on('error', (err: any) => {
+      resolve({
+        success: false,
+        message: `[Samrey Dev Error] ${err.message}`,
+        exitCode: 1
+      });
+    });
+  });
 }

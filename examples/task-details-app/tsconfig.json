@@ -9,7 +9,16 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "paths": {
+      "@samrey/reactivity": ["../../packages/reactivity/src/index.ts", "./node_modules/@samrey/reactivity"],
+      "@samrey/runtime": ["../../packages/runtime/src/index.ts", "./node_modules/@samrey/runtime"],
+      "@samrey/security": ["../../packages/security/src/index.ts", "./node_modules/@samrey/security"],
+      "@samrey/forms": ["../../packages/forms/src/index.ts", "./node_modules/@samrey/forms"],
+      "@samrey/router": ["../../packages/router/src/index.ts", "./node_modules/@samrey/router"],
+      "@samrey/http": ["../../packages/http/src/index.ts", "./node_modules/@samrey/http"],
+      "@samrey/ssr": ["../../packages/ssr/src/index.ts", "./node_modules/@samrey/ssr"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"]
 }

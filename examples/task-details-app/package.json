@@ -5,8 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "samrey dev",
-    "build": "esbuild src/index.ts --bundle --format=esm --minify --outfile=dist/bundle.js",
+    "dev": "vite --port 3000 --host",
+    "build": "vite build",
+    "preview": "vite preview --port 3000",
     "test": "node --import tsx --test tests/task-auth.test.ts"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@samrey/testing": "^1.0.0",
     "esbuild": "^0.25.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0"
   }
 }
