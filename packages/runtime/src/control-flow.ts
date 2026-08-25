@@ -19,20 +19,19 @@ export interface ShowProps<T> {
  * Intercepts parentNode assignment to ensure child DOM fragments mount synchronously.
  */
 function createControlFlowMarker(name: string, onParentAttached?: (parent: any) => void): Node {
-  let marker: any;
   if (typeof document !== 'undefined' && typeof document.createComment === 'function') {
-    marker = document.createComment(name);
-  } else {
-    // Mock node for headless testing
-    marker = {
-      nodeType: 8, // COMMENT_NODE
-      nodeName: '#comment',
-      nodeValue: name,
-      parentNode: null,
-      nextSibling: null,
-      previousSibling: null
-    };
+    return document.createComment(name);
   }
+
+  // Mock node for headless testing
+  const marker: any = {
+    nodeType: 8, // COMMENT_NODE
+    nodeName: '#comment',
+    nodeValue: name,
+    parentNode: null,
+    nextSibling: null,
+    previousSibling: null
+  };
 
   let _parent: any = null;
   try {
