@@ -1,0 +1,28 @@
+{
+  "name": "samrey-task-details-auth",
+  "version": "1.0.0",
+  "description": "Task details application with authentication (login, registration, logout) powered entirely by native Samrey framework primitives",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "samrey dev",
+    "build": "esbuild src/index.ts --bundle --format=esm --minify --outfile=dist/bundle.js",
+    "test": "node --import tsx --test tests/task-auth.test.ts"
+  },
+  "dependencies": {
+    "@samrey/reactivity": "^1.0.0",
+    "@samrey/runtime": "^1.0.0",
+    "@samrey/router": "^1.0.0",
+    "@samrey/forms": "^1.0.0",
+    "@samrey/http": "^1.0.0",
+    "@samrey/security": "^1.0.0",
+    "@samrey/ssr": "^1.0.0"
+  },
+  "devDependencies": {
+    "@samrey/cli": "^1.0.0",
+    "@samrey/testing": "^1.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2"
+  }
+}
