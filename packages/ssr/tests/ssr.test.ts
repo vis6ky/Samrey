@@ -2,10 +2,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString, createSSRContext } from '../src/index.js';
 
-describe('@gati/ssr - Server Side Rendering', () => {
+describe('@samrey/ssr - Server Side Rendering', () => {
   it('renders safe static HTML document with title, head metadata, and hydration scripts', async () => {
     const ctx = createSSRContext();
-    ctx.setTitle('Gati Dashboard');
+    ctx.setTitle('Samrey Dashboard');
     ctx.addMeta({ name: 'description', content: 'Ultra-fast reactive framework' });
 
     const html = await renderToString(
@@ -17,7 +17,7 @@ describe('@gati/ssr - Server Side Rendering', () => {
     );
 
     assert.ok(html.includes('<!DOCTYPE html>'));
-    assert.ok(html.includes('<title>Gati Dashboard</title>'));
+    assert.ok(html.includes('<title>Samrey Dashboard</title>'));
     assert.ok(html.includes('<meta name="description" content="Ultra-fast reactive framework">'));
     assert.ok(html.includes('<main><h1 class="heading">Dashboard</h1><p>Active Users: 42</p></main>'));
     assert.ok(html.includes('__AETHER_EVENTS__'));
@@ -45,7 +45,7 @@ describe('@gati/ssr - Server Side Rendering', () => {
     };
 
     const html = await renderToString(failingApp);
-    assert.ok(html.includes('aether-ssr-error'));
+    assert.ok(html.includes('samrey-ssr-error'));
     assert.ok(html.includes('Unexpected render crash'));
   });
 });

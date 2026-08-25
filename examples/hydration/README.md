@@ -1,4 +1,4 @@
-# Gati Hydration & Event Replay Example
+# Samrey Hydration & Event Replay Example
 
 Demonstrates client-side DOM hydration, Unicode-safe deserialization with secret protection, and zero-drop pre-hydration user event queueing and replay.
 
@@ -9,7 +9,7 @@ import {
   hydrate,
   deserializeHydrationState,
   generatePreHydrationScript
-} from '@gati/ssr';
+} from '@samrey/ssr';
 
 // 1. Generate ultra-fast <script> to buffer early user clicks before JS bundle finishes loading
 const earlyScript = generatePreHydrationScript();

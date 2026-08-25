@@ -1,8 +1,8 @@
-# Deployment & Packaging in Gati
+# Deployment & Packaging in Samrey
 
 ## 1. Production Build Workflow
 
-Gati applications build via standard Vite or custom Node.js servers.
+Samrey applications build via standard Vite or custom Node.js servers.
 
 ### Client-Side SPA Build
 
@@ -52,7 +52,7 @@ CMD ["node", "dist/server.cjs"]
 
 ## 3. Serverless & Edge Compatibility
 
-Gati's SSR streaming (`renderToStream`) relies exclusively on the standard Web Streams API (`ReadableStream`, `TextEncoder`), making it natively compatible with:
+Samrey's SSR streaming (`renderToStream`) relies exclusively on the standard Web Streams API (`ReadableStream`, `TextEncoder`), making it natively compatible with:
 - Cloudflare Workers & Pages
 - Vercel Edge Runtime & Serverless Functions
 - AWS Lambda & CloudFront Functions

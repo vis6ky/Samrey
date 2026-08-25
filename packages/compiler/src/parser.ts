@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
+ * @samrey/compiler - High-Performance AST Tokenizer, Parser & Static Hoisting
  */
 
 import {
@@ -27,8 +27,8 @@ import {
 import { classifyBindingContext } from './security-classifier.js';
 import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
-import { GatiCompilerError, GatiErrorCode } from './errors.js';
-import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@gati/security';
+import { SamreyCompilerError, SamreyErrorCode } from './errors.js';
+import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@samrey/security';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
@@ -66,11 +66,11 @@ export interface ParseOptions {
 export interface ParseResult {
   ast: ASTRootNode;
   diagnostics: string[];
-  errors: GatiCompilerError[];
+  errors: SamreyCompilerError[];
 }
 
 /**
- * High-Performance Recursive-Descent Parser for Gati templates/JSX.
+ * High-Performance Recursive-Descent Parser for Samrey templates/JSX.
  * Optimized with ASCII lookup tables, bulk location tracking, and zero unnecessary allocations.
  */
 export class TemplateParser {
@@ -81,7 +81,7 @@ export class TemplateParser {
   private lineStartOffset: number = 0;
   private filename?: string;
   private diagnostics: string[] = [];
-  private errors: GatiCompilerError[] = [];
+  private errors: SamreyCompilerError[] = [];
 
   constructor(source: string, options?: ParseOptions) {
     this.source = source;
@@ -114,7 +114,7 @@ export class TemplateParser {
     };
   }
 
-  public getStructuredErrors(): GatiCompilerError[] {
+  public getStructuredErrors(): SamreyCompilerError[] {
     return this.errors;
   }
 
@@ -158,14 +158,14 @@ export class TemplateParser {
   private recordDiagnostic(
     msg: string,
     pos = this.getPosition(),
-    code: GatiErrorCode = 'AETH-102',
+    code: SamreyErrorCode = 'AETH-102',
     explanation?: string,
     suggestion?: string
   ): void {
     const diagStr = `[${code}] [${pos.line}:${pos.column}] ${msg}`;
     this.diagnostics.push(diagStr);
     this.errors.push(
-      new GatiCompilerError({
+      new SamreyCompilerError({
         code,
         message: msg,
         source: this.source,

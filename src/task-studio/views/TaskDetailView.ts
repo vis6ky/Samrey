@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Task Detail View
+ * @samrey/task-studio - Task Detail View
  */
 
-import { el, Show } from '@gati/runtime';
-import { signal, computed } from '@gati/reactivity';
-import { RouterInstance } from '@gati/router';
+import { el, Show } from '@samrey/runtime';
+import { signal, computed } from '@samrey/reactivity';
+import { RouterInstance } from '@samrey/router';
 import { tasksState, updateTaskAction, deleteTaskAction, toggleTaskStatusAction } from '../state/tasks.store.js';
 import { TaskFormValues, TaskItem } from '../types.js';
 import { TaskForm } from '../components/TaskForm.js';

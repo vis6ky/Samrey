@@ -2,13 +2,13 @@
 
 **Document**: `docs/ROADMAP.md`  
 **Status**: Approved Phasing Baseline  
-**Framework**: Gati  
+**Framework**: Samrey  
 
 ---
 
 ## 1. Executive Phasing Strategy
 
-To ensure architectural integrity, stability, and maintainability, Gati follows a strict **Gate-Checked Multi-Phase Implementation Plan**. No subsequent phase begins until the preceding phase passes all automated verification gates, security audits, and performance thresholds.
+To ensure architectural integrity, stability, and maintainability, Samrey follows a strict **Gate-Checked Multi-Phase Implementation Plan**. No subsequent phase begins until the preceding phase passes all automated verification gates, security audits, and performance thresholds.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -60,17 +60,17 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 | Deferred Feature | Reason for Deferral | Recommended Initial Alternative |
 | :--- | :--- | :--- |
 | **1. Custom Bytecode Virtual Machine** | Excessive complexity and memory overhead; modern JavaScript JIT engines optimize native closures and direct DOM calls significantly better. | Native JS closures with direct `<template>` cloning. |
-| **2. Proprietary In-Browser Template Compiler (`eval`)** | Violates Core Tenet #1 (Zero-`eval` Runtime Guarantee) and breaks strict enterprise Content Security Policies (`script-src 'self'`). | 100% Ahead-of-Time (AOT) compilation via `@gati/compiler`. |
+| **2. Proprietary In-Browser Template Compiler (`eval`)** | Violates Core Tenet #1 (Zero-`eval` Runtime Guarantee) and breaks strict enterprise Content Security Policies (`script-src 'self'`). | 100% Ahead-of-Time (AOT) compilation via `@samrey/compiler`. |
 | **3. Proprietary CSS-in-JS Runtime** | Runtime style injection degrades CSSOM performance, causes style recalculation thrashing, and increases bundle size. | Standard CSS Modules, Tailwind CSS, and compiled native CSS variables. |
 | **4. Core Micro-Frontend Federation Engine** | Introducing Module Federation abstractions inside the core runtime pollutes dependency trees and complicates reactivity scopes. | Standard ECMAScript dynamic imports (`import()`) and standard Web Components wrapper. |
-| **5. Proprietary Client-Side Database / ORM** | Bloats client bundle size; framework should remain database-agnostic. | Standard REST / GraphQL / RPC integration via `@gati/http` and route `loader()`. |
+| **5. Proprietary Client-Side Database / ORM** | Bloats client bundle size; framework should remain database-agnostic. | Standard REST / GraphQL / RPC integration via `@samrey/http` and route `loader()`. |
 | **6. Two-Way Bidirectional Magic Binding** | Creates unpredictable state mutations and debugging loops. | Unidirectional data flow with explicit event-driven mutations and standard schema form bindings. |
 
 ---
 
 ## 3. Detailed Phase Breakdown
 
-### Phase 1: Core Reactivity Engine & DOM Renderer (`@gati/reactivity`, `@gati/runtime`)
+### Phase 1: Core Reactivity Engine & DOM Renderer (`@samrey/reactivity`, `@samrey/runtime`)
 * **Goals**:
   * Implement push-pull Signal graph with versioned clocks and cycle detection.
   * Implement `signal()`, `computed()`, `effect()`, `batch()`, `untrack()`, and `root()`.
@@ -83,10 +83,10 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 
 ---
 
-### Phase 2: Compiler Pipeline & AIR (`@gati/compiler`, `@gati/cli`)
+### Phase 2: Compiler Pipeline & AIR (`@samrey/compiler`, `@samrey/cli`)
 * **Goals**:
   * Implement TSX/JSX parser and AST traversal engine using TypeScript/Babel/OXC.
-  * Define and validate the Gati Intermediate Representation (AIR) schema.
+  * Define and validate the Samrey Intermediate Representation (AIR) schema.
   * Implement static HTML hoisting and `<template>` extraction.
   * Implement context-aware security classifier for attributes and text nodes.
   * Create `vite-plugin-aether` for Vite dev server and production builds.
@@ -96,7 +96,7 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 
 ---
 
-### Phase 3: Component Model & Runtime Lifecycle (`@gati/runtime`)
+### Phase 3: Component Model & Runtime Lifecycle (`@samrey/runtime`)
 * **Goals**:
   * Implement single-execution component instantiator.
   * Implement `<Show>`, `<For>`, `<Switch>`, and `<Suspense>` core control flow components with DOM comment anchors.
@@ -108,7 +108,7 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 
 ---
 
-### Phase 4: SSR Streaming & Resumable Hydration (`@gati/ssr`, `@gati/security`)
+### Phase 4: SSR Streaming & Resumable Hydration (`@samrey/ssr`, `@samrey/security`)
 * **Goals**:
   * Implement asynchronous HTML streaming renderer supporting Node.js and Web Streams.
   * Implement Out-of-Order HTML stream chunks using hidden `<template>` swap blocks.
@@ -120,23 +120,23 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 
 ---
 
-### Phase 5: Router, Data Fetching & Forms (`@gati/router`, `@gati/http`, `@gati/forms`)
+### Phase 5: Router, Data Fetching & Forms (`@samrey/router`, `@samrey/http`, `@samrey/forms`)
 * **Goals**:
   * Implement file-based and code-based route matching with typed parameters.
   * Implement parallel nested route data loaders and automatic link prefetching.
-  * Implement `@gati/http` client with resource signals and auto-cancellation.
-  * Implement `@gati/forms` with Standard Schema (Zod/Valibot) validation and auto-derived ARIA attributes.
+  * Implement `@samrey/http` client with resource signals and auto-cancellation.
+  * Implement `@samrey/forms` with Standard Schema (Zod/Valibot) validation and auto-derived ARIA attributes.
 * **Verification Gate**:
   * Seamless client-side navigation with zero layout flickering.
   * Form validation correctly sets `aria-invalid` and handles async server actions.
 
 ---
 
-### Phase 6: DevTools, Testing Harness & Ecosystem Tooling (`@gati/devtools`, `@gati/testing`)
+### Phase 6: DevTools, Testing Harness & Ecosystem Tooling (`@samrey/devtools`, `@samrey/testing`)
 * **Goals**:
   * Build browser DevTools extension for real-time signal graph inspection.
   * Implement time-travel state debugging and transaction recording.
-  * Release `@gati/testing` headless DOM runner for fast unit and integration tests.
+  * Release `@samrey/testing` headless DOM runner for fast unit and integration tests.
 * **Verification Gate**:
   * DevTools connects with <1% runtime CPU overhead in development mode.
 
@@ -160,4 +160,4 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 | **1. Developer Confusion regarding Single-Execution Model** | High | Medium | Provide immediate compiler diagnostics when local variables are modified outside signals; publish clear visual mental-model guides. |
 | **2. TypeScript Compiler Plugin Complexity** | Medium | High | Maintain standard TSX compatibility without requiring non-standard syntax extensions; use standard AST transformations. |
 | **3. Memory Leaks in Complex Reactive Graphs** | Medium | High | Enforce strict Owner tree disposal; automated heap snapshot tests in CI for every commit. |
-| **4. Edge Runtime Compatibility Differences** | Low | Medium | Standardize `@gati/ssr` and `@gati/http` on standard Web APIs (`Request`, `Response`, `ReadableStream`, `fetch`). |
+| **4. Edge Runtime Compatibility Differences** | Low | Medium | Standardize `@samrey/ssr` and `@samrey/http` on standard Web APIs (`Request`, `Response`, `ReadableStream`, `fetch`). |

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/http - Types
+ * @samrey/http - Types
  */
 
-import { ReadonlySignal } from '@gati/reactivity';
+import { ReadonlySignal } from '@samrey/reactivity';
 
 export type ResourceStatus = 'idle' | 'pending' | 'success' | 'error';
 

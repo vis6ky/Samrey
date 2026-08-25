@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati ADR View
+ * @samrey/doc - Native Samrey ADR View
  */
 
-import { el, For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { ARCHITECTURE_DECISION_RECORDS } from '../data/adrData.js';
 import { ADR } from '../types.js';
 import { icon } from '../lib/icons.js';
@@ -26,7 +26,7 @@ export function AdrView(): HTMLElement {
           'Design Justifications & Technical Tradeoffs'
         ),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
-          'Formal records capturing the technical context, explicit architectural choices, pros, cons, and alternatives considered during the design of Gati.'
+          'Formal records capturing the technical context, explicit architectural choices, pros, cons, and alternatives considered during the design of Samrey.'
         )
       ),
       el('div', { class: 'flex items-center space-x-2 text-xs font-mono bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300' },

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/example-ssr - Client Hydration Entrypoint
+ * @samrey/example-ssr - Client Hydration Entrypoint
  */
 
-import { signal, effect } from '@gati/reactivity';
-import { hydrate, deserializeHydrationState } from '@gati/ssr';
+import { signal, effect } from '@samrey/reactivity';
+import { hydrate, deserializeHydrationState } from '@samrey/ssr';
 import { App } from './app.js';
 
 function mountClient() {
@@ -13,7 +13,7 @@ function mountClient() {
 
   // Hydrate initial state
   const state = deserializeHydrationState<Record<string, unknown>>();
-  console.log('[Gati Client] Hydrated State from Server:', state);
+  console.log('[Samrey Client] Hydrated State from Server:', state);
 
   // Initialize interactive client counter
   const count = signal(0);

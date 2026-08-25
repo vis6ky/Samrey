@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether dev" Command
+ * @samrey/cli - "aether dev" Command
  */
 
 import { CommandResult } from './create.js';
@@ -19,14 +19,14 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   if (port < 1 || port > 65535) {
     return {
       success: false,
-      message: `[Gati Dev Error] Invalid port ${port}. Port must be between 1 and 65535.`,
+      message: `[Samrey Dev Error] Invalid port ${port}. Port must be between 1 and 65535.`,
       exitCode: 1
     };
   }
 
   const devUrl = `http://${host}:${port}`;
   const banner = [
-    `  ▲ Gati Development Server`,
+    `  ▲ Samrey Development Server`,
     `  ➜ Local:   ${devUrl}/`,
     `  ➜ DevTools: Enabled (Bridge active on window.__AETHER_DEVTOOLS_BRIDGE__)`,
     `  ➜ HMR:     Fine-grained reactive signal updates enabled`,

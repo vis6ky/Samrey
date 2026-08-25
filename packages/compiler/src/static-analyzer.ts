@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/compiler - Compile-Time Static Analysis & Constant Folding
+ * @samrey/compiler - Compile-Time Static Analysis & Constant Folding
  */
 
 import { ASTNode, ASTAttributeNode, ASTElementNode } from './ast.js';

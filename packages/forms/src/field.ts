@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/forms - Reactive Field State
+ * @samrey/forms - Reactive Field State
  */
 
-import { signal, computed, ReadonlySignal } from '@gati/reactivity';
+import { signal, computed, ReadonlySignal } from '@samrey/reactivity';
 import { computeAriaAttributes, AriaBindingAttributes } from './aria.js';
 import { Validator } from './standard-schema.js';
 

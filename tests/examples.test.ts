@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Gati Framework — Examples Verification Test Suite
+ * Samrey Framework — Examples Verification Test Suite
  */
 
 import { describe, it } from 'node:test';
@@ -17,7 +17,7 @@ import { generateStaticSite } from '../packages/ssr/src/index.js';
 import { App } from '../examples/ssr/src/app.js';
 import { routes } from '../examples/ssg/src/pages.js';
 
-describe('Gati Runnable Examples Suite', () => {
+describe('Samrey Runnable Examples Suite', () => {
   it('runs basic counter example cleanly', () => {
     const res = runCounterExample();
     assert.ok(res.root);
@@ -39,8 +39,8 @@ describe('Gati Runnable Examples Suite', () => {
     assert.ok(form.fields.password);
     assert.equal(form.fields.email.value(), '');
 
-    form.fields.email.setValue('lead@gati.dev');
-    assert.equal(form.fields.email.value(), 'lead@gati.dev');
+    form.fields.email.setValue('lead@samrey.dev');
+    assert.equal(form.fields.email.value(), 'lead@samrey.dev');
   });
 
   it('runs HTTP async resource fetching example', async () => {
@@ -48,20 +48,20 @@ describe('Gati Runnable Examples Suite', () => {
     assert.equal(res.status, 'success');
     assert.ok(res.post);
     assert.equal(res.post.id, 1);
-    assert.equal(res.post.title, 'Fine-Grained Reactivity in Gati');
+    assert.equal(res.post.title, 'Fine-Grained Reactivity in Samrey');
   });
 
   it('runs streaming SSR example with Unicode state escaping', async () => {
     const html = await runSsrExample();
     assert.ok(typeof html === 'string');
-    assert.ok(html.includes('Gati SSR App'));
+    assert.ok(html.includes('Samrey SSR App'));
     assert.ok(html.includes('Lead Architect'));
     assert.ok(html.includes('__AETHER_STATE__'));
   });
 
   it('runs full SSR application example with metadata and context', async () => {
     const ctx = createSSRContext({ initialRole: 'admin' });
-    ctx.setTitle('Gati SSR Test');
+    ctx.setTitle('Samrey SSR Test');
     ctx.addMeta({ name: 'viewport', content: 'width=device-width' });
 
     const html = await renderToString(App, {
@@ -69,9 +69,9 @@ describe('Gati Runnable Examples Suite', () => {
       clientScript: '/static/client.js'
     });
 
-    assert.ok(html.includes('Gati SSR Application'));
+    assert.ok(html.includes('Samrey SSR Application'));
     assert.ok(html.includes('Interactive Counter'));
-    assert.ok(html.includes('<title>Gati SSR Test</title>'));
+    assert.ok(html.includes('<title>Samrey SSR Test</title>'));
     assert.ok(html.includes('/static/client.js'));
   });
 
@@ -80,14 +80,14 @@ describe('Gati Runnable Examples Suite', () => {
       outDir: './dist/test-ssg-output',
       writeFiles: false,
       generateSitemap: true,
-      baseUrl: 'https://gati.dev'
+      baseUrl: 'https://samrey.dev'
     });
 
     assert.equal(result.totalPages, 5);
     assert.equal(result.pages.length, 5);
     assert.ok(result.sitemapXml);
-    assert.ok(result.sitemapXml.includes('https://gati.dev/'));
-    assert.ok(result.sitemapXml.includes('https://gati.dev/docs'));
+    assert.ok(result.sitemapXml.includes('https://samrey.dev/'));
+    assert.ok(result.sitemapXml.includes('https://samrey.dev/docs'));
   });
 
   it('runs hydration and event replay example', () => {

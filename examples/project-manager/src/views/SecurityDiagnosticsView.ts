@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Security Diagnostics & Adversarial Sandbox View
- * Powered 100% by @gati/security with real sanitization tests
+ * Samrey Project Manager — Security Diagnostics & Adversarial Sandbox View
+ * Powered 100% by @samrey/security with real sanitization tests
  */
 
-import { el, Show, For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
-import { sanitizeHtml, sanitizeUrl, isSafeUrl, safeJsonParse, validateCsrfToken } from '@gati/security';
+import { el, Show, For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
+import { sanitizeHtml, sanitizeUrl, isSafeUrl, safeJsonParse, validateCsrfToken } from '@samrey/security';
 import { ProjectManagerApi, currentCsrfToken } from '../api.js';
 
 export function SecurityDiagnosticsView(): HTMLElement {
@@ -70,7 +70,7 @@ export function SecurityDiagnosticsView(): HTMLElement {
     'div',
     { class: 'bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4' },
     el('h3', { class: 'text-base font-bold text-slate-800' }, 'Interactive Sanitizer Sandbox'),
-    el('p', { class: 'text-xs text-slate-500' }, 'Type hostile payloads below to witness real-time neutralization by @gati/security.'),
+    el('p', { class: 'text-xs text-slate-500' }, 'Type hostile payloads below to witness real-time neutralization by @samrey/security.'),
     el(
       'div',
       { class: 'grid grid-cols-1 md:grid-cols-2 gap-4' },

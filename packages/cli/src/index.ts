@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - Main Entry Point
+ * @samrey/cli - Main Entry Point
  */
 
 export * from './vite-plugin.js';

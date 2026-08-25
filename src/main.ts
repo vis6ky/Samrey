@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Monorepo Entry Point
+ * @samrey/doc - Native Samrey Monorepo Entry Point
  */
 
-import { mount } from '@gati/runtime';
+import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 import './index.css';
 

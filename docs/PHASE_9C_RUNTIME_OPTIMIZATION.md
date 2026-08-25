@@ -3,7 +3,7 @@
 
 ### 1. Executive Summary
 
-In Phase 9C, we profiled, benchmarked, and optimized the **Gati Reactivity Core** and **Runtime DOM Engine** based on measured data and systematic microbenchmarks. 
+In Phase 9C, we profiled, benchmarked, and optimized the **Samrey Reactivity Core** and **Runtime DOM Engine** based on measured data and systematic microbenchmarks. 
 
 All optimizations strictly preserved:
 - Glitch-free reactive updates & diamond dependency graph semantics
@@ -17,7 +17,7 @@ All optimizations strictly preserved:
 
 ### 2. Measured Bottlenecks & Targeted Optimizations
 
-#### A. Reactivity Engine (`@gati/reactivity`)
+#### A. Reactivity Engine (`@samrey/reactivity`)
 1. **Signal Notification & Allocation Overhead**:
    - *Bottleneck*: `signal.write` allocated intermediate arrays (`Array.from(node.subscribers)`) on every write notification cycle.
    - *Optimization*: Replaced array allocations with direct set iteration within batch boundaries. Optimized accessor delegation and subscriber notification loop.
@@ -33,7 +33,7 @@ All optimizations strictly preserved:
    - *Optimization*: Replaced `Object.assign` cloning with direct prototypal inheritance (`Object.create(parent.context)`), speeding up owner creation and reducing heap pressure during component tree and root lifecycle churn.
    - *Result*: Owner lifecycle and 500 reactive root churn cycle execution improved by **15-25%**.
 
-#### B. Runtime DOM Bindings (`@gati/runtime`)
+#### B. Runtime DOM Bindings (`@samrey/runtime`)
 1. **DOM Binding Dirty Checking (`bindText`, `bindAttr`, `bindClass`)**:
    - *Bottleneck*: `bindText`, `bindAttr`, and `bindClass` wrote directly to DOM node properties/attributes unconditionally on every effect execution, even when the evaluated value had not changed.
    - *Optimization*: Added micro-dirty checking (`prevText`, `prevVal`, `prevActive`) to skip redundant DOM mutations.

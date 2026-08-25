@@ -1,4 +1,4 @@
-# Gati Framework v1.0.0 — Final Release Checklist
+# Samrey Framework v1.0.0 — Final Release Checklist
 
 **Target Version:** 1.0.0 (General Availability)  
 **Audit Date:** 2026-08-24  
@@ -13,17 +13,17 @@
 - Inter-package dependency version references pinned to `^1.0.0`: **PASS**
 
 ### Packages
-- `@gati/reactivity` manifest and exports verified: **PASS**
-- `@gati/runtime` manifest and exports verified: **PASS**
-- `@gati/security` manifest and exports verified: **PASS**
-- `@gati/compiler` manifest and exports verified: **PASS**
-- `@gati/router` manifest and exports verified: **PASS**
-- `@gati/http` manifest and exports verified: **PASS**
-- `@gati/forms` manifest and exports verified: **PASS**
-- `@gati/ssr` manifest and exports verified: **PASS**
-- `@gati/testing` manifest and exports verified: **PASS**
-- `@gati/devtools` manifest and exports verified: **PASS**
-- `@gati/cli` manifest and binary bundle verified: **PASS**
+- `@samrey/reactivity` manifest and exports verified: **PASS**
+- `@samrey/runtime` manifest and exports verified: **PASS**
+- `@samrey/security` manifest and exports verified: **PASS**
+- `@samrey/compiler` manifest and exports verified: **PASS**
+- `@samrey/router` manifest and exports verified: **PASS**
+- `@samrey/http` manifest and exports verified: **PASS**
+- `@samrey/forms` manifest and exports verified: **PASS**
+- `@samrey/ssr` manifest and exports verified: **PASS**
+- `@samrey/testing` manifest and exports verified: **PASS**
+- `@samrey/devtools` manifest and exports verified: **PASS**
+- `@samrey/cli` manifest and binary bundle verified: **PASS**
 
 ### Public API
 - Formal contract verification against `docs/PUBLIC_API.md`: **PASS**
@@ -36,11 +36,11 @@
 - Zero external frontend UI runtime dependencies (React, Vue, Svelte, Solid, etc.): **PASS**
 - Correct dependency topological ordering and zero circular dependencies: **PASS**
 
-### Gati-Native UI
-- Documentation application navigation and layout 100% Gati-native: **PASS**
-- Search modal and Command Palette 100% Gati-native: **PASS**
-- Interactive Playground and Architecture Explorer 100% Gati-native: **PASS**
-- Benchmark UI and Security Lab 100% Gati-native: **PASS**
+### Samrey-Native UI
+- Documentation application navigation and layout 100% Samrey-native: **PASS**
+- Search modal and Command Palette 100% Samrey-native: **PASS**
+- Interactive Playground and Architecture Explorer 100% Samrey-native: **PASS**
+- Benchmark UI and Security Lab 100% Samrey-native: **PASS**
 - Native SVG icon primitives without external icon packages: **PASS**
 
 ### Documentation
@@ -74,7 +74,7 @@
 - Package access set to `publishConfig.access = "public"`: **PASS**
 
 ### Clean-Room Consumer
-- Isolated installation in `/tmp/aether-public-consumer`: **PASS**
+- Isolated installation in `/tmp/samrey-public-consumer`: **PASS**
 - Zero symlinks and zero monorepo aliases: **PASS**
 - Execution of public API consumer (signals, DOM runtime, control flow, SSR): **PASS**
 

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Release Public API Export Verification
+ * @samrey/monorepo - Release Public API Export Verification
  */
 
 import * as fs from 'node:fs';
@@ -17,56 +17,56 @@ export interface ExportVerificationResult {
 
 // Authoritative contract from docs/PUBLIC_API.md
 export const PUBLIC_API_CONTRACT: Record<string, string[]> = {
-  '@gati/reactivity': [
+  '@samrey/reactivity': [
     'signal', 'computed', 'effect', 'batch', 'untrack', 'createStore',
     'produce', 'reconcile', 'createMemo', 'createRoot', 'getOwner',
     'runWithOwner', 'onCleanup', 'createContext', 'useContext'
   ],
-  '@gati/runtime': [
+  '@samrey/runtime': [
     'el', 'svg', 'fragment', 'text', 'mount', 'hydrate', 'Show', 'For',
     'Switch', 'Match', 'ErrorBoundary', 'Dynamic', 'Portal', 'Suspense',
     'onMount', 'onCleanup', 'onError', 'createComponent'
   ],
-  '@gati/security': [
+  '@samrey/security': [
     'sanitizeHtml', 'sanitizeUrl', 'sanitizeAttribute', 'isSafeUrl',
     'safeJsonParse', 'safeJsonStringify', 'createCsrfToken',
     'validateCsrfToken', 'TrustedTypesPolicy', 'escapeHtmlText'
   ],
-  '@gati/compiler': [
+  '@samrey/compiler': [
     'compileTemplate', 'parseTemplate', 'buildAIR', 'generateCode',
-    'classifySecurityNode', 'lintAccessibility', 'GatiCompilerError',
+    'classifySecurityNode', 'lintAccessibility', 'SamreyCompilerError',
     'generateSourceFrame', 'ERROR_REGISTRY'
   ],
-  '@gati/router': [
+  '@samrey/router': [
     'Router', 'Route', 'Link', 'useRouter', 'useParams', 'useSearchParams',
     'useLocation', 'matchRoute', 'matchPath', 'matchRoutes', 'createLink',
     'createBrowserHistory', 'createMemoryHistory', 'createRouter'
   ],
-  '@gati/http': [
+  '@samrey/http': [
     'createResource', 'httpClient', 'createHttpCache', 'HttpError'
   ],
-  '@gati/forms': [
+  '@samrey/forms': [
     'createForm', 'createField', 'validateSchema', 'getAccessibleFieldProps'
   ],
-  '@gati/ssr': [
+  '@samrey/ssr': [
     'renderToString', 'renderToStream', 'generateStaticSite', 'hydrateFromSSR',
     'escapeHtml', 'escapeJsonState', 'sanitizeSsrState', 'stripSecrets',
     'serializeStateForHydration'
   ],
-  '@gati/testing': [
+  '@samrey/testing': [
     'renderTestComponent', 'fireEvent', 'waitFor', 'waitForNextUpdate',
     'createMockResource', 'cleanupAllTestContainers'
   ],
-  '@gati/devtools': [
-    'initDevTools', 'GatiDevToolsBridge', 'ReactiveGraphInspector',
+  '@samrey/devtools': [
+    'initDevTools', 'SamreyDevToolsBridge', 'ReactiveGraphInspector',
     'ComponentInspector', 'PerfInspector', 'DevToolsBridge',
     'aetherDevToolsBridge', 'GraphInspector', 'PerformanceInspector'
   ],
-  '@gati/cli': [
+  '@samrey/cli': [
     'runCLI', 'generateStarterProject', 'aetherVitePlugin', 'runCreateCommand',
     'runDevCommand', 'runBuildCommand', 'runPreviewCommand', 'runTestCommand',
     'runAuditCommand', 'runAnalyzeCommand', 'runGenerateCommand', 'CLI_VERSION',
-    'runGatiAudit'
+    'runSamreyAudit'
   ]
 };
 
@@ -75,7 +75,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
   let allValid = true;
 
   for (const [pkgName, expected] of Object.entries(PUBLIC_API_CONTRACT)) {
-    const pkgFolder = pkgName.replace('@gati/', '');
+    const pkgFolder = pkgName.replace('@samrey/', '');
     const indexPath = path.join(process.cwd(), 'packages', pkgFolder, 'src', 'index.ts');
 
     let actualExports: string[] = [];
@@ -112,7 +112,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
 
   // Generate docs/release/PUBLIC_API_RELEASE_VERIFICATION.md
   const reportLines = [
-    '# Gati Framework — Public API Release Verification Report',
+    '# Samrey Framework — Public API Release Verification Report',
     '',
     `**Target Version:** 1.0.0-rc.1  `,
     `**Audit Date:** 2026-08-21  `,
@@ -152,7 +152,7 @@ export async function validatePublicAPIExports(): Promise<{ results: ExportVerif
 }
 
 if (process.argv[1]?.endsWith('validate-exports.ts') || process.argv[1]?.endsWith('validate-exports.js')) {
-  console.log('▲ Gati Public API Export Verification Audit\n');
+  console.log('▲ Samrey Public API Export Verification Audit\n');
   validatePublicAPIExports().then(({ results, allValid }) => {
     for (const r of results) {
       console.log(`  • ${r.packageName} (${r.expectedExports.length} exports) -> ${r.isValid ? 'MATCH' : 'MISMATCH'}`);

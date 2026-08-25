@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Security Status Badge Component
- * Demonstrates @gati/security active sanitizer protection
+ * Samrey Project Manager — Security Status Badge Component
+ * Demonstrates @samrey/security active sanitizer protection
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { ProjectManagerApi } from '../api.js';
 
 export function SecurityBadge(): HTMLElement {

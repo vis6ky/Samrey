@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Sidebar Navigation Component
- * 100% Native Gati Runtime with Signal-driven active route tracking
+ * Samrey Project Manager — Sidebar Navigation Component
+ * 100% Native Samrey Runtime with Signal-driven active route tracking
  */
 
-import { el, For, Show } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For, Show } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { isSidebarCollapsed, store } from '../state.js';
 
 export interface NavItem {
@@ -106,8 +106,8 @@ export function Sidebar(props: {
         el(
           'div',
           { class: 'space-y-1' },
-          el('div', { class: 'font-mono text-slate-400' }, 'Gati v1.0.0-rc.1'),
-          el('div', { class: 'text-slate-500' }, '100% Pure Gati Primitives')
+          el('div', { class: 'font-mono text-slate-400' }, 'Samrey v1.0.0-rc.1'),
+          el('div', { class: 'text-slate-500' }, '100% Pure Samrey Primitives')
         ),
       fallback: () => el('div', { class: 'text-center font-mono text-xs text-slate-600' }, 'Æ')
     })

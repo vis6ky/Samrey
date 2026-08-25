@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether create" Command
+ * @samrey/cli - "aether create" Command
  */
 
 import * as fs from 'node:fs';
@@ -41,7 +41,7 @@ export async function runCreateCommand(options: CreateCommandOptions): Promise<C
   if (!validation.valid) {
     return {
       success: false,
-      message: `[Gati Create Error] ${validation.error}`,
+      message: `[Samrey Create Error] ${validation.error}`,
       exitCode: 1
     };
   }
@@ -74,14 +74,14 @@ export async function runCreateCommand(options: CreateCommandOptions): Promise<C
 
     return {
       success: true,
-      message: `[Gati] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
+      message: `[Samrey] Successfully initialized production starter project "${options.name}" at ${targetDir}`,
       exitCode: 0,
       data: { filesCreated: Object.keys(files).length, targetDir }
     };
   } catch (err: any) {
     return {
       success: false,
-      message: `[Gati Create Failed] Could not create project files: ${err.message}`,
+      message: `[Samrey Create Failed] Could not create project files: ${err.message}`,
       exitCode: 1
     };
   }

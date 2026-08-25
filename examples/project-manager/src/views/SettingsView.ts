@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Settings & Workspace Configuration View
- * Native Gati View with reactive settings toggles
+ * Samrey Project Manager — Settings & Workspace Configuration View
+ * Native Samrey View with reactive settings toggles
  */
 
-import { el } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { notify } from '../state.js';
 
 export function SettingsView(): HTMLElement {
@@ -20,7 +20,7 @@ export function SettingsView(): HTMLElement {
     'div',
     null,
     el('h2', { class: 'text-2xl font-bold text-slate-900 tracking-tight' }, 'Workspace Settings'),
-    el('p', { class: 'text-xs text-slate-500 mt-1' }, 'Preferences and ecosystem options for Gati Project Manager.')
+    el('p', { class: 'text-xs text-slate-500 mt-1' }, 'Preferences and ecosystem options for Samrey Project Manager.')
   );
 
   // Settings Card
@@ -68,7 +68,7 @@ export function SettingsView(): HTMLElement {
       el(
         'div',
         null,
-        el('h4', { class: 'text-sm font-bold text-slate-800' }, 'Gati DevTools Bridge Connection'),
+        el('h4', { class: 'text-sm font-bold text-slate-800' }, 'Samrey DevTools Bridge Connection'),
         el('p', { class: 'text-xs text-slate-500 mt-0.5' }, 'Enable live reactive graph topology inspections and time-travel debugging.')
       ),
       el('input', {

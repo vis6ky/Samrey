@@ -1,3 +1,3 @@
-# Gati Development Playground
+# Samrey Development Playground
 
-Interactive developer scratchpad for live experimentation with Gati compiler transforms, signal propagation, and form validations.
+Interactive developer scratchpad for live experimentation with Samrey compiler transforms, signal propagation, and form validations.

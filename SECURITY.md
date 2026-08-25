@@ -1,6 +1,6 @@
-# Security Policy — Gati Framework
+# Security Policy — Samrey Framework
 
-The Gati project takes the security and integrity of applications built on top of our framework extremely seriously.
+The Samrey project takes the security and integrity of applications built on top of our framework extremely seriously.
 
 ---
 
@@ -15,19 +15,19 @@ The Gati project takes the security and integrity of applications built on top o
 
 ## 🛡️ Core Security Architecture
 
-Gati is architecturally hardened against common web attack vectors by design:
+Samrey is architecturally hardened against common web attack vectors by design:
 
 1. **Zero Dynamic Code Execution**:
    - The framework source code contains zero instances of `eval()`, `new Function()`, or dynamic code generators.
    - Fully compatible with strict `script-src 'self'` Content Security Policies without requiring `'unsafe-eval'`.
 
 2. **Built-in Sanitization & W3C Trusted Types**:
-   - The `@gati/security` package enforces URI protocol validation (blocking `javascript:`, `vbscript:`, and malicious data URIs).
+   - The `@samrey/security` package enforces URI protocol validation (blocking `javascript:`, `vbscript:`, and malicious data URIs).
    - HTML attributes and text nodes are contextually escaped at compile-time and runtime.
    - Seamless integration with the browser's Trusted Types policy API.
 
 3. **SSR Secret Stripping (Secret Guard)**:
-   - The `@gati/ssr` state serialization engine automatically scans state objects before embedding them in HTML payloads.
+   - The `@samrey/ssr` state serialization engine automatically scans state objects before embedding them in HTML payloads.
    - Sensitive property names (e.g. `password`, `apiKey`, `jwtToken`, `databaseUrl`, `secret`) are automatically redacted from client hydration scripts.
 
 4. **Prototype Pollution Protection**:
@@ -37,10 +37,10 @@ Gati is architecturally hardened against common web attack vectors by design:
 
 ## 🚨 Reporting a Vulnerability
 
-If you discover a security vulnerability within Gati:
+If you discover a security vulnerability within Samrey:
 
 1. **Do NOT disclose the issue publicly** in GitHub issues, forums, or social media.
-2. Please submit a confidential security advisory through GitHub Security Advisories or email the core security team at `security@gati.dev`.
+2. Please submit a confidential security advisory through GitHub Security Advisories or email the core security team at `security@samrey.dev`.
 3. Include the following details:
    - Type of vulnerability (e.g., XSS, SSR state leak, CSRF bypass, prototype pollution)
    - Step-by-step reproduction steps or minimal proof of concept

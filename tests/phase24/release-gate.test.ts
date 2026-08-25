@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 Release Gate Master Verification
+ * @samrey/monorepo - Phase 24 Release Gate Master Verification
  * Aggregates and verifies all 10 release gates required for v1.0.0 GA release.
  */
 

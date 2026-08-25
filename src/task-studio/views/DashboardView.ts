@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Dashboard View
+ * @samrey/task-studio - Dashboard View
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { tasksState, toggleTaskStatusAction } from '../state/tasks.store.js';
 import { DashboardStats } from '../components/DashboardStats.js';
 import { Badge } from '../components/ui/Badge.js';
@@ -29,13 +29,13 @@ export function DashboardView(props: DashboardViewProps): HTMLElement {
       { class: 'max-w-xl' },
       el('div', { class: 'flex items-center space-x-2 text-emerald-400 text-xs font-mono mb-1' },
         el('span', { class: 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' }),
-        el('span', null, 'Gati Real-World Production Applet')
+        el('span', null, 'Samrey Real-World Production Applet')
       ),
       el('h1', { class: 'text-2xl sm:text-3xl font-extrabold tracking-tight text-white' }, 'Task Studio Dashboard'),
       el(
         'p',
         { class: 'mt-2 text-sm text-slate-300 leading-relaxed' },
-        'Manage framework engineering roadmaps, security hardening initiatives, and runtime optimizations using native Gati fine-grained reactivity.'
+        'Manage framework engineering roadmaps, security hardening initiatives, and runtime optimizations using native Samrey fine-grained reactivity.'
       )
     ),
     el(

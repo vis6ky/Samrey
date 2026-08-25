@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - Resumable Micro-Hydration & In-Place DOM Binding
+ * @samrey/ssr - Resumable Micro-Hydration & In-Place DOM Binding
  */
 
-import { createRoot, createOwner, runWithOwner } from '@gati/reactivity';
+import { createRoot, createOwner, runWithOwner } from '@samrey/reactivity';
 
 declare global {
   interface Window {
@@ -56,7 +56,7 @@ export function replayCapturedEvents(): number {
         // Re-dispatch original event to the hydrated target
         target.dispatchEvent(event);
       } catch (err) {
-        console.warn('[Gati Hydration] Failed to replay captured event:', err);
+        console.warn('[Samrey Hydration] Failed to replay captured event:', err);
       }
     }
   }
@@ -76,7 +76,7 @@ export function hydrate(
   options: HydrateOptions = {}
 ): HydrationResult {
   if (!container) {
-    throw new Error('[Gati Hydration] Target container element is null or undefined.');
+    throw new Error('[Samrey Hydration] Target container element is null or undefined.');
   }
 
   const repairMismatch = options.repairMismatch ?? true;
@@ -117,7 +117,7 @@ export function hydrate(
         }
 
         if (hasMismatch && repairMismatch) {
-          console.warn('[Gati Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
+          console.warn('[Samrey Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
           container.replaceChildren(...clientNodes);
         } else if (!hasMismatch) {
           // In-place attachment: replace children with reactive nodes

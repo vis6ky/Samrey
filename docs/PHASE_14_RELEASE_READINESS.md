@@ -1,6 +1,6 @@
 # Phase 14: Release Readiness & Public Beta Preparation Report
 
-**Gati Framework**  
+**Samrey Framework**  
 **Release Candidate:** `v1.0.0-rc.1`  
 **Date:** August 20, 2026  
 **Auditor / Release Engineer:** Automated Release Engineering & Verification Agent  
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Phase 14 has successfully completed all release engineering, package distribution integrity, developer onboarding validation, documentation synchronization, and security compliance verification for the Gati Framework `v1.0.0-rc.1` release candidate.
+Phase 14 has successfully completed all release engineering, package distribution integrity, developer onboarding validation, documentation synchronization, and security compliance verification for the Samrey Framework `v1.0.0-rc.1` release candidate.
 
 The framework was tested from first principles:
 - All 11 packages were version-aligned to `1.0.0-rc.1` with standardized metadata, repository links, engines, and Apache-2.0 licensing.
@@ -26,30 +26,30 @@ The framework was tested from first principles:
 
 ## 2. Package Inventory & Tarball Audit
 
-All 11 packages in `@gati/*` were packed and audited. Generated tarballs contain only production source, licenses, READMEs, and package manifests (no test files, benchmarks, or temporary files):
+All 11 packages in `@samrey/*` were packed and audited. Generated tarballs contain only production source, licenses, READMEs, and package manifests (no test files, benchmarks, or temporary files):
 
 | Package Name | Version | Tarball Size | Unpacked Files | Primary Exports |
 | :--- | :--- | :--- | :--- | :--- |
-| `@gati/reactivity` | `1.0.0-rc.1` | 7.3 kB | 11 files | `signal`, `computed`, `effect`, `batch`, `createStore`, `createOwner`, `onCleanup` |
-| `@gati/runtime` | `1.0.0-rc.1` | 10.1 kB | 10 files | `template`, `bindText`, `bindAttribute`, `bindEvent`, `<Show>`, `<For>` |
-| `@gati/compiler` | `1.0.0-rc.1` | 16.0 kB | 12 files | `compileTemplate`, `parseJSX`, `classifySecurityContext`, `lintA11y` |
-| `@gati/router` | `1.0.0-rc.1` | 5.8 kB | 8 files | `createRouter`, `matchPath`, `matchRoutes`, `<Link>` |
-| `@gati/http` | `1.0.0-rc.1` | 6.1 kB | 8 files | `createResource`, `HttpClient`, `invalidateCacheTags` |
-| `@gati/forms` | `1.0.0-rc.1` | 6.6 kB | 8 files | `createForm`, `createField`, `bindField`, Standard Schema integration |
-| `@gati/security` | `1.0.0-rc.1` | 7.7 kB | 7 files | `sanitizeUri`, `sanitizeHtmlString`, `escapeForScriptPayload`, Trusted Types |
-| `@gati/ssr` | `1.0.0-rc.1` | 13.5 kB | 11 files | `renderToString`, `renderToStream`, `generateStaticSite`, `hydrate`, Secret Guard |
-| `@gati/testing` | `1.0.0-rc.1` | 5.0 kB | 6 files | `renderTest`, `fireEvent`, `flushReactivity` |
-| `@gati/devtools` | `1.0.0-rc.1` | 9.5 kB | 13 files | `registerDevToolsHook`, graph inspection, profiler |
-| `@gati/cli` | `1.0.0-rc.1` | 26.2 kB | 17 files | Standalone executable binary (`./bin/aether.js`), Vite plugin, auditor |
+| `@samrey/reactivity` | `1.0.0-rc.1` | 7.3 kB | 11 files | `signal`, `computed`, `effect`, `batch`, `createStore`, `createOwner`, `onCleanup` |
+| `@samrey/runtime` | `1.0.0-rc.1` | 10.1 kB | 10 files | `template`, `bindText`, `bindAttribute`, `bindEvent`, `<Show>`, `<For>` |
+| `@samrey/compiler` | `1.0.0-rc.1` | 16.0 kB | 12 files | `compileTemplate`, `parseJSX`, `classifySecurityContext`, `lintA11y` |
+| `@samrey/router` | `1.0.0-rc.1` | 5.8 kB | 8 files | `createRouter`, `matchPath`, `matchRoutes`, `<Link>` |
+| `@samrey/http` | `1.0.0-rc.1` | 6.1 kB | 8 files | `createResource`, `HttpClient`, `invalidateCacheTags` |
+| `@samrey/forms` | `1.0.0-rc.1` | 6.6 kB | 8 files | `createForm`, `createField`, `bindField`, Standard Schema integration |
+| `@samrey/security` | `1.0.0-rc.1` | 7.7 kB | 7 files | `sanitizeUri`, `sanitizeHtmlString`, `escapeForScriptPayload`, Trusted Types |
+| `@samrey/ssr` | `1.0.0-rc.1` | 13.5 kB | 11 files | `renderToString`, `renderToStream`, `generateStaticSite`, `hydrate`, Secret Guard |
+| `@samrey/testing` | `1.0.0-rc.1` | 5.0 kB | 6 files | `renderTest`, `fireEvent`, `flushReactivity` |
+| `@samrey/devtools` | `1.0.0-rc.1` | 9.5 kB | 13 files | `registerDevToolsHook`, graph inspection, profiler |
+| `@samrey/cli` | `1.0.0-rc.1` | 26.2 kB | 17 files | Standalone executable binary (`./bin/aether.js`), Vite plugin, auditor |
 
 ---
 
 ## 3. Clean Environment Installation Test
 
-A simulation consumer project (`aether-simulation-consumer`) was created in a separate clean directory (`/tmp/aether-final-simulation`) with zero symlinks to the source monorepo:
+A simulation consumer project (`samrey-simulation-consumer`) was created in a separate clean directory (`/tmp/samrey-final-simulation`) with zero symlinks to the source monorepo:
 
 1. **Installation**: `npm install` succeeded with 11 packages installed, 0 high/critical vulnerabilities.
-2. **Module Resolution**: All ESM `import { ... } from "@gati/*"` resolved cleanly.
+2. **Module Resolution**: All ESM `import { ... } from "@samrey/*"` resolved cleanly.
 3. **Execution**: Full multi-feature application executed without errors:
    - Signals & Computeds updated topologically with atomic batching.
    - HTML sanitizer stripped `<script>` tags and blocked `javascript:` URI attacks.

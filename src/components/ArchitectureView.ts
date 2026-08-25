@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Architecture & Monorepo Packages Explorer
+ * @samrey/doc - Native Samrey Architecture & Monorepo Packages Explorer
  */
 
-import { el, For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { FRAMEWORK_PACKAGES } from '../data/packagesData.js';
 import { FrameworkPackage } from '../types.js';
 import { icon } from '../lib/icons.js';
@@ -23,7 +23,7 @@ export function ArchitectureView(): HTMLElement {
           el('span', null, 'Acyclic Monorepo Topology')
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' },
-          'Gati Monorepo & Package Architecture'
+          'Samrey Monorepo & Package Architecture'
         ),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
           '12 cohesive, tree-shakeable packages. Foundational reactivity and security primitives have zero dependencies, ensuring strict architectural isolation and minimal bundle footprints.'

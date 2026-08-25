@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Application Entry Point
+ * Samrey Project Manager — Application Entry Point
  */
 
-import { mount } from '@gati/runtime';
+import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 
 const appRoot = document.getElementById('app') || document.body;

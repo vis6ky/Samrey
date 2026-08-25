@@ -2,7 +2,7 @@ import { FrameworkPackage } from '../types';
 
 export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
   {
-    name: '@gati/reactivity',
+    name: '@samrey/reactivity',
     scope: 'Core Reactive Engine',
     description: 'Foundational push-pull topological signal graph with versioned transaction clocks and Owner-based memory disposal.',
     bundleBudget: '< 2.2 kB min+gzip',
@@ -17,11 +17,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Zero DOM access, zero eval/Function execution. Internal subscriber records use Object.create(null).'
   },
   {
-    name: '@gati/runtime',
+    name: '@samrey/runtime',
     scope: 'Component & DOM Engine',
     description: 'Instantiates single-execution components, clones pre-parsed static <template> elements, and surgically binds reactive updates.',
     bundleBudget: '< 4.5 kB min+gzip',
-    dependencies: ['@gati/reactivity', '@gati/security'],
+    dependencies: ['@samrey/reactivity', '@samrey/security'],
     keyExports: ['template', 'bindText', 'bindAttr', 'bindClass', 'on', 'Show', 'For', 'Switch', 'Suspense', 'createContext'],
     responsibilities: [
       'Static HTML template cloning via cloneNode(true)',
@@ -29,14 +29,14 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
       'Root event delegation listener (200 bytes)',
       'Scoped cleanup integration with reactivity Owner tree'
     ],
-    securityBoundary: 'Sanitizes all attribute bindings through @gati/security. Enforces strict URI scheme whitelist on href/src.'
+    securityBoundary: 'Sanitizes all attribute bindings through @samrey/security. Enforces strict URI scheme whitelist on href/src.'
   },
   {
-    name: '@gati/compiler',
+    name: '@samrey/compiler',
     scope: 'AOT Compiler & AST Pipeline',
-    description: 'Parses TSX/template code, constructs the Gati Intermediate Representation (AIR), validates security contexts, and generates optimized direct DOM JS.',
+    description: 'Parses TSX/template code, constructs the Samrey Intermediate Representation (AIR), validates security contexts, and generates optimized direct DOM JS.',
     bundleBudget: 'Build-time only (0 kB runtime)',
-    dependencies: ['@gati/security'],
+    dependencies: ['@samrey/security'],
     keyExports: ['compile', 'parseAIR', 'transformJSX', 'lintA11y', 'classifySecurityContext'],
     responsibilities: [
       'TSX parsing and semantic dependency extraction',
@@ -47,11 +47,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Rejects insecure inline expressions, blocks javascript: URLs at compile-time, and forces Trusted Types on dynamic HTML.'
   },
   {
-    name: '@gati/router',
+    name: '@samrey/router',
     scope: 'Type-Safe Routing',
     description: 'Universal file-based and code-based router with nested layout caching, streaming data loaders, and automatic prefetching.',
     bundleBudget: '< 3.8 kB min+gzip',
-    dependencies: ['@gati/reactivity', '@gati/runtime'],
+    dependencies: ['@samrey/reactivity', '@samrey/runtime'],
     keyExports: ['Router', 'Route', 'Link', 'useParams', 'useNavigate', 'useLoaderData', 'createFileRoute'],
     responsibilities: [
       'Hierarchical nested route matching with persistent layouts',
@@ -62,11 +62,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Validates route params against prototype injection; sanitizes navigation targets against open redirect attacks.'
   },
   {
-    name: '@gati/http',
+    name: '@samrey/http',
     scope: 'Data Fetching & Caching',
     description: 'Type-safe HTTP client with reactive resource signals, request deduplication, cache invalidation, and automatic AbortController lifecycle.',
     bundleBudget: '< 2.5 kB min+gzip',
-    dependencies: ['@gati/reactivity'],
+    dependencies: ['@samrey/reactivity'],
     keyExports: ['createResource', 'http', 'useMutation', 'invalidateTags', 'fetchStream'],
     responsibilities: [
       'Resource signal abstraction ({ data, loading, error, refetch })',
@@ -77,11 +77,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Strips sensitive auth headers on cross-origin requests; enforces default security headers (nosniff, strict-origin).'
   },
   {
-    name: '@gati/forms',
+    name: '@samrey/forms',
     scope: 'Schema-Driven Forms',
     description: 'First-class form validation engine supporting the Standard Schema specification (Zod, Valibot, ArkType) with auto-derived ARIA bindings.',
     bundleBudget: '< 2.8 kB min+gzip',
-    dependencies: ['@gati/reactivity', '@gati/runtime'],
+    dependencies: ['@samrey/reactivity', '@samrey/runtime'],
     keyExports: ['createForm', 'Field', 'useField', 'FormAction', 'validateSchema'],
     responsibilities: [
       'Standard Schema (~standard) compliance with zero custom adapters',
@@ -92,11 +92,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Built-in CSRF token integration; HMAC verification for server action endpoints.'
   },
   {
-    name: '@gati/ssr',
+    name: '@samrey/ssr',
     scope: 'Streaming & Resumable Hydration',
     description: 'High-throughput streaming HTML generator with out-of-order chunk swapping and safe Unicode JSON state serialization.',
     bundleBudget: '< 3.2 kB min+gzip',
-    dependencies: ['@gati/reactivity', '@gati/security'],
+    dependencies: ['@samrey/reactivity', '@samrey/security'],
     keyExports: ['renderToStream', 'renderToString', 'serializeForHydration', 'createEventDelegatorScript'],
     responsibilities: [
       'Out-of-order HTML chunk streaming via <template> swaps',
@@ -107,12 +107,12 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Mandatory Unicode escaping of <, >, &, \\u2028, and \\u2029 in serialized script blocks.'
   },
   {
-    name: '@gati/security',
+    name: '@samrey/security',
     scope: 'Security & Sanitization',
     description: 'Contextual HTML/URI sanitizer, W3C Trusted Types policy provider, CSP nonce utilities, and anti-CSRF token helpers.',
     bundleBudget: '< 1.8 kB min+gzip',
     dependencies: [],
-    keyExports: ['sanitizeUri', 'sanitizeHtmlString', 'getGatiTrustedPolicy', 'SafeHtml', 'generateCsrfToken'],
+    keyExports: ['sanitizeUri', 'sanitizeHtmlString', 'getSamreyTrustedPolicy', 'SafeHtml', 'generateCsrfToken'],
     responsibilities: [
       'W3C Trusted Types policy management (aether#html)',
       'Contextual URI scheme validation (HTTP/S/mailto/tel only)',
@@ -122,11 +122,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Acts as the central security verification layer for runtime, compiler, and SSR packages.'
   },
   {
-    name: '@gati/testing',
+    name: '@samrey/testing',
     scope: 'Headless Testing Harness',
     description: 'Lightweight reactive test runner with headless DOM mocking, signal assertion helpers, and memory leak detection tools.',
     bundleBudget: 'Dev/Test only',
-    dependencies: ['@gati/reactivity', '@gati/runtime'],
+    dependencies: ['@samrey/reactivity', '@samrey/runtime'],
     keyExports: ['renderTest', 'fireEvent', 'screen', 'flushReactivity', 'assertNoLeaks'],
     responsibilities: [
       'Microtask flush and signal settle assertions',
@@ -136,12 +136,12 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Runs tests in isolated scopes with mock security policies.'
   },
   {
-    name: '@gati/cli',
+    name: '@samrey/cli',
     scope: 'Build Tooling & Scaffolder',
     description: 'Vite, Rollup, and esbuild plugins, file-system route typegen, project starter generator, and static security linter.',
     bundleBudget: 'CLI / Node.js only',
-    dependencies: ['@gati/compiler'],
-    keyExports: ['vitePluginGati', 'createGatiApp', 'auditSecurity', 'generateRouteTypes'],
+    dependencies: ['@samrey/compiler'],
+    keyExports: ['vitePluginSamrey', 'createSamreyApp', 'auditSecurity', 'generateRouteTypes'],
     responsibilities: [
       'Zero-config bundler plugin integration',
       'Compile-time security and accessibility CLI audits (aether audit)',
@@ -150,11 +150,11 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     securityBoundary: 'Validates template sources against known XSS signatures and misconfigured security headers.'
   },
   {
-    name: '@gati/devtools',
+    name: '@samrey/devtools',
     scope: 'Visual Debugger & Inspector',
     description: 'Browser extension and in-page inspector for visual reactive graph inspection, computation timing profiling, and time-travel state debugging.',
     bundleBudget: '< 5 kB in dev; 0 kB in prod',
-    dependencies: ['@gati/reactivity'],
+    dependencies: ['@samrey/reactivity'],
     keyExports: ['initDevtools', 'inspectGraph', 'timeTravelState', 'recordTransaction'],
     responsibilities: [
       'Real-time visualization of signal-to-computed-to-effect edges',

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - Production Starter Project Generator
+ * @samrey/cli - Production Starter Project Generator
  * Provides complete, runnable TypeScript templates with SSR, Routing, Reactivity, and Testing.
  */
 
@@ -38,15 +38,15 @@ export function generateStarterProject(
       type: 'module',
       scripts,
       dependencies: {
-        '@gati/compiler': '^1.0.0',
-        '@gati/reactivity': '^1.0.0',
-        '@gati/runtime': '^1.0.0',
-        ...(templateType !== 'minimal' ? { '@gati/router': '^1.0.0' } : {}),
-        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@gati/ssr': '^1.0.0' } : {}),
-        '@gati/devtools': '^1.0.0'
+        '@samrey/compiler': '^1.0.0',
+        '@samrey/reactivity': '^1.0.0',
+        '@samrey/runtime': '^1.0.0',
+        ...(templateType !== 'minimal' ? { '@samrey/router': '^1.0.0' } : {}),
+        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@samrey/ssr': '^1.0.0' } : {}),
+        '@samrey/devtools': '^1.0.0'
       },
       devDependencies: {
-        '@gati/cli': '^1.0.0',
+        '@samrey/cli': '^1.0.0',
         typescript: '^5.0.0',
         vite: '^5.0.0'
       }
@@ -74,7 +74,7 @@ export function generateStarterProject(
   );
 
   const viteConfig = `import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@gati/cli';
+import { aetherVitePlugin } from '@samrey/cli';
 
 export default defineConfig({
   plugins: [aetherVitePlugin()],
@@ -89,7 +89,7 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${projectName} - Gati App</title>
+    <title>${projectName} - Samrey App</title>
   </head>
   <body>
     <div id="app"><!--ssr-outlet--></div>
@@ -100,14 +100,14 @@ export default defineConfig({
 
   // Minimal Template App
   if (templateType === 'minimal') {
-    const minimalApp = `import { signal } from '@gati/reactivity';
+    const minimalApp = `import { signal } from '@samrey/reactivity';
 
 export function App() {
   const count = signal(0);
   return (
     <main style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
       <h1>${projectName}</h1>
-      <p>Minimal Gati Application</p>
+      <p>Minimal Samrey Application</p>
       <div style="margin-top: 1rem;">
         <button type="button" onClick={() => count.value--}>-</button>
         <span style="margin: 0 1rem; font-weight: bold;">{count.value}</span>
@@ -118,7 +118,7 @@ export function App() {
 }
 `;
 
-    const minimalEntry = `import { mount } from '@gati/runtime';
+    const minimalEntry = `import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');
@@ -129,7 +129,7 @@ if (root) {
 
     const minimalTest = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { signal } from '@gati/reactivity';
+import { signal } from '@samrey/reactivity';
 
 describe('${projectName} Minimal Tests', () => {
   it('updates signal state', () => {
@@ -146,7 +146,7 @@ describe('${projectName} Minimal Tests', () => {
       'tsconfig.json': tsconfigJson,
       'vite.config.ts': viteConfig,
       'index.html': indexHtml,
-      'README.md': `# ${projectName}\n\nMinimal Gati Application.\n`,
+      'README.md': `# ${projectName}\n\nMinimal Samrey Application.\n`,
       '.gitignore': `node_modules/\ndist/\n.DS_Store\ncoverage/\n*.log\n`,
       'src/App.tsx': minimalApp,
       'src/entry-client.tsx': minimalEntry,
@@ -155,8 +155,8 @@ describe('${projectName} Minimal Tests', () => {
   }
 
   // SSG / SPA / SSR Templates
-  const appTsx = `import { signal } from '@gati/reactivity';
-import { Router, Route, Link } from '@gati/router';
+  const appTsx = `import { signal } from '@samrey/reactivity';
+import { Router, Route, Link } from '@samrey/router';
 import { Header } from './components/Header.js';
 import { HomeView } from './views/HomeView.js';
 import { AboutView } from './views/AboutView.js';
@@ -176,7 +176,7 @@ export function App() {
 }
 `;
 
-  const headerTsx = `import { Link } from '@gati/router';
+  const headerTsx = `import { Link } from '@samrey/router';
 
 export function Header(props: { title: string }) {
   return (
@@ -193,7 +193,7 @@ export function Header(props: { title: string }) {
 }
 `;
 
-  const counterTsx = `import { signal } from '@gati/reactivity';
+  const counterTsx = `import { signal } from '@samrey/reactivity';
 
 export function Counter() {
   const count = signal(0);
@@ -218,7 +218,7 @@ export function Counter() {
 export function HomeView() {
   return (
     <section class="page home-page">
-      <h2>Welcome to your Gati Application</h2>
+      <h2>Welcome to your Samrey Application</h2>
       <p>Fine-grained reactive performance with zero virtual DOM overhead.</p>
       <Counter />
     </section>
@@ -229,14 +229,14 @@ export function HomeView() {
   const aboutViewTsx = `export function AboutView() {
   return (
     <section class="page about-page">
-      <h2>About Gati Framework</h2>
+      <h2>About Samrey Framework</h2>
       <p>Built for unmatched developer ergonomics, security sandboxing, and ultra-fast SSR.</p>
     </section>
   );
 }
 `;
 
-  const entryClientTsx = `import { mount } from '@gati/runtime';
+  const entryClientTsx = `import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');
@@ -245,7 +245,7 @@ if (root) {
 }
 `;
 
-  const entryServerTsx = `import { renderToString } from '@gati/ssr';
+  const entryServerTsx = `import { renderToString } from '@samrey/ssr';
 import { App } from './App.js';
 
 export function render(url: string) {
@@ -253,7 +253,7 @@ export function render(url: string) {
 }
 `;
 
-  const ssgBuildTs = `import { generateStaticSite } from '@gati/ssr';
+  const ssgBuildTs = `import { generateStaticSite } from '@samrey/ssr';
 import { App } from './src/App.js';
 
 async function buildSSG() {
@@ -273,7 +273,7 @@ async function buildSSG() {
   </body>
 </html>\`,
     renderRoute: async (route) => {
-      const { renderToString } = await import('@gati/ssr');
+      const { renderToString } = await import('@samrey/ssr');
       return renderToString(() => <App />);
     }
   });
@@ -285,7 +285,7 @@ buildSSG().catch(console.error);
 
   const testTsx = `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { signal } from '@gati/reactivity';
+import { signal } from '@samrey/reactivity';
 
 describe('${projectName} Component Suite', () => {
   it('increments reactive counter signal', () => {
@@ -299,7 +299,7 @@ describe('${projectName} Component Suite', () => {
 
   const readmeMd = `# ${projectName}
 
-Built with [Gati Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
+Built with [Samrey Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 

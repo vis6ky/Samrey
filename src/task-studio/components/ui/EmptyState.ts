@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Empty, Loading & Error State Components
+ * @samrey/task-studio - Accessible Empty, Loading & Error State Components
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { Button } from './Button.js';
 
 export interface EmptyStateProps {

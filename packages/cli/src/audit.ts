@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/cli - Security & Accessibility Static Auditor
+ * @samrey/cli - Security & Accessibility Static Auditor
  */
 
-import { lintA11y } from '@gati/compiler';
+import { lintA11y } from '@samrey/compiler';
 
 export interface AuditReport {
   filesScanned: number;
@@ -36,4 +36,4 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
   };
 }
 
-export const runGatiAudit = auditSource;
+export const runSamreyAudit = auditSource;

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/router - Main Entry Point
+ * @samrey/router - Main Entry Point
  */
 
 export * from './types.js';

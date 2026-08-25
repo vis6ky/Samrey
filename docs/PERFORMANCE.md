@@ -2,7 +2,7 @@
 
 ## 1. Benchmark Methodology
 
-The Gati Framework performance suite measures compiler throughput, fine-grained reactive graph execution, runtime DOM manipulation, control flow reconciliation, component instantiation, server-side rendering, and memory churn.
+The Samrey Framework performance suite measures compiler throughput, fine-grained reactive graph execution, runtime DOM manipulation, control flow reconciliation, component instantiation, server-side rendering, and memory churn.
 
 ### Execution Parameters
 - **Warmup Phase**: 3 warmup runs preceding all timed benchmark iterations to prime Node.js / V8 TurboFan JIT optimizations.

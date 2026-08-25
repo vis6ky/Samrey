@@ -1,4 +1,4 @@
-# Gati Framework — Phase 16 Validation Report
+# Samrey Framework — Phase 16 Validation Report
 ## Real-World External Application & Developer Experience Validation
 
 **Target Version:** `1.0.0-rc.1`  
@@ -10,22 +10,22 @@
 
 ### Executive Summary
 
-Phase 16 executes a complete external-developer style production web application—**Gati Task Studio**—built exclusively with published `@gati/*` packages to validate real-world developer ergonomics, state management scalability, form validation pipelines, routing, resilience, security defenses, and DOM reconciliation efficiency.
+Phase 16 executes a complete external-developer style production web application—**Samrey Task Studio**—built exclusively with published `@samrey/*` packages to validate real-world developer ergonomics, state management scalability, form validation pipelines, routing, resilience, security defenses, and DOM reconciliation efficiency.
 
 ---
 
 ### 1. Application Architecture & Monorepo Package Integration
 
-| Package | Role in Gati Task Studio | Status |
+| Package | Role in Samrey Task Studio | Status |
 | :--- | :--- | :---: |
-| `@gati/reactivity` | Push-pull signal stores (`tasks`, `stats`, `toasts`, `settings`, `filters`), batched updates, computed caches | **VERIFIED** |
-| `@gati/runtime` | Direct DOM creation (`el`, `svgEl`), keyed `For` list reconciliation with DOM instance reuse, declarative `Show` branching | **VERIFIED** |
-| `@gati/router` | Client-side routing (`/dashboard`, `/tasks`, `/tasks/new`, `/tasks/:id`, `/security`, `/benchmarks`, `/settings`, `/about`) | **VERIFIED** |
-| `@gati/forms` | Standard Schema (`~standard` v1) validation engine, reactive field bindings, touched/dirty state, ARIA generators | **VERIFIED** |
-| `@gati/http` | Resilient `HttpClient` with full REST verbs (`get`, `post`, `put`, `patch`, `delete`), simulated latency, request caching | **VERIFIED** |
-| `@gati/security` | Zero-eval HTML sanitizer, URI/redirect scheme defense (`javascript:`, `data:` rejection), prototype pollution scrubber | **VERIFIED** |
-| `@gati/ssr` | Secret stripping guard, script breakout protection, Unicode line separator escaping | **VERIFIED** |
-| `@gati/testing` | Comprehensive end-to-end integration and lifecycle verification test harness | **VERIFIED** |
+| `@samrey/reactivity` | Push-pull signal stores (`tasks`, `stats`, `toasts`, `settings`, `filters`), batched updates, computed caches | **VERIFIED** |
+| `@samrey/runtime` | Direct DOM creation (`el`, `svgEl`), keyed `For` list reconciliation with DOM instance reuse, declarative `Show` branching | **VERIFIED** |
+| `@samrey/router` | Client-side routing (`/dashboard`, `/tasks`, `/tasks/new`, `/tasks/:id`, `/security`, `/benchmarks`, `/settings`, `/about`) | **VERIFIED** |
+| `@samrey/forms` | Standard Schema (`~standard` v1) validation engine, reactive field bindings, touched/dirty state, ARIA generators | **VERIFIED** |
+| `@samrey/http` | Resilient `HttpClient` with full REST verbs (`get`, `post`, `put`, `patch`, `delete`), simulated latency, request caching | **VERIFIED** |
+| `@samrey/security` | Zero-eval HTML sanitizer, URI/redirect scheme defense (`javascript:`, `data:` rejection), prototype pollution scrubber | **VERIFIED** |
+| `@samrey/ssr` | Secret stripping guard, script breakout protection, Unicode line separator escaping | **VERIFIED** |
+| `@samrey/testing` | Comprehensive end-to-end integration and lifecycle verification test harness | **VERIFIED** |
 
 ---
 
@@ -68,7 +68,7 @@ Phase 16 executes a complete external-developer style production web application
 
 ```
 TAP version 13
-# Subtest: Gati Task Studio - End-to-End Application & Consumer Audit
+# Subtest: Samrey Task Studio - End-to-End Application & Consumer Audit
     # Subtest: 1. Task Store State Initialization & Computed Stats
     ok 1 - 1. Task Store State Initialization & Computed Stats
     # Subtest: 2. Filtering, Category, Priority, and Search Computations
@@ -82,9 +82,9 @@ TAP version 13
     # Subtest: 6. Router Navigation & Parameter Extraction
     ok 6 - 6. Router Navigation & Parameter Extraction
     1..6
-ok 1 - Gati Task Studio - End-to-End Application & Consumer Audit
+ok 1 - Samrey Task Studio - End-to-End Application & Consumer Audit
 ```
 
 ### 4. Conclusion
 
-The Gati Framework v1.0.0-rc.1 satisfies all requirements for production-grade web application development. An external developer can construct, route, validate, style, secure, and benchmark complex web applications without any third-party UI framework dependencies.
+The Samrey Framework v1.0.0-rc.1 satisfies all requirements for production-grade web application development. An external developer can construct, route, validate, style, secure, and benchmark complex web applications without any third-party UI framework dependencies.

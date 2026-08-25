@@ -1,21 +1,21 @@
-# @gati/reactivity
+# @samrey/reactivity
 
 Fine-grained push-pull topological signal engine with versioned transaction clocks, automatic batching, and reactive Owner cleanup scopes.
 
 ## Purpose
 
-`@gati/reactivity` is the foundation of the Gati Framework. It provides high-performance reactive state management without virtual DOM diffing, dirty-checking, or monkey-patching. Signals act as reactive state atoms that notify only the specific DOM nodes or computations that depend on them.
+`@samrey/reactivity` is the foundation of the Samrey Framework. It provides high-performance reactive state management without virtual DOM diffing, dirty-checking, or monkey-patching. Signals act as reactive state atoms that notify only the specific DOM nodes or computations that depend on them.
 
 ## Installation
 
 ```bash
-npm install @gati/reactivity
+npm install @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { signal, computed, effect, batch, createStore } from '@gati/reactivity';
+import { signal, computed, effect, batch, createStore } from '@samrey/reactivity';
 
 // 1. Primitive state signal
 const count = signal(0);
@@ -67,7 +67,7 @@ Zero-eval architecture. Deep reactive stores include built-in prototype pollutio
 
 ## Related Packages
 
-- `@gati/runtime` — Direct DOM bindings and control flow built on `@gati/reactivity`.
-- `@gati/router` — Reactive URL routing.
-- `@gati/forms` — Reactive form validation and accessible field bindings.
+- `@samrey/runtime` — Direct DOM bindings and control flow built on `@samrey/reactivity`.
+- `@samrey/router` — Reactive URL routing.
+- `@samrey/forms` — Reactive form validation and accessible field bindings.
 

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - "aether generate" Command
+ * @samrey/cli - "aether generate" Command
  */
 
 import * as fs from 'node:fs';
@@ -21,7 +21,7 @@ export function scaffoldArtifact(type: GenerateArtifactType, name: string): { fi
   const camelName = name.charAt(0).toLowerCase() + name.slice(1);
 
   if (type === 'component') {
-    const code = `import { signal } from '@gati/reactivity';
+    const code = `import { signal } from '@samrey/reactivity';
 
 export interface ${pascalName}Props {
   title?: string;
@@ -92,7 +92,7 @@ describe('${pascalName}View Route', () => {
   }
 
   if (type === 'store') {
-    const code = `import { signal, computed } from '@gati/reactivity';
+    const code = `import { signal, computed } from '@samrey/reactivity';
 
 export function create${pascalName}Store(initialState: Record<string, unknown> = {}) {
   const state = signal(initialState);
@@ -134,7 +134,7 @@ describe('create${pascalName}Store', () => {
   }
 
   // resource
-  const code = `import { signal } from '@gati/reactivity';
+  const code = `import { signal } from '@samrey/reactivity';
 
 export function create${pascalName}Resource(fetcher: () => Promise<unknown>) {
   const data = signal<unknown>(null);
@@ -184,7 +184,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   if (!validTypes.includes(options.type)) {
     return {
       success: false,
-      message: `[Gati Generate Error] Unknown generator type "${options.type}". Supported types: ${validTypes.join(', ')}`,
+      message: `[Samrey Generate Error] Unknown generator type "${options.type}". Supported types: ${validTypes.join(', ')}`,
       exitCode: 1
     };
   }
@@ -192,7 +192,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   if (!options.name || options.name.trim().length === 0) {
     return {
       success: false,
-      message: `[Gati Generate Error] Artifact name is required. Example: aether generate component Button`,
+      message: `[Samrey Generate Error] Artifact name is required. Example: aether generate component Button`,
       exitCode: 1
     };
   }
@@ -201,7 +201,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   if (cleanName.includes('..') || cleanName.includes('/') || cleanName.includes('\\') || !/^[a-zA-Z0-9_-]+$/.test(cleanName)) {
     return {
       success: false,
-      message: `[Gati Generate Error] Invalid artifact name "${options.name}". Path traversal characters and path separators are forbidden.`,
+      message: `[Samrey Generate Error] Invalid artifact name "${options.name}". Path traversal characters and path separators are forbidden.`,
       exitCode: 1
     };
   }
@@ -234,7 +234,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   } catch (err: any) {
     return {
       success: false,
-      message: `[Gati Generate Error] Could not write files: ${err.message}`,
+      message: `[Samrey Generate Error] Could not write files: ${err.message}`,
       exitCode: 1
     };
   }

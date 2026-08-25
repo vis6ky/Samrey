@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/cli - Binary Entrypoint
+ * @samrey/cli - Binary Entrypoint
  */
 
 import { runCLI } from './runner.js';
@@ -17,6 +17,6 @@ runCLI(args).then((result) => {
   }
   process.exit(result.exitCode);
 }).catch((err) => {
-  console.error('[Gati Fatal Error]', err);
+  console.error('[Samrey Fatal Error]', err);
   process.exit(1);
 });

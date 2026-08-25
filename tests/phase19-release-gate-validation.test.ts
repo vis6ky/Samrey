@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 19 Release Gate & Distribution Validation Suite
+ * @samrey/monorepo - Phase 19 Release Gate & Distribution Validation Suite
  */
 
 import { describe, it } from 'node:test';
@@ -9,7 +9,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
-// Gati Native Modules
+// Samrey Native Modules
 import { signal, computed, effect, batch, createStore } from '../packages/reactivity/src/index.js';
 import { el, Show, For, Switch, Match, ErrorBoundary, mount } from '../packages/runtime/src/index.js';
 import { sanitizeHtml, sanitizeUrl, isSafeUrl, sanitizeAttribute, safeJsonParse, safeJsonStringify, createCsrfToken, validateCsrfToken } from '../packages/security/src/index.js';
@@ -22,7 +22,7 @@ import { renderTestComponent, fireEvent, waitFor, cleanupAllTestContainers, crea
 import { initDevTools, aetherDevToolsBridge } from '../packages/devtools/src/index.js';
 import { runCLI, generateStarterProject } from '../packages/cli/src/index.js';
 
-describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distribution Validation', () => {
+describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribution Validation', () => {
   const PACKAGES = [
     'reactivity',
     'runtime',
@@ -41,26 +41,26 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
     it('verifies all 11 package manifests have valid v1.0.0-rc.1 metadata and Apache-2.0 licenses', () => {
       for (const pkg of PACKAGES) {
         const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
-        assert.ok(fs.existsSync(manifestPath), `Manifest missing for @gati/${pkg}`);
+        assert.ok(fs.existsSync(manifestPath), `Manifest missing for @samrey/${pkg}`);
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-        assert.equal(manifest.name, `@gati/${pkg}`);
+        assert.equal(manifest.name, `@samrey/${pkg}`);
         assert.equal(manifest.version, '1.0.0');
         assert.equal(manifest.license, 'Apache-2.0');
-        assert.ok(manifest.description && manifest.description.length > 5, `Missing description in @gati/${pkg}`);
-        assert.ok(manifest.exports, `Missing exports in @gati/${pkg}`);
-        assert.ok(manifest.files, `Missing files in @gati/${pkg}`);
+        assert.ok(manifest.description && manifest.description.length > 5, `Missing description in @samrey/${pkg}`);
+        assert.ok(manifest.exports, `Missing exports in @samrey/${pkg}`);
+        assert.ok(manifest.files, `Missing files in @samrey/${pkg}`);
 
         // Ensure no test/benchmark leaks in packaged files definition
         const files: string[] = manifest.files;
-        assert.ok(!files.includes('tests'), `Tests directory should not be in files array for @gati/${pkg}`);
-        assert.ok(!files.includes('benchmarks'), `Benchmarks directory should not be in files array for @gati/${pkg}`);
+        assert.ok(!files.includes('tests'), `Tests directory should not be in files array for @samrey/${pkg}`);
+        assert.ok(!files.includes('benchmarks'), `Benchmarks directory should not be in files array for @samrey/${pkg}`);
       }
     });
 
     it('generates npm pack tarballs and executes isolated clean-room consumer application', () => {
-      const tarballDir = path.join('/tmp', 'aether-tarballs');
-      const consumerDir = path.join('/tmp', 'aether-release-consumer');
+      const tarballDir = path.join('/tmp', 'samrey-tarballs');
+      const consumerDir = path.join('/tmp', 'samrey-release-consumer');
 
       fs.rmSync(tarballDir, { recursive: true, force: true });
       fs.rmSync(consumerDir, { recursive: true, force: true });
@@ -78,7 +78,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
 
       // Create consumer package.json
       const consumerManifest = {
-        name: 'aether-release-consumer',
+        name: 'samrey-release-consumer',
         version: '1.0.0',
         private: true,
         type: 'module',
@@ -86,7 +86,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       };
 
       for (const tarball of tarballFiles) {
-        const pkgName = tarball.replace(/^aether-/, '@gati/').replace(/-1\.0\.0.*\.tgz$/, '');
+        const pkgName = tarball.replace(/^samrey-/, '@samrey/').replace(/-1\.0\.0.*\.tgz$/, '');
         consumerManifest.dependencies[pkgName] = path.join(tarballDir, tarball);
       }
 
@@ -103,14 +103,14 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       for (const pkg of PACKAGES) {
         assert.ok(
           fs.existsSync(path.join(installedNodeModules, pkg, 'package.json')),
-          `@gati/${pkg} must be installed in clean-room consumer`
+          `@samrey/${pkg} must be installed in clean-room consumer`
         );
       }
     });
   });
 
   describe('4. Public API Export Verification', () => {
-    it('verifies all public APIs exported by @gati/reactivity match specification', async () => {
+    it('verifies all public APIs exported by @samrey/reactivity match specification', async () => {
       const mod = await import('../packages/reactivity/src/index.js');
       assert.equal(typeof mod.signal, 'function');
       assert.equal(typeof mod.computed, 'function');
@@ -126,7 +126,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       assert.equal(typeof mod.useContext, 'function');
     });
 
-    it('verifies all public APIs exported by @gati/runtime match specification', async () => {
+    it('verifies all public APIs exported by @samrey/runtime match specification', async () => {
       const mod = await import('../packages/runtime/src/index.js');
       assert.equal(typeof mod.el, 'function');
       assert.equal(typeof mod.svg, 'function');
@@ -148,7 +148,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       assert.equal(typeof mod.createComponent, 'function');
     });
 
-    it('verifies all public APIs exported by @gati/security match specification', async () => {
+    it('verifies all public APIs exported by @samrey/security match specification', async () => {
       const mod = await import('../packages/security/src/index.js');
       assert.equal(typeof mod.sanitizeHtml, 'function');
       assert.equal(typeof mod.sanitizeUrl, 'function');
@@ -161,7 +161,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       assert.ok(mod.TrustedTypesPolicy, 'TrustedTypesPolicy must exist');
     });
 
-    it('verifies all public APIs exported by @gati/http and @gati/forms match specification', async () => {
+    it('verifies all public APIs exported by @samrey/http and @samrey/forms match specification', async () => {
       const httpMod = await import('../packages/http/src/index.js');
       assert.equal(typeof httpMod.createResource, 'function');
       assert.ok(httpMod.httpClient, 'httpClient instance must be exported');
@@ -201,7 +201,7 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
         for (const forbidden of FORBIDDEN) {
           assert.ok(
             !allDeps[forbidden],
-            `Forbidden dependency ${forbidden} found in @gati/${pkg} package.json!`
+            `Forbidden dependency ${forbidden} found in @samrey/${pkg} package.json!`
           );
         }
       }
@@ -260,9 +260,9 @@ describe('Gati Phase 19 — Release Gate, Production Deployment & NPM Distributi
       assert.equal((cleanState as any).nested.publicCount, 42, 'publicCount must remain');
 
       // Test SSR HTML render
-      const html = await renderToString(() => el('div', { id: 'app-root' }, 'Gati Native SSR Output'));
+      const html = await renderToString(() => el('div', { id: 'app-root' }, 'Samrey Native SSR Output'));
       assert.ok(html.includes('id="app-root"'), 'SSR HTML must contain element attributes');
-      assert.ok(html.includes('Gati Native SSR Output'), 'SSR HTML must contain text content');
+      assert.ok(html.includes('Samrey Native SSR Output'), 'SSR HTML must contain text content');
     });
 
     it('generates multi-route static site pages with generateStaticSite', async () => {

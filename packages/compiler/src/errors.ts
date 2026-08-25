@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/compiler - Structured Error Code System & Source Code Framing
+ * @samrey/compiler - Structured Error Code System & Source Code Framing
  */
 
 export interface SourceLocationInfo {
@@ -11,7 +11,7 @@ export interface SourceLocationInfo {
   length?: number;
 }
 
-export type GatiErrorCode =
+export type SamreyErrorCode =
   | 'AETH-101' // Unclosed Tag
   | 'AETH-102' // Invalid Expression / Unclosed Interpolation
   | 'AETH-103' // Missing Required Directive Prop (e.g. <For> missing 'each' or 'key')
@@ -29,13 +29,13 @@ export type GatiErrorCode =
   | 'AETH-501'; // Forms: Standard Schema Validation Error
 
 export interface ErrorDefinition {
-  code: GatiErrorCode;
+  code: SamreyErrorCode;
   title: string;
   defaultExplanation: string;
   defaultSuggestion: string;
 }
 
-export const ERROR_REGISTRY: Record<GatiErrorCode, ErrorDefinition> = {
+export const ERROR_REGISTRY: Record<SamreyErrorCode, ErrorDefinition> = {
   'AETH-101': {
     code: 'AETH-101',
     title: 'Unclosed HTML/JSX Tag',
@@ -169,8 +169,8 @@ export function generateSourceFrame(
   return output.join('\n');
 }
 
-export interface GatiDiagnosticOptions {
-  code: GatiErrorCode;
+export interface SamreyDiagnosticOptions {
+  code: SamreyErrorCode;
   message?: string;
   source?: string;
   filename?: string;
@@ -182,8 +182,8 @@ export interface GatiDiagnosticOptions {
   suggestion?: string;
 }
 
-export class GatiCompilerError extends Error {
-  public readonly code: GatiErrorCode;
+export class SamreyCompilerError extends Error {
+  public readonly code: SamreyErrorCode;
   public readonly filename?: string;
   public readonly line: number;
   public readonly column: number;
@@ -193,10 +193,10 @@ export class GatiCompilerError extends Error {
   public readonly suggestion: string;
   public readonly sourceFrame?: string;
 
-  constructor(options: GatiDiagnosticOptions) {
+  constructor(options: SamreyDiagnosticOptions) {
     const def = ERROR_REGISTRY[options.code] || {
       code: options.code,
-      title: 'Gati Compiler Error',
+      title: 'Samrey Compiler Error',
       defaultExplanation: 'An error occurred during compilation.',
       defaultSuggestion: 'Review the template code around this location.'
     };
@@ -216,7 +216,7 @@ export class GatiCompilerError extends Error {
     const formatted = `[${options.code}] ${title} at ${locStr}\n\n${sourceFrame ? `${sourceFrame}\n\n` : ''}Explanation: ${explanation}\nSuggestion:  ${suggestion}`;
 
     super(formatted);
-    this.name = 'GatiCompilerError';
+    this.name = 'SamreyCompilerError';
     this.code = options.code;
     this.filename = options.filename;
     this.line = line;
@@ -229,10 +229,10 @@ export class GatiCompilerError extends Error {
   }
 }
 
-export function formatGatiDiagnostic(err: GatiCompilerError | GatiDiagnosticOptions): string {
-  if (err instanceof GatiCompilerError) {
+export function formatSamreyDiagnostic(err: SamreyCompilerError | SamreyDiagnosticOptions): string {
+  if (err instanceof SamreyCompilerError) {
     return err.message;
   }
-  const instance = new GatiCompilerError(err);
+  const instance = new SamreyCompilerError(err);
   return instance.message;
 }

@@ -8,17 +8,17 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-        '@gati/security': path.resolve(__dirname, 'packages/security/src/index.ts'),
-        '@gati/reactivity': path.resolve(__dirname, 'packages/reactivity/src/index.ts'),
-        '@gati/runtime': path.resolve(__dirname, 'packages/runtime/src/index.ts'),
-        '@gati/compiler': path.resolve(__dirname, 'packages/compiler/src/index.ts'),
-        '@gati/router': path.resolve(__dirname, 'packages/router/src/index.ts'),
-        '@gati/http': path.resolve(__dirname, 'packages/http/src/index.ts'),
-        '@gati/forms': path.resolve(__dirname, 'packages/forms/src/index.ts'),
-        '@gati/ssr': path.resolve(__dirname, 'packages/ssr/src/index.ts'),
-        '@gati/testing': path.resolve(__dirname, 'packages/testing/src/index.ts'),
-        '@gati/cli': path.resolve(__dirname, 'packages/cli/src/index.ts'),
-        '@gati/devtools': path.resolve(__dirname, 'packages/devtools/src/index.ts')
+        '@samrey/security': path.resolve(__dirname, 'packages/security/src/index.ts'),
+        '@samrey/reactivity': path.resolve(__dirname, 'packages/reactivity/src/index.ts'),
+        '@samrey/runtime': path.resolve(__dirname, 'packages/runtime/src/index.ts'),
+        '@samrey/compiler': path.resolve(__dirname, 'packages/compiler/src/index.ts'),
+        '@samrey/router': path.resolve(__dirname, 'packages/router/src/index.ts'),
+        '@samrey/http': path.resolve(__dirname, 'packages/http/src/index.ts'),
+        '@samrey/forms': path.resolve(__dirname, 'packages/forms/src/index.ts'),
+        '@samrey/ssr': path.resolve(__dirname, 'packages/ssr/src/index.ts'),
+        '@samrey/testing': path.resolve(__dirname, 'packages/testing/src/index.ts'),
+        '@samrey/cli': path.resolve(__dirname, 'packages/cli/src/index.ts'),
+        '@samrey/devtools': path.resolve(__dirname, 'packages/devtools/src/index.ts')
       },
     },
     server: {

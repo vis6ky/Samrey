@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 CLI Tooling Final Gate
+ * @samrey/monorepo - Phase 24 CLI Tooling Final Gate
  * Tests aether CLI commands (create, dev, build, preview, test, audit, analyze, generate)
  */
 
@@ -19,7 +19,7 @@ describe('Phase 24 — CLI Tooling Final Gate', () => {
   it('2. Verifies CLI help command output', async () => {
     const helpRes = await runCLI(['--help']);
     assert.strictEqual(helpRes.success, true);
-    assert.ok(helpRes.message?.includes('Gati Framework CLI'));
+    assert.ok(helpRes.message?.includes('Samrey Framework CLI'));
     assert.ok(helpRes.message?.includes('create'));
     assert.ok(helpRes.message?.includes('dev'));
     assert.ok(helpRes.message?.includes('build'));
@@ -35,8 +35,8 @@ describe('Phase 24 — CLI Tooling Final Gate', () => {
 
       const manifest = JSON.parse(files['package.json']);
       assert.strictEqual(manifest.version, '1.0.0');
-      assert.strictEqual(manifest.dependencies['@gati/reactivity'], '^1.0.0');
-      assert.strictEqual(manifest.dependencies['@gati/runtime'], '^1.0.0');
+      assert.strictEqual(manifest.dependencies['@samrey/reactivity'], '^1.0.0');
+      assert.strictEqual(manifest.dependencies['@samrey/runtime'], '^1.0.0');
     }
   });
 

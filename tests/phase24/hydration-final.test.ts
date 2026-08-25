@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 Hydration & SSR Final Gate
+ * @samrey/monorepo - Phase 24 Hydration & SSR Final Gate
  * Validates SSR string rendering, stream rendering, hydration stability, and owner cleanup.
  */
 

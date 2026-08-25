@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Phase 24 Clean-Room Consumer Verification
+ * @samrey/monorepo - Phase 24 Clean-Room Consumer Verification
  * Installs packed tarballs into an isolated directory and executes all framework capabilities.
  */
 
@@ -12,10 +12,10 @@ import { execSync } from 'node:child_process';
 import { packAllPackages } from '../../scripts/release/pack.js';
 
 describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
-  const tarballDir = path.join('/tmp', 'aether-p24-clean-tarballs');
-  const consumerDir = path.join('/tmp', 'aether-v1-consumer');
+  const tarballDir = path.join('/tmp', 'samrey-p24-clean-tarballs');
+  const consumerDir = path.join('/tmp', 'samrey-v1-consumer');
 
-  it('1. Prepares tarballs and installs in isolated /tmp/aether-v1-consumer', () => {
+  it('1. Prepares tarballs and installs in isolated /tmp/samrey-v1-consumer', () => {
     fs.rmSync(tarballDir, { recursive: true, force: true });
     fs.rmSync(consumerDir, { recursive: true, force: true });
     fs.mkdirSync(tarballDir, { recursive: true });
@@ -25,7 +25,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
     assert.strictEqual(tarballs.length, 11, 'Must pack 11 tarballs');
 
     const consumerManifest = {
-      name: 'aether-v1-consumer',
+      name: 'samrey-v1-consumer',
       version: '1.0.0',
       private: true,
       type: 'module',
@@ -47,14 +47,14 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
 
   it('2. Executes end-to-end multi-package smoke script in clean-room environment', () => {
     const smokeScript = `
-      import { signal, computed, effect, batch, createRoot } from '@gati/reactivity';
-      import { el, Show, For, ErrorBoundary } from '@gati/runtime';
-      import { sanitizeHtml, sanitizeUrl } from '@gati/security';
-      import { createRouter } from '@gati/router';
-      import { createForm, createField } from '@gati/forms';
-      import { createResource } from '@gati/http';
-      import { renderToString, escapeJsonState } from '@gati/ssr';
-      import { initDevTools } from '@gati/devtools';
+      import { signal, computed, effect, batch, createRoot } from '@samrey/reactivity';
+      import { el, Show, For, ErrorBoundary } from '@samrey/runtime';
+      import { sanitizeHtml, sanitizeUrl } from '@samrey/security';
+      import { createRouter } from '@samrey/router';
+      import { createForm, createField } from '@samrey/forms';
+      import { createResource } from '@samrey/http';
+      import { renderToString, escapeJsonState } from '@samrey/ssr';
+      import { initDevTools } from '@samrey/devtools';
 
       // 1. Reactivity check
       const count = signal(5);
@@ -72,7 +72,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
       if (effectValue !== 100) throw new Error('Reactivity computation failed');
 
       // 2. Security sanitization check
-      const safe = sanitizeHtml('<script>alert(1)</script><p>Gati Clean Room</p>');
+      const safe = sanitizeHtml('<script>alert(1)</script><p>Samrey Clean Room</p>');
       if (safe.includes('<script>')) throw new Error('Security sanitization failed');
 
       // 3. SSR renderToString check

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Gati Framework — HTTP & Resource Data Fetching Example
+ * Samrey Framework — HTTP & Resource Data Fetching Example
  */
 
 import { createResource, HttpClient } from '../../packages/http/src/index.js';
@@ -19,7 +19,7 @@ export async function runHttpExample(): Promise<{
   const resource = createResource<Post>(async () => {
     return {
       id: 1,
-      title: 'Fine-Grained Reactivity in Gati',
+      title: 'Fine-Grained Reactivity in Samrey',
       body: 'Topological transaction clock prevents all glitches.'
     };
   });

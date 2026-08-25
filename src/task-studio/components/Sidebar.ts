@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Application Navigation Sidebar Component
+ * @samrey/task-studio - Application Navigation Sidebar Component
  */
 
-import { el, For } from '@gati/runtime';
-import { RouterInstance } from '@gati/router';
+import { el, For } from '@samrey/runtime';
+import { RouterInstance } from '@samrey/router';
 import { tasksState, setTaskFilter, setTaskCategory, setTaskPriority } from '../state/tasks.store.js';
 import { TaskFilterType } from '../types.js';
 
@@ -30,7 +30,7 @@ export function Sidebar(props: SidebarProps): HTMLElement {
     { path: '/security', label: 'Security Defenses', icon: '🛡️' },
     { path: '/benchmarks', label: 'DOM Benchmarks', icon: '⚡' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
-    { path: '/about', label: 'About Gati', icon: 'ℹ️' }
+    { path: '/about', label: 'About Samrey', icon: 'ℹ️' }
   ];
 
   const quickFilters: Array<{ type: TaskFilterType; label: string; countFn: () => number }> = [
@@ -139,7 +139,7 @@ export function Sidebar(props: SidebarProps): HTMLElement {
 
   sidebar.appendChild(topSection);
 
-  // Bottom Footer Section: Gati Monorepo Zero-Eval Certification
+  // Bottom Footer Section: Samrey Monorepo Zero-Eval Certification
   const footerSection = el(
     'div',
     { class: 'pt-4 border-t border-slate-100 text-xs text-slate-500 flex flex-col space-y-2' },
@@ -147,7 +147,7 @@ export function Sidebar(props: SidebarProps): HTMLElement {
       'div',
       { class: 'flex items-center space-x-2' },
       el('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
-      el('span', { class: 'font-mono text-[11px] font-semibold text-slate-800' }, '100% Native Gati')
+      el('span', { class: 'font-mono text-[11px] font-semibold text-slate-800' }, '100% Native Samrey')
     ),
     el('p', { class: 'text-[10px] text-slate-400 leading-tight' }, 'Zero React · Zero VDOM · Fine-Grained Reactive Primitives')
   );

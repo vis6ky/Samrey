@@ -35,7 +35,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
       'Zero memory leaks verified via automated heap allocation tests',
       'Diamond Dependency resolution passes with zero duplicate computations'
     ],
-    deliverablePackages: ['@gati/reactivity', '@gati/runtime', '@gati/security']
+    deliverablePackages: ['@samrey/reactivity', '@samrey/runtime', '@samrey/security']
   },
   {
     phaseNumber: 2,
@@ -44,7 +44,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
     status: 'Planned',
     objectives: [
       'Implement TSX/JSX parser and AST traversal engine',
-      'Define and validate Gati Intermediate Representation (AIR) schema',
+      'Define and validate Samrey Intermediate Representation (AIR) schema',
       'Implement static HTML hoisting and <template> extraction',
       'Implement context-aware security classifier and compile-time A11y linter',
       'Create vite-plugin-aether'
@@ -53,7 +53,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
       'Compile 50+ diverse test fixtures with bit-for-bit verified code output',
       'Compile-time rejection of javascript: URLs and unescaped HTML injection'
     ],
-    deliverablePackages: ['@gati/compiler', '@gati/cli']
+    deliverablePackages: ['@samrey/compiler', '@samrey/cli']
   },
   {
     phaseNumber: 3,
@@ -70,7 +70,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
       'Verify components execute root function exactly once on state mutations',
       'Reconciliation test suite passes for dynamic list mutations (insert, delete, swap)'
     ],
-    deliverablePackages: ['@gati/runtime (v1.0)']
+    deliverablePackages: ['@samrey/runtime (v1.0)']
   },
   {
     phaseNumber: 4,
@@ -87,7 +87,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
       'Zero XSS vulnerabilities on hostile string serialization payloads',
       'Sub-50ms Time-To-Interactive (TTI) verified on simulated 3G network'
     ],
-    deliverablePackages: ['@gati/ssr']
+    deliverablePackages: ['@samrey/ssr']
   },
   {
     phaseNumber: 5,
@@ -97,14 +97,14 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
     objectives: [
       'Implement file-based and code-based route matching with typed parameters',
       'Implement parallel nested route data loaders and automatic link prefetching',
-      'Implement @gati/http client with resource signals and auto-cancellation',
-      'Implement @gati/forms with Standard Schema (Zod/Valibot) validation'
+      'Implement @samrey/http client with resource signals and auto-cancellation',
+      'Implement @samrey/forms with Standard Schema (Zod/Valibot) validation'
     ],
     verificationGate: [
       'Seamless client-side navigation with zero layout flickering',
       'Form validation correctly sets aria-invalid and handles async server actions'
     ],
-    deliverablePackages: ['@gati/router', '@gati/http', '@gati/forms']
+    deliverablePackages: ['@samrey/router', '@samrey/http', '@samrey/forms']
   },
   {
     phaseNumber: 6,
@@ -114,13 +114,13 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
     objectives: [
       'Build browser DevTools extension for real-time signal graph inspection',
       'Implement time-travel state debugging and transaction recording',
-      'Release @gati/testing headless DOM runner for fast unit and integration tests'
+      'Release @samrey/testing headless DOM runner for fast unit and integration tests'
     ],
     verificationGate: [
       'DevTools connects with <1% runtime CPU overhead in development mode',
       'Full headless test suite runs in under 3 seconds in CI'
     ],
-    deliverablePackages: ['@gati/devtools', '@gati/testing']
+    deliverablePackages: ['@samrey/devtools', '@samrey/testing']
   },
   {
     phaseNumber: 7,
@@ -149,7 +149,7 @@ export const DEFERRED_FEATURES: DeferredFeature[] = [
   {
     feature: 'Proprietary In-Browser Template Compiler (eval/new Function)',
     reason: 'Violates Core Tenet #1 (Zero-eval Runtime Guarantee) and breaks strict enterprise Content Security Policies (script-src self).',
-    alternative: '100% Ahead-of-Time (AOT) compilation via @gati/compiler.'
+    alternative: '100% Ahead-of-Time (AOT) compilation via @samrey/compiler.'
   },
   {
     feature: 'Proprietary CSS-in-JS Runtime',
@@ -164,7 +164,7 @@ export const DEFERRED_FEATURES: DeferredFeature[] = [
   {
     feature: 'Proprietary Client-Side Database / ORM',
     reason: 'Bloats client bundle size; the frontend framework should remain strictly database-agnostic.',
-    alternative: 'Standard REST / GraphQL / RPC integration via @gati/http and route loaders.'
+    alternative: 'Standard REST / GraphQL / RPC integration via @samrey/http and route loaders.'
   },
   {
     feature: 'Two-Way Bidirectional Magic Binding',

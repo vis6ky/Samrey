@@ -1,20 +1,20 @@
-# Gati Framework — Phase 20 Release Readiness Assessment & Final Verdict
+# Samrey Framework — Phase 20 Release Readiness Assessment & Final Verdict
 
 **Target Version:** 1.0.0-rc.1  
 **Date:** 2026-08-21  
 **Framework Status:** Production-Ready Independent Framework  
-**Architectural Invariant:** "Gati Must Use Gati" (Zero Foreign UI Frameworks)  
+**Architectural Invariant:** "Samrey Must Use Samrey" (Zero Foreign UI Frameworks)  
 **License:** Apache-2.0  
 
 ---
 
 ## 1. Executive Summary
 
-Phase 20 is the final Public Release Engineering and npm Publication Readiness verification gate for Gati Framework v1.0.0-rc.1.
+Phase 20 is the final Public Release Engineering and npm Publication Readiness verification gate for Samrey Framework v1.0.0-rc.1.
 
 Every claim, package manifest, dependency constraint, public API export, security boundary, CLI command, and clean-room consumer flow has been empirically tested and validated.
 
-- **Total Monorepo Packages:** 11 (`@gati/*`)
+- **Total Monorepo Packages:** 11 (`@samrey/*`)
 - **Total Test Suites Passing:** 143/143 unit and integration tests + 9/9 Phase 20 release gate integration tests (152 total tests)
 - **TypeScript Strict Checking:** 100% clean across all packages and examples (`tsc --noEmit` exit code 0)
 - **Production Build:** Vite production bundle generated cleanly (exit code 0)
@@ -28,7 +28,7 @@ Every claim, package manifest, dependency constraint, public API export, securit
 | Gate # | Assessment Gate Description | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Gate 1** | **Zero-Foreign-Framework Audit** | AST & manifest audit across all 11 packages and root | **PASS** |
-| **Gate 2** | **"Gati Must Use Gati" Dogfooding** | Documentation and sample apps built natively | **PASS** |
+| **Gate 2** | **"Samrey Must Use Samrey" Dogfooding** | Documentation and sample apps built natively | **PASS** |
 | **Gate 3** | **Package Version Consistency** | All manifests pinned to exact `1.0.0-rc.1` | **PASS** |
 | **Gate 4** | **License Uniformity** | All packages have `Apache-2.0` license and headers | **PASS** |
 | **Gate 5** | **Repository & Author Metadata** | Standardized GitHub repository links and descriptions | **PASS** |
@@ -64,4 +64,4 @@ Every claim, package manifest, dependency constraint, public API export, securit
 
 **VERDICT: PASS**
 
-The Gati Framework v1.0.0-rc.1 has satisfied all release criteria. It is ready for public release, npm distribution, and production adoption as a standalone, zero-foreign-framework reactive web framework.
+The Samrey Framework v1.0.0-rc.1 has satisfied all release criteria. It is ready for public release, npm distribution, and production adoption as a standalone, zero-foreign-framework reactive web framework.

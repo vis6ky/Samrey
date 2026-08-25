@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Card Container Component
+ * @samrey/task-studio - Accessible Card Container Component
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 
 export interface CardProps {
   id?: string;

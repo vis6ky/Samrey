@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Competitive Analysis View
+ * @samrey/doc - Native Samrey Competitive Analysis View
  */
 
-import { el, Show, For } from '@gati/runtime';
-import { signal, computed } from '@gati/reactivity';
+import { el, Show, For } from '@samrey/runtime';
+import { signal, computed } from '@samrey/reactivity';
 import { CATEGORIES, DIMENSIONS } from '../data/competitiveData.js';
 import { DimensionItem } from '../types.js';
 import { icon } from '../lib/icons.js';
@@ -212,7 +212,7 @@ export function CompetitiveView(): HTMLElement {
       );
       container.appendChild(header);
 
-      // Gati Architectural Solution Card (Highlighted)
+      // Samrey Architectural Solution Card (Highlighted)
       const aetherCard = el('div', { class: 'p-5 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm space-y-2' },
         el('div', { class: 'flex items-center space-x-2' },
           el('span', { class: 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold' },

@@ -1,15 +1,15 @@
-# @gati/security
+# @samrey/security
 
 Zero-trust contextual sanitization, W3C Trusted Types policy management, prototype pollution defense, SSR serialization escaping, and anti-CSRF token verification.
 
 ## Purpose
 
-`@gati/security` provides defense-in-depth security utilities designed specifically for modern web applications and reactive frameworks. It guarantees protection against Cross-Site Scripting (XSS), prototype pollution, URI scheme injection, and CSRF attacks.
+`@samrey/security` provides defense-in-depth security utilities designed specifically for modern web applications and reactive frameworks. It guarantees protection against Cross-Site Scripting (XSS), prototype pollution, URI scheme injection, and CSRF attacks.
 
 ## Installation
 
 ```bash
-npm install @gati/security
+npm install @samrey/security
 ```
 
 ## Quick Example
@@ -23,7 +23,7 @@ import {
   safeJsonStringify,
   createCsrfToken,
   validateCsrfToken
-} from '@gati/security';
+} from '@samrey/security';
 
 // 1. Sanitize HTML
 const clean = sanitizeHtml('<script>alert(1)</script><p>Safe content</p>');
@@ -36,8 +36,8 @@ const url = sanitizeUrl('javascript:alert(document.cookie)');
 const isOk = isSafeUrl('https://example.com'); // true
 
 // 3. Prototype Pollution Defense
-const obj = safeJsonParse('{"__proto__": {"polluted": true}, "name": "Gati"}');
-console.log(obj.name); // "Gati"
+const obj = safeJsonParse('{"__proto__": {"polluted": true}, "name": "Samrey"}');
+console.log(obj.name); // "Samrey"
 console.log(({} as any).polluted); // undefined
 
 // 4. Safe JSON Serialization for SSR
@@ -71,7 +71,7 @@ Zero-eval execution model. All inputs are contextually parsed and escaped withou
 
 ## Related Packages
 
-- `@gati/runtime` — Uses `@gati/security` for safe attribute binding.
-- `@gati/ssr` — Uses `@gati/security` for SSR state hydration serialization.
-- `@gati/forms` — Form validation with CSRF integration.
+- `@samrey/runtime` — Uses `@samrey/security` for safe attribute binding.
+- `@samrey/ssr` — Uses `@samrey/security` for SSR state hydration serialization.
+- `@samrey/forms` — Form validation with CSRF integration.
 

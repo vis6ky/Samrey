@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Task Card Component
+ * @samrey/task-studio - Accessible Task Card Component
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { TaskItem } from '../types.js';
 import { Badge } from './ui/Badge.js';
 import { toggleTaskStatusAction } from '../state/tasks.store.js';

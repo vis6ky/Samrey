@@ -1,20 +1,20 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Markdown Parser & Reactive Renderer
+ * @samrey/doc - Native Samrey Markdown Parser & Reactive Renderer
  *
  * Implements a 100% pure TypeScript Markdown parser & DOM generator without React or external libraries.
- * Enforces strict security policies via @gati/security (sanitizing URIs, attributes, and raw HTML).
+ * Enforces strict security policies via @samrey/security (sanitizing URIs, attributes, and raw HTML).
  */
 
-import { el, rawHtml } from '@gati/runtime';
-import { sanitizeUri, escapeHtmlText } from '@gati/security';
+import { el, rawHtml } from '@samrey/runtime';
+import { sanitizeUri, escapeHtmlText } from '@samrey/security';
 
 export interface RenderMarkdownOptions {
   enableCopyCode?: boolean;
 }
 
 export function renderMarkdown(markdownText: string, options: RenderMarkdownOptions = { enableCopyCode: true }): HTMLElement {
-  const container = el('div', { class: 'aether-markdown prose max-w-none text-slate-800 text-sm leading-relaxed space-y-4' });
+  const container = el('div', { class: 'samrey-markdown prose max-w-none text-slate-800 text-sm leading-relaxed space-y-4' });
 
   if (!markdownText) {
     return container;
@@ -321,4 +321,4 @@ export function formatInlineMarkdown(text: string): string {
   return escaped;
 }
 
-export { renderMarkdown as renderMarkdownToGatiDOM };
+export { renderMarkdown as renderMarkdownToSamreyDOM };

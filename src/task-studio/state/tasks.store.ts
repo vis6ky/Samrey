@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Reactive Task Management State Store
+ * @samrey/task-studio - Reactive Task Management State Store
  */
 
-import { signal, computed, batch, ReadonlySignal } from '@gati/reactivity';
+import { signal, computed, batch, ReadonlySignal } from '@samrey/reactivity';
 import {
   TaskItem,
   TaskActivityLog,

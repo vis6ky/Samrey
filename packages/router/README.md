@@ -1,22 +1,22 @@
-# @gati/router
+# @samrey/router
 
 Fine-grained reactive routing engine with nested routes, parameterized matching, route guards, async loaders, and zero full-page re-renders.
 
 ## Purpose
 
-`@gati/router` provides client-side and universal routing built entirely on Gati reactive signals. Navigating between routes updates only the dynamic route view outlet rather than tearing down the root application shell.
+`@samrey/router` provides client-side and universal routing built entirely on Samrey reactive signals. Navigating between routes updates only the dynamic route view outlet rather than tearing down the root application shell.
 
 ## Installation
 
 ```bash
-npm install @gati/router @gati/reactivity @gati/runtime
+npm install @samrey/router @samrey/reactivity @samrey/runtime
 ```
 
 ## Quick Example
 
 ```ts
-import { createRouter, Link, RouterOutlet } from '@gati/router';
-import { el } from '@gati/runtime';
+import { createRouter, Link, RouterOutlet } from '@samrey/router';
+import { el } from '@samrey/runtime';
 
 const routes = [
   { path: '/', component: () => el('h1', null, 'Home View') },
@@ -58,7 +58,7 @@ Sanitizes navigation targets against `javascript:` injection and prevents open r
 
 ## Related Packages
 
-- `@gati/runtime` — Renders route components into the DOM.
-- `@gati/reactivity` — Drives reactive routing state.
-- `@gati/ssr` — Server-side route matching and pre-rendering.
+- `@samrey/runtime` — Renders route components into the DOM.
+- `@samrey/reactivity` — Drives reactive routing state.
+- `@samrey/ssr` — Server-side route matching and pre-rendering.
 

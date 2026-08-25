@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Interactive Application Security Defense Lab
+ * @samrey/task-studio - Interactive Application Security Defense Lab
  */
 
-import { el, For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import {
   sanitizeHtmlString,
   sanitizeUri,
@@ -12,7 +12,7 @@ import {
   safeJsonParse,
   escapeJsonStringForScript,
   stripSecrets
-} from '@gati/security';
+} from '@samrey/security';
 import { Card } from '../components/ui/Card.js';
 import { Button } from '../components/ui/Button.js';
 
@@ -25,7 +25,7 @@ export function SecurityView(): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-rose-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-rose-500' }),
-      el('span', null, '@gati/security Live Verification Engine')
+      el('span', null, '@samrey/security Live Verification Engine')
     ),
     el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'Application Security & Hardening Lab'),
     el(
@@ -189,7 +189,7 @@ export function SecurityView(): HTMLElement {
   const stateSample = {
     user: 'vishal',
     passwordHash: '$2b$12$e8Y...SECRET',
-    apiKey: 'sk-live-aether-super-secret-key-12345',
+    apiKey: 'sk-live-samrey-super-secret-key-12345',
     jwtToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
     database_url: 'postgres://admin:secretpass@db.internal:5432/main',
     comment: '</script><script>alert("Hostile Breakout!")</script>',

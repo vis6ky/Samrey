@@ -1,8 +1,8 @@
-# Reactivity & Control Flow in Gati
+# Reactivity & Control Flow in Samrey
 
 ## 1. Topological Push-Pull Signal Engine
 
-The reactive system in `@gati/reactivity` uses a push-pull dependency algorithm coupled with a monotonic versioned transaction clock (`globalClock`).
+The reactive system in `@samrey/reactivity` uses a push-pull dependency algorithm coupled with a monotonic versioned transaction clock (`globalClock`).
 
 ### Key Reactive Primitives
 
@@ -13,7 +13,7 @@ The reactive system in `@gati/reactivity` uses a push-pull dependency algorithm 
 - `untrack(fn)`: Runs code without tracking any signal reads inside it.
 
 ```typescript
-import { signal, computed, effect, batch } from '@gati/reactivity';
+import { signal, computed, effect, batch } from '@samrey/reactivity';
 
 const price = signal(100);
 const taxRate = signal(0.2);
@@ -36,13 +36,13 @@ batch(() => {
 
 ## 2. Memory Management & Owner Lifecycle
 
-Gati uses an explicit `Owner` hierarchy. Every effect, computation, and component lifecycle runs inside an `Owner` context.
+Samrey uses an explicit `Owner` hierarchy. Every effect, computation, and component lifecycle runs inside an `Owner` context.
 
 - `createRoot(fn)`: Creates an isolated top-level reactive root that persists until manually disposed.
 - `onCleanup(fn)`: Registers a disposal callback that executes when the current Owner scope is destroyed or re-evaluated.
 
 ```typescript
-import { createRoot, onCleanup, effect } from '@gati/reactivity';
+import { createRoot, onCleanup, effect } from '@samrey/reactivity';
 
 const dispose = createRoot(() => {
   const timer = setInterval(() => {
@@ -63,13 +63,13 @@ dispose();
 
 ## 3. Declarative Control Flow (`<Show>` & `<For>`)
 
-Instead of JavaScript ternary operators or `.map()` in Virtual DOM templates, Gati provides fine-grained control flow primitives that surgically insert, swap, and remove DOM nodes without destroying surrounding state.
+Instead of JavaScript ternary operators or `.map()` in Virtual DOM templates, Samrey provides fine-grained control flow primitives that surgically insert, swap, and remove DOM nodes without destroying surrounding state.
 
 ### `<Show>` (Conditional Rendering)
 
 ```typescript
-import { Show } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { Show } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 const isLoggedIn = signal(false);
 
@@ -85,8 +85,8 @@ const node = Show({
 The `<For>` component uses an index-keyed differential reconciliation algorithm to move, insert, and remove DOM nodes with minimal mutations.
 
 ```typescript
-import { For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 interface Todo {
   id: number;
@@ -94,7 +94,7 @@ interface Todo {
 }
 
 const todos = signal<Todo[]>([
-  { id: 1, text: 'Design Gati Compiler' },
+  { id: 1, text: 'Design Samrey Compiler' },
   { id: 2, text: 'Verify Zero-Eval Security' }
 ]);
 

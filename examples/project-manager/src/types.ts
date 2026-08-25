@@ -1,7 +1,7 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Type Contracts & Standard Schema Definitions
- * 100% Native Gati Independent Consumer Application
+ * Samrey Project Manager — Type Contracts & Standard Schema Definitions
+ * 100% Native Samrey Independent Consumer Application
  */
 
 export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';

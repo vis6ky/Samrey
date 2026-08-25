@@ -1,9 +1,9 @@
-# Gati Framework — Compatibility Matrix
+# Samrey Framework — Compatibility Matrix
 
 **Version: 1.0.0-rc.1**  
 *Last Updated: August 20, 2026*
 
-This document outlines environment, runtime, browser, and library compatibility for Gati applications.
+This document outlines environment, runtime, browser, and library compatibility for Samrey applications.
 
 ---
 
@@ -22,7 +22,7 @@ This document outlines environment, runtime, browser, and library compatibility 
 
 ## 🌐 Browser Support
 
-Gati targets modern evergreen browsers with standard Web APIs:
+Samrey targets modern evergreen browsers with standard Web APIs:
 
 | Browser | Minimum Version | Tested & Verified |
 | :--- | :--- | :--- |
@@ -37,7 +37,7 @@ Gati targets modern evergreen browsers with standard Web APIs:
 
 ## 📚 Schema & Validation Compatibility
 
-Gati's `@gati/forms` package implements the [Standard Schema](https://github.com/standard-schema/standard-schema) specification:
+Samrey's `@samrey/forms` package implements the [Standard Schema](https://github.com/standard-schema/standard-schema) specification:
 
 | Schema Library | Minimum Version | Status |
 | :--- | :--- | :--- |
@@ -51,7 +51,7 @@ Gati's `@gati/forms` package implements the [Standard Schema](https://github.com
 
 | Tool | Recommended Setup | Status |
 | :--- | :--- | :--- |
-| **Vite** | `@gati/cli/vite-plugin` | ✅ Official First-Party Plugin |
+| **Vite** | `@samrey/cli/vite-plugin` | ✅ Official First-Party Plugin |
 | **esbuild** | Direct AOT compiler transform | ✅ Full Support |
 | **Rollup** | Standard ESM packaging | ✅ Full Support |
 | **TypeScript** | `>= 5.0.0` | ✅ Strict mode certified |

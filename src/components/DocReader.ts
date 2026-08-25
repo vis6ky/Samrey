@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @gati/doc - Native Gati Documentation Reader
+ * @samrey/doc - Native Samrey Documentation Reader
  */
 
-import { el, For } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, For } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 import { DOCS_REGISTRY, DocEntry } from '../data/docContents.js';
-import { renderMarkdownToGatiDOM } from '../lib/markdown.js';
+import { renderMarkdownToSamreyDOM } from '../lib/markdown.js';
 import { icon } from '../lib/icons.js';
 
 export function DocReader(): HTMLElement {
@@ -44,7 +44,7 @@ export function DocReader(): HTMLElement {
           el('span', null, 'Full Specification Documents')
         ),
         el('h2', { class: 'text-2xl font-bold tracking-tight' },
-          'Gati Architectural Documentation Suite'
+          'Samrey Architectural Documentation Suite'
         ),
         el('p', { class: 'text-slate-400 text-sm mt-1 max-w-3xl' },
           'Inspect and export the complete markdown technical specifications generated in the ',
@@ -139,7 +139,7 @@ export function DocReader(): HTMLElement {
     el('div', {
       class: 'prose-container text-sm leading-relaxed overflow-y-auto max-h-[750px] pr-2'
     },
-      () => renderMarkdownToGatiDOM(selectedDoc.value.content)
+      () => renderMarkdownToSamreyDOM(selectedDoc.value.content)
     )
   );
 

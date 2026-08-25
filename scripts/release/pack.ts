@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Release Tarball Packager
+ * @samrey/monorepo - Release Tarball Packager
  */
 
 import * as fs from 'node:fs';
@@ -27,7 +27,7 @@ export function packAllPackages(outDir = path.join(process.cwd(), 'dist', 'tarba
   const packed: PackedTarball[] = [];
 
   for (const fullPkgName of topologicalOrder) {
-    const pkg = fullPkgName.replace('@gati/', '');
+    const pkg = fullPkgName.replace('@samrey/', '');
     const pkgDir = path.join(process.cwd(), 'packages', pkg);
 
     // Build CLI if needed
@@ -61,7 +61,7 @@ export function packAllPackages(outDir = path.join(process.cwd(), 'dist', 'tarba
 }
 
 if (process.argv[1]?.endsWith('pack.ts') || process.argv[1]?.endsWith('pack.js')) {
-  console.log('▲ Gati Packaging Pipeline\n');
+  console.log('▲ Samrey Packaging Pipeline\n');
   const tarballs = packAllPackages();
   console.log(`  Packed ${tarballs.length} packages into dist/tarballs:\n`);
   for (const t of tarballs) {

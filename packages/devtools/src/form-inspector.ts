@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/devtools - Forms & Validation State Inspector
+ * @samrey/devtools - Forms & Validation State Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

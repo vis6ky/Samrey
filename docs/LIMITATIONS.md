@@ -1,9 +1,9 @@
-# Gati Framework — Known Limitations & Constraints
+# Samrey Framework — Known Limitations & Constraints
 
 **Version: 1.0.0-rc.1**  
 *Last Updated: August 20, 2026*
 
-This document provides a transparent overview of architectural trade-offs, intentional constraints, and known limitations in Gati `1.0.0-rc.1`.
+This document provides a transparent overview of architectural trade-offs, intentional constraints, and known limitations in Samrey `1.0.0-rc.1`.
 
 ---
 
@@ -22,7 +22,7 @@ This document provides a transparent overview of architectural trade-offs, inten
 ## 2. Compiler & Syntax Constraints
 
 ### JSX/TSX Compilation Target
-- Gati's AOT compiler compiles JSX elements to static `<template>` clones and surgical hole path binding arrays. It does not produce React `createElement()` calls.
+- Samrey's AOT compiler compiles JSX elements to static `<template>` clones and surgical hole path binding arrays. It does not produce React `createElement()` calls.
 - Third-party React component libraries (e.g. standard Material UI or Radix React wrappers) cannot be imported directly without an adapter layer.
 
 ### Root Node Expressions
@@ -37,14 +37,14 @@ This document provides a transparent overview of architectural trade-offs, inten
 - **Solution**: Store non-deterministic values in the SSR state context (`createSSRContext({ timestamp })`) so the client hydration reads the identical server value.
 
 ### HTML Formatting Differences
-- Browser DOM parsers automatically normalize certain HTML attributes (such as `checked=""` to `checked`). Gati's hydration reconciler automatically handles attribute normalization without throwing runtime errors.
+- Browser DOM parsers automatically normalize certain HTML attributes (such as `checked=""` to `checked`). Samrey's hydration reconciler automatically handles attribute normalization without throwing runtime errors.
 
 ---
 
 ## 4. Platform Compatibility & Environment
 
 ### Node.js Engine
-- Gati requires Node.js version `>= 18.0.0` (with full support for WHATWG `ReadableStream`, `fetch`, and ECMAScript Modules).
+- Samrey requires Node.js version `>= 18.0.0` (with full support for WHATWG `ReadableStream`, `fetch`, and ECMAScript Modules).
 
 ### Browser Compatibility
 - Modern evergreen browsers (Chrome, Edge, Firefox, Safari iOS 15+) supporting standard ES2022 modules, `<template>`, and standard DOM APIs.

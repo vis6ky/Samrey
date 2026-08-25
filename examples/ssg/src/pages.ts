@@ -1,17 +1,17 @@
 /**
  * @license Apache-2.0
- * @gati/example-ssg - Static Page Definitions
+ * @samrey/example-ssg - Static Page Definitions
  */
 
-import { StaticRouteConfig } from '@gati/ssr';
+import { StaticRouteConfig } from '@samrey/ssr';
 
 export const routes: StaticRouteConfig[] = [
   {
     path: '/',
-    title: 'Gati - High Performance Reactive Framework',
+    title: 'Samrey - High Performance Reactive Framework',
     component: () => `
       <main class="max-w-4xl mx-auto py-12 px-6 font-sans">
-        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 mb-4">Gati Framework</h1>
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 mb-4">Samrey Framework</h1>
         <p class="text-lg text-slate-600 mb-8 leading-relaxed">
           The next-generation frontend framework powered by fine-grained signals, direct HTML template cloning, and native W3C security controls.
         </p>
@@ -34,14 +34,14 @@ export const routes: StaticRouteConfig[] = [
   },
   {
     path: '/docs',
-    title: 'Documentation - Gati Framework',
+    title: 'Documentation - Samrey Framework',
     component: () => `
       <main class="max-w-4xl mx-auto py-12 px-6 font-sans">
-        <h1 class="text-3xl font-bold text-slate-900 mb-4">Gati Documentation</h1>
+        <h1 class="text-3xl font-bold text-slate-900 mb-4">Samrey Documentation</h1>
         <p class="text-slate-600 mb-6">Explore the architecture, reactivity engine, and SSR workflows.</p>
         <ul class="list-disc pl-6 space-y-2 text-slate-700">
           <li>Reactivity Model (Push-Pull Topological Scheduling)</li>
-          <li>Gati Intermediate Representation (AIR) Compiler</li>
+          <li>Samrey Intermediate Representation (AIR) Compiler</li>
           <li>Static Site Generation (SSG) & Streaming SSR</li>
         </ul>
       </main>
@@ -56,19 +56,19 @@ export const routes: StaticRouteConfig[] = [
           <h1 class="text-3xl font-bold text-slate-900">Post Title</h1>
         </header>
         <div class="prose text-slate-700 leading-relaxed">
-          <p>This page was pre-rendered statically at build time using Gati SSG.</p>
+          <p>This page was pre-rendered statically at build time using Samrey SSG.</p>
         </div>
       </article>
     `,
     getStaticPaths: () => [
       {
         params: { slug: 'why-signals-matter' },
-        title: 'Why Signals Matter - Gati Blog',
+        title: 'Why Signals Matter - Samrey Blog',
         state: { author: 'Engineering Team', date: '2026-08-19' }
       },
       {
         params: { slug: 'trusted-types-in-practice' },
-        title: 'Trusted Types in Practice - Gati Blog',
+        title: 'Trusted Types in Practice - Samrey Blog',
         state: { author: 'Security Team', date: '2026-08-18' }
       }
     ]

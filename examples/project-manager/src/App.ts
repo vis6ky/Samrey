@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Root Application Shell
- * 100% Native Gati Independent Consumer App
+ * Samrey Project Manager — Root Application Shell
+ * 100% Native Samrey Independent Consumer App
  */
 
-import { el, Show, Switch, Match, ErrorBoundary } from '@gati/runtime';
-import { signal, effect } from '@gati/reactivity';
+import { el, Show, Switch, Match, ErrorBoundary } from '@samrey/runtime';
+import { signal, effect } from '@samrey/reactivity';
 import { Navbar } from './components/Navbar.js';
 import { Sidebar } from './components/Sidebar.js';
 import { NotificationToast } from './components/NotificationToast.js';

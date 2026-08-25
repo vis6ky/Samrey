@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/monorepo - Release Clean-Room Consumer & Production Smoke Test
+ * @samrey/monorepo - Release Clean-Room Consumer & Production Smoke Test
  */
 
 import * as fs from 'node:fs';
@@ -18,12 +18,12 @@ export interface SmokeTestResult {
   diagnostics: string[];
 }
 
-export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consumer'): Promise<SmokeTestResult> {
+export async function runSmokeTest(consumerBaseDir = '/tmp/samrey-public-consumer'): Promise<SmokeTestResult> {
   const startTime = Date.now();
   const diagnostics: string[] = [];
 
   // 1. Pack tarballs
-  diagnostics.push('Packaging all 11 @gati/* modules into release tarballs...');
+  diagnostics.push('Packaging all 11 @samrey/* modules into release tarballs...');
   const tarballDir = path.join(process.cwd(), 'dist', 'tarballs');
   const tarballs = packAllPackages(tarballDir);
 
@@ -33,7 +33,7 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consume
   fs.mkdirSync(consumerBaseDir, { recursive: true });
 
   const consumerPkg = {
-    name: 'aether-clean-room-consumer',
+    name: 'samrey-clean-room-consumer',
     version: '1.0.0',
     type: 'module',
     dependencies: {} as Record<string, string>
@@ -50,14 +50,14 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consume
 
   // 3. Clean-room Execution Script
   const testScript = `
-    import { signal, computed, effect, batch, createRoot } from '@gati/reactivity';
-    import { el, Show, For, ErrorBoundary } from '@gati/runtime';
-    import { sanitizeHtml, sanitizeUrl, safeJsonParse } from '@gati/security';
-    import { createRouter } from '@gati/router';
-    import { createForm } from '@gati/forms';
-    import { createResource } from '@gati/http';
-    import { renderToString, escapeJsonState } from '@gati/ssr';
-    import { initDevTools } from '@gati/devtools';
+    import { signal, computed, effect, batch, createRoot } from '@samrey/reactivity';
+    import { el, Show, For, ErrorBoundary } from '@samrey/runtime';
+    import { sanitizeHtml, sanitizeUrl, safeJsonParse } from '@samrey/security';
+    import { createRouter } from '@samrey/router';
+    import { createForm } from '@samrey/forms';
+    import { createResource } from '@samrey/http';
+    import { renderToString, escapeJsonState } from '@samrey/ssr';
+    import { initDevTools } from '@samrey/devtools';
 
     // A. Reactivity Check
     const count = signal(10);
@@ -94,8 +94,8 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consume
     if (form.fields.title.value.value !== 'Release Build') throw new Error('Form initialization failed');
 
     // E. SSR Rendering & State Escaping Check
-    const ssrHtml = await renderToString(() => el('div', { class: 'smoke-root' }, 'Gati Framework Production Ready'));
-    if (!ssrHtml.includes('Gati Framework Production Ready')) throw new Error('SSR renderToString failed');
+    const ssrHtml = await renderToString(() => el('div', { class: 'smoke-root' }, 'Samrey Framework Production Ready'));
+    if (!ssrHtml.includes('Samrey Framework Production Ready')) throw new Error('SSR renderToString failed');
     const escaped = escapeJsonState({ payload: '</script><script>alert(1)</script>' });
     if (escaped.includes('alert(1)</script>') || escaped.includes('<script>alert')) throw new Error('Unicode SSR state escaping failed');
 
@@ -124,7 +124,7 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consume
   const templatesTested: { name: string; filesCount: number; success: boolean }[] = [];
 
   for (const tmpl of templateNames) {
-    const tmplDir = path.join('/tmp', `aether-template-${tmpl}`);
+    const tmplDir = path.join('/tmp', `samrey-template-${tmpl}`);
     fs.rmSync(tmplDir, { recursive: true, force: true });
     fs.mkdirSync(tmplDir, { recursive: true });
 
@@ -198,7 +198,7 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/aether-public-consume
 }
 
 if (process.argv[1]?.endsWith('smoke-test.ts') || process.argv[1]?.endsWith('smoke-test.js')) {
-  console.log('▲ Gati Clean-Room Consumer & Production Smoke Test\n');
+  console.log('▲ Samrey Clean-Room Consumer & Production Smoke Test\n');
   runSmokeTest().then((res) => {
     for (const d of res.diagnostics) {
       console.log(`  • ${d}`);

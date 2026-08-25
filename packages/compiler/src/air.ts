@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/compiler - Gati Intermediate Representation (AIR) AST Definitions
+ * @samrey/compiler - Samrey Intermediate Representation (AIR) AST Definitions
  */
 
 export * from './ast.js';

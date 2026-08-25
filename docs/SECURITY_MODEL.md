@@ -1,4 +1,4 @@
-# Security Model: Gati Frontend Framework
+# Security Model: Samrey Frontend Framework
 
 **Document**: `docs/SECURITY_MODEL.md`  
 **Classification**: Core Architecture Specification  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Security Principles
 
-Gati is engineered from the ground up on the principle of **Zero-Trust Input and Security-by-Default**. Unlike legacy frameworks where security is treated as a runtime add-on or delegated to developer discipline, Gati integrates contextual security boundaries directly into the **Compiler Pipeline**, **Reactivity Engine**, **Hydration Serializer**, and **HTTP Client**.
+Samrey is engineered from the ground up on the principle of **Zero-Trust Input and Security-by-Default**. Unlike legacy frameworks where security is treated as a runtime add-on or delegated to developer discipline, Samrey integrates contextual security boundaries directly into the **Compiler Pipeline**, **Reactivity Engine**, **Hydration Serializer**, and **HTTP Client**.
 
 ### Core Security Tenets
 1. **Zero-`eval` Runtime Guarantee**: No `eval()`, `new Function()`, or dynamic string-to-code execution in any core package. Full compatibility with the strictest Content Security Policy (`script-src 'self'`).
@@ -21,11 +21,11 @@ Gati is engineered from the ground up on the principle of **Zero-Trust Input and
 
 ## 2. Context-Aware Sanitization Pipeline
 
-A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the mismatch between the sanitization strategy and the execution context. Gati's compiler classifies every dynamic binding into one of five distinct contexts:
+A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the mismatch between the sanitization strategy and the execution context. Samrey's compiler classifies every dynamic binding into one of five distinct contexts:
 
 ```
                   ┌─────────────────────────────────────┐
-                  │ Gati Template / JSX Parser (AOT)   │
+                  │ Samrey Template / JSX Parser (AOT)   │
                   └──────────────────┬──────────────────┘
                                      │ Analyzes Insertion Context
          ┌──────────────┬────────────┼─────────────┬──────────────┐
@@ -50,14 +50,14 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
 
 ## 3. Trusted Types Architecture
 
-Gati provides native first-class integration with the W3C Trusted Types specification. When running in a browser that supports Trusted Types (or when using the polyfill), Gati creates and manages an internal, private Trusted Type Policy:
+Samrey provides native first-class integration with the W3C Trusted Types specification. When running in a browser that supports Trusted Types (or when using the polyfill), Samrey creates and manages an internal, private Trusted Type Policy:
 
 ```typescript
 // packages/security/src/trusted-types.ts
 
 let aetherPolicy: TrustedTypePolicy | null = null;
 
-export function getGatiTrustedPolicy(): TrustedTypePolicy {
+export function getSamreyTrustedPolicy(): TrustedTypePolicy {
   if (aetherPolicy) return aetherPolicy;
 
   if (typeof window !== 'undefined' && window.trustedTypes) {
@@ -68,7 +68,7 @@ export function getGatiTrustedPolicy(): TrustedTypePolicy {
       },
       createScript: () => {
         // Zero-eval policy: completely blocks dynamic script creation
-        throw new SecurityError('[Gati Security] Dynamic script creation is prohibited.');
+        throw new SecurityError('[Samrey Security] Dynamic script creation is prohibited.');
       },
       createScriptURL: (url: string) => {
         return sanitizeScriptUrl(url);
@@ -86,8 +86,8 @@ export function getGatiTrustedPolicy(): TrustedTypePolicy {
 
 A critical vulnerability in SSR applications is **Hydration Script Injection**. When state is serialized to a `<script>` tag for client hydration, user input containing `</script><script>maliciousCode()</script>` can prematurely close the script tag and execute arbitrary JavaScript.
 
-### Gati Serialization Protocol
-Gati uses a dedicated **Safe JSON Serializer** for all SSR state transfers (`window.__AETHER_STATE__`):
+### Samrey Serialization Protocol
+Samrey uses a dedicated **Safe JSON Serializer** for all SSR state transfers (`window.__AETHER_STATE__`):
 
 ```typescript
 // packages/ssr/src/serializer.ts
@@ -116,7 +116,7 @@ export function serializeForHydration(data: unknown): string {
 
 ## 5. Form & CSRF Defense Architecture
 
-Gati's built-in `@gati/forms` and `@gati/http` packages enforce CSRF protection without requiring third-party middleware:
+Samrey's built-in `@samrey/forms` and `@samrey/http` packages enforce CSRF protection without requiring third-party middleware:
 
 ```
 [Form Submission / Action] ──> [Cryptographic Origin / Referer Check]
@@ -139,7 +139,7 @@ Gati's built-in `@gati/forms` and `@gati/http` packages enforce CSRF protection 
 
 ## 6. HTTP & Network Security Policies
 
-The `@gati/http` client enforces enterprise security policies by default:
+The `@samrey/http` client enforces enterprise security policies by default:
 
 * **Automatic Header Injections**: Configurable default headers for `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `X-Frame-Options: DENY`.
 * **Subresource Integrity (SRI) Support**: Automatic generation and verification of SRI hashes for code-split lazy chunks.
@@ -149,7 +149,7 @@ The `@gati/http` client enforces enterprise security policies by default:
 
 ## 7. Comparative Threat Matrix
 
-| Threat Vector | Common Framework Vulnerability | Gati Architectural Countermeasure | Classification |
+| Threat Vector | Common Framework Vulnerability | Samrey Architectural Countermeasure | Classification |
 | :--- | :--- | :--- | :--- |
 | **DOM-based XSS via `innerHTML`** | Accidental use of `v-html` or `dangerouslySetInnerHTML` | No direct `innerHTML` access in compiler output; requires `<SafeHtml>` + Trusted Types | **[Category A Defense]** |
 | **Script Tag Breakout during SSR** | Raw `JSON.stringify(state)` embedded in HTML template | Mandatory Unicode escaping of `<, >, &, \u2028, \u2029` | **[Category A Defense]** |

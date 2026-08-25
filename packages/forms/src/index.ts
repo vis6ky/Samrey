@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/forms - Main Entry Point
+ * @samrey/forms - Main Entry Point
  */
 
 export * from './standard-schema.js';

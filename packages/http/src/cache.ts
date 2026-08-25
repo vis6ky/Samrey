@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/http - In-Memory Deduplication Cache
+ * @samrey/http - In-Memory Deduplication Cache
  */
 
 export class RequestCache {

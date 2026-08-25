@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * Gati Framework — Hydration & Event Replay Example
+ * Samrey Framework — Hydration & Event Replay Example
  */
 
 import {

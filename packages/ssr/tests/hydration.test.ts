@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getDelegatedEventScript, replayCapturedEvents, hydrate } from '../src/index.js';
 
-describe('@gati/ssr - Client Hydration & Event Replay', () => {
+describe('@samrey/ssr - Client Hydration & Event Replay', () => {
   it('generates ultra-compact pre-hydration event listener script', () => {
     const script = getDelegatedEventScript(['click', 'input', 'submit']);
     assert.ok(script.includes('window.__AETHER_EVENTS__=[]'));

@@ -1,29 +1,29 @@
-# @gati/runtime
+# @samrey/runtime
 
 Direct DOM rendering engine, reactive hole bindings, declarative control flow, and lifecycle management with zero Virtual DOM.
 
 ## Purpose
 
-`@gati/runtime` provides the core rendering and component system for Gati applications. It executes components exactly once to construct direct DOM trees and attaches fine-grained signal subscriptions to dynamic text and attribute slots.
+`@samrey/runtime` provides the core rendering and component system for Samrey applications. It executes components exactly once to construct direct DOM trees and attaches fine-grained signal subscriptions to dynamic text and attribute slots.
 
 ## Installation
 
 ```bash
-npm install @gati/runtime @gati/reactivity
+npm install @samrey/runtime @samrey/reactivity
 ```
 
 ## Quick Example
 
 ```ts
-import { el, Show, For, mount } from '@gati/runtime';
-import { signal } from '@gati/reactivity';
+import { el, Show, For, mount } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 function App() {
   const count = signal(0);
   const items = signal(['Alpha', 'Beta', 'Gamma']);
 
   return el('div', { class: 'app-container' },
-    el('h1', null, 'Gati Runtime Application'),
+    el('h1', null, 'Samrey Runtime Application'),
     el('button', {
       type: 'button',
       onClick: () => { count.value++; }
@@ -74,7 +74,7 @@ Automatic HTML attribute sanitization and URL validation for `href`, `src`, and 
 
 ## Related Packages
 
-- `@gati/reactivity` — Fine-grained signals engine powering runtime bindings.
-- `@gati/router` — Declarative routing for Gati applications.
-- `@gati/ssr` — Server-Side Rendering and hydration.
+- `@samrey/reactivity` — Fine-grained signals engine powering runtime bindings.
+- `@samrey/router` — Declarative routing for Samrey applications.
+- `@samrey/ssr` — Server-Side Rendering and hydration.
 

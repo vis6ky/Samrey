@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Project Detail & Task Management View
- * Native Gati Reactive View with project-scoped tasks, status filtering, and task creation
+ * Samrey Project Manager — Project Detail & Task Management View
+ * Native Samrey Reactive View with project-scoped tasks, status filtering, and task creation
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { store, filteredTasks } from '../state.js';
 import { TaskItem } from '../components/TaskItem.js';
 

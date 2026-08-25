@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Framework Architecture & About View
+ * @samrey/task-studio - Framework Architecture & About View
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { Card } from '../components/ui/Card.js';
 import { Badge } from '../components/ui/Badge.js';
 import { Button } from '../components/ui/Button.js';
@@ -21,13 +21,13 @@ export function AboutView(props: AboutViewProps): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-emerald-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
-      el('span', null, 'Gati Framework v1.0.0 GA Certified')
+      el('span', null, 'Samrey Framework v1.0.0 GA Certified')
     ),
-    el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'About Gati Task Studio'),
+    el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'About Samrey Task Studio'),
     el(
       'p',
       { class: 'text-xs text-slate-500 mt-0.5' },
-      'A real-world production-style task application proving framework independence, zero foreign UI dependencies, and pure native Gati engineering.'
+      'A real-world production-style task application proving framework independence, zero foreign UI dependencies, and pure native Samrey engineering.'
     )
   );
   container.appendChild(header);
@@ -79,22 +79,22 @@ export function AboutView(props: AboutViewProps): HTMLElement {
 
   // 3. Monorepo Published Packages Matrix
   const packages = [
-    { name: '@gati/reactivity', desc: 'Push-pull signal engine, computed caches, batching & ownership lifecycle' },
-    { name: '@gati/runtime', desc: 'Direct DOM template bindings, event listeners, Show & keyed For control flow' },
-    { name: '@gati/router', desc: 'Declarative routing, pattern matcher, parameter extraction, and active link state' },
-    { name: '@gati/forms', desc: 'Standard Schema (~v1) integration, reactive field controllers, ARIA generators' },
-    { name: '@gati/http', desc: 'Resilient HTTP client, abort controllers, request caching, and reactive resources' },
-    { name: '@gati/security', desc: 'Zero-eval HTML sanitization, safe URI schemas, and prototype pollution scrubbing' },
-    { name: '@gati/ssr', desc: 'Streaming and string SSR, secret stripping, Unicode escaping, and event hydration' },
-    { name: '@gati/compiler', desc: 'ASCII template parser, semantic analyzer, AIR intermediate representation' },
-    { name: '@gati/testing', desc: 'Isolated test harness, microtask flusher, and DOM event dispatch simulator' },
-    { name: '@gati/devtools', desc: 'Performance profiler, dependency graph visualizer, and component inspector' },
-    { name: '@gati/cli', desc: 'Monorepo project scaffolding, bundle analyzers, and package validation tools' }
+    { name: '@samrey/reactivity', desc: 'Push-pull signal engine, computed caches, batching & ownership lifecycle' },
+    { name: '@samrey/runtime', desc: 'Direct DOM template bindings, event listeners, Show & keyed For control flow' },
+    { name: '@samrey/router', desc: 'Declarative routing, pattern matcher, parameter extraction, and active link state' },
+    { name: '@samrey/forms', desc: 'Standard Schema (~v1) integration, reactive field controllers, ARIA generators' },
+    { name: '@samrey/http', desc: 'Resilient HTTP client, abort controllers, request caching, and reactive resources' },
+    { name: '@samrey/security', desc: 'Zero-eval HTML sanitization, safe URI schemas, and prototype pollution scrubbing' },
+    { name: '@samrey/ssr', desc: 'Streaming and string SSR, secret stripping, Unicode escaping, and event hydration' },
+    { name: '@samrey/compiler', desc: 'ASCII template parser, semantic analyzer, AIR intermediate representation' },
+    { name: '@samrey/testing', desc: 'Isolated test harness, microtask flusher, and DOM event dispatch simulator' },
+    { name: '@samrey/devtools', desc: 'Performance profiler, dependency graph visualizer, and component inspector' },
+    { name: '@samrey/cli', desc: 'Monorepo project scaffolding, bundle analyzers, and package validation tools' }
   ];
 
   const packagesCard = Card(
     {
-      title: 'Gati Monorepo Package Ecosystem',
+      title: 'Samrey Monorepo Package Ecosystem',
       subtitle: 'All 11 core packages published and dogfooded directly in this application',
       padding: 'none'
     },

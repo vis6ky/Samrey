@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Task Data Service with @gati/http
+ * @samrey/task-studio - Task Data Service with @samrey/http
  */
 
 import { TaskItem, TaskActivityLog, TaskFormValues } from '../types.js';

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Badge Component
+ * @samrey/task-studio - Accessible Badge Component
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 import { TaskPriority, TaskStatus, TaskCategory } from '../../types.js';
 
 export interface BadgeProps {

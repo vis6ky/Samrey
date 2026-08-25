@@ -8,7 +8,7 @@ import {
   buildAIRFromAST
 } from '../src/index.js';
 
-describe('@gati/compiler - Phase 9B Optimizations', () => {
+describe('@samrey/compiler - Phase 9B Optimizations', () => {
   it('evaluates and folds constant expressions correctly', () => {
     assert.deepEqual(evaluateConstantExpression('"hello"'), { isConstant: true, value: 'hello' });
     assert.deepEqual(evaluateConstantExpression("'world'"), { isConstant: true, value: 'world' });

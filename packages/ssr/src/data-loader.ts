@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/ssr - Server-Side Data Loading & Hydration Cache
+ * @samrey/ssr - Server-Side Data Loading & Hydration Cache
  */
 
-import { signal, Signal, ReadonlySignal } from '@gati/reactivity';
+import { signal, Signal, ReadonlySignal } from '@samrey/reactivity';
 import { getSSRContext } from './context.js';
 import { deserializeHydrationState } from './serializer.js';
 

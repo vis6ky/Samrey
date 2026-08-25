@@ -1,13 +1,13 @@
-# Forms & Validation in Gati
+# Forms & Validation in Samrey
 
-## 1. Standard Schema Integration (`@gati/forms`)
+## 1. Standard Schema Integration (`@samrey/forms`)
 
-Gati provides first-class support for any validator adhering to the [Standard Schema](https://standardschema.dev) specification (including Zod, Valibot, and ArkType), as well as custom validation functions.
+Samrey provides first-class support for any validator adhering to the [Standard Schema](https://standardschema.dev) specification (including Zod, Valibot, and ArkType), as well as custom validation functions.
 
 ### Creating a Reactive Form
 
 ```typescript
-import { createForm } from '@gati/forms';
+import { createForm } from '@samrey/forms';
 
 export function RegistrationForm() {
   const form = createForm({
@@ -33,7 +33,7 @@ export function RegistrationForm() {
 
 ## 2. Automated ARIA & Accessibility Bindings
 
-When a field has an error, `@gati/forms` automatically manages accessibility attributes on the input element:
+When a field has an error, `@samrey/forms` automatically manages accessibility attributes on the input element:
 - `aria-invalid="true"`
 - `aria-describedby="[field-name]-error"`
 - `aria-required="true"`
@@ -41,7 +41,7 @@ When a field has an error, `@gati/forms` automatically manages accessibility att
 ### Binding to DOM Elements
 
 ```typescript
-import { bindField } from '@gati/forms';
+import { bindField } from '@samrey/forms';
 
 const inputElement = document.querySelector('input[name="email"]') as HTMLInputElement;
 const errorElement = document.querySelector('#email-error') as HTMLElement;
@@ -56,4 +56,4 @@ bindField(inputElement, form.fields.email, {
 
 ## 3. Prototype Pollution Defense
 
-`@gati/forms` scrubs `__proto__`, `constructor`, and `prototype` keys during form initialization and value updates, preventing malicious form fields from mutating the global JavaScript object prototype.
+`@samrey/forms` scrubs `__proto__`, `constructor`, and `prototype` keys during form initialization and value updates, preventing malicious form fields from mutating the global JavaScript object prototype.

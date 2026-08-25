@@ -1,9 +1,9 @@
-# Gati Framework — Phase 19 Public API Export Verification Report
+# Samrey Framework — Phase 19 Public API Export Verification Report
 Target Version: 1.0.0-rc.1
 License: Apache-2.0
 
 ## Executive Summary
-This document provides an exhaustive, automated verification of all public APIs across the 11 `@gati/*` packages in the monorepo, compared directly against `docs/PUBLIC_API.md`.
+This document provides an exhaustive, automated verification of all public APIs across the 11 `@samrey/*` packages in the monorepo, compared directly against `docs/PUBLIC_API.md`.
 
 All public symbols were loaded, invoked, and validated in an isolated clean-room consumer environment.
 
@@ -11,7 +11,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
 
 ## Package Verification Matrix
 
-### 1. `@gati/reactivity`
+### 1. `@samrey/reactivity`
 - **Status:** PASS
 - **Exports Verified:**
   - `signal` (Signal constructor)
@@ -28,7 +28,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `useContext` (Context value consumer)
   - `createOwner`, `getOwner`, `runWithOwner`, `onCleanup`
 
-### 2. `@gati/runtime`
+### 2. `@samrey/runtime`
 - **Status:** PASS
 - **Exports Verified:**
   - `el` (Fine-grained DOM / Headless node builder)
@@ -48,7 +48,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `onMount`, `onCleanup`, `onError`
   - `createComponent`
 
-### 3. `@gati/security`
+### 3. `@samrey/security`
 - **Status:** PASS
 - **Exports Verified:**
   - `sanitizeHtml` / `sanitizeHtmlString` (AST tag/attribute sanitizer)
@@ -60,22 +60,22 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `safeJsonStringify` / `escapeForScriptPayload` (XSS-safe JSON stringifier)
   - `createCsrfToken` (Cryptographically random CSRF generator)
   - `validateCsrfToken` (Timing-safe constant-time CSRF validator)
-  - `TrustedTypesPolicy` / `getGatiTrustedPolicy` (W3C Trusted Types provider)
+  - `TrustedTypesPolicy` / `getSamreyTrustedPolicy` (W3C Trusted Types provider)
 
-### 4. `@gati/compiler`
+### 4. `@samrey/compiler`
 - **Status:** PASS
 - **Exports Verified:**
-  - `compileTemplate` (Gati template to AIR & JS compiler)
+  - `compileTemplate` (Samrey template to AIR & JS compiler)
   - `parseTemplate` (Recursive-descent template parser)
   - `buildAIR` / `buildAIRFromAST` (Intermediate representation builder)
   - `generateCode` / `generateModuleCode` (JS Code generator)
   - `classifySecurityNode` / `classifyBindingContext` (Security context classifier)
   - `lintAccessibility` / `lintA11y` (Static accessibility linter)
-  - `GatiCompilerError` (Structured compiler error class)
+  - `SamreyCompilerError` (Structured compiler error class)
   - `generateSourceFrame` (Source code frame generator)
   - `ERROR_REGISTRY` (Standard compiler and runtime error definitions)
 
-### 5. `@gati/router`
+### 5. `@samrey/router`
 - **Status:** PASS
 - **Exports Verified:**
   - `createRouter` (Router state machine and navigation engine)
@@ -88,7 +88,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `useRouter`, `useParams`, `useLocation`, `useSearchParams`
   - `createBrowserHistory`, `createMemoryHistory`
 
-### 6. `@gati/http`
+### 6. `@samrey/http`
 - **Status:** PASS
 - **Exports Verified:**
   - `createResource` (Reactive async resource manager)
@@ -96,7 +96,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `createHttpCache` (In-memory TTL HTTP cache with cache invalidation)
   - `HttpError` (HTTP response error class)
 
-### 7. `@gati/forms`
+### 7. `@samrey/forms`
 - **Status:** PASS
 - **Exports Verified:**
   - `createForm` (Reactive schema form manager)
@@ -104,7 +104,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `validateSchema` (Standard Schema ~v1 executor)
   - `getAccessibleFieldProps` (ARIA & accessibility attributes generator)
 
-### 8. `@gati/ssr`
+### 8. `@samrey/ssr`
 - **Status:** PASS
 - **Exports Verified:**
   - `renderToString` (Async SSR HTML renderer with state serialization)
@@ -115,7 +115,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `serializeStateForHydration` / `escapeJsonState` (Script injection safe JSON state tag builder)
   - `createSSRContext`, `runWithSSRContext`, `resolveSSRContext`
 
-### 9. `@gati/testing`
+### 9. `@samrey/testing`
 - **Status:** PASS
 - **Exports Verified:**
   - `renderTestComponent` (Isolated container test renderer)
@@ -124,29 +124,29 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
   - `cleanupAllTestContainers` (Test container disposal coordinator)
   - `createMockResource` (Test HTTP resource mock builder)
 
-### 10. `@gati/devtools`
+### 10. `@samrey/devtools`
 - **Status:** PASS
 - **Exports Verified:**
-  - `DevToolsBridge`, `aetherDevToolsBridge`, `GatiDevToolsBridge`
+  - `DevToolsBridge`, `aetherDevToolsBridge`, `SamreyDevToolsBridge`
   - `initDevTools` (Origin-locked DevTools initializer)
   - `GraphInspector`, `ReactiveGraphInspector` (Signal dependency graph inspector)
   - `ComponentInspector` (Component hierarchy inspector)
   - `PerformanceInspector`, `PerfInspector` (Fine-grained update profiler)
   - `NetworkInspector`, `FormInspector`, `RouterInspector`
 
-### 11. `@gati/cli`
+### 11. `@samrey/cli`
 - **Status:** PASS
 - **Exports Verified:**
   - `runCLI` (Command-line interface runner)
   - `generateStarterProject` (Template generator: ssr, spa, minimal, ssg)
   - `aetherVitePlugin` (Vite compiler integration plugin)
-  - `runGatiAudit` (Security and accessibility auditor)
+  - `runSamreyAudit` (Security and accessibility auditor)
   - `CLI_VERSION` (Version constant = '1.0.0-rc.1')
 
 ---
 
 ## Independent Consumer Execution Proof
-Executed inside `/tmp/aether-release-consumer` using packed `.tgz` artifacts:
+Executed inside `/tmp/samrey-release-consumer` using packed `.tgz` artifacts:
 - Tarballs packed: 11
 - Successful package installations: 11/11
 - Zero external UI dependencies detected: PASS

@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Keyed Task List Component with DOM Node Reuse
+ * @samrey/task-studio - Keyed Task List Component with DOM Node Reuse
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { TaskItem } from '../types.js';
 import { tasksState, resetTaskFilters } from '../state/tasks.store.js';
 import { TaskCard } from './TaskCard.js';

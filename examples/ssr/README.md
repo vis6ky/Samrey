@@ -1,6 +1,6 @@
-# Gati SSR Example
+# Samrey SSR Example
 
-This example demonstrates server-side rendering (SSR) in Gati with automatic state serialization, secret leakage protection, and client-side hydration.
+This example demonstrates server-side rendering (SSR) in Samrey with automatic state serialization, secret leakage protection, and client-side hydration.
 
 ## Features
 

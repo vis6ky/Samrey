@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/security - Main Entry Point
+ * @samrey/security - Main Entry Point
  */
 
 export * from './sanitizer.js';

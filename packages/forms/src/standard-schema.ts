@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/forms - Standard Schema Compatibility Specification (~v1)
+ * @samrey/forms - Standard Schema Compatibility Specification (~v1)
  */
 
 export interface StandardSchemaIssue {

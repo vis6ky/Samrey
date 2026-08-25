@@ -1,5 +1,5 @@
 {
-  "name": "@gati/example-ssg",
+  "name": "@samrey/example-ssg",
   "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
@@ -8,9 +8,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gati/reactivity": "^1.0.0-rc.1",
-    "@gati/runtime": "^1.0.0-rc.1",
-    "@gati/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^1.0.0-rc.1",
+    "@samrey/runtime": "^1.0.0-rc.1",
+    "@samrey/ssr": "^1.0.0-rc.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/runtime - Main Entry Point
+ * @samrey/runtime - Main Entry Point
  */
 
 export * from './template.js';

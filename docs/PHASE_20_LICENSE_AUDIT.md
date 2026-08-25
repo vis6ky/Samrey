@@ -1,4 +1,4 @@
-# Gati Framework — Phase 20 License & Security Audit Report
+# Samrey Framework — Phase 20 License & Security Audit Report
 
 **Target Version:** 1.0.0-rc.1  
 **Audit Date:** 2026-08-21  
@@ -24,17 +24,17 @@ An exhaustive scan across all packages, source files, documentation, examples, a
 | Package Name | Manifest `license` | `LICENSE` File Present | SPDX Header Coverage | Result |
 | :--- | :--- | :--- | :--- | :--- |
 | `aether` (Monorepo Root) | `Apache-2.0` | Yes (`/LICENSE`) | 100% | **PASS** |
-| `@gati/reactivity` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/runtime` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/security` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/compiler` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/router` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/http` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/forms` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/ssr` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/testing` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/devtools` | `Apache-2.0` | Yes | 100% | **PASS** |
-| `@gati/cli` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/reactivity` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/runtime` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/security` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/compiler` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/router` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/http` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/forms` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/ssr` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/testing` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/devtools` | `Apache-2.0` | Yes | 100% | **PASS** |
+| `@samrey/cli` | `Apache-2.0` | Yes | 100% | **PASS** |
 
 ---
 
@@ -67,4 +67,4 @@ All 11 packages were analyzed for foreign runtime frameworks:
 [AUDIT] Checking Redux / Zustand / MobX: 0 references in production runtimes
 ```
 
-**Architectural Rule Status:** **PASS ("Gati Must Use Gati" 100% Enforced)**
+**Architectural Rule Status:** **PASS ("Samrey Must Use Samrey" 100% Enforced)**

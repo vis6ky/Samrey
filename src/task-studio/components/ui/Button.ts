@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/task-studio - Accessible Button Component
+ * @samrey/task-studio - Accessible Button Component
  */
 
-import { el } from '@gati/runtime';
+import { el } from '@samrey/runtime';
 
 export interface ButtonProps {
   id?: string;

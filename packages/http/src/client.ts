@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/http - Fetch Client Wrapper
+ * @samrey/http - Fetch Client Wrapper
  */
 
-import { sanitizeUri } from '@gati/security';
+import { sanitizeUri } from '@samrey/security';
 
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number;
@@ -16,7 +16,7 @@ export class HttpClient {
     const raw = this.baseUrl ? `${this.baseUrl}${path}` : path;
     const safe = sanitizeUri(raw);
     if (safe === 'about:blank' && raw !== 'about:blank') {
-      throw new Error(`[Gati HTTP] Blocked insecure request URL: "${raw}"`);
+      throw new Error(`[Samrey HTTP] Blocked insecure request URL: "${raw}"`);
     }
     return raw;
   }

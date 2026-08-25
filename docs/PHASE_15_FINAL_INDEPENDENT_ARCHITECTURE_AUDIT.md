@@ -1,25 +1,25 @@
-# Gati Framework — Phase 15
+# Samrey Framework — Phase 15
 # Final Independent Architecture, Zero-Dependency & Runtime Verification Report
 
 **Target Version:** `1.0.0-rc.1`  
 **Audit Date:** August 21, 2026  
 **Auditor:** Independent Architecture Verification Engine  
 **Final Status:** **PASS (100% Verified)**  
-**Core Architectural Claim:** *"Gati is a standalone web framework capable of building Gati itself."*
+**Core Architectural Claim:** *"Samrey is a standalone web framework capable of building Samrey itself."*
 
 ---
 
 ## 1. Executive Summary & Audit Verdict
 
-A rigorous, independent, zero-trust architectural audit was conducted across the entire Gati Framework repository. Every package manifest, lockfile, source module, build artifact, production bundle, test suite, and external consumer scenario was audited and executed in isolation.
+A rigorous, independent, zero-trust architectural audit was conducted across the entire Samrey Framework repository. Every package manifest, lockfile, source module, build artifact, production bundle, test suite, and external consumer scenario was audited and executed in isolation.
 
 ### Final Audit Verdict: **PASS**
-Gati satisfies all architectural requirements without reservation or exception:
+Samrey satisfies all architectural requirements without reservation or exception:
 - **Zero Prohibited UI Frameworks:** There is **0%** dependency on React, React DOM, Vue, Angular, Svelte, Solid, Preact, Lit, or any other third-party UI framework in runtime production, internal tooling, documentation UI, or published packages.
-- **Gati-Native Dogfooding:** The entire documentation application, interactive playgrounds, architecture explorer, and telemetry interfaces are constructed **100% with native Gati primitives** (`@gati/runtime`, `@gati/reactivity`, `@gati/router`, `@gati/compiler`, `@gati/ssr`, and `@gati/security`).
+- **Samrey-Native Dogfooding:** The entire documentation application, interactive playgrounds, architecture explorer, and telemetry interfaces are constructed **100% with native Samrey primitives** (`@samrey/runtime`, `@samrey/reactivity`, `@samrey/router`, `@samrey/compiler`, `@samrey/ssr`, and `@samrey/security`).
 - **Complete Monorepo Test Suite:** **130 of 130 tests** pass across **38 test suites** with zero failures or skipped assertions.
 - **Strict Type Safety:** Complete TypeScript type checking (`tsc --noEmit`) passes with **0 errors**.
-- **External Consumer Readiness:** An independent external consumer project initialized in an isolated directory cleanly imports and executes all 8 core Gati packages without auxiliary dependencies.
+- **External Consumer Readiness:** An independent external consumer project initialized in an isolated directory cleanly imports and executes all 8 core Samrey packages without auxiliary dependencies.
 
 ---
 
@@ -41,18 +41,18 @@ A recursive static and dynamic scan of all `package.json` files and source files
 | `lucide-react` | 0 | 0 | None (0 bytes) | **CLEAN** |
 | `framer-motion` | 0 | 0 | None (0 bytes) | **CLEAN** |
 
-*Note: All UI icons are rendered using Gati-native SVG helper primitives (`svgEl`, `pathEl`) located in `src/lib/icons.ts`.*
+*Note: All UI icons are rendered using Samrey-native SVG helper primitives (`svgEl`, `pathEl`) located in `src/lib/icons.ts`.*
 
 ### 2.2 Production Bundle Analysis
 - **Build Artifact:** `dist/assets/index-Ds6bMRHP.js` (Built with Vite + `@tailwindcss/vite`)
-- **Bundle Inspection:** Verified to contain only native Gati runtime primitives (`el`, `svgEl`, `mount`, `signal`, `computed`, `effect`, `batch`, `Show`, `For`).
+- **Bundle Inspection:** Verified to contain only native Samrey runtime primitives (`el`, `svgEl`, `mount`, `signal`, `computed`, `effect`, `batch`, `Show`, `For`).
 - **Occurrences of Framework Names:** Present strictly within descriptive technical strings for benchmark comparisons and documentation matrices; zero execution code from foreign frameworks exists in the bundle.
 
 ---
 
-## 3. Gati-Native UI Architecture & Dogfooding
+## 3. Samrey-Native UI Architecture & Dogfooding
 
-The documentation application located in `src/` is built entirely on Gati's native architecture:
+The documentation application located in `src/` is built entirely on Samrey's native architecture:
 
 ### 3.1 Core Primitives Used in Application UI
 - **DOM Instantiation:** Direct DOM element creation via `el(tag, props, ...children)` and SVG generation via `svgEl(tag, props, ...children)`.
@@ -73,7 +73,7 @@ The documentation application located in `src/` is built entirely on Gati's nati
 
 ## 4. Monorepo Package Subsystems Breakdown
 
-The Gati Framework comprises 11 tightly integrated packages:
+The Samrey Framework comprises 11 tightly integrated packages:
 
 ```
 packages/
@@ -139,7 +139,7 @@ packages/
 
 ## 6. External Consumer Sandbox Verification
 
-To verify that Gati packages function in isolation for third-party consumers, an independent consumer application was created in `/tmp/aether-final-consumer` and executed without framework bundling layers.
+To verify that Samrey packages function in isolation for third-party consumers, an independent consumer application was created in `/tmp/samrey-final-consumer` and executed without framework bundling layers.
 
 ### Verified Consumer Capabilities:
 1. **Reactivity Engine:** Glitch-free topological signal updates, batch transactions, and computed memoization.
@@ -171,7 +171,7 @@ To verify that Gati packages function in isolation for third-party consumers, an
 
 ## 7. Security Hardening & Zero-Eval Certification
 
-Gati enforces a zero-trust, zero-eval security model across compiler, runtime, and SSR:
+Samrey enforces a zero-trust, zero-eval security model across compiler, runtime, and SSR:
 - **Zero `eval()` / `new Function()`:** The compiler parses templates via an ASCII lookup table recursive-descent parser and generates deterministic code; no runtime code generation or dynamic script evaluation is permitted.
 - **Prototype Pollution Defense:** Recursive scrubbers cleanse `__proto__`, `constructor`, and `prototype` keys during state serialization, deserialization, and form binding.
 - **SSR Secret Guard:** Automated object tree traversal replaces sensitive credential keys (`token`, `password`, `secret`, `apiKey`, `bearer`, `privateKey`) with redaction markers before client hydration payloads are emitted.
@@ -185,14 +185,14 @@ Gati enforces a zero-trust, zero-eval security model across compiler, runtime, a
 
 | Architectural Mandate | Status | Verification Evidence |
 | :--- | :---: | :--- |
-| **"Gati Must Use Gati"** | **COMPLIANT** | Source code in `src/` uses only `@gati/*` packages. |
+| **"Samrey Must Use Samrey"** | **COMPLIANT** | Source code in `src/` uses only `@samrey/*` packages. |
 | **Zero External UI Frameworks** | **COMPLIANT** | Manifests, bundle, and runtime free of React, Vue, Svelte, Angular, Solid. |
 | **Complete Unit & Integration Testing** | **COMPLIANT** | 130 / 130 tests passing across 38 suites. |
 | **Zero TypeScript Compilation Errors** | **COMPLIANT** | `tsc --noEmit` exits with status 0. |
-| **Production Bundle Purity** | **COMPLIANT** | `vite build` produces clean, Gati-only assets. |
+| **Production Bundle Purity** | **COMPLIANT** | `vite build` produces clean, Samrey-only assets. |
 | **External Consumer Independence** | **COMPLIANT** | Clean execution in isolated sandbox. |
 
 ### Final Sign-Off
-**Certification:** The Gati Framework v1.0.0-rc.1 is certified as a standalone, framework-independent, self-hosting frontend architecture.
+**Certification:** The Samrey Framework v1.0.0-rc.1 is certified as a standalone, framework-independent, self-hosting frontend architecture.
 
 **Verdict: PASS**

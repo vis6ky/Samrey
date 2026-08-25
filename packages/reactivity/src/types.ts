@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/reactivity - Types & Core Interfaces
+ * @samrey/reactivity - Types & Core Interfaces
  */
 
 export interface ReactiveNode {

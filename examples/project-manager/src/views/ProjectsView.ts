@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Projects List & Filtering View
- * Native Gati View with search, category filtering, and sorting
+ * Samrey Project Manager — Projects List & Filtering View
+ * Native Samrey View with search, category filtering, and sorting
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { store, filteredProjects } from '../state.js';
 import { ProjectCard } from '../components/ProjectCard.js';
 

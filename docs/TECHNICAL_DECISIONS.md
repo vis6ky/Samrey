@@ -1,8 +1,8 @@
-# Architecture Decision Records (ADRs): Gati Framework
+# Architecture Decision Records (ADRs): Samrey Framework
 
 **Document**: `docs/TECHNICAL_DECISIONS.md`  
 **Status**: Formal Architectural Standard  
-**Framework**: Gati  
+**Framework**: Samrey  
 
 ---
 
@@ -32,7 +32,7 @@ Frontend frameworks historically rely on either:
 The VDOM approach incurs continuous memory allocation for virtual nodes, garbage collection pressure, and structural re-render cascades that necessitate complex manual memoization (`useMemo`, `useCallback`, `React.memo`).
 
 ### Decision
-Gati will utilize a **Fine-Grained Push-Pull Topological Signal Engine**. Component functions will execute **exactly once** during mounting. Signals will directly notify and update targeted DOM text nodes and element properties without diffing any intermediate trees.
+Samrey will utilize a **Fine-Grained Push-Pull Topological Signal Engine**. Component functions will execute **exactly once** during mounting. Signals will directly notify and update targeted DOM text nodes and element properties without diffing any intermediate trees.
 
 ### Consequences & Tradeoffs
 * **Positive**:
@@ -57,7 +57,7 @@ Direct DOM manipulation can be performed by either:
 Browser benchmarks demonstrate that cloning pre-parsed HTML templates via native browser C++ engines is 3x to 5x faster than sequential JS DOM creation calls and uses significantly less JS heap memory.
 
 ### Decision
-The `@gati/compiler` will extract all static HTML subtrees into module-scoped `<template>` elements and emit `cloneNode(true)` invocations with direct sibling traversal paths (`firstChild`, `nextSibling`) for dynamic slot insertion.
+The `@samrey/compiler` will extract all static HTML subtrees into module-scoped `<template>` elements and emit `cloneNode(true)` invocations with direct sibling traversal paths (`firstChild`, `nextSibling`) for dynamic slot insertion.
 
 ### Consequences & Tradeoffs
 * **Positive**: Maximum initial rendering throughput; highly compact compiled output.
@@ -74,7 +74,7 @@ The `@gati/compiler` will extract all static HTML subtrees into module-scoped `<
 Legacy template systems frequently use `new Function()` or `eval()` to compile dynamic expressions at runtime in the browser. This violates strict Content Security Policies (`script-src 'self'`) and introduces Cross-Site Scripting (XSS) attack vectors.
 
 ### Decision
-Gati core packages will **strictly forbid any usage of `eval()`, `new Function()`, or dynamic script tag execution**. All expressions must be compiled Ahead-of-Time. Dynamic HTML rendering will be restricted to an explicit `<SafeHtml>` component backed by a cryptographically sealed W3C Trusted Types policy (`aether#html`).
+Samrey core packages will **strictly forbid any usage of `eval()`, `new Function()`, or dynamic script tag execution**. All expressions must be compiled Ahead-of-Time. Dynamic HTML rendering will be restricted to an explicit `<SafeHtml>` component backed by a cryptographically sealed W3C Trusted Types policy (`aether#html`).
 
 ### Consequences & Tradeoffs
 * **Positive**: Full compliance with the highest enterprise security standards; zero risk of template expression injection.
@@ -91,7 +91,7 @@ Gati core packages will **strictly forbid any usage of `eval()`, `new Function()
 Form validation in modern TypeScript ecosystems is fragmented across libraries like Zod, Valibot, ArkType, and Yup. Building a proprietary validation syntax forces developers to learn redundant APIs and write custom validation bridges.
 
 ### Decision
-Gati's `@gati/forms` package will natively implement the **Standard Schema Specification** (`~standard`). Any schema from Zod v3.24+, Valibot v1+, or ArkType will work out-of-the-box with full TypeScript inference, automatic `aria-invalid` bindings, and asynchronous server-side action validation.
+Samrey's `@samrey/forms` package will natively implement the **Standard Schema Specification** (`~standard`). Any schema from Zod v3.24+, Valibot v1+, or ArkType will work out-of-the-box with full TypeScript inference, automatic `aria-invalid` bindings, and asynchronous server-side action validation.
 
 ### Consequences & Tradeoffs
 * **Positive**: Zero vendor lock-in; interoperable with existing enterprise schema libraries; zero runtime validation bundle penalty if using lightweight libraries like Valibot.
@@ -107,7 +107,7 @@ Gati's `@gati/forms` package will natively implement the **Standard Schema Speci
 Traditional SSR hydration requires the browser to download the entire JavaScript bundle, re-execute the entire component hierarchy, and build an in-memory representation before attaching event listeners. This results in the "Uncanny Valley"—the page looks loaded but is unresponsive to user clicks.
 
 ### Decision
-Gati will implement **Out-of-Order Streaming SSR** combined with **Resumable Micro-Hydration**. Event listeners will be delegated to a lightweight root listener (200 bytes) immediately upon HTML parsing. Components will resume state from serialized Unicode JSON payloads without re-executing component initialization logic.
+Samrey will implement **Out-of-Order Streaming SSR** combined with **Resumable Micro-Hydration**. Event listeners will be delegated to a lightweight root listener (200 bytes) immediately upon HTML parsing. Components will resume state from serialized Unicode JSON payloads without re-executing component initialization logic.
 
 ### Consequences & Tradeoffs
 * **Positive**: Near-zero Time-to-Interactive (TTI); user interactions during loading are buffered and replayed with zero dropped clicks.
@@ -124,7 +124,7 @@ Gati will implement **Out-of-Order Streaming SSR** combined with **Resumable Mic
 Monolithic frontend frameworks lead to bloated client bundles when developers only need specific sub-features. Poorly defined package boundaries cause circular dependencies and hinder tree-shaking.
 
 ### Decision
-Gati will be structured as a monorepo with 12 distinct packages adhering to a strict Direct Acyclic Graph (DAG). Foundational packages (`@gati/reactivity`, `@gati/security`) will have zero internal dependencies.
+Samrey will be structured as a monorepo with 12 distinct packages adhering to a strict Direct Acyclic Graph (DAG). Foundational packages (`@samrey/reactivity`, `@samrey/security`) will have zero internal dependencies.
 
 ---
 
@@ -137,7 +137,7 @@ Gati will be structured as a monorepo with 12 distinct packages adhering to a st
 React's `useEffect` pattern for data fetching is notorious for race conditions, waterfall requests, missing cleanup handlers, and unhandled promise rejections.
 
 ### Decision
-Gati will provide first-class `createResource(fetcher)` and route-level `loader()` primitives. These create managed, reactive state containers with built-in status flags (`idle`, `pending`, `success`, `error`), automatic request deduplication, and built-in `AbortController` lifecycle cleanup.
+Samrey will provide first-class `createResource(fetcher)` and route-level `loader()` primitives. These create managed, reactive state containers with built-in status flags (`idle`, `pending`, `success`, `error`), automatic request deduplication, and built-in `AbortController` lifecycle cleanup.
 
 ---
 
@@ -150,4 +150,4 @@ Gati will provide first-class `createResource(fetcher)` and route-level `loader(
 Accessibility and security vulnerabilities are often caught late in QA or production audits rather than during development.
 
 ### Decision
-The `@gati/compiler` will enforce WAI-ARIA and security linting directly during compilation. Missing `alt` tags, invalid ARIA role combinations, unsafe URL protocols in `href`, and unescaped HTML injections will trigger compile-time warnings and errors.
+The `@samrey/compiler` will enforce WAI-ARIA and security linting directly during compilation. Missing `alt` tags, invalid ARIA role combinations, unsafe URL protocols in `href`, and unescaped HTML injections will trigger compile-time warnings and errors.

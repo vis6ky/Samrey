@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @gati/devtools - HTTP & Resource Network Inspector
+ * @samrey/devtools - HTTP & Resource Network Inspector
  */
 
 import { aetherDevToolsBridge } from './bridge.js';

@@ -1,14 +1,14 @@
-# Gati Framework — Phase 13 Real-World Production Validation Report
+# Samrey Framework — Phase 13 Real-World Production Validation Report
 
 **Date:** August 20, 2026  
 **Target Version:** `v1.0.0-rc.1`  
-**Execution Context:** External standalone consumer project (`/tmp/aether-consumer`) installed strictly from packed distribution tarballs (`npm pack`). Zero monorepo source aliases used.
+**Execution Context:** External standalone consumer project (`/tmp/samrey-consumer`) installed strictly from packed distribution tarballs (`npm pack`). Zero monorepo source aliases used.
 
 ---
 
 ## Executive Summary
 
-Phase 13 subjected the Gati Framework to real-world validation by constructing an external consumer project located outside the monorepo workspace. The consumer project consumed the framework through its distribution tarballs (`@gati/reactivity`, `@gati/runtime`, `@gati/compiler`, `@gati/router`, `@gati/http`, `@gati/forms`, `@gati/security`, `@gati/ssr`, `@gati/testing`, `@gati/devtools`, `@gati/cli`).
+Phase 13 subjected the Samrey Framework to real-world validation by constructing an external consumer project located outside the monorepo workspace. The consumer project consumed the framework through its distribution tarballs (`@samrey/reactivity`, `@samrey/runtime`, `@samrey/compiler`, `@samrey/router`, `@samrey/http`, `@samrey/forms`, `@samrey/security`, `@samrey/ssr`, `@samrey/testing`, `@samrey/devtools`, `@samrey/cli`).
 
 All 18 validation areas—spanning package resolution, realistic multi-component application shells, fine-grained topological reactivity, `<Show>` and keyed `<For>` reconciliation, routing and parameter extraction, HTTP asynchronous resources with AbortSignal cancellation, Standard Schema reactive forms with ARIA accessibility, streaming SSR with secret stripping, client-side hydration with event replay, memory churn under 2,000+ lifecycle cycles, production tree-shaking (resulting in a 6.29 kB minified bundle), and public API surface audits—passed with zero blockers.
 
@@ -18,8 +18,8 @@ All 18 validation areas—spanning package resolution, realistic multi-component
 
 | Area | Status | Evidence | Developer Impact | Action |
 |---|---|---|---|---|
-| **1. Consumer Project** | **PASS** | Standalone consumer application created at `/tmp/aether-consumer` completely decoupled from monorepo source files. Built application shell integrating state, computed stats, effects, forms, routing, HTTP, and SSR. | Proves that external developers can initialize and structure real-world Gati applications without internal monorepo tooling. | None required. |
-| **2. Package Installation** | **PASS** | All 11 packages packed into distribution tarballs via `npm pack` and installed cleanly into consumer `node_modules/@gati/*`. All ESM entrypoints resolved without module resolution errors. | Developers can install and import packages using standard npm/yarn/pnpm workflows. | None required. |
+| **1. Consumer Project** | **PASS** | Standalone consumer application created at `/tmp/samrey-consumer` completely decoupled from monorepo source files. Built application shell integrating state, computed stats, effects, forms, routing, HTTP, and SSR. | Proves that external developers can initialize and structure real-world Samrey applications without internal monorepo tooling. | None required. |
+| **2. Package Installation** | **PASS** | All 11 packages packed into distribution tarballs via `npm pack` and installed cleanly into consumer `node_modules/@samrey/*`. All ESM entrypoints resolved without module resolution errors. | Developers can install and import packages using standard npm/yarn/pnpm workflows. | None required. |
 | **3. Component Architecture** | **PASS** | Verified component instantiation, nested children hierarchies, props reactivity, lifecycle management, and cleanup cascades. Zero duplicate renders or stale event listeners. | Clean, predictable functional component model with automatic reactive tracking. | None required. |
 | **4. Fine-Grained Reactivity** | **PASS** | Diamond dependency graphs (`root -> left/right -> diamond`) evaluated with 0 intermediate glitches. Synchronous batching executed in exact single evaluation. Dynamic signal re-tracking verified. | High-performance state management without tearing, unnecessary re-renders, or stale computed values. | None required. |
 | **5. `<Show>` Control Flow** | **PASS** | Tested 500 rapid toggling cycles (`false -> true -> false`). Verified exact 500 owner cleanups, accurate DOM node counts, and proper unmounting of child branches. | Flawless conditional rendering with leak-free subtree disposal. | None required. |
@@ -34,7 +34,7 @@ All 18 validation areas—spanning package resolution, realistic multi-component
 | **14. Memory & Lifecycle** | **PASS** | Executed 2,000 continuous mount/update/unmount cycles in 70.97ms. Verified exact 1-to-1 cleanup ratio with zero orphaned reactive owners or memory leaks. | Long-running single-page applications will remain memory-stable across extended usage. | None required. |
 | **15. Developer Experience** | **PASS** | Evaluated API ergonomic consistency across reactivity, templates, forms, routing, and SSR. APIs are intuitive, minimal, and provide clear TypeScript types with autocomplete. | High developer velocity with minimal cognitive overhead. | None required. |
 | **16. Error Handling** | **PASS** | Tested fault-tolerant compiler diagnostics (`[AETH-101]`), 404 route handling, 500 HTTP resource error states, SSR hydration mismatch recovery, and safe fallback on corrupted JSON state. | Deterministic, actionable error messages with automatic runtime recovery where safe. | None required. |
-| **17. API Surface** | **PASS** | All application tasks completed strictly through public package exports (`@gati/*`). Audited zero reliance on internal private modules or undocumented symbols. | Clean, maintainable boundary protecting future backward compatibility. | None required. |
+| **17. API Surface** | **PASS** | All application tasks completed strictly through public package exports (`@samrey/*`). Audited zero reliance on internal private modules or undocumented symbols. | Clean, maintainable boundary protecting future backward compatibility. | None required. |
 
 ---
 

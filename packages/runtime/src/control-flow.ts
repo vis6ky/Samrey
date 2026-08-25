@@ -1,9 +1,9 @@
 /**
  * @license Apache-2.0
- * @gati/runtime - Reactive Control Flow Primitives (<Show>, <For>)
+ * @samrey/runtime - Reactive Control Flow Primitives (<Show>, <For>)
  */
 
-import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@gati/reactivity';
+import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@samrey/reactivity';
 import { reportDuplicateKey } from './diagnostics.js';
 import { el, text } from './dom.js';
 import { createComponent } from './component.js';

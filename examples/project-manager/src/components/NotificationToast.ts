@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * Gati Project Manager — Toast Notifications Overlay Component
- * 100% Native Gati Runtime Component with <For> and reactive signal animations
+ * Samrey Project Manager — Toast Notifications Overlay Component
+ * 100% Native Samrey Runtime Component with <For> and reactive signal animations
  */
 
-import { el, For, Show } from '@gati/runtime';
+import { el, For, Show } from '@samrey/runtime';
 import { store, dismissNotification } from '../state.js';
 import { NotificationItem } from '../types.js';
 
