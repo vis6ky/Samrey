@@ -74,7 +74,7 @@ The `@samrey/compiler` will extract all static HTML subtrees into module-scoped 
 Legacy template systems frequently use `new Function()` or `eval()` to compile dynamic expressions at runtime in the browser. This violates strict Content Security Policies (`script-src 'self'`) and introduces Cross-Site Scripting (XSS) attack vectors.
 
 ### Decision
-Samrey core packages will **strictly forbid any usage of `eval()`, `new Function()`, or dynamic script tag execution**. All expressions must be compiled Ahead-of-Time. Dynamic HTML rendering will be restricted to an explicit `<SafeHtml>` component backed by a cryptographically sealed W3C Trusted Types policy (`aether#html`).
+Samrey core packages will **strictly forbid any usage of `eval()`, `new Function()`, or dynamic script tag execution**. All expressions must be compiled Ahead-of-Time. Dynamic HTML rendering will be restricted to an explicit `<SafeHtml>` component backed by a cryptographically sealed W3C Trusted Types policy (`samrey#html`).
 
 ### Consequences & Tradeoffs
 * **Positive**: Full compliance with the highest enterprise security standards; zero risk of template expression injection.

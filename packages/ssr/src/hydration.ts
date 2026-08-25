@@ -7,7 +7,7 @@ import { createRoot, createOwner, runWithOwner } from '@samrey/reactivity';
 
 declare global {
   interface Window {
-    __AETHER_EVENTS__?: Event[];
+    __SAMREY_EVENTS__?: Event[];
   }
 }
 
@@ -33,18 +33,18 @@ export interface HydrationResult {
  */
 export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown']): string {
   const eventsList = JSON.stringify(events);
-  return `<script>!function(){window.__AETHER_EVENTS__=[];var e=${eventsList};e.forEach(function(t){document.addEventListener(t,function(e){window.__AETHER_EVENTS__.push(e)},{capture:!0})})}();</script>`;
+  return `<script>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList};e.forEach(function(t){document.addEventListener(t,function(e){window.__SAMREY_EVENTS__.push(e)},{capture:!0})})}();</script>`;
 }
 
 /**
  * Replays any user interactions captured by the inline delegator prior to client JS hydration.
  */
 export function replayCapturedEvents(): number {
-  if (typeof window === 'undefined' || !window.__AETHER_EVENTS__) {
+  if (typeof window === 'undefined' || !window.__SAMREY_EVENTS__) {
     return 0;
   }
 
-  const queue = window.__AETHER_EVENTS__;
+  const queue = window.__SAMREY_EVENTS__;
   const count = queue.length;
 
   if (count === 0) return 0;
@@ -62,7 +62,7 @@ export function replayCapturedEvents(): number {
   }
 
   // Clear event queue
-  window.__AETHER_EVENTS__ = [];
+  window.__SAMREY_EVENTS__ = [];
   return count;
 }
 

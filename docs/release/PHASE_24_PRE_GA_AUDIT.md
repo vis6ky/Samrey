@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-This Pre-GA Audit provides an exhaustive inspection of the Samrey codebase prior to transitioning from `1.0.0-rc.1` to `1.0.0` GA. All packages, runtime components, documentation apps, CLI commands, and test suites were audited against the absolute architectural invariant: **"AETHER MUST USE AETHER"**.
+This Pre-GA Audit provides an exhaustive inspection of the Samrey codebase prior to transitioning from `1.0.0-rc.1` to `1.0.0` GA. All packages, runtime components, documentation apps, CLI commands, and test suites were audited against the absolute architectural invariant: **"SAMREY MUST USE SAMREY"**.
 
 Every finding has been categorized according to severity:
 - **BLOCKER:** Critical release gate failure; must be resolved before GA publication.

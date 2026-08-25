@@ -68,7 +68,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Compiles JSX into native HTML <template> elements and clones them via cloneNode(true). Sibling pointers walk the tree once during initialization. Zero VDOM.'
     },
-    aether: {
+    samrey: {
       summary: 'Static <template> clone hoisting with fine-grained DOM slot bindings',
       architecturalSolution: 'Module-level pre-parsed <template> tags cloned via native browser C++ cloneNode(true). Signal bindings hook directly into text nodes and attributes with zero VDOM.'
     }
@@ -101,7 +101,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Pure push-pull reactive graph. Components execute once; only subscriber closures execute when signals change. Dynamic values must be wrapped in getters.'
     },
-    aether: {
+    samrey: {
       summary: 'Glitch-free topological push-pull Signals with O(1) clock dirty flagging',
       architecturalSolution: 'Topologically ordered graph with transaction clocks. Guarantees zero redundant evaluations, eliminates the Diamond Dependency problem, and prunes destroyed scopes via Owner disposal trees.'
     }
@@ -134,7 +134,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Transforms JSX markup into native template element string literals and effect bindings with sibling traversal paths.'
     },
-    aether: {
+    samrey: {
       summary: 'Samrey Intermediate Representation (AIR) with AOT Security & A11y Verification',
       architecturalSolution: 'Multi-pass compiler generates an intermediate representation (AIR), hoists static templates, classifies security contexts (URI, HTML, CSS), lints accessibility, and emits zero-overhead JS.'
     }
@@ -167,7 +167,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Extremely lean runtime consisting of signal propagation primitives and template cloning helpers.'
     },
-    aether: {
+    samrey: {
       summary: 'Minimal (<7 kB min+gzip core runtime, zero VDOM reconciler)',
       architecturalSolution: 'Stripped core containing only the push-pull signal graph, template cloning engine, and event delegator. All higher-level modules (router, forms, http) are tree-shakeable.'
     }
@@ -200,7 +200,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'A',
       details: 'Standard JSX string escaping. Using innerHTML or unescaped SSR string interpolation can lead to injection if not passed through custom sanitizers.'
     },
-    aether: {
+    samrey: {
       summary: 'Context-Aware Auto-Sanitizing Compiler + Trusted Types + Zero-eval Guarantee',
       architecturalSolution: 'Compiler classifies every binding context (URI, Safe Attr, Text, CSS). Blocks javascript: schemes at compile-time. Emits Trusted Types policies. Zero eval() in codebase.'
     }
@@ -233,7 +233,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Streams HTML chunks; embeds serialized event delegation script to record user clicks before client bundle finishes downloading.'
     },
-    aether: {
+    samrey: {
       summary: 'Universal Async Out-of-Order Streaming SSR with Resumable Micro-Hydration',
       architecturalSolution: 'Streams HTML with hidden <template> chunk swapping. Root event listener (200 bytes) buffers early user clicks. Client resumes reactive graph from escaped Unicode JSON without re-running component initialization.'
     }
@@ -266,7 +266,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'D',
       details: 'No standard built-in form engine; developers rely on community packages or build custom signal wrappers.'
     },
-    aether: {
+    samrey: {
       summary: 'Built-in Standard Schema Forms (Zod/Valibot/ArkType) + Auto-ARIA Wiring',
       architecturalSolution: 'First-class @samrey/forms natively validates schemas conforming to the Standard Schema spec. Automatically computes aria-invalid, aria-describedby, and supports progressive enhancement POST actions.'
     }
@@ -299,7 +299,7 @@ export const DIMENSIONS: DimensionItem[] = [
       category: 'F',
       details: 'Declarative JSX or file-based routing with route-level data loaders and transition integration.'
     },
-    aether: {
+    samrey: {
       summary: 'Type-Safe Dual Router (File-Based & Code-Based) with Streaming Loaders',
       architecturalSolution: 'Built-in @samrey/router supporting both filesystem route discovery and type-safe JSX routes. Features automatic prefetching on link hover/viewport, nested layouts, and View Transitions API.'
     }

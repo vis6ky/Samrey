@@ -11,7 +11,7 @@ Application Root (Single-execution setup + Async loaders)
       ↓
 HTML Document (Pre-rendered DOM Shell + <template> tags)
       ↓
-Serialized State (<script id="__AETHER_STATE__" type="application/json">)
+Serialized State (<script id="__SAMREY_STATE__" type="application/json">)
       ↓
 Browser (Immediate First Contentful Paint + Inline Event Delegator)
       ↓
@@ -28,10 +28,10 @@ Interactive Application
 Unlike traditional Virtual DOM frameworks that reconstruct an entire synthetic tree on both server and client, Samrey renders semantic HTML directly on the server and attaches fine-grained reactive subscriptions (`effect`, `signal`) in-place during client hydration.
 
 ### Zero-Waterfall Server Data Hydration
-When components use `createServerData(key, loader)`, data is fetched concurrently during the server render pass. The resolved values are embedded into a secure, Unicode-escaped `<script id="__AETHER_STATE__">` tag. On boot, client signals synchronously read the cached state with **zero additional client-side network roundtrips**.
+When components use `createServerData(key, loader)`, data is fetched concurrently during the server render pass. The resolved values are embedded into a secure, Unicode-escaped `<script id="__SAMREY_STATE__">` tag. On boot, client signals synchronously read the cached state with **zero additional client-side network roundtrips**.
 
 ### Zero-Overhead Inline Event Delegator
-To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Samrey injects a ~200-byte capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__AETHER_EVENTS__` and immediately replayed to the hydrated DOM nodes upon `hydrate()`.
+To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Samrey injects a ~200-byte capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__SAMREY_EVENTS__` and immediately replayed to the hydrated DOM nodes upon `hydrate()`.
 
 ---
 
@@ -83,7 +83,7 @@ const routes: StaticRouteConfig[] = [
     path: '/blog/:slug',
     component: () => '<article>Blog Post</article>',
     getStaticPaths: async () => [
-      { params: { slug: 'launching-aether' } },
+      { params: { slug: 'launching-samrey' } },
       { params: { slug: 'signals-deep-dive' } }
     ]
   }

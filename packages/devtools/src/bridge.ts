@@ -43,7 +43,7 @@ export class DevToolsBridge {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      (window as any).__AETHER_DEVTOOLS_BRIDGE__ = this;
+      (window as any).__SAMREY_DEVTOOLS_BRIDGE__ = this;
       if (window.location && window.location.origin) {
         this.allowedOrigins.add(window.location.origin);
       }
@@ -121,4 +121,4 @@ export class DevToolsBridge {
   }
 }
 
-export const aetherDevToolsBridge = new DevToolsBridge();
+export const samreyDevToolsBridge = new DevToolsBridge();

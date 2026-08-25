@@ -65,7 +65,7 @@
 
 ### Build
 - Production bundle build (`npm run build`): **PASS**
-- CLI standalone binary bundle (`esbuild bin/aether.js`): **PASS**
+- CLI standalone binary bundle (`esbuild bin/samrey.js`): **PASS**
 
 ### NPM Packages
 - Tarball packing for all 11 packages (`npm run release:pack`): **PASS**
@@ -79,8 +79,8 @@
 - Execution of public API consumer (signals, DOM runtime, control flow, SSR): **PASS**
 
 ### CLI
-- CLI version reporting (`aether --version` -> `1.0.0`): **PASS**
-- CLI project creation (`aether create`): **PASS**
+- CLI version reporting (`samrey --version` -> `1.0.0`): **PASS**
+- CLI project creation (`samrey create`): **PASS**
 - CLI templates verified (`minimal`, `spa`, `ssr`, `ssg`): **PASS**
 - CLI commands tested (`audit`, `analyze`, `generate`, `dev`, `build`, `test`): **PASS**
 

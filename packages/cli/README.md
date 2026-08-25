@@ -13,7 +13,7 @@ Command Line Interface, project scaffolder, Vite compiler plugin, and static aud
 npm install -g @samrey/cli
 
 # Or create a new project via npx / npm create
-npm create aether@latest my-app
+npm create samrey@latest my-app
 ```
 
 ## Quick Example
@@ -36,19 +36,19 @@ npx @samrey/cli audit
 ```ts
 // vite.config.ts
 import { defineConfig } from 'vite';
-import { aetherPlugin } from '@samrey/cli';
+import { samreyPlugin } from '@samrey/cli';
 
 export default defineConfig({
-  plugins: [aetherPlugin()]
+  plugins: [samreyPlugin()]
 });
 ```
 
 ## API / Commands
 
-- `aether create <name> [--template <type>]` — Scaffolds a new project (`minimal`, `spa`, `ssr`, `ssg`).
-- `aether build` — Builds the application for production.
-- `aether audit` — Performs static security and accessibility validation across all source templates.
-- `aetherPlugin(options?: SamreyPluginOptions)` — Vite plugin performing AOT compilation and JSX transforms.
+- `samrey create <name> [--template <type>]` — Scaffolds a new project (`minimal`, `spa`, `ssr`, `ssg`).
+- `samrey build` — Builds the application for production.
+- `samrey audit` — Performs static security and accessibility validation across all source templates.
+- `samreyPlugin(options?: SamreyPluginOptions)` — Vite plugin performing AOT compilation and JSX transforms.
 - `scaffold(targetDir: string, template: TemplateType): Promise<void>` — Programmatic scaffolding API.
 
 ## Environment

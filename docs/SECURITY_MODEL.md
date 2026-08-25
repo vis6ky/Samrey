@@ -61,7 +61,7 @@ export function getSamreyTrustedPolicy(): TrustedTypePolicy {
   if (aetherPolicy) return aetherPolicy;
 
   if (typeof window !== 'undefined' && window.trustedTypes) {
-    aetherPolicy = window.trustedTypes.createPolicy('aether#html', {
+    aetherPolicy = window.trustedTypes.createPolicy('samrey#html', {
       createHTML: (input: string) => {
         // Enforce strict AST-based sanitation
         return sanitizeHtmlString(input);
@@ -87,7 +87,7 @@ export function getSamreyTrustedPolicy(): TrustedTypePolicy {
 A critical vulnerability in SSR applications is **Hydration Script Injection**. When state is serialized to a `<script>` tag for client hydration, user input containing `</script><script>maliciousCode()</script>` can prematurely close the script tag and execute arbitrary JavaScript.
 
 ### Samrey Serialization Protocol
-Samrey uses a dedicated **Safe JSON Serializer** for all SSR state transfers (`window.__AETHER_STATE__`):
+Samrey uses a dedicated **Safe JSON Serializer** for all SSR state transfers (`window.__SAMREY_STATE__`):
 
 ```typescript
 // packages/ssr/src/serializer.ts

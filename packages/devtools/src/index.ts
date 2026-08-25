@@ -13,7 +13,7 @@ export * from './network-inspector.js';
 export * from './form-inspector.js';
 export * from './perf-inspector.js';
 
-import { DevToolsBridge, aetherDevToolsBridge } from './bridge.js';
+import { DevToolsBridge, samreyDevToolsBridge } from './bridge.js';
 import { GraphInspector } from './graph-inspector.js';
 import { PerformanceInspector } from './perf-inspector.js';
 
@@ -23,7 +23,7 @@ export const PerfInspector = PerformanceInspector;
 
 export function initDevTools(options?: { targetOrigin?: string }) {
   if (options?.targetOrigin) {
-    aetherDevToolsBridge.setTargetOrigin(options.targetOrigin);
+    samreyDevToolsBridge.setTargetOrigin(options.targetOrigin);
   }
-  return aetherDevToolsBridge;
+  return samreyDevToolsBridge;
 }

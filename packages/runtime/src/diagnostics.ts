@@ -55,9 +55,9 @@ export function emitDevDiagnostic(diagnostic: Omit<DevDiagnostic, 'timestamp'>):
   }
 
   // Also broadcast to DevTools bridge if active in browser
-  if (typeof window !== 'undefined' && (window as any).__AETHER_DEVTOOLS_BRIDGE__) {
+  if (typeof window !== 'undefined' && (window as any).__SAMREY_DEVTOOLS_BRIDGE__) {
     try {
-      (window as any).__AETHER_DEVTOOLS_BRIDGE__.emit('diagnostic', fullDiag);
+      (window as any).__SAMREY_DEVTOOLS_BRIDGE__.emit('diagnostic', fullDiag);
     } catch {
       // Ignore bridge errors
     }

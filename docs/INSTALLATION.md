@@ -11,7 +11,7 @@ To create a new Samrey application, run the official CLI tool:
 
 ```bash
 # Using npm
-npm create aether@rc my-app
+npm create samrey@latest my-app
 
 # Or using npx directly
 npx @samrey/cli@rc create my-app --template spa
@@ -77,9 +77,9 @@ Add `@samrey/cli/vite-plugin` to your `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@samrey/cli';
+import { samreyVitePlugin } from '@samrey/cli';
 
 export default defineConfig({
-  plugins: [aetherVitePlugin()]
+  plugins: [samreyVitePlugin()]
 });
 ```

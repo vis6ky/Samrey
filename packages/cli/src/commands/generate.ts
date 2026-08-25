@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether generate" Command
+ * @samrey/cli - "samrey generate" Command
  */
 
 import * as fs from 'node:fs';
@@ -192,7 +192,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   if (!options.name || options.name.trim().length === 0) {
     return {
       success: false,
-      message: `[Samrey Generate Error] Artifact name is required. Example: aether generate component Button`,
+      message: `[Samrey Generate Error] Artifact name is required. Example: samrey generate component Button`,
       exitCode: 1
     };
   }

@@ -11,7 +11,7 @@
 
 Before executing any publication command, verify the following:
 
-1. **Authentication:** Ensure you are authenticated with npm using 2FA or a Granular Access Token with publish permissions for the `@aether` organization:
+1. **Authentication:** Ensure you are authenticated with npm using 2FA or a Granular Access Token with publish permissions for the `@samrey` organization:
    ```bash
    npm whoami
    ```

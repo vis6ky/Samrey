@@ -21,7 +21,7 @@
 | **Gate 17** | Memory & Lifecycle Release Gate | **PASS** | 1,000 mount/unmount cycles executed with zero memory leaks or orphaned effects. |
 | **Gate 18** | Error Diagnostic Release Gate | **PASS** | Error codes catalog `ERROR_REGISTRY` mapped with actionable suggestions. |
 | **Gate 19** | External Testing Experience | **PASS** | Native test runner `@samrey/testing` provides clean component mounting and events. |
-| **Gate 20** | Developer Time-to-First-App | **PASS** | `aether create` bootstraps functional starter apps in < 2 seconds. |
+| **Gate 20** | Developer Time-to-First-App | **PASS** | `samrey create` bootstraps functional starter apps in < 2 seconds. |
 | **Gate 21** | Deployment Validation | **PASS** | Standalone Node.js server and static hosting deployment targets ready. |
 | **Gate 22** | License & Legal Release Check | **PASS** | Apache-2.0 headers and license metadata verified across all source files. |
 | **Gate 23** | Security & Secret Scan | **PASS** | SSR state sanitizer stripped 100% of adversarial API keys and connection strings. |

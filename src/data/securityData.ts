@@ -46,11 +46,11 @@ export function sanitizeUri(rawUri: string): string {
     samplePayload: `<img src="x" onerror="alert(document.domain)">`,
     vulnDescription: 'Direct assignment of un-sanitized strings to innerHTML, v-html, or dangerouslySetInnerHTML completely bypasses standard template escaping.',
     frameworkImpact: 'Top source of DOM-based XSS across all frontend frameworks.',
-    aetherDefense: 'Disallows raw innerHTML in compiler output. Mandates <SafeHtml> component backed by cryptographically sealed W3C Trusted Types policy (aether#html).',
+    aetherDefense: 'Disallows raw innerHTML in compiler output. Mandates <SafeHtml> component backed by cryptographically sealed W3C Trusted Types policy (samrey#html).',
     aetherCodeSnippet: `// packages/security/src/trusted-types.ts
 export function getSamreyTrustedPolicy(): TrustedTypePolicy {
   if (typeof window !== 'undefined' && window.trustedTypes) {
-    return window.trustedTypes.createPolicy('aether#html', {
+    return window.trustedTypes.createPolicy('samrey#html', {
       createHTML: (input) => sanitizeHtmlWithAst(input),
       createScript: () => { throw new SecurityError('Dynamic script creation blocked'); }
     });

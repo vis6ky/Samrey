@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Resumable Hydration & Event Replay (`@samrey/ssr`)**: Lightweight (<350 byte) inline event capture script, seamless event replay buffer, and surgical DOM hole re-attachment without hydration blowouts.
 - **Deterministic Testing Harness (`@samrey/testing`)**: DOM test container harness (`renderTest()`), event dispatchers (`fireEvent()`), and reactive graph flush helpers (`flushReactivity()`).
 - **Developer Tools Bridge (`@samrey/devtools`)**: Zero-overhead in production devtools inspection bridge, reactive graph visualizer hooks, performance profiler, and sanitization audit feeds.
-- **CLI & Tooling (`@samrey/cli`)**: Production-ready command line interface (`aether create`, `aether dev`, `aether build`, `aether test`, `aether audit`, `aether analyze`, `aether generate`) with standalone single-file binary execution.
+- **CLI & Tooling (`@samrey/cli`)**: Production-ready command line interface (`samrey create`, `samrey dev`, `samrey build`, `samrey test`, `samrey audit`, `samrey analyze`, `samrey generate`) with standalone single-file binary execution.
 
 ### Security
 - Zero use of `eval()` or `new Function()` anywhere across the monorepo.

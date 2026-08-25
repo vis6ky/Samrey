@@ -15,7 +15,7 @@ export interface DimensionItem {
   vue: { summary: string; category?: CategoryCode; details: string };
   svelte: { summary: string; category?: CategoryCode; details: string };
   solid: { summary: string; category?: CategoryCode; details: string };
-  aether: { summary: string; architecturalSolution: string };
+  samrey: { summary: string; architecturalSolution: string };
 }
 
 export interface FrameworkPackage {

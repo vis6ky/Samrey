@@ -62,9 +62,9 @@
 - **Runtime Parity:** 100% Match
 
 ### `@samrey/devtools`
-- **Contract Symbols (9):** `initDevTools`, `SamreyDevToolsBridge`, `ReactiveGraphInspector`, `ComponentInspector`, `PerfInspector`, `DevToolsBridge`, `aetherDevToolsBridge`, `GraphInspector`, `PerformanceInspector`
+- **Contract Symbols (9):** `initDevTools`, `SamreyDevToolsBridge`, `ReactiveGraphInspector`, `ComponentInspector`, `PerfInspector`, `DevToolsBridge`, `samreyDevToolsBridge`, `GraphInspector`, `PerformanceInspector`
 - **Runtime Parity:** 100% Match
 
 ### `@samrey/cli`
-- **Contract Symbols (13):** `runCLI`, `generateStarterProject`, `aetherVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand`, `CLI_VERSION`, `runSamreyAudit`
+- **Contract Symbols (13):** `runCLI`, `generateStarterProject`, `samreyVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand`, `CLI_VERSION`, `runSamreyAudit`
 - **Runtime Parity:** 100% Match

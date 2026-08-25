@@ -99,7 +99,7 @@ export function Show<T>(props: ShowProps<T>): Node {
   let currentOwner: Owner | null = null;
   let currentNodes: Node[] = [];
 
-  const marker = createControlFlowMarker('aether:show', (parent) => {
+  const marker = createControlFlowMarker('samrey:show', (parent) => {
     if (currentNodes.length > 0) {
       const next = marker.nextSibling;
       for (const node of currentNodes) {
@@ -222,7 +222,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   let fallbackOwner: Owner | null = null;
   let fallbackNodes: Node[] = [];
 
-  const marker = createControlFlowMarker('aether:for', (parent) => {
+  const marker = createControlFlowMarker('samrey:for', (parent) => {
     if (fallbackNodes.length > 0) {
       for (const node of fallbackNodes) {
         if (node.parentNode !== parent) {

@@ -5,7 +5,7 @@ import { bindAttr, bindText } from '@samrey/runtime';
 import { signal } from '@samrey/reactivity';
 import { createRouter } from '@samrey/router';
 import { serializeStateForHydration, deserializeHydrationState, stripSecrets } from '@samrey/ssr';
-import { aetherDevToolsBridge } from '@samrey/devtools';
+import { samreyDevToolsBridge } from '@samrey/devtools';
 import { runCreateCommand } from '@samrey/cli/src/commands/create.js';
 import { runGenerateCommand } from '@samrey/cli/src/commands/generate.js';
 import { createForm } from '@samrey/forms';
@@ -190,7 +190,7 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
           getElementById: () => mockForm
         };
 
-        const result = deserializeHydrationState({ id: '__AETHER_STATE__', fallback: { safe: true } });
+        const result = deserializeHydrationState({ id: '__SAMREY_STATE__', fallback: { safe: true } });
         // Because nodeName is FORM not SCRIPT, it must return the safe fallback
         assert.deepEqual(result, { safe: true });
       } finally {
@@ -204,13 +204,13 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
   describe('Vulnerability 6: DevTools Origin & Secret Redaction', () => {
     it('redacts sensitive keys before emitting DevTools events', () => {
       let capturedEvent: any = null;
-      const unsubscribe = aetherDevToolsBridge.subscribe((ev) => {
+      const unsubscribe = samreyDevToolsBridge.subscribe((ev) => {
         if (ev.type === 'form:submit') {
           capturedEvent = ev;
         }
       });
 
-      aetherDevToolsBridge.emit('form:submit', {
+      samreyDevToolsBridge.emit('form:submit', {
         username: 'alice',
         password: 'SuperSecretPassword123!',
         token: 'secret-token-abc'

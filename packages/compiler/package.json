@@ -5,15 +5,15 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samrey-framework/aether.git",
+    "url": "git+https://github.com/samrey-framework/samrey.git",
     "directory": "packages/compiler"
   },
   "homepage": "https://samrey.dev",
   "bugs": {
-    "url": "https://github.com/samrey-framework/aether/issues"
+    "url": "https://github.com/samrey-framework/samrey/issues"
   },
   "keywords": [
-    "aether",
+    "samrey",
     "compiler",
     "air",
     "ast",

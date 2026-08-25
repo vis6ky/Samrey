@@ -90,7 +90,7 @@ export function validateDependencyTopology(): TopologyResult {
     }
   }
 
-  // To publish, tier 1 has 0 dependencies on other @aether packages
+  // To publish, tier 1 has 0 dependencies on other @samrey packages
   // node -> depends on -> deps
   const depCount: Record<string, number> = {};
   for (const node of Object.keys(graph)) {

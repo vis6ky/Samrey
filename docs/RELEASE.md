@@ -9,7 +9,7 @@
 
 ## 1. Release Architecture & Pipeline Overview
 
-Samrey is released as an atomic suite of 11 independent scoped packages under the `@aether` organization:
+Samrey is released as an atomic suite of 11 independent scoped packages under the `@samrey` organization:
 
 - `@samrey/reactivity` — Fine-grained signal and dependency tracking engine
 - `@samrey/runtime` — Direct-DOM reactive rendering runtime and control flow

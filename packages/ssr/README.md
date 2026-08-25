@@ -29,7 +29,7 @@ function App() {
 const html = await renderToString(App);
 
 // 2. State Serialization
-const scriptTag = serializeState('__AETHER_STATE__', { user: 'Alice', theme: 'dark' });
+const scriptTag = serializeState('__SAMREY_STATE__', { user: 'Alice', theme: 'dark' });
 ```
 
 ## API

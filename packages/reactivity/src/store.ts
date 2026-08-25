@@ -6,7 +6,7 @@
 import { signal } from './signal.js';
 
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const PROXIED = Symbol('AETHER_PROXIED');
+const PROXIED = Symbol('SAMREY_PROXIED');
 
 export function createStore<T extends object>(initialObject: T): T {
   if (!initialObject || typeof initialObject !== 'object') return initialObject;

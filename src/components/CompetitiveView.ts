@@ -27,7 +27,7 @@ export function CompetitiveView(): HTMLElement {
         item.vue.summary.toLowerCase().includes(query) ||
         item.svelte.summary.toLowerCase().includes(query) ||
         item.solid.summary.toLowerCase().includes(query) ||
-        item.aether.summary.toLowerCase().includes(query);
+        item.samrey.summary.toLowerCase().includes(query);
 
       if (cat === 'ALL') return matchesSearch;
 
@@ -181,7 +181,7 @@ export function CompetitiveView(): HTMLElement {
         ),
         el('p', {
           class: () => `text-xs mt-1.5 line-clamp-2 ${activeDimension.value?.id === item.id ? 'text-slate-300' : 'text-slate-500'}`
-        }, item.aether.summary)
+        }, item.samrey.summary)
       );
       return itemCard;
     }
@@ -216,12 +216,12 @@ export function CompetitiveView(): HTMLElement {
       const aetherCard = el('div', { class: 'p-5 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm space-y-2' },
         el('div', { class: 'flex items-center space-x-2' },
           el('span', { class: 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold' },
-            'AETHER ARCHITECTURE'
+            'SAMREY ARCHITECTURE'
           ),
-          el('span', { class: 'text-xs font-semibold text-slate-200' }, dim.aether.summary)
+          el('span', { class: 'text-xs font-semibold text-slate-200' }, dim.samrey.summary)
         ),
         el('p', { class: 'text-xs text-slate-300 leading-relaxed font-sans mt-2' },
-          dim.aether.architecturalSolution
+          dim.samrey.architecturalSolution
         )
       );
       container.appendChild(aetherCard);

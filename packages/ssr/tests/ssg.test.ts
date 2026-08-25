@@ -19,7 +19,7 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
         path: '/blog/:slug',
         component: () => '<article class="post"><h1>Blog Post</h1></article>',
         getStaticPaths: () => [
-          { params: { slug: 'launching-aether' }, title: 'Launching Samrey' },
+          { params: { slug: 'launching-samrey' }, title: 'Launching Samrey' },
           { params: { slug: 'reactivity-deep-dive' }, title: 'Reactivity Deep Dive' }
         ]
       }
@@ -37,7 +37,7 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
     const paths = result.pages.map((p) => p.path);
     assert.ok(paths.includes('/'));
     assert.ok(paths.includes('/about'));
-    assert.ok(paths.includes('/blog/launching-aether'));
+    assert.ok(paths.includes('/blog/launching-samrey'));
     assert.ok(paths.includes('/blog/reactivity-deep-dive'));
 
     const homePage = result.pages.find((p) => p.path === '/');
@@ -45,7 +45,7 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
     assert.ok(homePage?.html.includes('<h1>Home</h1>'));
 
     assert.ok(result.sitemapXml);
-    assert.ok(result.sitemapXml?.includes('https://samrey.dev/blog/launching-aether'));
+    assert.ok(result.sitemapXml?.includes('https://samrey.dev/blog/launching-samrey'));
     assert.ok(result.sitemapXml?.includes('https://samrey.dev/about'));
   });
 });

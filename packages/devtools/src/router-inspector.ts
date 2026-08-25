@@ -3,7 +3,7 @@
  * @samrey/devtools - Router & Navigation Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 import { sanitizePayload } from './sanitizer.js';
 
 export interface InspectedRoute {
@@ -33,7 +33,7 @@ export class RouterInspector {
       this.history.shift();
     }
 
-    aetherDevToolsBridge.emit('router:navigate', route);
+    samreyDevToolsBridge.emit('router:navigate', route);
   }
 
   getCurrentRoute(): InspectedRoute | null {

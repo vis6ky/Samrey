@@ -5,7 +5,7 @@ import { getDelegatedEventScript, replayCapturedEvents, hydrate } from '../src/i
 describe('@samrey/ssr - Client Hydration & Event Replay', () => {
   it('generates ultra-compact pre-hydration event listener script', () => {
     const script = getDelegatedEventScript(['click', 'input', 'submit']);
-    assert.ok(script.includes('window.__AETHER_EVENTS__=[]'));
+    assert.ok(script.includes('window.__SAMREY_EVENTS__=[]'));
     assert.ok(script.includes('"click"'));
     assert.ok(script.includes('"input"'));
     assert.ok(script.includes('"submit"'));
@@ -27,14 +27,14 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
     } as unknown as Event;
 
     // Attach to global window
-    (globalThis as unknown as { window: { __AETHER_EVENTS__: Event[] } }).window = {
-      __AETHER_EVENTS__: [mockEvent]
+    (globalThis as unknown as { window: { __SAMREY_EVENTS__: Event[] } }).window = {
+      __SAMREY_EVENTS__: [mockEvent]
     };
 
     const replayed = replayCapturedEvents();
     assert.equal(replayed, 1);
     assert.equal(eventDispatched, true);
-    assert.equal((globalThis as unknown as { window: { __AETHER_EVENTS__: Event[] } }).window.__AETHER_EVENTS__.length, 0);
+    assert.equal((globalThis as unknown as { window: { __SAMREY_EVENTS__: Event[] } }).window.__SAMREY_EVENTS__.length, 0);
   });
 
   it('hydrates container and repairs mismatch gracefully', () => {

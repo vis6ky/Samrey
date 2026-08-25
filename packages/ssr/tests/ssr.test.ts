@@ -20,9 +20,9 @@ describe('@samrey/ssr - Server Side Rendering', () => {
     assert.ok(html.includes('<title>Samrey Dashboard</title>'));
     assert.ok(html.includes('<meta name="description" content="Ultra-fast reactive framework">'));
     assert.ok(html.includes('<main><h1 class="heading">Dashboard</h1><p>Active Users: 42</p></main>'));
-    assert.ok(html.includes('__AETHER_EVENTS__'));
+    assert.ok(html.includes('__SAMREY_EVENTS__'));
     assert.ok(html.includes('<script type="module" src="/client.js"></script>'));
-    assert.ok(html.includes('<script id="__AETHER_STATE__" type="application/json">{}</script>'));
+    assert.ok(html.includes('<script id="__SAMREY_STATE__" type="application/json">{}</script>'));
   });
 
   it('handles server-side rendering error boundaries and emits fallback', async () => {

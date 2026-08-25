@@ -110,8 +110,8 @@ export function validateAllPackages(expectedVersion = '1.0.0'): { packages: Pack
 
     // CLI specific check
     if (pkg === 'cli') {
-      if (!manifest.bin?.aether) {
-        errors.push('CLI package must expose "bin.aether" entry point');
+      if (!manifest.bin?.samrey) {
+        errors.push('CLI package must expose "bin.samrey" entry point');
       }
       if (!manifest.files.includes('bin')) {
         errors.push('CLI package files whitelist must include "bin"');

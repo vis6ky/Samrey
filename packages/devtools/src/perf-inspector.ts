@@ -3,7 +3,7 @@
  * @samrey/devtools - Performance & Render Timings Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 
 export interface InspectedPerfMetric {
   name: string;
@@ -31,7 +31,7 @@ export class PerformanceInspector {
       this.metrics.shift();
     }
 
-    aetherDevToolsBridge.emit('perf:measure', metric);
+    samreyDevToolsBridge.emit('perf:measure', metric);
   }
 
   getMetrics(category?: InspectedPerfMetric['category']): InspectedPerfMetric[] {

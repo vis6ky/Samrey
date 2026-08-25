@@ -42,7 +42,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
     );
 
     execSync('npm install --no-package-lock', { cwd: consumerDir, stdio: 'pipe' });
-    assert.ok(fs.existsSync(path.join(consumerDir, 'node_modules', '@aether')), 'node_modules/@aether must exist');
+    assert.ok(fs.existsSync(path.join(consumerDir, 'node_modules', '@samrey')), 'node_modules/@samrey must exist');
   });
 
   it('2. Executes end-to-end multi-package smoke script in clean-room environment', () => {

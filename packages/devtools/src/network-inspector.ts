@@ -3,7 +3,7 @@
  * @samrey/devtools - HTTP & Resource Network Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 import { sanitizePayload } from './sanitizer.js';
 
 export interface InspectedHttpRequest {
@@ -46,7 +46,7 @@ export class NetworkInspector {
     };
 
     this.requests.set(id, req);
-    aetherDevToolsBridge.emit('http:request', req);
+    samreyDevToolsBridge.emit('http:request', req);
   }
 
   recordResponse(id: string, status: number, statusText: string, responseBody?: unknown): void {
@@ -59,7 +59,7 @@ export class NetworkInspector {
     req.statusText = statusText;
     req.responseBody = sanitizePayload(responseBody);
 
-    aetherDevToolsBridge.emit('http:response', req);
+    samreyDevToolsBridge.emit('http:response', req);
   }
 
   recordError(id: string, error: unknown): void {
@@ -70,7 +70,7 @@ export class NetworkInspector {
     req.durationMs = req.endTime - req.startTime;
     req.error = error instanceof Error ? error.message : String(error);
 
-    aetherDevToolsBridge.emit('http:response', req);
+    samreyDevToolsBridge.emit('http:response', req);
   }
 
   getRequests(): InspectedHttpRequest[] {

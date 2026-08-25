@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 
-// src/commands/create.ts
+// packages/cli/src/commands/create.ts
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-// src/starter-template.ts
+// packages/cli/src/starter-template.ts
 function generateStarterProject(projectName, options = {}) {
   const templateType = options.template || "ssr";
   const scripts = {
-    dev: "aether dev",
-    build: "aether build",
-    test: "aether test",
-    audit: "aether audit",
-    analyze: "aether analyze"
+    dev: "samrey dev",
+    build: "samrey build",
+    test: "samrey test",
+    audit: "samrey audit",
+    analyze: "samrey analyze"
   };
   if (templateType === "ssr") {
     scripts.start = "node server.js";
   } else if (templateType === "ssg") {
-    scripts.build = "aether build && tsx ssg-build.ts";
+    scripts.build = "samrey build && tsx ssg-build.ts";
     scripts.start = "vite preview";
   } else {
     scripts.start = "vite preview";
@@ -63,10 +63,10 @@ function generateStarterProject(projectName, options = {}) {
     2
   );
   const viteConfig = `import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@samrey/cli';
+import { samreyVitePlugin } from '@samrey/cli';
 
 export default defineConfig({
-  plugins: [aetherVitePlugin()],
+  plugins: [samreyVitePlugin()],
   server: {
     port: 3000
   }
@@ -279,7 +279,7 @@ describe('${projectName} Component Suite', () => {
 `;
   const readmeMd = `# ${projectName}
 
-Built with [Samrey Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
+Built with [Samrey Framework](https://github.com/samrey/samrey) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 
@@ -334,7 +334,7 @@ coverage/
   return result;
 }
 
-// src/commands/create.ts
+// packages/cli/src/commands/create.ts
 function validateProjectName(name) {
   if (!name || name.trim().length === 0) {
     return { valid: false, error: "Project name cannot be empty." };
@@ -394,7 +394,7 @@ async function runCreateCommand(options) {
   }
 }
 
-// src/commands/dev.ts
+// packages/cli/src/commands/dev.ts
 async function runDevCommand(options = {}) {
   const port = options.port || 3e3;
   const host = options.host ? typeof options.host === "string" ? options.host : "0.0.0.0" : "localhost";
@@ -409,7 +409,7 @@ async function runDevCommand(options = {}) {
   const banner = [
     `  \u25B2 Samrey Development Server`,
     `  \u279C Local:   ${devUrl}/`,
-    `  \u279C DevTools: Enabled (Bridge active on window.__AETHER_DEVTOOLS_BRIDGE__)`,
+    `  \u279C DevTools: Enabled (Bridge active on window.__SAMREY_DEVTOOLS_BRIDGE__)`,
     `  \u279C HMR:     Fine-grained reactive signal updates enabled`,
     `  \u279C Mode:    Development (Diagnostics & runtime assertions active)`
   ].join("\n");
@@ -429,7 +429,7 @@ async function runDevCommand(options = {}) {
   };
 }
 
-// ../compiler/src/security-classifier.ts
+// packages/compiler/src/security-classifier.ts
 function classifyBindingContext(targetType, attrName) {
   if (targetType === "text") {
     return "html-text";
@@ -449,7 +449,7 @@ function classifyBindingContext(targetType, attrName) {
   return "safe-attr";
 }
 
-// ../compiler/src/codegen.ts
+// packages/compiler/src/codegen.ts
 function hoistTemplates(templateUnits) {
   const hoistedDeclarations = templateUnits.map((u, i) => {
     return `const _tmpl$${i + 1} = /*#__PURE__*/ template(${JSON.stringify(u.staticHtml)});`;
@@ -497,7 +497,7 @@ export default function Render() {
 `;
 }
 
-// ../compiler/src/static-analyzer.ts
+// packages/compiler/src/static-analyzer.ts
 function evaluateConstantExpression(expr) {
   const trimmed = expr.trim();
   if (!trimmed) {
@@ -539,7 +539,7 @@ function evaluateConstantExpression(expr) {
   return { isConstant: false, value: null };
 }
 
-// ../compiler/src/errors.ts
+// packages/compiler/src/errors.ts
 var ERROR_REGISTRY = {
   "AETH-101": {
     code: "AETH-101",
@@ -704,7 +704,7 @@ Suggestion:  ${suggestion}`;
   }
 };
 
-// ../security/src/sanitizer.ts
+// packages/security/src/sanitizer.ts
 var SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
 var DANGEROUS_URI_PATTERNS = /^(javascript|vbscript|data|blob):/i;
 function decodeHtmlEntities(str) {
@@ -753,7 +753,7 @@ function escapeHtmlText(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// ../compiler/src/parser.ts
+// packages/compiler/src/parser.ts
 var VOID_ELEMENTS = /* @__PURE__ */ new Set([
   "area",
   "base",
@@ -1474,7 +1474,7 @@ function compileTemplate(rawSource, options) {
   };
 }
 
-// src/commands/build.ts
+// packages/cli/src/commands/build.ts
 async function runBuildCommand(options = {}) {
   const outDir = options.outDir || "dist";
   const targetMode = options.ssr ? "SSR + Client Hydration" : "Client SPA";
@@ -1501,7 +1501,7 @@ async function runBuildCommand(options = {}) {
   };
 }
 
-// src/commands/preview.ts
+// packages/cli/src/commands/preview.ts
 async function runPreviewCommand(options = {}) {
   const port = options.port || 4173;
   const host = options.host ? "0.0.0.0" : "localhost";
@@ -1525,7 +1525,7 @@ async function runPreviewCommand(options = {}) {
   };
 }
 
-// src/commands/test.ts
+// packages/cli/src/commands/test.ts
 async function runTestCommand(options = {}) {
   const fileCount = options.files?.length || 1;
   const summary = [
@@ -1546,7 +1546,7 @@ async function runTestCommand(options = {}) {
   };
 }
 
-// src/audit.ts
+// packages/cli/src/audit.ts
 function auditSource(source, filename = "Component.tsx") {
   const messages = [];
   const imgRegex = /<img\b([^>]*)>/gi;
@@ -1567,7 +1567,7 @@ function auditSource(source, filename = "Component.tsx") {
   };
 }
 
-// src/commands/audit.ts
+// packages/cli/src/commands/audit.ts
 async function runAuditCommand(options = {}) {
   const sources = options.sampleSources || [
     {
@@ -1608,7 +1608,7 @@ async function runAuditCommand(options = {}) {
   };
 }
 
-// src/commands/analyze.ts
+// packages/cli/src/commands/analyze.ts
 async function runAnalyzeCommand(options = {}) {
   const analysisData = {
     bundleSizeKb: 14.2,
@@ -1654,7 +1654,7 @@ async function runAnalyzeCommand(options = {}) {
   };
 }
 
-// src/commands/generate.ts
+// packages/cli/src/commands/generate.ts
 import * as fs2 from "node:fs";
 import * as path2 from "node:path";
 function scaffoldArtifact(type, name) {
@@ -1818,7 +1818,7 @@ async function runGenerateCommand(options) {
   if (!options.name || options.name.trim().length === 0) {
     return {
       success: false,
-      message: `[Samrey Generate Error] Artifact name is required. Example: aether generate component Button`,
+      message: `[Samrey Generate Error] Artifact name is required. Example: samrey generate component Button`,
       exitCode: 1
     };
   }
@@ -1861,14 +1861,14 @@ async function runGenerateCommand(options) {
   }
 }
 
-// src/runner.ts
+// packages/cli/src/runner.ts
 var CLI_VERSION = "1.0.0";
 var HELP_TEXT = `
 Samrey Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
 
 USAGE:
-  $ aether <command> [options]
+  $ samrey <command> [options]
 
 COMMANDS:
   create <name>        Initialize a new production Samrey starter project
@@ -1891,13 +1891,13 @@ OPTIONS:
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
-  $ aether create my-app --template ssr
-  $ aether create quick-demo --template minimal
-  $ aether dev --port 3000
-  $ aether build --ssr
-  $ aether preview --port 4173
-  $ aether audit --strict
-  $ aether generate component UserProfile
+  $ samrey create my-app --template ssr
+  $ samrey create quick-demo --template minimal
+  $ samrey dev --port 3000
+  $ samrey build --ssr
+  $ samrey preview --port 4173
+  $ samrey audit --strict
+  $ samrey generate component UserProfile
 `;
 async function runCLI(args2) {
   if (args2.length === 0 || args2.includes("-h") || args2.includes("--help") || args2[0] === "help") {
@@ -1910,7 +1910,7 @@ async function runCLI(args2) {
   if (args2.includes("-v") || args2.includes("--version") || args2[0] === "version") {
     return {
       success: true,
-      message: `aether v${CLI_VERSION}`,
+      message: `samrey v${CLI_VERSION}`,
       exitCode: 0
     };
   }
@@ -1922,7 +1922,7 @@ async function runCLI(args2) {
       if (!name) {
         return {
           success: false,
-          message: "[Samrey Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]",
+          message: "[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]",
           exitCode: 1
         };
       }
@@ -1978,7 +1978,7 @@ async function runCLI(args2) {
       if (!type || !name) {
         return {
           success: false,
-          message: "[Samrey Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>",
+          message: "[Samrey Generate Error] Type and name are required.\nUsage: samrey generate <component|route|store|resource> <Name>",
           exitCode: 1
         };
       }
@@ -1987,14 +1987,14 @@ async function runCLI(args2) {
     default: {
       return {
         success: false,
-        message: `[Samrey Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
+        message: `[Samrey Error] Unknown command "${command}". Run "samrey --help" to view available commands.`,
         exitCode: 1
       };
     }
   }
 }
 
-// src/bin.ts
+// packages/cli/src/bin.ts
 var args = process.argv.slice(2);
 runCLI(args).then((result) => {
   if (result.message) {
@@ -2016,11 +2016,11 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether create" Command
+ * @samrey/cli - "samrey create" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether dev" Command
+ * @samrey/cli - "samrey dev" Command
  */
 /**
  * @license Apache-2.0
@@ -2048,15 +2048,15 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether build" Command
+ * @samrey/cli - "samrey build" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether preview" Command
+ * @samrey/cli - "samrey preview" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether test" Command
+ * @samrey/cli - "samrey test" Command
  */
 /**
  * @license Apache-2.0
@@ -2064,15 +2064,15 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether audit" Command
+ * @samrey/cli - "samrey audit" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether analyze" Command
+ * @samrey/cli - "samrey analyze" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether generate" Command
+ * @samrey/cli - "samrey generate" Command
  */
 /**
  * @license Apache-2.0

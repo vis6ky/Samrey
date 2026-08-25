@@ -61,7 +61,7 @@ describe('Phase 24 — Security Final Gate', () => {
     const serialized = escapeJsonState(stateWithAttack);
     // The payload itself inside the tag must have script tags escaped
     assert.ok(serialized.includes('\\u003c/script\\u003e') || serialized.includes('\\u003c'), 'Script tags must be unicode-escaped inside payload');
-    assert.ok(serialized.startsWith('<script id="__AETHER_STATE__" type="application/json">'));
+    assert.ok(serialized.startsWith('<script id="__SAMREY_STATE__" type="application/json">'));
   });
 
   it('4. Verifies CSRF token creation, validation, and rejection of forged tokens', () => {

@@ -3,7 +3,7 @@
  * @samrey/devtools - Owner & Effect Lifecycle Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 
 export interface InspectedOwner {
   id: string;
@@ -38,7 +38,7 @@ export class OwnerInspector {
       createdAt: Date.now()
     };
     this.owners.set(id, owner);
-    aetherDevToolsBridge.emit('owner:create', owner);
+    samreyDevToolsBridge.emit('owner:create', owner);
   }
 
   disposeOwner(id: string): void {
@@ -47,7 +47,7 @@ export class OwnerInspector {
 
     owner.disposed = true;
     owner.disposedAt = Date.now();
-    aetherDevToolsBridge.emit('owner:dispose', { id, disposedAt: owner.disposedAt });
+    samreyDevToolsBridge.emit('owner:dispose', { id, disposedAt: owner.disposedAt });
   }
 
   recordEffectRun(effectId: string, ownerId?: string, durationMs?: number, name?: string): void {
@@ -69,7 +69,7 @@ export class OwnerInspector {
 
     effect.runCount++;
     effect.lastExecutionMs = durationMs;
-    aetherDevToolsBridge.emit('effect:run', effect);
+    samreyDevToolsBridge.emit('effect:run', effect);
   }
 
   getOwners(): InspectedOwner[] {

@@ -245,7 +245,7 @@ Visual graph topology inspector, component tree inspector, and performance telem
 
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
-| `initDevTools(options?)` | Function | Initializes browser window bridge (`window.__AETHER_DEVTOOLS__`). | Browser |
+| `initDevTools(options?)` | Function | Initializes browser window bridge (`window.__SAMREY_DEVTOOLS__`). | Browser |
 | `SamreyDevToolsBridge` | Class | Core communication bridge between framework runtime and DevTools UI. | Browser |
 | `ReactiveGraphInspector` | Class | Generates node/edge graph representations of signal dependencies. | Browser |
 | `ComponentInspector` | Class | Inspects active component hierarchy and props. | Browser |
@@ -263,12 +263,12 @@ Project initialization, development server, production builder, preview server, 
 | :--- | :--- | :--- | :--- |
 | `runCLI(args: string[])` | Function | Programmatic CLI entry point executing commands. | Node |
 | `generateStarterProject(name, opts)` | Function | Generates starter project file dictionary for `ssr`, `spa`, `minimal`, or `ssg`. | Node |
-| `aetherVitePlugin(options?)` | Function | Vite plugin compiling `.aether`, `.tsx`, `.jsx` templates via `@samrey/compiler`. | Node |
-| `runCreateCommand(options)` | Function | Executes `aether create <name>`. | Node |
-| `runDevCommand(options)` | Function | Executes `aether dev`. | Node |
-| `runBuildCommand(options)` | Function | Executes `aether build`. | Node |
-| `runPreviewCommand(options)` | Function | Executes `aether preview`. | Node |
-| `runTestCommand(options)` | Function | Executes `aether test`. | Node |
-| `runAuditCommand(options)` | Function | Executes `aether audit`. | Node |
-| `runAnalyzeCommand(options)` | Function | Executes `aether analyze`. | Node |
-| `runGenerateCommand(options)` | Function | Executes `aether generate <type> <name>`. | Node |
+| `samreyVitePlugin(options?)` | Function | Vite plugin compiling `.samrey`, `.tsx`, `.jsx` templates via `@samrey/compiler`. | Node |
+| `runCreateCommand(options)` | Function | Executes `samrey create <name>`. | Node |
+| `runDevCommand(options)` | Function | Executes `samrey dev`. | Node |
+| `runBuildCommand(options)` | Function | Executes `samrey build`. | Node |
+| `runPreviewCommand(options)` | Function | Executes `samrey preview`. | Node |
+| `runTestCommand(options)` | Function | Executes `samrey test`. | Node |
+| `runAuditCommand(options)` | Function | Executes `samrey audit`. | Node |
+| `runAnalyzeCommand(options)` | Function | Executes `samrey analyze`. | Node |
+| `runGenerateCommand(options)` | Function | Executes `samrey generate <type> <name>`. | Node |

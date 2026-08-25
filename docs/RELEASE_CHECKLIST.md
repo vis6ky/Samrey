@@ -26,7 +26,7 @@ This checklist ensures strict quality, security, and build integrity before publ
 ## 3. Packaging & Distribution Integrity
 - [x] **Tarball Inspection (`npm pack`)**: Verified that tarballs contain only production code (`src/`, `bin/`, `README.md`, `LICENSE`, `package.json`) with zero test files, local artifacts, or temporary files.
 - [x] **Clean Installation Test**: Verified that an external application can install all 11 packages from tarballs and execute successfully in an isolated directory.
-- [x] **Binary Executable Verification**: Verified `aether --help`, `aether --version`, `aether create`, `aether audit` run instantaneously without loaders.
+- [x] **Binary Executable Verification**: Verified `samrey --help`, `samrey --version`, `samrey create`, `samrey audit` run instantaneously without loaders.
 
 ---
 

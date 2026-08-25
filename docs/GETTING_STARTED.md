@@ -12,16 +12,16 @@ The official `@samrey/cli` provides instant scaffolding for various architecture
 
 ```bash
 # Default Server-Side Rendering (SSR) starter
-aether create my-app --template ssr
+samrey create my-app --template ssr
 
 # Single-Page Application (SPA) starter
-aether create my-app --template spa
+samrey create my-app --template spa
 
 # Minimal lightweight starter
-aether create my-app --template minimal
+samrey create my-app --template minimal
 
 # Static Site Generation (SSG) starter
-aether create my-app --template ssg
+samrey create my-app --template ssg
 ```
 
 ### Navigating & Running

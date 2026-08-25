@@ -291,13 +291,13 @@ Samrey includes a first-class, type-safe router:
 ```
 
 * **Out-of-Order Streaming**: Uses hidden `<template id="async-chunk">` swaps to stream fast content immediately, inserting heavy async chunks as they resolve.
-* **Resumability**: Event delegation is captured at the root document listener (`window.__aether_dispatch`). Initial event clicks during page load are replayed seamlessly once code chunks download.
+* **Resumability**: Event delegation is captured at the root document listener (`window.__samrey_dispatch`). Initial event clicks during page load are replayed seamlessly once code chunks download.
 
 ---
 
 ### 3.10 CLI & DevTools Architecture
 
-* **`@samrey/cli`**: Provides instant Vite plugins (`vite-plugin-aether`), TypeScript type generation for file routes, and compile-time A11y/security audits (`aether audit`).
+* **`@samrey/cli`**: Provides instant Vite plugins (`vite-plugin-samrey`), TypeScript type generation for file routes, and compile-time A11y/security audits (`samrey audit`).
 * **`@samrey/devtools`**: Communicates over a structured window postMessage protocol to inspect the live Signal dependency graph, profile computation timings, and trigger time-travel state rollbacks.
 
 ---

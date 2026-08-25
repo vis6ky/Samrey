@@ -8,7 +8,7 @@ import { stripSecrets, SecretGuardOptions } from './secret-guard.js';
 
 export interface SerializeOptions extends SecretGuardOptions {
   /**
-   * DOM script element ID. Defaults to '__AETHER_STATE__'.
+   * DOM script element ID. Defaults to '__SAMREY_STATE__'.
    */
   id?: string;
 }
@@ -17,7 +17,7 @@ export type StateValidator<T> = (data: unknown) => { success: true; data: T } | 
 
 export interface DeserializeOptions<T = unknown> {
   /**
-   * DOM script element ID to read from. Defaults to '__AETHER_STATE__'.
+   * DOM script element ID to read from. Defaults to '__SAMREY_STATE__'.
    */
   id?: string;
   /**
@@ -35,7 +35,7 @@ export interface DeserializeOptions<T = unknown> {
  * Automatically scans and strips secrets and escapes script breakout tokens.
  */
 export function serializeStateForHydration(state: unknown, options: SerializeOptions = {}): string {
-  const scriptId = options.id || '__AETHER_STATE__';
+  const scriptId = options.id || '__SAMREY_STATE__';
   const cleanState = stripSecrets(state, options);
   const rawJson = JSON.stringify(cleanState);
   const safePayload = escapeForScriptPayload(rawJson);
@@ -62,7 +62,7 @@ export function safeJsonParse<T = unknown>(rawJson: string): T {
  * malformed, or fails schema validation.
  */
 export function deserializeHydrationState<T = unknown>(options: DeserializeOptions<T> = {}): T | null {
-  const scriptId = options.id || '__AETHER_STATE__';
+  const scriptId = options.id || '__SAMREY_STATE__';
   const fallback = options.fallback !== undefined ? options.fallback : null;
 
   if (typeof document === 'undefined') {
