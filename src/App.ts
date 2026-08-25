@@ -22,11 +22,11 @@ export function App(): HTMLElement {
   const getInitialTab = (): string => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const hash = window.location.hash.replace('#', '').trim();
-      if (['task-studio', 'competitive', 'compiler', 'reactivity', 'security', 'architecture', 'adr', 'roadmap', 'docs'].includes(hash)) {
+      if (['competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
         return hash;
       }
     }
-    return 'task-studio';
+    return 'competitive';
   };
 
   const activeTab = signal<string>(getInitialTab());

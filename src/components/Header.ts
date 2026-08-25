@@ -14,12 +14,12 @@ export interface NavTabItem {
 }
 
 export const NAV_ITEMS: NavTabItem[] = [
+  { id: 'competitive', label: '⚖️ Framework Comparison & Matrix', iconName: 'layers' },
+  { id: 'architecture', label: '🏛️ Architecture & Packages', iconName: 'cpu' },
   { id: 'task-studio', label: '🚀 Task Studio (Phase 16 App)', iconName: 'check-circle' },
-  { id: 'competitive', label: 'Competitive Analysis', iconName: 'layers' },
-  { id: 'compiler', label: 'Compiler & IR Pipeline', iconName: 'file-code' },
   { id: 'reactivity', label: 'Reactivity Engine', iconName: 'activity' },
+  { id: 'compiler', label: 'Compiler & IR Pipeline', iconName: 'file-code' },
   { id: 'security', label: 'Security Model', iconName: 'shield-check' },
-  { id: 'architecture', label: 'Monorepo & Packages', iconName: 'cpu' },
   { id: 'adr', label: 'ADRs', iconName: 'git-pull-request' },
   { id: 'roadmap', label: 'Roadmap & Non-Goals', iconName: 'milestone' },
   { id: 'docs', label: 'Architecture Docs', iconName: 'book-open' }
