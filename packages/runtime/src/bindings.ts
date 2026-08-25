@@ -27,11 +27,70 @@ export function bindText(node: Node, getter: () => unknown): void {
   let prevText: string | null = null;
   effect(() => {
     const val = getter();
-    const nextText = val === null || val === undefined ? '' : String(val);
+    const nextText = val === null || val === undefined ? '' : typeof val === 'object' && 'nodeType' in (val as any) ? '' : String(val);
     if (nextText !== prevText) {
       prevText = nextText;
       node.textContent = nextText;
     }
+  });
+}
+
+export function bindDynamicChild(parent: Node, getter: () => unknown): void {
+  let currentNodes: Node[] = [];
+  const marker = typeof document !== 'undefined' && typeof document.createComment === 'function'
+    ? document.createComment('samrey:dynamic')
+    : ({ nodeType: 8, nodeName: '#comment', parentNode: null } as unknown as Node);
+
+  parent.appendChild(marker);
+
+  effect(() => {
+    const val = getter();
+    const p = marker.parentNode || parent;
+
+    // Fast path: single text update on existing single text node
+    if ((typeof val === 'string' || typeof val === 'number') && currentNodes.length === 1 && currentNodes[0].nodeType === 3) {
+      currentNodes[0].textContent = String(val);
+      return;
+    }
+
+    // Normalize val into Node[]
+    let nextNodes: Node[] = [];
+    if (val === null || val === undefined || val === false || val === true) {
+      nextNodes = [];
+    } else if (Array.isArray(val)) {
+      for (const item of val) {
+        if (item === null || item === undefined || item === false || item === true) continue;
+        if (typeof item === 'object' && item !== null && 'nodeType' in item) {
+          nextNodes.push(item as Node);
+        } else {
+          const t = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
+            ? document.createTextNode(String(item))
+            : ({ nodeType: 3, nodeName: '#text', textContent: String(item) } as unknown as Node);
+          nextNodes.push(t);
+        }
+      }
+    } else if (typeof val === 'object' && val !== null && 'nodeType' in (val as any)) {
+      nextNodes = [val as Node];
+    } else {
+      const t = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
+        ? document.createTextNode(String(val))
+        : ({ nodeType: 3, nodeName: '#text', textContent: String(val) } as unknown as Node);
+      nextNodes = [t];
+    }
+
+    if (p) {
+      for (const oldNode of currentNodes) {
+        if (oldNode.parentNode === p && !nextNodes.includes(oldNode)) {
+          p.removeChild(oldNode);
+        }
+      }
+      for (const newNode of nextNodes) {
+        if (newNode.parentNode !== p) {
+          p.insertBefore(newNode, marker);
+        }
+      }
+    }
+    currentNodes = nextNodes;
   });
 }
 

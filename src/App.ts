@@ -75,87 +75,49 @@ export function App(): HTMLElement {
         : 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8'
   });
 
-  // Lazy cache instantiated views to avoid duplicate work
-  let taskStudioEl: HTMLElement | null = null;
-  let competitiveEl: HTMLElement | null = null;
-  let compilerEl: HTMLElement | null = null;
-  let reactivityEl: HTMLElement | null = null;
-  let securityEl: HTMLElement | null = null;
-  let architectureEl: HTMLElement | null = null;
-  let adrEl: HTMLElement | null = null;
-  let roadmapEl: HTMLElement | null = null;
-  let docsEl: HTMLElement | null = null;
-
   const viewTaskStudio = Show({
     when: () => activeTab.value === 'task-studio',
-    children: () => {
-      if (!taskStudioEl) taskStudioEl = AppShell();
-      return taskStudioEl;
-    }
+    children: () => AppShell()
   });
 
   const viewCompetitive = Show({
     when: () => activeTab.value === 'competitive',
-    children: () => {
-      if (!competitiveEl) competitiveEl = CompetitiveView();
-      return competitiveEl;
-    }
+    children: () => CompetitiveView()
   });
 
   const viewCompiler = Show({
     when: () => activeTab.value === 'compiler',
-    children: () => {
-      if (!compilerEl) compilerEl = CompilerVisualizer();
-      return compilerEl;
-    }
+    children: () => CompilerVisualizer()
   });
 
   const viewReactivity = Show({
     when: () => activeTab.value === 'reactivity',
-    children: () => {
-      if (!reactivityEl) reactivityEl = ReactivityVisualizer();
-      return reactivityEl;
-    }
+    children: () => ReactivityVisualizer()
   });
 
   const viewSecurity = Show({
     when: () => activeTab.value === 'security',
-    children: () => {
-      if (!securityEl) securityEl = SecurityView();
-      return securityEl;
-    }
+    children: () => SecurityView()
   });
 
   const viewArchitecture = Show({
     when: () => activeTab.value === 'architecture',
-    children: () => {
-      if (!architectureEl) architectureEl = ArchitectureView();
-      return architectureEl;
-    }
+    children: () => ArchitectureView()
   });
 
   const viewAdr = Show({
     when: () => activeTab.value === 'adr',
-    children: () => {
-      if (!adrEl) adrEl = AdrView();
-      return adrEl;
-    }
+    children: () => AdrView()
   });
 
   const viewRoadmap = Show({
     when: () => activeTab.value === 'roadmap',
-    children: () => {
-      if (!roadmapEl) roadmapEl = RoadmapView();
-      return roadmapEl;
-    }
+    children: () => RoadmapView()
   });
 
   const viewDocs = Show({
     when: () => activeTab.value === 'docs',
-    children: () => {
-      if (!docsEl) docsEl = DocReader();
-      return docsEl;
-    }
+    children: () => DocReader()
   });
 
   main.appendChild(viewTaskStudio);
