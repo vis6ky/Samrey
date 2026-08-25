@@ -42,7 +42,7 @@ All 11 packages declared in the Samrey monorepo were directly verified in `/pack
 | `/packages/ssr` | `@samrey/ssr` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
 | `/packages/testing` | `@samrey/testing` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
 | `/packages/devtools` | `@samrey/devtools` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/cli` | `@samrey/cli` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: aether`) |
+| `/packages/cli` | `@samrey/cli` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: samrey`) |
 
 ### Dependency Graph & Circular Dependency Audit
 - **Reactivity & Security**: Core zero-dependency base layer. No circular imports.

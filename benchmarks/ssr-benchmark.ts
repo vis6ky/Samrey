@@ -8,7 +8,7 @@ import { signal } from '../packages/reactivity/src/index.js';
 
 async function runSSRBenchmark() {
   console.log('===========================================================');
-  console.log('       AETHER SSR & HYDRATION PERFORMANCE BENCHMARK       ');
+  console.log('       SAMREY SSR & HYDRATION PERFORMANCE BENCHMARK       ');
   console.log('===========================================================\n');
 
   // --- 1. SERVER RENDER TIME BENCHMARK ---

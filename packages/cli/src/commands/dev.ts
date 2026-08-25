@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether dev" Command
+ * @samrey/cli - "samrey dev" Command
  */
 
 import { CommandResult } from './create.js';
@@ -28,7 +28,7 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   const banner = [
     `  ▲ Samrey Development Server`,
     `  ➜ Local:   ${devUrl}/`,
-    `  ➜ DevTools: Enabled (Bridge active on window.__AETHER_DEVTOOLS_BRIDGE__)`,
+    `  ➜ DevTools: Enabled (Bridge active on window.__SAMREY_DEVTOOLS_BRIDGE__)`,
     `  ➜ HMR:     Fine-grained reactive signal updates enabled`,
     `  ➜ Mode:    Development (Diagnostics & runtime assertions active)`
   ].join('\n');

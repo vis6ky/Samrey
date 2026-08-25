@@ -29,6 +29,6 @@ Samrey features a defense-in-depth security model implemented natively in `@samr
 ## 3. Reporting a Vulnerability
 
 To report a vulnerability or security flaw:
-1. Open a private security advisory via GitHub Security Advisories at `https://github.com/samrey-framework/aether/security/advisories`.
+1. Open a private security advisory via GitHub Security Advisories at `https://github.com/samrey-framework/samrey/security/advisories`.
 2. Do not open public issues for zero-day vulnerabilities.
 3. Vulnerabilities will be triaged within 48 hours and patched in the next release candidate or patch release.

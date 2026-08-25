@@ -3,7 +3,7 @@
  * @samrey/devtools - Reactive Graph Topology & Signal Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 import { sanitizePayload } from './sanitizer.js';
 
 export interface InspectedSignalNode {
@@ -29,7 +29,7 @@ export class GraphInspector {
     const isNew = !this.trackedNodes.has(node.id);
     this.trackedNodes.set(node.id, safeNode);
 
-    aetherDevToolsBridge.emit(isNew ? 'signal:create' : 'signal:update', safeNode);
+    samreyDevToolsBridge.emit(isNew ? 'signal:create' : 'signal:update', safeNode);
   }
 
   updateNodeValue(id: string, rawValue: unknown, subscribersCount?: number): void {
@@ -42,7 +42,7 @@ export class GraphInspector {
     }
     node.updatedAt = Date.now();
 
-    aetherDevToolsBridge.emit('signal:update', node);
+    samreyDevToolsBridge.emit('signal:update', node);
   }
 
   getNode(id: string): InspectedSignalNode | undefined {

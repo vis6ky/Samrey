@@ -10,11 +10,11 @@ export interface SamreyPluginOptions {
   exclude?: string[];
 }
 
-export function aetherVitePlugin(options: SamreyPluginOptions = {}) {
+export function samreyVitePlugin(options: SamreyPluginOptions = {}) {
   return {
-    name: 'vite-plugin-aether',
+    name: 'vite-plugin-samrey',
     transform(code: string, id: string) {
-      if (!id.endsWith('.aether') && !id.endsWith('.tsx') && !id.endsWith('.jsx')) {
+      if (!id.endsWith('.samrey') && !id.endsWith('.tsx') && !id.endsWith('.jsx')) {
         return null;
       }
 

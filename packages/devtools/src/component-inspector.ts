@@ -3,7 +3,7 @@
  * @samrey/devtools - Component Hierarchy & Tree Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 import { sanitizePayload } from './sanitizer.js';
 
 export interface InspectedComponent {
@@ -29,7 +29,7 @@ export class ComponentInspector {
       existing.props = safeProps;
       existing.renderCount++;
       existing.lastUpdateTime = Date.now();
-      aetherDevToolsBridge.emit('component:update', existing);
+      samreyDevToolsBridge.emit('component:update', existing);
       return;
     }
 
@@ -52,7 +52,7 @@ export class ComponentInspector {
       }
     }
 
-    aetherDevToolsBridge.emit('component:mount', node);
+    samreyDevToolsBridge.emit('component:mount', node);
   }
 
   unmountComponent(id: string): void {
@@ -65,7 +65,7 @@ export class ComponentInspector {
     }
 
     this.components.delete(id);
-    aetherDevToolsBridge.emit('component:unmount', { id, name: comp.name });
+    samreyDevToolsBridge.emit('component:unmount', { id, name: comp.name });
   }
 
   getComponent(id: string): InspectedComponent | undefined {

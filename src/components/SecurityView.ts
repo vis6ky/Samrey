@@ -21,15 +21,15 @@ export function SecurityView(): HTMLElement {
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/&/g, '\\u0026');
-      simulatedDefenseResult.value = `[SAFE SERIALIZED SSR OUTPUT]:\nwindow.__AETHER_STATE__ = "${escaped}";\n\nResult: Safe! Browser HTML parser ignores Unicode escapes; Script tag remains open and intact.`;
+      simulatedDefenseResult.value = `[SAFE SERIALIZED SSR OUTPUT]:\nwindow.__SAMREY_STATE__ = "${escaped}";\n\nResult: Safe! Browser HTML parser ignores Unicode escapes; Script tag remains open and intact.`;
     } else if (threatId === 'THREAT-02' || payload.startsWith('javascript:')) {
-      simulatedDefenseResult.value = `[AETHER URI SANITIZER INTERCEPTED]:\nTarget: "${payload}"\nBlocked Scheme: "javascript:"\nResolved Output: "about:blank"\n\nResult: Blocked! Zero script execution on click/navigation.`;
+      simulatedDefenseResult.value = `[SAMREY URI SANITIZER INTERCEPTED]:\nTarget: "${payload}"\nBlocked Scheme: "javascript:"\nResolved Output: "about:blank"\n\nResult: Blocked! Zero script execution on click/navigation.`;
     } else if (threatId === 'THREAT-03' || payload.includes('<img') || payload.includes('onerror')) {
-      simulatedDefenseResult.value = `[W3C TRUSTED TYPES ENFORCEMENT]:\nPolicy: aether#html.createHTML()\nAction: Stripped inline event handler "onerror"\nResult: Safe HTML token created under Cryptographically Sealed Policy.`;
+      simulatedDefenseResult.value = `[W3C TRUSTED TYPES ENFORCEMENT]:\nPolicy: samrey#html.createHTML()\nAction: Stripped inline event handler "onerror"\nResult: Safe HTML token created under Cryptographically Sealed Policy.`;
     } else if (threatId === 'THREAT-04' || payload.includes('__proto__')) {
       simulatedDefenseResult.value = `[PROTOTYPE POLLUTION DEFENSE]:\nObject.create(null) store initialized.\nRejected keys: ["__proto__", "constructor", "prototype"]\nObject.prototype polluted? FALSE. Application memory is hermetically sealed.`;
     } else {
-      simulatedDefenseResult.value = `[AETHER ACTION CSRF VALIDATOR]:\nSec-Fetch-Site: cross-site -> REJECTED (HTTP 403 Forbidden).\nAction signature verification failed. State unmodified.`;
+      simulatedDefenseResult.value = `[SAMREY ACTION CSRF VALIDATOR]:\nSec-Fetch-Site: cross-site -> REJECTED (HTTP 403 Forbidden).\nAction signature verification failed. State unmodified.`;
     }
   };
 

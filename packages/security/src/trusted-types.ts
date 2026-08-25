@@ -25,7 +25,7 @@ export function getSamreyTrustedPolicy(): SamreyTrustedPolicy {
 
   if (tt) {
     try {
-      cachedPolicy = tt.createPolicy('aether#html', {
+      cachedPolicy = tt.createPolicy('samrey#html', {
         createHTML: (input: string) => sanitizeHtmlString(input),
         createScript: () => {
           throw new Error('[Samrey Security] Dynamic script creation is prohibited under zero-eval policy.');

@@ -12,12 +12,12 @@ Phase 17 represents the complete public API audit, developer experience hardenin
 1. **Public API Audit & Verification**: Formally audited all 11 packages, established the authoritative contract in `docs/PUBLIC_API.md`, and verified export stability and environment targets (Universal, Browser, Server).
 2. **Deterministic Error Code System**: Created `docs/ERROR_CODES.md` establishing standardized diagnostic error codes (`AETH-001` through `AETH-899`), root cause explanations, and actionable recovery suggestions.
 3. **TypeScript Type Safety & Generic Inference**: Audited reactive primitives (`signal`, `computed`, `effect`, `createStore`, `produce`, `reconcile`), DOM bindings (`el`, `mount`, `hydrate`), router signals (`useParams`, `useSearchParams`), HTTP resources (`createResource`), and schema forms (`createForm`, `createField`) for strict type safety.
-4. **CLI Hardening & Multi-Template Scaffolding**: Validated `aether create` across all 4 production starter templates:
+4. **CLI Hardening & Multi-Template Scaffolding**: Validated `samrey create` across all 4 production starter templates:
    - `ssr` (Default Server-Side Rendering + Hydration)
    - `spa` (Single-Page Client Application)
    - `minimal` (Ultra-light single-file reactive baseline)
    - `ssg` (Static Site Generation pre-rendered across route manifests)
-   Added `aether preview` command and hardened input validation against directory traversal and malformed inputs.
+   Added `samrey preview` command and hardened input validation against directory traversal and malformed inputs.
 5. **Memory, Lifecycle & Stress Hardening**: Executed 1,000, 5,000, and 10,000 cycle stress benchmarks verifying complete owner cleanup, effect disposal, batched transactional efficiency, and deep proxy store scalability with zero memory leaks.
 6. **Documentation & Zero-Dependency Purity Gate**: Updated documentation across the monorepo to ensure 100% Samrey-native patterns with zero external framework dependencies.
 
@@ -37,7 +37,7 @@ Phase 17 represents the complete public API audit, developer experience hardenin
 | `@samrey/ssr` | `src/index.ts` | `renderToString`, `renderToStream`, `generateStaticSite`, `hydrateFromSSR`, `escapeHtml`, `escapeJsonState`, `sanitizeSsrState` | Stable | Server / Node |
 | `@samrey/testing` | `src/index.ts` | `renderTestComponent`, `fireEvent`, `waitFor`, `waitForNextUpdate`, `createMockResource`, `cleanupAllTestContainers` | Stable | Universal / Test |
 | `@samrey/devtools` | `src/index.ts` | `initDevTools`, `SamreyDevToolsBridge`, `ReactiveGraphInspector`, `ComponentInspector`, `OwnerInspector`, `RouterInspector`, `NetworkInspector`, `FormInspector`, `PerfInspector` | Stable | Browser |
-| `@samrey/cli` | `src/index.ts` | `runCLI`, `generateStarterProject`, `aetherVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand` | Stable | Node |
+| `@samrey/cli` | `src/index.ts` | `runCLI`, `generateStarterProject`, `samreyVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand` | Stable | Node |
 
 ---
 
@@ -60,16 +60,16 @@ The Samrey error model provides machine-readable codes with standardized ranges:
 ## 3. Developer Experience & CLI Verification
 
 ### Tested Commands & Scaffolding Modes
-1. `aether create <name> --template ssr` — Generates isomorphic app with `renderToString`, client hydration, Vite build pipeline.
-2. `aether create <name> --template spa` — Generates client-only single-page application with `@samrey/router`.
-3. `aether create <name> --template minimal` — Generates single-file lightweight reactive baseline with zero routing overhead.
-4. `aether create <name> --template ssg` — Generates static site generator script with `generateStaticSite`.
-5. `aether dev` — Starts development server with hot template compilation and DevTools bridge.
-6. `aether build` — Compiles production bundle with static template hoisting and AST tree-shaking.
-7. `aether preview` — Serves production build locally with production headers.
-8. `aether test` — Executes test suites natively.
-9. `aether audit` — Runs static security and accessibility audit.
-10. `aether analyze` — Inspects reactive dependency topology and bundle distribution.
+1. `samrey create <name> --template ssr` — Generates isomorphic app with `renderToString`, client hydration, Vite build pipeline.
+2. `samrey create <name> --template spa` — Generates client-only single-page application with `@samrey/router`.
+3. `samrey create <name> --template minimal` — Generates single-file lightweight reactive baseline with zero routing overhead.
+4. `samrey create <name> --template ssg` — Generates static site generator script with `generateStaticSite`.
+5. `samrey dev` — Starts development server with hot template compilation and DevTools bridge.
+6. `samrey build` — Compiles production bundle with static template hoisting and AST tree-shaking.
+7. `samrey preview` — Serves production build locally with production headers.
+8. `samrey test` — Executes test suites natively.
+9. `samrey audit` — Runs static security and accessibility audit.
+10. `samrey analyze` — Inspects reactive dependency topology and bundle distribution.
 
 ---
 

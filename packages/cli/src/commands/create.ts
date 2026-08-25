@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether create" Command
+ * @samrey/cli - "samrey create" Command
  */
 
 import * as fs from 'node:fs';

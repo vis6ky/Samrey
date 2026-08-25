@@ -47,7 +47,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
       'Define and validate Samrey Intermediate Representation (AIR) schema',
       'Implement static HTML hoisting and <template> extraction',
       'Implement context-aware security classifier and compile-time A11y linter',
-      'Create vite-plugin-aether'
+      'Create vite-plugin-samrey'
     ],
     verificationGate: [
       'Compile 50+ diverse test fixtures with bit-for-bit verified code output',
@@ -80,7 +80,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
     objectives: [
       'Implement asynchronous HTML streaming renderer for Node.js and Web Streams',
       'Implement Out-of-Order HTML stream chunks using hidden <template> swap blocks',
-      'Implement safe Unicode JSON state serializer (window.__AETHER_STATE__)',
+      'Implement safe Unicode JSON state serializer (window.__SAMREY_STATE__)',
       'Implement 200-byte root event delegation listener with event buffering'
     ],
     verificationGate: [

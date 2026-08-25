@@ -183,7 +183,7 @@ describe('Security Fuzzing Suite', () => {
 
       assert.doesNotThrow(() => {
         const html = serializeStateForHydration(circular);
-        assert.ok(html.includes('<script id="__AETHER_STATE__"'));
+        assert.ok(html.includes('<script id="__SAMREY_STATE__"'));
       });
     });
 

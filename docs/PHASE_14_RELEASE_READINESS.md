@@ -40,7 +40,7 @@ All 11 packages in `@samrey/*` were packed and audited. Generated tarballs conta
 | `@samrey/ssr` | `1.0.0-rc.1` | 13.5 kB | 11 files | `renderToString`, `renderToStream`, `generateStaticSite`, `hydrate`, Secret Guard |
 | `@samrey/testing` | `1.0.0-rc.1` | 5.0 kB | 6 files | `renderTest`, `fireEvent`, `flushReactivity` |
 | `@samrey/devtools` | `1.0.0-rc.1` | 9.5 kB | 13 files | `registerDevToolsHook`, graph inspection, profiler |
-| `@samrey/cli` | `1.0.0-rc.1` | 26.2 kB | 17 files | Standalone executable binary (`./bin/aether.js`), Vite plugin, auditor |
+| `@samrey/cli` | `1.0.0-rc.1` | 26.2 kB | 17 files | Standalone executable binary (`./bin/samrey.js`), Vite plugin, auditor |
 
 ---
 
@@ -61,11 +61,11 @@ A simulation consumer project (`samrey-simulation-consumer`) was created in a se
 
 ## 4. CLI Experience Verification
 
-The CLI binary (`packages/cli/bin/aether.js`) was tested in clean isolation:
-- `aether --help`: Displays full command directory and usage examples.
-- `aether --version`: Outputs `aether v1.0.0-rc.1`.
-- `aether create <name> --template ssr --dry-run`: Successfully prepares starter files.
-- `aether audit`: Executes static XSS, CSP, and accessibility audit and reports status.
+The CLI binary (`packages/cli/bin/samrey.js`) was tested in clean isolation:
+- `samrey --help`: Displays full command directory and usage examples.
+- `samrey --version`: Outputs `samrey v1.0.0-rc.1`.
+- `samrey create <name> --template ssr --dry-run`: Successfully prepares starter files.
+- `samrey audit`: Executes static XSS, CSP, and accessibility audit and reports status.
 
 ---
 
@@ -118,7 +118,7 @@ The following release engineering files were created or updated:
 
 ```
 ================================================================================
-                    AETHER FRAMEWORK RELEASE READINESS: PASS
+                    SAMREY FRAMEWORK RELEASE READINESS: PASS
                     TARGET: v1.0.0-rc.1 (PUBLIC BETA READY)
 ================================================================================
 ```

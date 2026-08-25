@@ -114,7 +114,7 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     dependencies: [],
     keyExports: ['sanitizeUri', 'sanitizeHtmlString', 'getSamreyTrustedPolicy', 'SafeHtml', 'generateCsrfToken'],
     responsibilities: [
-      'W3C Trusted Types policy management (aether#html)',
+      'W3C Trusted Types policy management (samrey#html)',
       'Contextual URI scheme validation (HTTP/S/mailto/tel only)',
       'Zero-eval runtime enforcement',
       'AST-based HTML element and attribute whitelist sanitization'
@@ -144,7 +144,7 @@ export const FRAMEWORK_PACKAGES: FrameworkPackage[] = [
     keyExports: ['vitePluginSamrey', 'createSamreyApp', 'auditSecurity', 'generateRouteTypes'],
     responsibilities: [
       'Zero-config bundler plugin integration',
-      'Compile-time security and accessibility CLI audits (aether audit)',
+      'Compile-time security and accessibility CLI audits (samrey audit)',
       'Automatic TypeScript definition generation for file routes'
     ],
     securityBoundary: 'Validates template sources against known XSS signatures and misconfigured security headers.'

@@ -1,7 +1,7 @@
 /**
  * @license Apache-2.0
  * @samrey/monorepo - Phase 24 CLI Tooling Final Gate
- * Tests aether CLI commands (create, dev, build, preview, test, audit, analyze, generate)
+ * Tests samrey CLI commands (create, dev, build, preview, test, audit, analyze, generate)
  */
 
 import { describe, it } from 'node:test';

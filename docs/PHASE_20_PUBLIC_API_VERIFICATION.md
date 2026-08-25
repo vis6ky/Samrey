@@ -33,7 +33,7 @@ All 11 packages were evaluated for:
 | **`@samrey/ssr`** | `renderToString`, `renderToStream`, `generateStaticSite`, `hydrateFromSSR`, `escapeHtml`, `escapeJsonState`, `sanitizeSsrState`, `stripSecrets` | All 8 SSR/SSG primitives present | None | None | Strict TypeScript | Fully Operational | **PASS** |
 | **`@samrey/testing`** | `renderTestComponent`, `fireEvent`, `waitFor`, `waitForNextUpdate`, `createMockResource`, `cleanupAllTestContainers` | All 6 test primitives present | None | None | Strict TypeScript | Fully Operational | **PASS** |
 | **`@samrey/devtools`** | `initDevTools`, `SamreyDevToolsBridge`, `ReactiveGraphInspector`, `ComponentInspector`, `PerfInspector` | All 5 DevTools primitives present | None | None | Strict TypeScript | Fully Operational | **PASS** |
-| **`@samrey/cli`** | `runCLI`, `generateStarterProject`, `aetherVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand`, `CLI_VERSION` | All 12 CLI primitives present | None | None | Strict TypeScript | Fully Operational | **PASS** |
+| **`@samrey/cli`** | `runCLI`, `generateStarterProject`, `samreyVitePlugin`, `runCreateCommand`, `runDevCommand`, `runBuildCommand`, `runPreviewCommand`, `runTestCommand`, `runAuditCommand`, `runAnalyzeCommand`, `runGenerateCommand`, `CLI_VERSION` | All 12 CLI primitives present | None | None | Strict TypeScript | Fully Operational | **PASS** |
 
 ---
 

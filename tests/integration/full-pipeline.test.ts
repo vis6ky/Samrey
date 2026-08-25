@@ -254,9 +254,9 @@ describe('Samrey Full Pipeline End-to-End Integration', () => {
 
     assert.ok(ssrHtml.includes('<!DOCTYPE html>'));
     assert.ok(ssrHtml.includes('<title>Project #42 - Enterprise Core</title>'));
-    assert.ok(ssrHtml.includes('__AETHER_STATE__'));
+    assert.ok(ssrHtml.includes('__SAMREY_STATE__'));
     assert.ok(ssrHtml.includes('Enterprise Core'));
     assert.ok(ssrHtml.includes('Run E2E Pipeline'));
-    assert.ok(ssrHtml.includes('window.__AETHER_EVENTS__'));
+    assert.ok(ssrHtml.includes('window.__SAMREY_EVENTS__'));
   });
 });

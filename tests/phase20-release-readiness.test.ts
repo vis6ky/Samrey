@@ -19,8 +19,8 @@ import { createResource, httpClient, createHttpCache, HttpError } from '../packa
 import { createForm, createField, validateSchema, getAccessibleFieldProps } from '../packages/forms/src/index.js';
 import { renderToString, renderToStream, generateStaticSite, sanitizeSsrState, stripSecrets, serializeStateForHydration, escapeJsonState, hydrateFromSSR } from '../packages/ssr/src/index.js';
 import { renderTestComponent, fireEvent, waitFor, cleanupAllTestContainers, createMockResource } from '../packages/testing/src/index.js';
-import { DevToolsBridge, aetherDevToolsBridge, SamreyDevToolsBridge, initDevTools, GraphInspector, ReactiveGraphInspector, PerformanceInspector, PerfInspector } from '../packages/devtools/src/index.js';
-import { runCLI, generateStarterProject, aetherVitePlugin, runSamreyAudit, CLI_VERSION } from '../packages/cli/src/index.js';
+import { DevToolsBridge, samreyDevToolsBridge, SamreyDevToolsBridge, initDevTools, GraphInspector, ReactiveGraphInspector, PerformanceInspector, PerfInspector } from '../packages/devtools/src/index.js';
+import { runCLI, generateStarterProject, samreyVitePlugin, runSamreyAudit, CLI_VERSION } from '../packages/cli/src/index.js';
 
 describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () => {
   const PACKAGES = [
@@ -95,7 +95,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
         assert.ok(manifest.files, `Missing files in @samrey/${pkg}`);
 
         if (pkg === 'cli') {
-          assert.ok(manifest.bin && manifest.bin.aether, 'CLI must have bin.aether field');
+          assert.ok(manifest.bin && manifest.bin.samrey, 'CLI must have bin.samrey field');
         }
       }
     });
@@ -207,7 +207,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
 
       // DevTools
       assert.ok(DevToolsBridge, 'DevToolsBridge must exist');
-      assert.ok(aetherDevToolsBridge, 'aetherDevToolsBridge must exist');
+      assert.ok(samreyDevToolsBridge, 'samreyDevToolsBridge must exist');
       assert.ok(SamreyDevToolsBridge, 'SamreyDevToolsBridge must exist');
       assert.equal(typeof initDevTools, 'function');
       assert.ok(GraphInspector, 'GraphInspector must exist');
@@ -218,7 +218,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       // CLI
       assert.equal(typeof runCLI, 'function');
       assert.equal(typeof generateStarterProject, 'function');
-      assert.equal(typeof aetherVitePlugin, 'function');
+      assert.equal(typeof samreyVitePlugin, 'function');
       assert.equal(typeof runSamreyAudit, 'function');
       assert.equal(CLI_VERSION, '1.0.0');
     });

@@ -23,7 +23,7 @@ An exhaustive scan across all packages, source files, documentation, examples, a
 
 | Package Name | Manifest `license` | `LICENSE` File Present | SPDX Header Coverage | Result |
 | :--- | :--- | :--- | :--- | :--- |
-| `aether` (Monorepo Root) | `Apache-2.0` | Yes (`/LICENSE`) | 100% | **PASS** |
+| `samrey` (Monorepo Root) | `Apache-2.0` | Yes (`/LICENSE`) | 100% | **PASS** |
 | `@samrey/reactivity` | `Apache-2.0` | Yes | 100% | **PASS** |
 | `@samrey/runtime` | `Apache-2.0` | Yes | 100% | **PASS** |
 | `@samrey/security` | `Apache-2.0` | Yes | 100% | **PASS** |

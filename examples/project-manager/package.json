@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "aether dev",
-    "build": "aether build",
-    "preview": "aether preview",
+    "dev": "samrey dev",
+    "build": "samrey build",
+    "preview": "samrey preview",
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {

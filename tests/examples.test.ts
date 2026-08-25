@@ -56,7 +56,7 @@ describe('Samrey Runnable Examples Suite', () => {
     assert.ok(typeof html === 'string');
     assert.ok(html.includes('Samrey SSR App'));
     assert.ok(html.includes('Lead Architect'));
-    assert.ok(html.includes('__AETHER_STATE__'));
+    assert.ok(html.includes('__SAMREY_STATE__'));
   });
 
   it('runs full SSR application example with metadata and context', async () => {
@@ -92,7 +92,7 @@ describe('Samrey Runnable Examples Suite', () => {
 
   it('runs hydration and event replay example', () => {
     const res = runHydrationExample();
-    assert.ok(res.preHydrationScript.includes('__AETHER_EVENTS__'));
+    assert.ok(res.preHydrationScript.includes('__SAMREY_EVENTS__'));
     assert.ok(res.serializedState.includes('usr_998'));
     assert.equal(res.deserializedState['userId'], 'usr_998');
     assert.equal(res.hydrationResult.success, true);

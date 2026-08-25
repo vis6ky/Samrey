@@ -52,23 +52,23 @@ The `@samrey/cli` package supplies scaffolding, compilation plugins, and static 
 
 ```bash
 # Scaffolding
-npx aether create <project-name>
-npx aether generate component <ComponentName>
-npx aether generate route <RoutePath>
-npx aether generate store <StoreName>
+npx samrey create <project-name>
+npx samrey generate component <ComponentName>
+npx samrey generate route <RoutePath>
+npx samrey generate store <StoreName>
 
 # Development & Build
-npx aether dev [--port 3000]
-npx aether build
-npx aether test
+npx samrey dev [--port 3000]
+npx samrey build
+npx samrey test
 
 # Static Security & A11y Audit
-npx aether audit [--strict]
-npx aether analyze [--json]
+npx samrey audit [--strict]
+npx samrey analyze [--json]
 ```
 
 ### Static Template Auditing
 
-The `aether audit` command scans templates for:
+The `samrey audit` command scans templates for:
 - Accessibility violations: Missing `alt` on `<img>`, missing form labels, invalid ARIA attributes.
 - Security hazards: Unescaped interpolations in dangerous contexts, raw HTML injections without Trusted Types policies.

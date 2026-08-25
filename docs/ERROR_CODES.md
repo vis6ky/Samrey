@@ -34,27 +34,27 @@ Samrey features a centralized, deterministic error model with structured codes (
 #### `AETH-001`: Invalid Project Name or Directory
 - **Message**: `[AETH-001] Invalid project name or target directory.`
 - **Explanation**: The project name is empty, contains forbidden path traversal sequences (`..`), absolute root paths, or illegal filename characters.
-- **Suggestion**: Use alphanumeric characters, hyphens, and underscores (e.g. `aether create my-dashboard-app`).
+- **Suggestion**: Use alphanumeric characters, hyphens, and underscores (e.g. `samrey create my-dashboard-app`).
 
 #### `AETH-002`: Unknown Starter Template
 - **Message**: `[AETH-002] Unknown starter template "<name>".`
-- **Explanation**: The `--template` argument provided to `aether create` is not recognized.
+- **Explanation**: The `--template` argument provided to `samrey create` is not recognized.
 - **Suggestion**: Specify one of the supported starter templates: `ssr`, `spa`, `minimal`, or `ssg`.
 
 #### `AETH-003`: Invalid Server Port or Network Host
 - **Message**: `[AETH-003] Invalid port number or host configuration.`
-- **Explanation**: The port passed to `aether dev` or `aether preview` is out of the valid range (1–65535) or unavailable.
+- **Explanation**: The port passed to `samrey dev` or `samrey preview` is out of the valid range (1–65535) or unavailable.
 - **Suggestion**: Pass a valid open port number, e.g. `--port 3000`.
 
 #### `AETH-004`: Unknown CLI Command
 - **Message**: `[AETH-004] Unknown command "<command>".`
 - **Explanation**: The requested CLI command is not registered.
-- **Suggestion**: Run `aether --help` to list all available commands (`create`, `dev`, `build`, `preview`, `test`, `audit`, `analyze`, `generate`).
+- **Suggestion**: Run `samrey --help` to list all available commands (`create`, `dev`, `build`, `preview`, `test`, `audit`, `analyze`, `generate`).
 
 #### `AETH-005`: Missing Generator Artifact
 - **Message**: `[AETH-005] Missing artifact type or name for generator.`
-- **Explanation**: `aether generate` requires both an artifact type (`component`, `route`, `store`, `resource`) and a valid name.
-- **Suggestion**: Run `aether generate component UserProfile`.
+- **Explanation**: `samrey generate` requires both an artifact type (`component`, `route`, `store`, `resource`) and a valid name.
+- **Suggestion**: Run `samrey generate component UserProfile`.
 
 ---
 

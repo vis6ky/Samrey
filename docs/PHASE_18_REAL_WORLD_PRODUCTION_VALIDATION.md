@@ -96,7 +96,7 @@ All 4 CLI starter templates were verified for architectural purity and zero-depe
 - `minimal`: Micro-footprint starter (sub-5KB) with fine-grained DOM bindings.
 - `ssg`: Static site generator with parameterized route pre-rendering.
 
-CLI commands (`aether create`, `aether dev`, `aether build`, `aether preview`, `aether test`, `aether audit`, `aether analyze`) executed without errors in dry-run and simulated external developer environments.
+CLI commands (`samrey create`, `samrey dev`, `samrey build`, `samrey preview`, `samrey test`, `samrey audit`, `samrey analyze`) executed without errors in dry-run and simulated external developer environments.
 
 ---
 

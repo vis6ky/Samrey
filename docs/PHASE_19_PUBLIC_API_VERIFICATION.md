@@ -127,7 +127,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
 ### 10. `@samrey/devtools`
 - **Status:** PASS
 - **Exports Verified:**
-  - `DevToolsBridge`, `aetherDevToolsBridge`, `SamreyDevToolsBridge`
+  - `DevToolsBridge`, `samreyDevToolsBridge`, `SamreyDevToolsBridge`
   - `initDevTools` (Origin-locked DevTools initializer)
   - `GraphInspector`, `ReactiveGraphInspector` (Signal dependency graph inspector)
   - `ComponentInspector` (Component hierarchy inspector)
@@ -139,7 +139,7 @@ All public symbols were loaded, invoked, and validated in an isolated clean-room
 - **Exports Verified:**
   - `runCLI` (Command-line interface runner)
   - `generateStarterProject` (Template generator: ssr, spa, minimal, ssg)
-  - `aetherVitePlugin` (Vite compiler integration plugin)
+  - `samreyVitePlugin` (Vite compiler integration plugin)
   - `runSamreyAudit` (Security and accessibility auditor)
   - `CLI_VERSION` (Version constant = '1.0.0-rc.1')
 

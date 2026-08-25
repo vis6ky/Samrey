@@ -19,7 +19,7 @@ import { createResource, httpClient, createHttpCache, HttpError } from '../packa
 import { createForm, createField, validateSchema, getAccessibleFieldProps } from '../packages/forms/src/index.js';
 import { renderToString, renderToStream, generateStaticSite, sanitizeSsrState, stripSecrets } from '../packages/ssr/src/index.js';
 import { renderTestComponent, fireEvent, waitFor, cleanupAllTestContainers, createMockResource } from '../packages/testing/src/index.js';
-import { initDevTools, aetherDevToolsBridge } from '../packages/devtools/src/index.js';
+import { initDevTools, samreyDevToolsBridge } from '../packages/devtools/src/index.js';
 import { runCLI, generateStarterProject } from '../packages/cli/src/index.js';
 
 describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribution Validation', () => {
@@ -97,8 +97,8 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
 
       // Verify tarball install in isolated consumer directory
       execSync('npm install --no-package-lock', { cwd: consumerDir, stdio: 'pipe' });
-      const installedNodeModules = path.join(consumerDir, 'node_modules', '@aether');
-      assert.ok(fs.existsSync(installedNodeModules), 'node_modules/@aether must be populated');
+      const installedNodeModules = path.join(consumerDir, 'node_modules', '@samrey');
+      assert.ok(fs.existsSync(installedNodeModules), 'node_modules/@samrey must be populated');
 
       for (const pkg of PACKAGES) {
         assert.ok(

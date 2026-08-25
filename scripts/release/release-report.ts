@@ -279,7 +279,7 @@ PASS (Zero React, Vue, Angular, Svelte, Solid, Preact, Lit, or foreign UI runtim
 latest (GA)
 
 ### Final Decision
-AETHER FRAMEWORK v1.0.0 — GENERAL AVAILABILITY (GA) CERTIFIED
+SAMREY FRAMEWORK v1.0.0 — GENERAL AVAILABILITY (GA) CERTIFIED
 `
   );
 

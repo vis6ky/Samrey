@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether audit" Command
+ * @samrey/cli - "samrey audit" Command
  */
 
 import { CommandResult } from './create.js';

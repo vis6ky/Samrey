@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
-  aetherVitePlugin, 
+  samreyVitePlugin, 
   auditSource,
   runCLI,
   generateStarterProject,
@@ -11,8 +11,8 @@ import {
 
 describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () => {
   it('integrates Vite plugin transform hook with compiler', () => {
-    const plugin = aetherVitePlugin();
-    assert.equal(plugin.name, 'vite-plugin-aether');
+    const plugin = samreyVitePlugin();
+    assert.equal(plugin.name, 'vite-plugin-samrey');
 
     const transformed = plugin.transform('<div>{title}</div>', 'App.tsx');
     assert.ok(transformed !== null);
@@ -56,7 +56,7 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.equal(validateProjectName('my project with spaces').valid, false);
   });
 
-  it('handles "aether --help" and "aether --version" cleanly', async () => {
+  it('handles "samrey --help" and "samrey --version" cleanly', async () => {
     const helpResult = await runCLI(['--help']);
     assert.equal(helpResult.exitCode, 0);
     assert.ok(helpResult.message.includes('Samrey Framework CLI'));
@@ -64,22 +64,22 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
 
     const versionResult = await runCLI(['--version']);
     assert.equal(versionResult.exitCode, 0);
-    assert.ok(versionResult.message.includes('aether v1.0.0'));
+    assert.ok(versionResult.message.includes('samrey v1.0.0'));
   });
 
-  it('executes "aether create" in dry-run mode with deterministic output', async () => {
+  it('executes "samrey create" in dry-run mode with deterministic output', async () => {
     const result = await runCLI(['create', 'shop-app', '--template', 'ssr', '--dry-run']);
     assert.equal(result.exitCode, 0);
     assert.ok(result.message.includes('Prepared'));
   });
 
-  it('returns non-zero exit code on missing project name in "aether create"', async () => {
+  it('returns non-zero exit code on missing project name in "samrey create"', async () => {
     const result = await runCLI(['create']);
     assert.equal(result.exitCode, 1);
     assert.ok(result.message.includes('Project name is required'));
   });
 
-  it('executes "aether dev" with port option and validation', async () => {
+  it('executes "samrey dev" with port option and validation', async () => {
     const validDev = await runCLI(['dev', '--port', '4000', '--dry-run']);
     assert.equal(validDev.exitCode, 0);
 
@@ -88,25 +88,25 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.ok(invalidDev.message.includes('Invalid port'));
   });
 
-  it('executes "aether build" with production report and static hoisting summary', async () => {
+  it('executes "samrey build" with production report and static hoisting summary', async () => {
     const result = await runCLI(['build', '--ssr']);
     assert.equal(result.exitCode, 0);
     assert.ok(result.message.includes('Samrey Production Build'));
     assert.ok(result.message.includes('SSR + Client Hydration'));
   });
 
-  it('executes "aether test" suite runner', async () => {
+  it('executes "samrey test" suite runner', async () => {
     const result = await runCLI(['test']);
     assert.equal(result.exitCode, 0);
     assert.ok(result.message.includes('All test suites passed'));
   });
 
-  it('executes "aether audit" detecting violations and honoring strict exit codes', async () => {
+  it('executes "samrey audit" detecting violations and honoring strict exit codes', async () => {
     const cleanAudit = await runCLI(['audit']);
     assert.equal(cleanAudit.exitCode, 0);
   });
 
-  it('executes "aether analyze" with JSON flag output', async () => {
+  it('executes "samrey analyze" with JSON flag output', async () => {
     const result = await runCLI(['analyze', '--json']);
     assert.equal(result.exitCode, 0);
     const parsed = JSON.parse(result.message);
@@ -114,7 +114,7 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.ok(parsed.reactivityGraph.signalsCount > 0);
   });
 
-  it('scaffolds components, routes, stores, and resources with "aether generate"', async () => {
+  it('scaffolds components, routes, stores, and resources with "samrey generate"', async () => {
     const compScaffold = scaffoldArtifact('component', 'UserProfile');
     assert.equal(compScaffold.filename, 'UserProfile.tsx');
     assert.equal(compScaffold.testFilename, 'UserProfile.test.ts');

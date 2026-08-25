@@ -3,7 +3,7 @@
  * @samrey/devtools - Forms & Validation State Inspector
  */
 
-import { aetherDevToolsBridge } from './bridge.js';
+import { samreyDevToolsBridge } from './bridge.js';
 import { sanitizePayload, isSensitiveKey } from './sanitizer.js';
 
 export interface InspectedField {
@@ -49,7 +49,7 @@ export class FormInspector {
     };
 
     this.forms.set(formName, form);
-    aetherDevToolsBridge.emit('form:change', form);
+    samreyDevToolsBridge.emit('form:change', form);
   }
 
   getForms(): InspectedForm[] {

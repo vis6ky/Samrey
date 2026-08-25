@@ -110,12 +110,12 @@ describe('Phase 24 — Public API Freeze Gate', () => {
 
     const devtools = await import('../../packages/devtools/src/index.js');
     assert.ok('initDevTools' in devtools);
-    assert.ok('aetherDevToolsBridge' in devtools);
+    assert.ok('samreyDevToolsBridge' in devtools);
 
     const cli = await import('../../packages/cli/src/index.js');
     assert.ok('runCLI' in cli);
     assert.ok('generateStarterProject' in cli);
-    assert.ok('aetherVitePlugin' in cli);
+    assert.ok('samreyVitePlugin' in cli);
     assert.strictEqual(cli.CLI_VERSION, '1.0.0');
   });
 });

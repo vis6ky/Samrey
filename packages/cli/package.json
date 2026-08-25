@@ -5,15 +5,15 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samrey-framework/aether.git",
+    "url": "git+https://github.com/samrey-framework/samrey.git",
     "directory": "packages/cli"
   },
   "homepage": "https://samrey.dev",
   "bugs": {
-    "url": "https://github.com/samrey-framework/aether/issues"
+    "url": "https://github.com/samrey-framework/samrey/issues"
   },
   "keywords": [
-    "aether",
+    "samrey",
     "cli",
     "vite-plugin",
     "bundler",
@@ -43,13 +43,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/**/*.test.ts",
-    "build": "esbuild src/bin.ts --bundle --alias:@samrey/compiler=../compiler/src/index.ts --alias:@samrey/security=../security/src/index.ts --alias:@samrey/reactivity=../reactivity/src/index.ts --alias:@samrey/runtime=../runtime/src/index.ts --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=bin/samrey.js && cp bin/samrey.js bin/gati.js && cp bin/samrey.js bin/aether.js",
+    "build": "esbuild src/bin.ts --bundle --alias:@samrey/compiler=../compiler/src/index.ts --alias:@samrey/security=../security/src/index.ts --alias:@samrey/reactivity=../reactivity/src/index.ts --alias:@samrey/runtime=../runtime/src/index.ts --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=bin/samrey.js",
     "prepack": "npm run build"
   },
   "bin": {
-    "samrey": "./bin/samrey.js",
-    "gati": "./bin/samrey.js",
-    "aether": "./bin/samrey.js"
+    "samrey": "./bin/samrey.js"
   },
   "dependencies": {
     "@samrey/compiler": "^1.0.0"

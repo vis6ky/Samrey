@@ -60,10 +60,10 @@ export const PUBLIC_API_CONTRACT: Record<string, string[]> = {
   '@samrey/devtools': [
     'initDevTools', 'SamreyDevToolsBridge', 'ReactiveGraphInspector',
     'ComponentInspector', 'PerfInspector', 'DevToolsBridge',
-    'aetherDevToolsBridge', 'GraphInspector', 'PerformanceInspector'
+    'samreyDevToolsBridge', 'GraphInspector', 'PerformanceInspector'
   ],
   '@samrey/cli': [
-    'runCLI', 'generateStarterProject', 'aetherVitePlugin', 'runCreateCommand',
+    'runCLI', 'generateStarterProject', 'samreyVitePlugin', 'runCreateCommand',
     'runDevCommand', 'runBuildCommand', 'runPreviewCommand', 'runTestCommand',
     'runAuditCommand', 'runAnalyzeCommand', 'runGenerateCommand', 'CLI_VERSION',
     'runSamreyAudit'

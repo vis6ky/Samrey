@@ -1,4 +1,4 @@
-# AETHER FRAMEWORK — PHASE 9C
+# SAMREY FRAMEWORK — PHASE 9C
 ## Runtime & Reactivity Performance Optimization Report
 
 ### 1. Executive Summary

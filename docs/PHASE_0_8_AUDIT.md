@@ -115,7 +115,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
   * `template.ts`: High-performance static HTML template factory utilizing native browser `document.createElement('template')` and `cloneNode(true)`.
   * Single-execution component instantiator (`createComponent`) ensuring components run once during mount.
 * **Gaps & Weaknesses**:
-  * `control-flow.ts`: The `<Show>` component sets up an effect and owner cleanup but merely returns a comment node (`<!-- aether:show -->`) without inserting or removing active DOM nodes in the live DOM.
+  * `control-flow.ts`: The `<Show>` component sets up an effect and owner cleanup but merely returns a comment node (`<!-- samrey:show -->`) without inserting or removing active DOM nodes in the live DOM.
   * Keyed list reconciliation primitive `<For>` is not yet implemented.
 
 ---
@@ -148,7 +148,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
   * **Request Context**: Request isolation via `AsyncLocalStorage` with data loader registry (`createServerData`) and head management.
   * **Secret Leakage Defense (`secret-guard.ts`)**: Recursive stripping and strict-mode rejection of 19 sensitive credential patterns (`password`, `token`, `secret`, `apiKey`, `jwt`, `databaseUrl`, etc.).
   * **Unicode JSON Escaping (`serializer.ts`)**: Complete script breakout mitigation using `\u003c`, `\u003e`, `\u0026`, `\u2028`, and `\u2029`.
-  * **Resumable Micro-Hydration (`hydration.ts`)**: Inline ~200-byte pre-hydration event capturer (`window.__AETHER_EVENTS__`) with replay capability and mismatch recovery.
+  * **Resumable Micro-Hydration (`hydration.ts`)**: Inline ~200-byte pre-hydration event capturer (`window.__SAMREY_EVENTS__`) with replay capability and mismatch recovery.
   * **Static Site Generation (`ssg.ts`)**: Automated static page builder with route parameter interpolation and XML sitemap generator.
   * **Examples**: Dedicated example applications in `examples/ssr`, `examples/ssg`, `examples/streaming-ssr`, `examples/basic-counter`, and `examples/schema-form`.
 
@@ -158,7 +158,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 * **Status**: **COMPLETE** (90%)
 * **Implemented**:
   * **Testing (`@samrey/testing`)**: `renderTest()` with automatic reactive root disposal and `fireEvent()` synthetic event dispatchers.
-  * **CLI (`@samrey/cli`)**: `aetherVitePlugin` for file transformation and `auditSource` for static security and accessibility linting.
+  * **CLI (`@samrey/cli`)**: `samreyVitePlugin` for file transformation and `auditSource` for static security and accessibility linting.
   * **DevTools (`@samrey/devtools`)**: `GraphInspector` for signal topology snapshots and `DevToolsBridge` for window postMessage telemetry.
 
 ---
@@ -173,7 +173,7 @@ Test Suite:       PASSED (17 test files, 48 tests passed, 0 failed)
 | **Credential Leakage** | Pattern-based recursive secret scrubbing prior to SSR payload serialization. | `packages/ssr/src/secret-guard.ts` | **VERIFIED PASS** |
 | **Prototype Pollution** | Store proxies and SSR JSON parser scrub `__proto__`, `constructor`, and `prototype`. | `packages/reactivity/src/store.ts`<br>`packages/ssr/src/serializer.ts` | **VERIFIED PASS** |
 | **CSRF Resistance** | Cryptographic token generation and constant-time string comparison (`timingSafeEqual`). | `packages/security/src/csrf.ts` | **VERIFIED PASS** |
-| **W3C Trusted Types** | Programmatic fallback and browser Trusted Types policy provider (`aether#html`). | `packages/security/src/trusted-types.ts` | **VERIFIED PASS** |
+| **W3C Trusted Types** | Programmatic fallback and browser Trusted Types policy provider (`samrey#html`). | `packages/security/src/trusted-types.ts` | **VERIFIED PASS** |
 
 ---
 

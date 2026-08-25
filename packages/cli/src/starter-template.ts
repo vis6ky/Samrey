@@ -15,17 +15,17 @@ export function generateStarterProject(
   const templateType = options.template || 'ssr';
 
   const scripts: Record<string, string> = {
-    dev: 'aether dev',
-    build: 'aether build',
-    test: 'aether test',
-    audit: 'aether audit',
-    analyze: 'aether analyze'
+    dev: 'samrey dev',
+    build: 'samrey build',
+    test: 'samrey test',
+    audit: 'samrey audit',
+    analyze: 'samrey analyze'
   };
 
   if (templateType === 'ssr') {
     scripts.start = 'node server.js';
   } else if (templateType === 'ssg') {
-    scripts.build = 'aether build && tsx ssg-build.ts';
+    scripts.build = 'samrey build && tsx ssg-build.ts';
     scripts.start = 'vite preview';
   } else {
     scripts.start = 'vite preview';
@@ -74,10 +74,10 @@ export function generateStarterProject(
   );
 
   const viteConfig = `import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@samrey/cli';
+import { samreyVitePlugin } from '@samrey/cli';
 
 export default defineConfig({
-  plugins: [aetherVitePlugin()],
+  plugins: [samreyVitePlugin()],
   server: {
     port: 3000
   }
@@ -299,7 +299,7 @@ describe('${projectName} Component Suite', () => {
 
   const readmeMd = `# ${projectName}
 
-Built with [Samrey Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
+Built with [Samrey Framework](https://github.com/samrey/samrey) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 

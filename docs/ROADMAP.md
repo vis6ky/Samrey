@@ -89,7 +89,7 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
   * Define and validate the Samrey Intermediate Representation (AIR) schema.
   * Implement static HTML hoisting and `<template>` extraction.
   * Implement context-aware security classifier for attributes and text nodes.
-  * Create `vite-plugin-aether` for Vite dev server and production builds.
+  * Create `vite-plugin-samrey` for Vite dev server and production builds.
 * **Verification Gate**:
   * Compile 50+ diverse test fixtures with bit-for-bit verified code output.
   * Automatic blocking of unsafe `javascript:` URLs and unescaped HTML.
@@ -112,7 +112,7 @@ To prevent premature optimization, scope creep, and architectural bloat, the fol
 * **Goals**:
   * Implement asynchronous HTML streaming renderer supporting Node.js and Web Streams.
   * Implement Out-of-Order HTML stream chunks using hidden `<template>` swap blocks.
-  * Implement safe Unicode JSON state serializer (`window.__AETHER_STATE__`).
+  * Implement safe Unicode JSON state serializer (`window.__SAMREY_STATE__`).
   * Implement 200-byte root event delegation listener with event buffering.
 * **Verification Gate**:
   * Zero XSS vulnerabilities on hostile string serialization payloads.

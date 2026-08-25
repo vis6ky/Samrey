@@ -8,16 +8,16 @@ import * as path from "node:path";
 function generateStarterProject(projectName, options = {}) {
   const templateType = options.template || "ssr";
   const scripts = {
-    dev: "aether dev",
-    build: "aether build",
-    test: "aether test",
-    audit: "aether audit",
-    analyze: "aether analyze"
+    dev: "samrey dev",
+    build: "samrey build",
+    test: "samrey test",
+    audit: "samrey audit",
+    analyze: "samrey analyze"
   };
   if (templateType === "ssr") {
     scripts.start = "node server.js";
   } else if (templateType === "ssg") {
-    scripts.build = "aether build && tsx ssg-build.ts";
+    scripts.build = "samrey build && tsx ssg-build.ts";
     scripts.start = "vite preview";
   } else {
     scripts.start = "vite preview";
@@ -63,10 +63,10 @@ function generateStarterProject(projectName, options = {}) {
     2
   );
   const viteConfig = `import { defineConfig } from 'vite';
-import { aetherVitePlugin } from '@samrey/cli';
+import { samreyVitePlugin } from '@samrey/cli';
 
 export default defineConfig({
-  plugins: [aetherVitePlugin()],
+  plugins: [samreyVitePlugin()],
   server: {
     port: 3000
   }
@@ -279,7 +279,7 @@ describe('${projectName} Component Suite', () => {
 `;
   const readmeMd = `# ${projectName}
 
-Built with [Samrey Framework](https://github.com/aether/aether) (Template: ${templateType.toUpperCase()}).
+Built with [Samrey Framework](https://github.com/samrey/samrey) (Template: ${templateType.toUpperCase()}).
 
 ## Quick Start
 
@@ -409,7 +409,7 @@ async function runDevCommand(options = {}) {
   const banner = [
     `  \u25B2 Samrey Development Server`,
     `  \u279C Local:   ${devUrl}/`,
-    `  \u279C DevTools: Enabled (Bridge active on window.__AETHER_DEVTOOLS_BRIDGE__)`,
+    `  \u279C DevTools: Enabled (Bridge active on window.__SAMREY_DEVTOOLS_BRIDGE__)`,
     `  \u279C HMR:     Fine-grained reactive signal updates enabled`,
     `  \u279C Mode:    Development (Diagnostics & runtime assertions active)`
   ].join("\n");
@@ -1818,7 +1818,7 @@ async function runGenerateCommand(options) {
   if (!options.name || options.name.trim().length === 0) {
     return {
       success: false,
-      message: `[Samrey Generate Error] Artifact name is required. Example: aether generate component Button`,
+      message: `[Samrey Generate Error] Artifact name is required. Example: samrey generate component Button`,
       exitCode: 1
     };
   }
@@ -1868,7 +1868,7 @@ Samrey Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
 
 USAGE:
-  $ aether <command> [options]
+  $ samrey <command> [options]
 
 COMMANDS:
   create <name>        Initialize a new production Samrey starter project
@@ -1891,13 +1891,13 @@ OPTIONS:
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
-  $ aether create my-app --template ssr
-  $ aether create quick-demo --template minimal
-  $ aether dev --port 3000
-  $ aether build --ssr
-  $ aether preview --port 4173
-  $ aether audit --strict
-  $ aether generate component UserProfile
+  $ samrey create my-app --template ssr
+  $ samrey create quick-demo --template minimal
+  $ samrey dev --port 3000
+  $ samrey build --ssr
+  $ samrey preview --port 4173
+  $ samrey audit --strict
+  $ samrey generate component UserProfile
 `;
 async function runCLI(args2) {
   if (args2.length === 0 || args2.includes("-h") || args2.includes("--help") || args2[0] === "help") {
@@ -1910,7 +1910,7 @@ async function runCLI(args2) {
   if (args2.includes("-v") || args2.includes("--version") || args2[0] === "version") {
     return {
       success: true,
-      message: `aether v${CLI_VERSION}`,
+      message: `samrey v${CLI_VERSION}`,
       exitCode: 0
     };
   }
@@ -1922,7 +1922,7 @@ async function runCLI(args2) {
       if (!name) {
         return {
           success: false,
-          message: "[Samrey Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]",
+          message: "[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]",
           exitCode: 1
         };
       }
@@ -1978,7 +1978,7 @@ async function runCLI(args2) {
       if (!type || !name) {
         return {
           success: false,
-          message: "[Samrey Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>",
+          message: "[Samrey Generate Error] Type and name are required.\nUsage: samrey generate <component|route|store|resource> <Name>",
           exitCode: 1
         };
       }
@@ -1987,7 +1987,7 @@ async function runCLI(args2) {
     default: {
       return {
         success: false,
-        message: `[Samrey Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
+        message: `[Samrey Error] Unknown command "${command}". Run "samrey --help" to view available commands.`,
         exitCode: 1
       };
     }
@@ -2016,11 +2016,11 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether create" Command
+ * @samrey/cli - "samrey create" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether dev" Command
+ * @samrey/cli - "samrey dev" Command
  */
 /**
  * @license Apache-2.0
@@ -2048,15 +2048,15 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether build" Command
+ * @samrey/cli - "samrey build" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether preview" Command
+ * @samrey/cli - "samrey preview" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether test" Command
+ * @samrey/cli - "samrey test" Command
  */
 /**
  * @license Apache-2.0
@@ -2064,15 +2064,15 @@ runCLI(args).then((result) => {
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether audit" Command
+ * @samrey/cli - "samrey audit" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether analyze" Command
+ * @samrey/cli - "samrey analyze" Command
  */
 /**
  * @license Apache-2.0
- * @samrey/cli - "aether generate" Command
+ * @samrey/cli - "samrey generate" Command
  */
 /**
  * @license Apache-2.0

@@ -2,7 +2,7 @@
 
 **Status:** Certified PASS  
 **Date:** March 2026  
-**Architectural Mandate:** AETHER MUST USE AETHER
+**Architectural Mandate:** SAMREY MUST USE SAMREY
 
 ---
 

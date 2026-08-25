@@ -20,7 +20,7 @@ Samrey Framework CLI v${CLI_VERSION}
 High-performance reactive web framework tooling.
 
 USAGE:
-  $ aether <command> [options]
+  $ samrey <command> [options]
 
 COMMANDS:
   create <name>        Initialize a new production Samrey starter project
@@ -43,13 +43,13 @@ OPTIONS:
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
-  $ aether create my-app --template ssr
-  $ aether create quick-demo --template minimal
-  $ aether dev --port 3000
-  $ aether build --ssr
-  $ aether preview --port 4173
-  $ aether audit --strict
-  $ aether generate component UserProfile
+  $ samrey create my-app --template ssr
+  $ samrey create quick-demo --template minimal
+  $ samrey dev --port 3000
+  $ samrey build --ssr
+  $ samrey preview --port 4173
+  $ samrey audit --strict
+  $ samrey generate component UserProfile
 `;
 
 export async function runCLI(args: string[]): Promise<CommandResult> {
@@ -64,7 +64,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
   if (args.includes('-v') || args.includes('--version') || args[0] === 'version') {
     return {
       success: true,
-      message: `aether v${CLI_VERSION}`,
+      message: `samrey v${CLI_VERSION}`,
       exitCode: 0
     };
   }
@@ -78,7 +78,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!name) {
         return {
           success: false,
-          message: '[Samrey Create Error] Project name is required.\nUsage: aether create <project-name> [--template ssr|spa|minimal|ssg]',
+          message: '[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]',
           exitCode: 1
         };
       }
@@ -141,7 +141,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       if (!type || !name) {
         return {
           success: false,
-          message: '[Samrey Generate Error] Type and name are required.\nUsage: aether generate <component|route|store|resource> <Name>',
+          message: '[Samrey Generate Error] Type and name are required.\nUsage: samrey generate <component|route|store|resource> <Name>',
           exitCode: 1
         };
       }
@@ -151,7 +151,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
     default: {
       return {
         success: false,
-        message: `[Samrey Error] Unknown command "${command}". Run "aether --help" to view available commands.`,
+        message: `[Samrey Error] Unknown command "${command}". Run "samrey --help" to view available commands.`,
         exitCode: 1
       };
     }

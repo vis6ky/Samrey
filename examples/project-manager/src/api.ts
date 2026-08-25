@@ -107,7 +107,7 @@ let tasksStore: Task[] = [
     id: 'task-5',
     projectId: 'proj-4',
     title: 'Verify multi-template scaffolding (SSR, SPA, Minimal, SSG)',
-    description: 'Ensure aether create outputs clean, working TypeScript code for all templates.',
+    description: 'Ensure samrey create outputs clean, working TypeScript code for all templates.',
     status: 'done',
     priority: 'high',
     assignee: 'Ada Lovelace',
