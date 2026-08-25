@@ -3,7 +3,7 @@
  * @samrey/runtime - Fine-Grained Reactive Element & DOM Tree Constructors
  */
 
-import { bindText, bindAttr, bindClass } from './bindings.js';
+import { bindText, bindAttr, bindClass, bindDynamicChild } from './bindings.js';
 import { on } from './events.js';
 import { sanitizeHtmlString } from '@samrey/security';
 import { effect } from '@samrey/reactivity';
@@ -30,17 +30,7 @@ export function appendChildren(parent: Node, children: ChildValue[]): void {
     if (Array.isArray(child)) {
       appendChildren(parent, child);
     } else if (typeof child === 'function') {
-      const fn = child as () => unknown;
-      if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
-        const textNode = document.createTextNode('');
-        parent.appendChild(textNode);
-        bindText(textNode, fn);
-      } else {
-        // Mock environment
-        const mockText = { nodeType: 3, nodeName: '#text', textContent: '' } as unknown as Node;
-        parent.appendChild(mockText);
-        bindText(mockText, fn);
-      }
+      bindDynamicChild(parent, child as () => unknown);
     } else if (typeof child === 'object' && child !== null && 'nodeType' in child) {
       parent.appendChild(child as Node);
     } else {

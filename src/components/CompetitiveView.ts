@@ -8,7 +8,7 @@ import { signal, computed } from '@samrey/reactivity';
 import { CATEGORIES, DIMENSIONS } from '../data/competitiveData.js';
 import { COMPARISON_TABLE_ROWS, FEATURE_CODE_EXAMPLES, FeatureCodeExample } from '../data/comparisonTableData.js';
 import { DimensionItem } from '../types.js';
-import { icon } from '../lib/icons.js';
+import { icon, IconName } from '../lib/icons.js';
 
 export function CompetitiveView(): HTMLElement {
   // Main view mode: 'table' | 'code' | 'dimensions'
@@ -90,7 +90,7 @@ export function CompetitiveView(): HTMLElement {
   // Sub-Navigation Tabs: Table Matrix | Code Comparison | 22-Dimension Explorer
   const navTabsContainer = el('div', { class: 'bg-white rounded-2xl border border-slate-200 p-2 shadow-xs flex flex-wrap gap-2' });
 
-  const modes: { id: 'table' | 'code' | 'dimensions'; label: string; icon: string }[] = [
+  const modes: { id: 'table' | 'code' | 'dimensions'; label: string; icon: IconName }[] = [
     { id: 'table', label: '📊 Comparison Table Matrix', icon: 'layers' },
     { id: 'code', label: '💻 Feature Code Comparison (Side-by-Side)', icon: 'file-code' },
     { id: 'dimensions', label: '🔍 22-Dimension Taxonomy & Details', icon: 'cpu' }
