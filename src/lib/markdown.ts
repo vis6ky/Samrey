@@ -212,8 +212,7 @@ function createCodeBlockElement(code: string, language: string, enableCopy = tru
   const pre = el('pre', {
     class: 'p-4 overflow-x-auto text-slate-100 leading-relaxed font-mono text-[12px]'
   });
-  const codeEl = el('code', { class: `language-${language}` });
-  codeEl.textContent = code;
+  const codeEl = el('code', { class: `language-${language}` }, code);
   pre.appendChild(codeEl);
   wrapper.appendChild(pre);
 

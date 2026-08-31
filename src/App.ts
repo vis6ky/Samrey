@@ -6,6 +6,7 @@
 import { el, Show } from '@samrey/runtime';
 import { signal, effect } from '@samrey/reactivity';
 import { Header } from './components/Header.js';
+import { AssistantView } from './components/AssistantView.js';
 import { CompetitiveView } from './components/CompetitiveView.js';
 import { CompilerVisualizer } from './components/CompilerVisualizer.js';
 import { ReactivityVisualizer } from './components/ReactivityVisualizer.js';
@@ -22,11 +23,11 @@ export function App(): HTMLElement {
   const getInitialTab = (): string => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const hash = window.location.hash.replace('#', '').trim();
-      if (['competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
+      if (['assistant', 'competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
         return hash;
       }
     }
-    return 'competitive';
+    return 'assistant';
   };
 
   const activeTab = signal<string>(getInitialTab());
@@ -75,6 +76,11 @@ export function App(): HTMLElement {
         : 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8'
   });
 
+  const viewAssistant = Show({
+    when: () => activeTab.value === 'assistant',
+    children: () => AssistantView()
+  });
+
   const viewTaskStudio = Show({
     when: () => activeTab.value === 'task-studio',
     children: () => AppShell()
@@ -120,6 +126,7 @@ export function App(): HTMLElement {
     children: () => DocReader()
   });
 
+  main.appendChild(viewAssistant);
   main.appendChild(viewTaskStudio);
   main.appendChild(viewCompetitive);
   main.appendChild(viewCompiler);
