@@ -146,7 +146,15 @@ export class DeterministicKnowledgeProvider implements AssistantProvider {
       return createUnknownDocAnswer(query, intent);
     }
 
-    const baseAnswer = queryKnowledgeBase(query);
+    // Check recipe catalog for recipe-level queries
+    const recipe = findRecipeForQuery(query);
+    let baseAnswer: AssistantAnswer;
+
+    if (recipe && (intent.type === 'RECIPE_LOOKUP' || !queryKnowledgeBase(query).isDirectMatch)) {
+      baseAnswer = formatRecipeToAnswer(recipe, query);
+    } else {
+      baseAnswer = queryKnowledgeBase(query);
+    }
 
     // Merge retrieved doc links and source files
     const docLinks = [...baseAnswer.docLinks];
