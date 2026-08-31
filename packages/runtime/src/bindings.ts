@@ -120,6 +120,11 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
         prevVal = null;
         try {
           element.removeAttribute(attrName);
+          if (attrName === 'value' && 'value' in element) {
+            (element as any).value = '';
+          } else if (attrName === 'checked' && 'checked' in element) {
+            (element as any).checked = false;
+          }
         } catch {
           // Ignore removal errors on mock/detached nodes
         }
@@ -131,6 +136,11 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
         prevVal = nextStr;
         try {
           element.setAttribute(attrName, nextStr);
+          if (attrName === 'value' && 'value' in element) {
+            (element as any).value = nextStr;
+          } else if (attrName === 'checked' && 'checked' in element) {
+            (element as any).checked = Boolean(val);
+          }
         } catch (err) {
           console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
         }

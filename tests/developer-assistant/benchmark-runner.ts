@@ -474,3 +474,37 @@ export function Broken() {
     results
   };
 }
+
+// Auto-run if executed directly via CLI
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('benchmark-runner.ts')) {
+  console.log('🚀 Running 20-Challenge Samrey Blind Benchmark Suite...\n');
+  runBlindDeveloperBenchmark().then(report => {
+    console.log('====================================================');
+    console.log(' SAMREY DEVELOPER ASSISTANT BENCHMARK RESULTS');
+    console.log('====================================================');
+    console.log(`Total Score:            ${report.totalScore} / ${report.maxPossibleScore} (${report.scorePercentage}%)`);
+    console.log(`Average Score:          ${report.averageScore} / 30.0`);
+    console.log(`Compilation Rate:       ${report.compilationRate}%`);
+    console.log(`API Accuracy Rate:      ${report.apiAccuracyRate}%`);
+    console.log(`Task Completion Rate:   ${report.taskCompletionRate}%`);
+    console.log(`Hallucination Rate:     ${report.hallucinationRate}%`);
+    console.log(`Foreign Framework Rate: ${report.foreignFrameworkRate}%`);
+    console.log(`Aether References:      ${report.aetherReferenceCount}`);
+    console.log(`ALL PASSED THRESHOLD:   ${report.allPassedThreshold ? '✅ YES' : '❌ NO'}`);
+    console.log('====================================================\n');
+
+    for (const res of report.results) {
+      const status = res.passed ? '✅ PASS' : '❌ FAIL';
+      console.log(`[Challenge ${res.challenge.id}] [${res.challenge.category}] Score: ${res.score.totalScore}/30 -> ${status}`);
+      if (!res.passed) {
+        console.log(`   Compiles: ${res.score.compiles}`);
+        if (res.score.compileErrors.length > 0) console.log(`   Errors: ${res.score.compileErrors.join(', ')}`);
+        if (res.score.hallucinatedApis.length > 0) console.log(`   Hallucinations: ${res.score.hallucinatedApis.join(', ')}`);
+        if (res.score.missingCapabilities.length > 0) console.log(`   Missing: ${res.score.missingCapabilities.join(', ')}`);
+      }
+    }
+  }).catch(err => {
+    console.error('Benchmark runner error:', err);
+    process.exit(1);
+  });
+}

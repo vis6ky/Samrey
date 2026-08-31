@@ -52,7 +52,7 @@ export function Header(props: {
 
   const logoBadge = el('div', {
     class: 'w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm font-mono font-bold text-lg'
-  }, 'Æ');
+  }, 'S');
 
   const titleBox = el('div', null,
     el('div', { class: 'flex items-center space-x-2' },
