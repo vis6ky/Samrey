@@ -16,6 +16,18 @@ import {
   UserIntent,
   SearchResult
 } from './docSearchEngine.js';
+import { findRecipeForQuery, formatRecipeToAnswer } from '../data/recipeCatalog.js';
+import type {
+  CodeHelpRequest,
+  CodeHelpResult
+} from './codeHelpEngine.js';
+import {
+  analyzeSamreyCode,
+  detectUnsupportedApis
+} from './codeHelpEngine.js';
+
+export type { CodeHelpRequest, CodeHelpResult };
+export { detectUnsupportedApis, analyzeSamreyCode };
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -24,6 +36,7 @@ export interface ChatMessage {
 
 export interface AssistantProvider {
   askQuestion(query: string, history?: ChatMessage[]): Promise<AssistantAnswer>;
+  analyzeCode?(request: CodeHelpRequest): Promise<CodeHelpResult>;
 }
 
 /**
@@ -77,6 +90,44 @@ export class GeminiServerProvider implements AssistantProvider {
 
     throw new Error('Invalid response structure received from /api/assistant');
   }
+
+  async analyzeCode(
+    request: CodeHelpRequest,
+    retrievedDocs = ''
+  ): Promise<CodeHelpResult> {
+    if (typeof fetch === 'undefined') {
+      throw new Error('fetch API is not available in current environment');
+    }
+
+    const response = await fetch('/api/assistant', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: request.question || 'Analyze and fix this Samrey code.',
+        code: request.code,
+        mode: 'code_help',
+        retrievedDocs
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.codeHelp && typeof data.codeHelp === 'object') {
+      return {
+        ...data.codeHelp,
+        isAiGenerated: true,
+        provider: data.provider || 'gemini-3.7-flash'
+      };
+    }
+
+    // Fallback to local deterministic analysis
+    return analyzeSamreyCode(request.code, request.question);
+  }
 }
 
 /**
@@ -114,6 +165,10 @@ export class DeterministicKnowledgeProvider implements AssistantProvider {
       isAiGenerated: false,
       provider: 'samrey-knowledge-engine-v1.0.0'
     };
+  }
+
+  async analyzeCode(request: CodeHelpRequest): Promise<CodeHelpResult> {
+    return analyzeSamreyCode(request.code, request.question);
   }
 }
 
@@ -188,6 +243,29 @@ export class SmartAssistantProvider implements AssistantProvider {
         isAiGenerated: false,
         provider: 'samrey-knowledge-engine-v1.0.0'
       };
+    }
+  }
+
+  async analyzeCode(request: CodeHelpRequest): Promise<CodeHelpResult> {
+    const searchResults = searchDocumentation(request.question || request.code, { maxResults: 3, minScoreThreshold: 10 });
+    const groundedContext = buildGroundedContext(searchResults, 2);
+
+    try {
+      const aiResult = await this.geminiProvider.analyzeCode(request, groundedContext.contextMarkdown);
+      const unsupported = detectUnsupportedApis(request.code);
+      const warnings = unsupported.map(w => `⚠️ ${w.detectedApi}: ${w.description} -> ${w.samreyAlternative}`);
+
+      return {
+        ...aiResult,
+        warnings: [...new Set([...(aiResult.warnings || []), ...warnings])],
+        unsupportedApisFound: unsupported,
+        docLinks: groundedContext.relatedDocLinks.length > 0 ? groundedContext.relatedDocLinks : aiResult.docLinks,
+        isAiGenerated: true,
+        provider: aiResult.provider || 'gemini-3.7-flash (Code Engine)'
+      };
+    } catch {
+      // Deterministic analyzer fallback
+      return this.knowledgeProvider.analyzeCode(request);
     }
   }
 }

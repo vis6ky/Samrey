@@ -48,7 +48,9 @@ export type IconName =
   | 'external-link'
   | 'code'
   | 'eye'
-  | 'refresh-cw';
+  | 'refresh-cw'
+  | 'thumbs-up'
+  | 'thumbs-down';
 
 export function icon(name: IconName, className = 'w-4 h-4'): SVGElement {
   const svg = svgEl('svg', {
@@ -298,6 +300,16 @@ export function icon(name: IconName, className = 'w-4 h-4'): SVGElement {
       svg.appendChild(svgEl('path', { d: 'M21 3v5h-5' }));
       svg.appendChild(svgEl('path', { d: 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16' }));
       svg.appendChild(svgEl('path', { d: 'M8 16H3v5' }));
+      break;
+
+    case 'thumbs-up':
+      svg.appendChild(svgEl('path', { d: 'M7 10v12' }));
+      svg.appendChild(svgEl('path', { d: 'M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3' }));
+      break;
+
+    case 'thumbs-down':
+      svg.appendChild(svgEl('path', { d: 'M17 14V2' }));
+      svg.appendChild(svgEl('path', { d: 'M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3' }));
       break;
 
     default:
