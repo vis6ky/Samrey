@@ -13,6 +13,7 @@ export type IntentType =
   | 'API_LOOKUP'
   | 'ERROR_DIAGNOSTICS'
   | 'HOW_TO_GUIDE'
+  | 'RECIPE_LOOKUP'
   | 'CONCEPTUAL'
   | 'MIGRATION_FOREIGN'
   | 'SECURITY'

@@ -20,6 +20,7 @@
     "benchmark:reactivity": "tsx benchmarks/runner.ts reactivity",
     "benchmark:ssr": "tsx benchmarks/runner.ts ssr",
     "benchmark:gate": "tsx benchmarks/check-regression.ts",
+    "assistant:benchmark": "tsx tests/developer-assistant/generate-report.ts",
     "release:preflight": "tsx scripts/release/preflight.ts",
     "release:validate": "tsx scripts/release/validate-packages.ts && tsx scripts/release/validate-dependencies.ts && tsx scripts/release/validate-exports.ts && tsx scripts/release/validate-version.ts && tsx scripts/release/validate-license.ts && tsx scripts/release/validate-files.ts",
     "release:pack": "tsx scripts/release/pack.ts",

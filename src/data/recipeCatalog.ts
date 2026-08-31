@@ -419,8 +419,8 @@ export function ContactForm() {
     ],
     problem: 'Validating form data with type-safe Standard Schema (Zod, Valibot, ArkType) and accessible ARIA error feedback',
     samreyConcept: 'Interoperable Standard Schema (~standard v1) validation engine',
-    recommendedApi: '@samrey/forms -> createForm({ schema }), validateSchema()',
-    implementation: `import { createForm, getAccessibleFieldProps } from '@samrey/forms';
+    recommendedApi: '@samrey/forms -> createForm({ schema }), createField()',
+    implementation: `import { createForm } from '@samrey/forms';
 import { el, Show } from '@samrey/runtime';
 import { z } from 'zod'; // Standard Schema compliant
 
@@ -438,18 +438,21 @@ export function LoginForm() {
     }
   });
 
+  const emailField = form.field('email');
+  const passwordField = form.field('password');
+
   return el('form', {
-    onSubmit: (e: Event) => { e.preventDefault(); form.handleSubmit(); }
+    onSubmit: form.handleSubmit
   },
     el('input', {
       type: 'email',
-      value: () => form.values.email,
-      onInput: (e: any) => form.setFieldValue('email', e.target.value),
-      ...getAccessibleFieldProps(form.getField('email'))
+      value: () => emailField.value.value,
+      onInput: (e: Event) => emailField.value.set((e.target as HTMLInputElement).value),
+      onBlur: () => emailField.touched.set(true)
     }),
     Show({
-      when: () => !!form.errors.value.email,
-      children: () => el('p', { class: 'text-xs text-red-600 mt-1' }, () => form.errors.value.email)
+      when: () => emailField.touched.value && !!emailField.error.value,
+      children: () => el('p', { class: 'text-xs text-red-600 mt-1' }, () => emailField.error.value)
     })
   );
 }`,
@@ -460,7 +463,7 @@ export function LoginForm() {
       'Validating only on client submit without displaying field-level blur errors.',
       'Neglecting accessible ARIA labels for screen readers when displaying error messages.'
     ],
-    relatedApis: ['createForm', 'validateSchema', 'getAccessibleFieldProps', 'createField'],
+    relatedApis: ['createForm', 'createField', 'standardSchemaValidator', 'deriveAriaAttributes'],
     documentation: [
       { label: 'Forms and Validation', url: '#docs', sourcePath: 'docs/FORMS_AND_VALIDATION.md' }
     ]
@@ -472,57 +475,55 @@ export function LoginForm() {
     category: 'http-api',
     categoryLabel: 'HTTP & API Calls',
     keywords: [
-      'call api', 'http fetch', 'createResource', 'fetch data', 'async resource',
-      'api request', 'httpClient', 'loading state'
+      'call api', 'http fetch', 'createHttpClient', 'resource', 'fetch data', 'async resource',
+      'api request', 'loading state'
     ],
     problem: 'Fetching asynchronous data from REST/GraphQL APIs with reactive loading, error, and refetch states',
     samreyConcept: 'Declarative async resource primitives with automated dependency tracking',
-    recommendedApi: '@samrey/http -> createResource(), httpClient',
+    recommendedApi: '@samrey/http -> createHttpClient(), resource()',
     implementation: `import { signal } from '@samrey/reactivity';
-import { createResource, httpClient } from '@samrey/http';
+import { createHttpClient, resource } from '@samrey/http';
 import { el, Show } from '@samrey/runtime';
 
 interface User { id: string; name: string; email: string; }
+
+const api = createHttpClient({ baseUrl: 'https://api.example.com' });
 
 export function UserProfile() {
   const userId = signal('101');
 
   // Resource automatically refetches whenever userId signal changes
-  const [user, { loading, error, refetch }] = createResource(
-    userId,
-    async (id) => {
-      const res = await httpClient.get<User>(\`/api/users/\${id}\`);
-      return res.data;
-    }
-  );
+  const userResource = resource(async () => {
+    return api.get<User>(\`/users/\${userId.value}\`);
+  });
 
   return el('div', { class: 'p-4' },
     Show({
-      when: () => loading.value,
+      when: () => userResource.loading.value,
       children: () => el('div', { class: 'animate-pulse text-indigo-600' }, 'Loading user profile...')
     }),
     Show({
-      when: () => !!error.value,
-      children: () => el('div', { class: 'text-red-600' }, () => \`Failed to load: \${error.value?.message}\`)
+      when: () => !!userResource.error.value,
+      children: () => el('div', { class: 'text-red-600' }, () => \`Failed to load: \${userResource.error.value?.message}\`)
     }),
     Show({
-      when: () => !!user.value,
+      when: () => !!userResource.data.value,
       children: () => el('div', { class: 'space-y-1' },
-        el('h2', { class: 'font-bold' }, () => user.value?.name),
-        el('p', { class: 'text-slate-600' }, () => user.value?.email)
+        el('h2', { class: 'font-bold' }, () => userResource.data.value?.name),
+        el('p', { class: 'text-slate-600' }, () => userResource.data.value?.email)
       )
     }),
-    el('button', { onClick: () => refetch(), class: 'mt-2 px-3 py-1 bg-slate-200 rounded' }, 'Refresh')
+    el('button', { onClick: () => userResource.refetch(), class: 'mt-2 px-3 py-1 bg-slate-200 rounded' }, 'Refresh')
   );
 }`,
-    howItWorks: 'createResource() links a reactive source signal (or static boolean) to an asynchronous fetcher. It exposes data, loading, and error signals, and automatically handles request deduplication, race condition cancellation, and refetching.',
+    howItWorks: 'resource() links an async fetcher to reactive state. It exposes data, loading, and error signals, and automatically handles request deduplication, cancellation, and refetching.',
     whenToUse: 'For all asynchronous API fetching, remote queries, and data loading workflows.',
     alternative: 'Manual native fetch() in an effect() with explicit signal state management',
     commonMistakes: [
-      'Calling createResource() inside click handlers instead of declaring it at component setup time.',
+      'Calling resource() inside click handlers instead of declaring it at component setup time.',
       'Forgetting to display the error signal, causing unhandled promise rejections.'
     ],
-    relatedApis: ['createResource', 'httpClient', 'createHttpCache', 'HttpError'],
+    relatedApis: ['createHttpClient', 'resource', 'createCache', 'fetchResource'],
     documentation: [
       { label: 'Router and HTTP Guide', url: '#docs', sourcePath: 'docs/ROUTER_AND_HTTP.md' }
     ]
@@ -540,11 +541,11 @@ export function UserProfile() {
     problem: 'Declarative client-side routing, URL matching, route parameter extraction, and programmatic navigation',
     samreyConcept: 'Zero-dependency reactive router with parameterized pattern matching',
     recommendedApi: '@samrey/router -> Router, Route, Link, useParams, useRouter',
-    implementation: `import { Router, Link, useParams, useRouter } from '@samrey/router';
+    implementation: `import { createRouter, Router, Route, Link, useParams, useRouter } from '@samrey/router';
 import { el } from '@samrey/runtime';
 
 function UserDetail() {
-  const params = useParams<{ id: string }>();
+  const params = useParams();
   const router = useRouter();
 
   return el('div', { class: 'p-4' },
@@ -557,11 +558,20 @@ function UserDetail() {
 }
 
 export function AppRouter() {
-  return Router({
+  const router = createRouter({
     routes: [
       { path: '/', component: () => el('h1', null, 'Home Page') },
       { path: '/dashboard', component: () => el('h1', null, 'Dashboard') },
       { path: '/users/:id', component: UserDetail }
+    ]
+  });
+
+  return Router({
+    router,
+    children: [
+      Route({ path: '/', component: () => el('h1', null, 'Home Page') }),
+      Route({ path: '/dashboard', component: () => el('h1', null, 'Dashboard') }),
+      Route({ path: '/users/:id', component: UserDetail })
     ]
   });
 }`,
@@ -588,10 +598,10 @@ export function AppRouter() {
     ],
     problem: 'Rendering components to static HTML strings or streams on Node.js / edge servers and hydrating on the client',
     samreyConcept: 'Isomorphic component rendering with state dehydration and client-side hydration',
-    recommendedApi: '@samrey/ssr -> renderToString(), renderToStream(), sanitizeSsrState()',
-    implementation: `import { renderToString, escapeJsonState, sanitizeSsrState } from '@samrey/ssr';
+    recommendedApi: '@samrey/ssr -> renderToString(), renderToStream(), serializeState()',
+    implementation: `import { renderToString, serializeState } from '@samrey/ssr';
 import { signal } from '@samrey/reactivity';
-import { el } from '@samrey/runtime';
+import { el, hydrate } from '@samrey/runtime';
 
 function App(props: { initialCount: number }) {
   const count = signal(props.initialCount);
@@ -605,24 +615,24 @@ function App(props: { initialCount: number }) {
 export async function handleRequest() {
   const initialData = { initialCount: 42 };
   const html = await renderToString(() => App(initialData));
-  const safeState = escapeJsonState(sanitizeSsrState(initialData));
+  const safeState = serializeState(initialData);
 
   return \`<!DOCTYPE html>
 <html>
   <head><title>Samrey SSR</title></head>
   <body>
     <div id="root">\${html}</div>
-    <script>window.__INITIAL_STATE__ = \${safeState};</script>
+    <script id="__SAMREY_STATE__" type="application/json">\${safeState}</script>
   </body>
 </html>\`;
 }`,
-    howItWorks: 'renderToString() executes the component tree in Node, evaluates initial signal values, and emits semantic HTML. sanitizeSsrState() strips sensitive credentials before embedding state into the client HTML payload.',
+    howItWorks: 'renderToString() executes the component tree in Node, evaluates initial signal values, and emits semantic HTML. serializeState() securely serializes state while stripping private keys before embedding into the client HTML payload.',
     whenToUse: 'For SEO-sensitive websites, fast First Contentful Paint (FCP), and content-heavy applications.',
     alternative: 'renderToStream() for chunked web streams and fast Time to First Byte (TTFB)',
     commonMistakes: [
       'Accessing browser globals (window, document, localStorage) during top-level SSR component setup.'
     ],
-    relatedApis: ['renderToString', 'renderToStream', 'hydrateFromSSR', 'escapeJsonState', 'sanitizeSsrState'],
+    relatedApis: ['renderToString', 'renderToStream', 'serializeState', 'hydrateState', 'hydrate'],
     documentation: [
       { label: 'SSR & Hydration Guide', url: '#docs', sourcePath: 'docs/SSR_AND_HYDRATION.md' }
     ]
@@ -637,32 +647,36 @@ export async function handleRequest() {
       'ssg', 'static site generation', 'pre render', 'generate static site',
       'static html build', 'export static'
     ],
-    problem: 'Pre-rendering all application routes into static HTML files at build time for CDN deployment',
+    problem: 'Pre-rendering application routes into static HTML files at build time for CDN deployment',
     samreyConcept: 'Build-time route pre-rendering with zero server runtime overhead',
-    recommendedApi: '@samrey/ssr -> generateStaticSite() / @samrey/cli -> runBuildCommand()',
-    implementation: `import { generateStaticSite } from '@samrey/ssr';
+    recommendedApi: '@samrey/ssr -> renderToString()',
+    implementation: `import { renderToString } from '@samrey/ssr';
 import { el } from '@samrey/runtime';
 
-export async function buildStaticSite() {
-  await generateStaticSite({
-    outDir: './dist/static',
-    routes: ['/', '/about', '/pricing', '/docs/getting-started'],
-    renderRoute: async (path) => {
-      return el('main', { class: 'container' },
-        el('h1', null, \`Static Page: \${path}\`),
-        el('p', null, 'Pre-rendered at build time with Samrey SSG.')
-      );
-    }
-  });
-  console.log('Static site build complete.');
+function ProductPage(props: { id: string }) {
+  return el('div', { class: 'p-6' },
+    el('h1', null, \`Product \${props.id}\`),
+    el('p', null, 'Pre-rendered statically at build time.')
+  );
+}
+
+export async function buildStaticSite(): Promise<Record<string, string>> {
+  const routes = ['1', '2', '3'];
+  const pages: Record<string, string> = {};
+
+  for (const id of routes) {
+    const body = await renderToString(() => ProductPage({ id }));
+    pages[\`/products/\${id}\`] = \`<!DOCTYPE html><html><body>\${body}</body></html>\`;
+  }
+  return pages;
 }`,
-    howItWorks: 'generateStaticSite() iterates through configured routes, renders each view to an HTML string, and saves static .html files ready for CDN hosting on Cloudflare Pages, Vercel, or GitHub Pages.',
+    howItWorks: 'renderToString() renders each route to an HTML string at build time, saving static .html files ready for CDN hosting on Cloudflare Pages, Vercel, or GitHub Pages.',
     whenToUse: 'For blogs, documentation portals, landing pages, and marketing websites.',
     alternative: 'SSR with edge caching for dynamic personalized content',
     commonMistakes: [
       'Relying on request headers or user session cookies during static build time.'
     ],
-    relatedApis: ['generateStaticSite', 'renderToString', 'runBuildCommand'],
+    relatedApis: ['renderToString', 'serializeState', 'createSsrContext'],
     documentation: [
       { label: 'SSR and SSG Guide', url: '#docs', sourcePath: 'docs/SSR_AND_HYDRATION.md' },
       { label: 'CLI & Tooling', url: '#docs', sourcePath: 'docs/CLI_AND_TOOLING.md' }
@@ -675,32 +689,32 @@ export async function buildStaticSite() {
     category: 'security',
     categoryLabel: 'Security & Sanitization',
     keywords: [
-      'security', 'prevent xss', 'sanitize html', 'sanitize url', 'csrf token',
+      'security', 'prevent xss', 'sanitize html', 'sanitize uri', 'csrf token',
       'prototype pollution', 'trusted types'
     ],
-    problem: 'Preventing Cross-Site Scripting (XSS), URL injection, CSRF, and prototype pollution',
+    problem: 'Preventing Cross-Site Scripting (XSS), URI injection, CSRF, and prototype pollution',
     samreyConcept: 'Zero-trust runtime sanitization and safe JSON deserialization',
-    recommendedApi: '@samrey/security -> sanitizeHtml(), sanitizeUrl(), safeJsonParse()',
-    implementation: `import { sanitizeHtml, sanitizeUrl, safeJsonParse, isSafeUrl } from '@samrey/security';
+    recommendedApi: '@samrey/security -> sanitizeHtml(), sanitizeUri(), safeJsonParse()',
+    implementation: `import { sanitizeHtml, sanitizeUri, safeJsonParse } from '@samrey/security';
 
 // 1. Sanitize untrusted user-generated HTML before rendering
 const rawUserInput = '<script>evil()</script><p>Clean Text</p>';
 const safeHtml = sanitizeHtml(rawUserInput); // Escapes script tags
 
-// 2. Validate external user URLs (prevents javascript: attacks)
-const untrustedUrl = 'javascript:stealTokens()';
-const safeUrl = sanitizeUrl(untrustedUrl); // Becomes "about:blank"
+// 2. Validate external user URIs (prevents javascript: attacks)
+const untrustedUri = 'javascript:stealTokens()';
+const safeUri = sanitizeUri(untrustedUri); // Becomes "about:blank"
 
 // 3. Safe JSON parsing (immune to prototype pollution __proto__)
 const untrustedJson = '{"__proto__": {"isAdmin": true}, "name": "Sam"}';
 const safeData = safeJsonParse(untrustedJson);`,
-    howItWorks: '@samrey/security provides deterministic sanitizers that neutralize dangerous markup and script URLs before DOM attachment, and scrubs prototype pollution attempts during JSON parsing.',
+    howItWorks: '@samrey/security provides deterministic sanitizers that neutralize dangerous markup and script URIs before DOM attachment, and scrubs prototype pollution attempts during JSON parsing.',
     whenToUse: 'Whenever rendering user-authored HTML, external links, or parsing untrusted API responses.',
     alternative: 'TrustedTypesPolicy for browser-enforced Trusted Types security policies',
     commonMistakes: [
       'Using element.innerHTML without sanitizing untrusted inputs with sanitizeHtml().'
     ],
-    relatedApis: ['sanitizeHtml', 'sanitizeUrl', 'safeJsonParse', 'createCsrfToken', 'isSafeUrl'],
+    relatedApis: ['sanitizeHtml', 'sanitizeUri', 'safeJsonParse', 'createCsrfToken', 'stripSecrets'],
     documentation: [
       { label: 'Security Specification', url: '#security', sourcePath: 'docs/SECURITY.md' }
     ]
