@@ -10,7 +10,15 @@
 import { DocChunk, REPOSITORY_DOC_CHUNKS } from '../data/searchIndex.js';
 
 export type IntentType =
+  | 'QUESTION'
+  | 'HOW_TO'
+  | 'REQUIREMENT'
+  | 'DEBUG'
+  | 'CONVERT'
+  | 'ERROR'
+  | 'ARCHITECTURE'
   | 'API_LOOKUP'
+  // Backward compatibility aliases
   | 'ERROR_DIAGNOSTICS'
   | 'HOW_TO_GUIDE'
   | 'RECIPE_LOOKUP'
@@ -215,32 +223,77 @@ export function normalizeQuestion(rawQuery: string): NormalizedQuery {
 export function detectIntent(normalized: NormalizedQuery): UserIntent {
   const { raw, cleaned, detectedErrorCode, detectedApi, isForeignFramework, foreignFrameworkName } = normalized;
 
-  // 1. Check for deterministic Error Code lookup
-  if (detectedErrorCode) {
+  // 1. Error intent: AETH-xxx or error message
+  if (detectedErrorCode || /\b(aeth|error\s*\d+|typeerror|referenceerror|stack\s*trace|failed\s*to\s*mount)\b/i.test(raw)) {
     return {
-      type: 'ERROR_DIAGNOSTICS',
+      type: 'ERROR',
       category: 'errors',
       confidence: 0.98,
       matchedEntity: detectedErrorCode,
       isDirectAnswerable: true,
-      description: `Diagnostic troubleshooting for ${detectedErrorCode}`
+      description: `Diagnostic troubleshooting for ${detectedErrorCode || 'runtime error'}`
     };
   }
 
-  // 2. Foreign framework translation / migration intent
-  if (isForeignFramework) {
+  // 2. Debug intent: Bug diagnostics, "doesn't update", "fix this", "why isn't", broken code
+  if (/\b(doesn't update|does not update|why isn't|why is not|fix this|broken|bug|stale state|infinite loop|stale closure|debug)\b/i.test(raw) ||
+      (/\b(signal|effect|el|mutation|push)\b/i.test(raw) && /\b(not working|fails|wrong|broken|fix)\b/i.test(raw))) {
     return {
-      type: 'MIGRATION_FOREIGN',
+      type: 'DEBUG',
+      category: 'reactivity',
+      confidence: 0.95,
+      isDirectAnswerable: true,
+      description: 'AST & Reactive bug diagnosis and code repair'
+    };
+  }
+
+  // 3. Convert intent: Foreign framework translation / migration
+  if (isForeignFramework || /\b(convert|translate|migrate|from react|from vue|from svelte|from solid|from angular|from redux)\b/i.test(raw)) {
+    return {
+      type: 'CONVERT',
       category: 'migration',
       confidence: 0.95,
       matchedEntity: foreignFrameworkName,
       isDirectAnswerable: true,
-      description: `Migration guidance from ${foreignFrameworkName || 'foreign framework'} to Samrey`
+      description: `Migration and conversion from ${foreignFrameworkName || 'foreign framework'} to Samrey`
     };
   }
 
-  // 3. Exact API lookup
-  if (detectedApi && (/\b(api|function|how to use|signature|parameters|options|return|what is)\b/i.test(raw) || normalized.tokens.length <= 3)) {
+  // 4. Requirement intent: "Create a...", "Build a...", "Implement a...", specifications
+  if (/^(create\s+a|build\s+a|implement\s+a|make\s+a|add\s+a|generate\s+a)\b/i.test(raw.trim()) ||
+      /\b(with validation|with debounce|optimistic|full feature|requirement)\b/i.test(raw)) {
+    let category: DocChunk['category'] = 'general';
+    if (/\b(form|validation|schema|input)\b/i.test(cleaned)) category = 'forms';
+    else if (/\b(search|debounce|http|fetch|api|resource)\b/i.test(cleaned)) category = 'http';
+    else if (/\b(route|router|navigation|param)\b/i.test(cleaned)) category = 'router';
+    else if (/\b(task|list|dom|node|update)\b/i.test(cleaned)) category = 'runtime';
+    else if (/\b(store|state|signal)\b/i.test(cleaned)) category = 'reactivity';
+    else if (/\b(security|xss|sanitize)\b/i.test(cleaned)) category = 'security';
+    else if (/\b(ssr|ssg|hydrate)\b/i.test(cleaned)) category = 'ssr';
+    else if (/\b(test|harness|assert)\b/i.test(cleaned)) category = 'testing';
+
+    return {
+      type: 'REQUIREMENT',
+      category,
+      confidence: 0.94,
+      isDirectAnswerable: false,
+      description: `Implementation specification for ${category} requirement`
+    };
+  }
+
+  // 5. Architecture intent
+  if (/\b(how should i structure|architecture|single-execution|single execution|design pattern|package structure|zero-vdom|zero vdom|subsystem|directory layout)\b/i.test(cleaned)) {
+    return {
+      type: 'ARCHITECTURE',
+      category: 'general',
+      confidence: 0.92,
+      isDirectAnswerable: false,
+      description: 'Samrey architecture and structural design patterns'
+    };
+  }
+
+  // 6. Exact API lookup
+  if (detectedApi && (/\b(api|function|signature|parameters|options|return|reference)\b/i.test(raw) || normalized.tokens.length <= 3)) {
     let category: DocChunk['category'] = 'general';
     if (['signal', 'computed', 'effect', 'batch', 'untrack', 'createStore', 'produce', 'reconcile', 'createMemo', 'createRoot', 'onCleanup', 'createContext', 'useContext'].includes(detectedApi)) {
       category = 'reactivity';
@@ -294,31 +347,21 @@ export function detectIntent(normalized: NormalizedQuery): UserIntent {
     };
   }
 
-  // 4. Security intent
-  if (/\b(xss|sanitize|sanitization|csrf|trusted types|secret|prototype pollution)\b/i.test(cleaned)) {
-    return {
-      type: 'SECURITY',
-      category: 'security',
-      confidence: 0.92,
-      isDirectAnswerable: true,
-      description: 'Security architecture, XSS prevention, and Trusted Types guidelines'
-    };
-  }
-
-  // 5. How-to implementation guides
-  if (/\b(how do i|how to|how can i|implement|create|build|write|setup|set up|guide)\b/i.test(cleaned)) {
+  // 7. How-to implementation guides
+  if (/\b(how do i|how to|how can i|how do you|transfer data|update the dom|validate a form|fetch api|create a store|prevent xss|test a component)\b/i.test(cleaned)) {
     let category: DocChunk['category'] = 'general';
     if (/\b(form|validation|validate|schema|zod|aria)\b/i.test(cleaned)) category = 'forms';
     else if (/\b(route|router|routing|navigation|param)\b/i.test(cleaned)) category = 'router';
     else if (/\b(http|fetch|api|call|request|resource)\b/i.test(cleaned)) category = 'http';
-    else if (/\b(store|state|signal|computed|reactive)\b/i.test(cleaned)) category = 'reactivity';
+    else if (/\b(store|state|signal|computed|reactive|data between|transfer)\b/i.test(cleaned)) category = 'reactivity';
     else if (/\b(ssr|server|hydrate|hydration|stream)\b/i.test(cleaned)) category = 'ssr';
     else if (/\b(dom|component|update|element|show|for)\b/i.test(cleaned)) category = 'runtime';
     else if (/\b(test|testing|harness|assert)\b/i.test(cleaned)) category = 'testing';
+    else if (/\b(security|xss|sanitize)\b/i.test(cleaned)) category = 'security';
     else if (/\b(cli|create app|starter|template)\b/i.test(cleaned)) category = 'cli';
 
     return {
-      type: 'HOW_TO_GUIDE',
+      type: 'HOW_TO',
       category,
       confidence: 0.90,
       isDirectAnswerable: false,
@@ -326,23 +369,13 @@ export function detectIntent(normalized: NormalizedQuery): UserIntent {
     };
   }
 
-  // 6. Conceptual / Architecture
-  if (/\b(why|what is|architecture|how does|philosophy|vdom|virtual dom|benchmark|comparison|concept)\b/i.test(cleaned)) {
-    return {
-      type: 'CONCEPTUAL',
-      category: 'general',
-      confidence: 0.88,
-      isDirectAnswerable: false,
-      description: 'Architectural concepts and core design principles'
-    };
-  }
-
+  // 8. General Question
   return {
-    type: 'HOW_TO_GUIDE',
+    type: 'QUESTION',
     category: 'general',
-    confidence: 0.7,
+    confidence: 0.85,
     isDirectAnswerable: false,
-    description: 'Samrey development guidance'
+    description: 'Samrey Framework developer inquiry'
   };
 }
 

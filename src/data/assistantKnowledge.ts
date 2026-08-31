@@ -68,15 +68,16 @@ export const POPULAR_PROMPTS = [
 ];
 
 export const CATEGORY_FILTERS = [
-  { id: 'all', label: 'All Topics' },
-  { id: 'reactivity', label: 'Reactivity Engine' },
+  { id: 'all', label: 'All' },
+  { id: 'reactivity', label: 'Reactivity' },
   { id: 'runtime', label: 'Runtime & DOM' },
   { id: 'forms', label: 'Forms & Validation' },
   { id: 'router', label: 'Router & Navigation' },
   { id: 'http', label: 'HTTP & Data Fetching' },
   { id: 'ssr', label: 'SSR & Hydration' },
-  { id: 'security', label: 'Security & XSS' },
-  { id: 'errors', label: 'Error Codes (AETH)' }
+  { id: 'security', label: 'Security' },
+  { id: 'testing', label: 'Testing' },
+  { id: 'cli', label: 'CLI' }
 ];
 
 export const FAQ_ENTRIES: Array<{ question: string; category: string; summary: string }> = [

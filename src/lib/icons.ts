@@ -50,7 +50,10 @@ export type IconName =
   | 'eye'
   | 'refresh-cw'
   | 'thumbs-up'
-  | 'thumbs-down';
+  | 'thumbs-down'
+  | 'help-circle'
+  | 'message-square'
+  | 'layout';
 
 export function icon(name: IconName, className = 'w-4 h-4'): SVGElement {
   const svg = svgEl('svg', {
@@ -310,6 +313,22 @@ export function icon(name: IconName, className = 'w-4 h-4'): SVGElement {
     case 'thumbs-down':
       svg.appendChild(svgEl('path', { d: 'M17 14V2' }));
       svg.appendChild(svgEl('path', { d: 'M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3' }));
+      break;
+
+    case 'help-circle':
+      svg.appendChild(svgEl('circle', { cx: '12', cy: '12', r: '10' }));
+      svg.appendChild(svgEl('path', { d: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3' }));
+      svg.appendChild(svgEl('line', { x1: '12', y1: '17', x2: '12.01', y2: '17' }));
+      break;
+
+    case 'message-square':
+      svg.appendChild(svgEl('path', { d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' }));
+      break;
+
+    case 'layout':
+      svg.appendChild(svgEl('rect', { x: '3', y: '3', width: '18', height: '18', rx: '2', ry: '2' }));
+      svg.appendChild(svgEl('line', { x1: '3', y1: '9', x2: '21', y2: '9' }));
+      svg.appendChild(svgEl('line', { x1: '9', y1: '21', x2: '9', y2: '9' }));
       break;
 
     default:
