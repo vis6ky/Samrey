@@ -73,6 +73,17 @@ export function el<K extends keyof HTMLElementTagNameMap>(
       }
     }
 
+    const eventListeners: Record<string, Function[]> = {};
+    if (attrs) {
+      for (const [k, v] of Object.entries(attrs)) {
+        if (typeof v === 'function' && k.startsWith('on')) {
+          const evt = k.slice(2).toLowerCase();
+          eventListeners[evt] = eventListeners[evt] || [];
+          eventListeners[evt].push(v);
+        }
+      }
+    }
+
     const mockElem: any = {
       nodeType: 1,
       nodeName: String(tagName).toUpperCase(),
@@ -105,12 +116,27 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         contains: (cls: string) => (attributes['class'] || attributes['className'] || '').split(/\s+/).filter(Boolean).includes(cls)
       },
       querySelector: (selector: string) => {
-        const selectors = selector.split(',').map(s => s.trim().toUpperCase());
+        const rawSelectors = selector.split(',').map(s => s.trim());
+        function matchNode(child: any): boolean {
+          for (const s of rawSelectors) {
+            if (s.startsWith('#')) {
+              const id = s.slice(1);
+              if (child.getAttribute?.('id') === id || child.id === id || child.attributes?.['id'] === id) return true;
+            } else if (s.startsWith('.')) {
+              const cls = s.slice(1);
+              if (child.classList?.contains(cls)) return true;
+            } else if (child.tagName === s.toUpperCase()) {
+              return true;
+            }
+          }
+          return false;
+        }
+
         function find(node: any): any {
           if (!node || !node.childNodes) return null;
           for (const child of node.childNodes) {
             if (child && child.nodeType === 1) {
-              if (selectors.includes(child.tagName) || selectors.some(s => s.startsWith('.') && child.classList?.contains(s.slice(1)))) {
+              if (matchNode(child)) {
                 return child;
               }
               const nested = find(child);
@@ -122,13 +148,28 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         return find({ childNodes });
       },
       querySelectorAll: (selector: string) => {
-        const selectors = selector.split(',').map(s => s.trim().toUpperCase());
+        const rawSelectors = selector.split(',').map(s => s.trim());
         const results: any[] = [];
+        function matchNode(child: any): boolean {
+          for (const s of rawSelectors) {
+            if (s.startsWith('#')) {
+              const id = s.slice(1);
+              if (child.getAttribute?.('id') === id || child.id === id || child.attributes?.['id'] === id) return true;
+            } else if (s.startsWith('.')) {
+              const cls = s.slice(1);
+              if (child.classList?.contains(cls)) return true;
+            } else if (child.tagName === s.toUpperCase()) {
+              return true;
+            }
+          }
+          return false;
+        }
+
         function collect(node: any) {
           if (!node || !node.childNodes) return;
           for (const child of node.childNodes) {
             if (child && child.nodeType === 1) {
-              if (selectors.includes(child.tagName) || selectors.some(s => s.startsWith('.') && child.classList?.contains(s.slice(1)))) {
+              if (matchNode(child)) {
                 results.push(child);
               }
               collect(child);
@@ -161,12 +202,33 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         childNodes.push(child);
         return child;
       },
-      addEventListener: () => {},
-      removeEventListener: () => {},
+      addEventListener: (type: string, fn: any) => {
+        const evt = type.toLowerCase();
+        eventListeners[evt] = eventListeners[evt] || [];
+        eventListeners[evt].push(fn);
+      },
+      removeEventListener: (type: string, fn: any) => {
+        const evt = type.toLowerCase();
+        if (eventListeners[evt]) {
+          eventListeners[evt] = eventListeners[evt].filter(f => f !== fn);
+        }
+      },
       focus: () => {},
       blur: () => {},
-      click: () => {},
-      dispatchEvent: () => true,
+      click: () => {
+        const handlers = eventListeners['click'] || [];
+        for (const handler of handlers) {
+          handler({ type: 'click', target: mockElem, currentTarget: mockElem, preventDefault: () => {} });
+        }
+      },
+      dispatchEvent: (e: any) => {
+        const type = (e?.type || '').toLowerCase();
+        const handlers = eventListeners[type] || [];
+        for (const handler of handlers) {
+          handler(e);
+        }
+        return true;
+      },
       get outerHTML() {
         const tag = String(tagName).toLowerCase();
         let attrStr = '';

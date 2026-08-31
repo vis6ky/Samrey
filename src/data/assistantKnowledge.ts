@@ -47,19 +47,24 @@ export interface AssistantAnswer {
   provider?: string;
   intentType?: string;
   isDirectMatch?: boolean;
+  isRecipe?: boolean;
+  problem?: string;
+  samreyConcept?: string;
+  howItWorks?: string;
+  alternative?: string;
 }
 
 export const POPULAR_PROMPTS = [
   'How do I transfer data between components?',
-  'How do I update DOM elements when a signal changes?',
-  'How do I create a reactive store?',
-  'How do I call an API?',
+  'How do I update the DOM reactively?',
+  'How do I create a store?',
+  'How do I fetch API data?',
   'How do I validate a form?',
   'How do I create a route?',
   'How do I implement SSR?',
   'How do I prevent XSS?',
-  'How do I handle an AETH error?',
-  'How do I create a reusable component?'
+  'How do I test a component?',
+  'How should I structure a Samrey component?'
 ];
 
 export const CATEGORY_FILTERS = [
@@ -81,17 +86,17 @@ export const FAQ_ENTRIES: Array<{ question: string; category: string; summary: s
     summary: 'Use props for direct parent-child communication, Signals for reactive values, and createContext / useContext for deep subtree dependency injection.'
   },
   {
-    question: 'How do I update DOM elements when a signal changes?',
+    question: 'How do I update the DOM reactively?',
     category: 'runtime',
     summary: 'Bind signal functions directly to element properties in el() or use text() nodes. The fine-grained runtime mutates DOM nodes without VDOM diffing.'
   },
   {
-    question: 'How do I create a reactive store?',
+    question: 'How do I create a store?',
     category: 'reactivity',
     summary: 'Use createStore() from @samrey/reactivity with deep proxy tracking, produce() for mutations, and reconcile() for structural updates.'
   },
   {
-    question: 'How do I call an API?',
+    question: 'How do I fetch API data?',
     category: 'http',
     summary: 'Use createHttpClient() and resource() from @samrey/http to handle declarative data fetching, caching, and reactive loading states.'
   },
@@ -114,6 +119,11 @@ export const FAQ_ENTRIES: Array<{ question: string; category: string; summary: s
     question: 'How do I prevent XSS?',
     category: 'security',
     summary: 'Samrey auto-sanitizes attributes and content at compile time; use sanitizeHtml(), sanitizeUri(), and escapeHtmlText() for dynamic external data.'
+  },
+  {
+    question: 'How do I test a component?',
+    category: 'runtime',
+    summary: 'Use renderTest() from @samrey/testing to mount components in isolated reactive roots, fireEvent() to trigger interactions, and waitFor() / flushReactivity() to assert state.'
   },
   {
     question: 'How do I handle an AETH error?',
@@ -235,7 +245,7 @@ export function RootApp(): HTMLElement {
   // 2. DOM Updates on Signal Changes
   {
     id: 'dom-updates-signal',
-    keywords: ['update dom', 'signal changes', 'dom element', 'reactive binding', 'el', 'fine-grained', 'mutate dom', 'text node'],
+    keywords: ['update the dom reactively', 'update dom reactively', 'update dom', 'signal changes', 'dom element', 'reactive binding', 'el', 'fine-grained', 'mutate dom', 'text node', 'reactive dom'],
     categories: ['runtime', 'reactivity'],
     title: 'Updating DOM Elements When a Signal Changes',
     shortAnswer: 'In Samrey, pass reactive getter functions `() => signal.value` directly as attributes, class names, or child elements in `el()`. The runtime registers surgical subscribers that update only the specific DOM attribute or text node when the signal changes.',
@@ -293,7 +303,7 @@ export function DynamicCounter(): HTMLElement {
   // 3. Creating a Reactive Store
   {
     id: 'reactive-store',
-    keywords: ['reactive store', 'createStore', 'produce', 'reconcile', 'global state', 'store', 'deep reactivity', 'state management'],
+    keywords: ['create a store', 'create store', 'create a reactive store', 'reactive store', 'createStore', 'produce', 'reconcile', 'global state', 'store', 'deep reactivity', 'state management'],
     categories: ['reactivity'],
     title: 'Creating and Managing Reactive Stores',
     shortAnswer: 'Use `createStore<T>(initialState)` from `@samrey/reactivity` to create deep proxy-backed reactive stores with fine-grained path tracking, `produce()` for mutable draft updates, and `reconcile()` for structural merging.',
@@ -380,7 +390,7 @@ export function TaskList(): HTMLElement {
   // 4. API Calls & HTTP Data Fetching
   {
     id: 'api-data-fetching',
-    keywords: ['call an api', 'fetch data', 'http client', 'resource', 'createHttpClient', 'data fetching', 'async resource', 'cache'],
+    keywords: ['fetch api data', 'fetch data', 'api data', 'call an api', 'http client', 'resource', 'createHttpClient', 'data fetching', 'async resource', 'cache'],
     categories: ['http', 'reactivity', 'runtime'],
     title: 'Calling APIs and Managing Asynchronous Resources',
     shortAnswer: 'Use `createHttpClient()` and `resource()` from `@samrey/http` for declarative async data fetching, automatic caching, error handling, and reactive loading states.',
@@ -933,6 +943,118 @@ export function Card(props: CardProps): HTMLElement {
     docLinks: [
       { label: 'Templates & Component Design', url: '#architecture' },
       { label: 'Public API Specification', url: '#docs' }
+    ]
+  },
+
+  // 11. Testing Components with @samrey/testing
+  {
+    id: 'testing-components',
+    keywords: ['test a component', 'test component', 'testing', 'renderTest', 'fireEvent', 'waitFor', 'flushReactivity', 'waitForNextUpdate', 'test harness', 'unit test', '@samrey/testing'],
+    categories: ['runtime', 'reactivity', 'general'],
+    title: 'Testing Samrey Components with @samrey/testing',
+    shortAnswer: 'Test Samrey components using `renderTest()` from `@samrey/testing` to instantiate components in isolated reactive roots, `fireEvent()` to simulate user interactions, and `waitFor()` / `flushReactivity()` to assert asynchronous state transitions.',
+    concept: 'Samrey components execute once to construct native DOM elements and signal subscribers. `@samrey/testing` wraps component execution in `createRoot()`, providing an `unmount()` disposer, synthetic event dispatchers (`fireEvent`), and microtask flush utilities (`waitFor`, `flushReactivity`) without requiring a full browser or heavy virtual DOM mocks.',
+    recommendedApi: '`renderTest()`, `fireEvent()`, `waitFor()`, and `flushReactivity()` from `@samrey/testing`.',
+    whenToUse: 'Use for all unit tests, integration tests, and component interaction assertions in Node.js test runners (such as node:test, Vitest, or Jest).',
+    implementationSteps: [
+      'Import `renderTest`, `fireEvent`, and `flushReactivity` / `waitFor` from `@samrey/testing`.',
+      'Render the component inside `renderTest(() => MyComponent(props))`.',
+      'Query container DOM elements and assert initial states.',
+      'Simulate user actions via `fireEvent(button, "click")` or input events.',
+      'Await reactive DOM updates using `await flushReactivity()` or `await waitFor(...)`.',
+      'Call `result.unmount()` or `cleanupAllTestContainers()` in teardown.'
+    ],
+    tsCodeExample: `import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
+
+// Component under test
+function Counter(): HTMLElement {
+  const count = signal(0);
+  return el('div', { id: 'counter-root' },
+    el('span', { id: 'count-display' }, () => \`Count: \${count.value}\`),
+    el('button', {
+      id: 'inc-btn',
+      onClick: () => count.set(c => c + 1)
+    }, 'Increment')
+  );
+}
+
+describe('Counter Component', () => {
+  it('updates DOM reactively on click', async () => {
+    const { container, unmount } = renderTest(() => Counter());
+    const display = (container as HTMLElement).querySelector('#count-display');
+    const button = (container as HTMLElement).querySelector('#inc-btn');
+
+    assert.equal(display?.textContent, 'Count: 0');
+
+    // Simulate user click
+    fireEvent(button!, 'click');
+    await flushReactivity();
+
+    assert.equal(display?.textContent, 'Count: 1');
+
+    // Clean up reactive root
+    unmount();
+  });
+});`,
+    completeWorkingExample: `import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { el, Show } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
+import { renderTest, fireEvent, waitFor } from '@samrey/testing';
+
+function AsyncGreeting(): HTMLElement {
+  const isLoaded = signal(false);
+  const name = signal('');
+
+  const loadData = () => {
+    setTimeout(() => {
+      name.set('Samrey Developer');
+      isLoaded.set(true);
+    }, 50);
+  };
+
+  return el('div', null,
+    el('button', { id: 'load-btn', onClick: loadData }, 'Load User'),
+    Show({
+      when: () => isLoaded.value,
+      children: () => el('p', { id: 'greeting' }, () => \`Hello, \${name.value}!\`)
+    })
+  );
+}
+
+describe('AsyncGreeting Component', () => {
+  it('renders greeting after asynchronous state transition', async () => {
+    const { container, unmount } = renderTest(() => AsyncGreeting());
+    const button = (container as HTMLElement).querySelector('#load-btn');
+
+    fireEvent(button!, 'click');
+
+    // Wait for reactive DOM condition
+    await waitFor(() => {
+      const greeting = (container as HTMLElement).querySelector('#greeting');
+      return greeting?.textContent === 'Hello, Samrey Developer!';
+    }, 500);
+
+    const greeting = (container as HTMLElement).querySelector('#greeting');
+    assert.equal(greeting?.textContent, 'Hello, Samrey Developer!');
+
+    unmount();
+  });
+});`,
+    codeExplanation: '`renderTest` executes the component factory inside an isolated reactive root, returning the container DOM node and an `unmount()` function. `fireEvent` dispatches synthetic events that trigger signal mutations. `flushReactivity()` or `waitFor()` ensures asynchronous microtasks and timers settle before assertions run.',
+    alternativeApproach: 'You can also use `createMockResource()` for mocking async HTTP data fetching in tests.',
+    commonMistakes: [
+      'Forgetting to await `flushReactivity()` or `waitFor()` after dispatching an event, checking DOM values before the microtask queue flushes.',
+      'Forgetting to call `unmount()` in long test suites, which may keep signal effects subscribed.',
+      'Testing components with React Testing Library instead of the native `@samrey/testing` harness.'
+    ],
+    relatedApis: ['renderTest', 'fireEvent', 'waitFor', 'flushReactivity', 'createMockResource', 'createRoot'],
+    docLinks: [
+      { label: 'Testing Harness & Event Dispatchers', url: '#docs' }
     ]
   }
 ];
