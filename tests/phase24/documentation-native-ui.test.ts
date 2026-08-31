@@ -15,6 +15,7 @@ import { Header } from '../../src/components/Header.js';
 import { DocReader } from '../../src/components/DocReader.js';
 import { SearchModal } from '../../src/components/SearchModal.js';
 import { CompetitiveView } from '../../src/components/CompetitiveView.js';
+import { AssistantView } from '../../src/components/AssistantView.js';
 import { CompilerVisualizer } from '../../src/components/CompilerVisualizer.js';
 import { ReactivityVisualizer } from '../../src/components/ReactivityVisualizer.js';
 import { SecurityView } from '../../src/components/SecurityView.js';
@@ -99,6 +100,9 @@ describe('Phase 24 — Documentation UI Native Samrey Certification', () => {
 
     const compView = CompetitiveView();
     assert.ok(isSamreyElement(compView), 'CompetitiveView must instantiate as an Samrey element');
+
+    const assistView = AssistantView();
+    assert.ok(isSamreyElement(assistView), 'AssistantView must instantiate as an Samrey element');
   });
 
   it('6. Verifies Task Studio AppShell native component', () => {

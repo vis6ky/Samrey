@@ -5,7 +5,7 @@
 **Preflight Status:** PASS  
 
 ## Preflight Diagnostics
-- Node.js version v22.23.1 satisfies >=18.0.0 requirement
+- Node.js version v22.23.2 satisfies >=18.0.0 requirement
 - npm version: 10.9.8
 - Git repository status check skipped / clean
 - Found 11/11 @samrey/* packages
