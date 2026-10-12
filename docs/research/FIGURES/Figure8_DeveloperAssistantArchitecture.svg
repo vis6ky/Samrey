@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #64748b; }
+      .box { rx: 12px; stroke-width: 1.5px; }
+      .box-blue { fill: #eff6ff; stroke: #3b82f6; }
+      .box-indigo { fill: #eef2ff; stroke: #6366f1; }
+      .box-emerald { fill: #ecfdf5; stroke: #10b981; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-rose { fill: #fff1f2; stroke: #f43f5e; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-purple { fill: #faf5ff; stroke: #a855f7; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+      .box-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #475569; }
+      .arrow { stroke: #64748b; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #3b82f6; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-blue); }
+      .arrow-emerald { stroke: #10b981; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-emerald); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <text x="24" y="36" class="title">Figure 8: Developer Assistant & Grounded Knowledge Engine Architecture</text>
+  <text x="24" y="56" class="subtitle">Samrey Framework v1.0.0 Architectural Specification</text>
+  
+  <rect x="40" y="80" width="820" height="70" class="box box-indigo" />
+  <text x="60" y="110" class="box-title">Unified Developer Input (Questions, How-To, Code, Bug Reports, AETH Errors)</text>
+  <text x="60" y="130" class="box-text">Auto-Intent Detection: QUESTION | HOW_TO | REQUIREMENT | DEBUG | CONVERT | ERROR | ARCHITECTURE | API_LOOKUP</text>
+
+  <rect x="40" y="175" width="390" height="130" class="box box-blue" />
+  <text x="60" y="200" class="box-title">Deterministic Grounded Engine</text>
+  <text x="60" y="220" class="box-text">• Frozen PUBLIC_API.md verification</text>
+  <text x="60" y="238" class="box-text">• Subsystem Error Registry (AETH-001 to 899)</text>
+  <text x="60" y="256" class="box-text">• Implementation Recipe Catalog (19 categories)</text>
+  <text x="60" y="274" class="box-text">• Zero hallucinated symbol guarantee</text>
+
+  <rect x="470" y="175" width="390" height="130" class="box box-purple" />
+  <text x="490" y="200" class="box-title">Smart LLM Provider + Grounded Context</text>
+  <text x="490" y="220" class="box-text">• Server-side Gemini API provider</text>
+  <text x="490" y="238" class="box-text">• Injects retrieved repository specifications</text>
+  <text x="490" y="256" class="box-text">• Foreign framework detection (React/Vue/Svelte)</text>
+  <text x="490" y="274" class="box-text">• Fallback to deterministic catalog on offline</text>
+
+  <rect x="40" y="325" width="820" height="75" class="box box-emerald" />
+  <text x="60" y="350" class="box-title">AST Code Validator &amp; Live Runtime Sandbox</text>
+  <text x="60" y="370" class="box-text">• Validates code against official @samrey/* exports (shows ✓ Samrey v1.0.0 Verified ONLY on pass)</text>
+  <text x="60" y="388" class="box-text">• In-browser live execution sandbox transpiles TypeScript and mounts native DOM nodes</text>
+
+</svg>

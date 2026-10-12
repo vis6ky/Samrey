@@ -147,13 +147,15 @@ export class DeterministicKnowledgeProvider implements AssistantProvider {
     }
 
     // Check recipe catalog for recipe-level queries
-    const recipe = findRecipeForQuery(query);
+    const isErrorQuery = intent.type === 'ERROR_DIAGNOSTICS' || /aeth-?\d{3}/i.test(query);
+    const kbAnswer = queryKnowledgeBase(query);
+    const recipe = !isErrorQuery ? findRecipeForQuery(query) : null;
     let baseAnswer: AssistantAnswer;
 
-    if (recipe && (intent.type === 'RECIPE_LOOKUP' || !queryKnowledgeBase(query).isDirectMatch)) {
+    if (recipe && (intent.type === 'RECIPE_LOOKUP' || !kbAnswer.isDirectMatch)) {
       baseAnswer = formatRecipeToAnswer(recipe, query);
     } else {
-      baseAnswer = queryKnowledgeBase(query);
+      baseAnswer = kbAnswer;
     }
 
     // Merge retrieved doc links and source files

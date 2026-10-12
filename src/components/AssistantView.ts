@@ -44,6 +44,8 @@ export function AssistantView(): HTMLElement {
 
   // Unified Query Input State
   const searchQuery = signal<string>('');
+  const activeInputMode = signal<'qa' | 'code-help'>('qa');
+  const codeInput = signal<string>('');
   const activeCategory = signal<string>('all');
   const isLoading = signal<boolean>(false);
   const loadingStage = signal<string>('Analyzing query & detecting intent...');
@@ -67,7 +69,7 @@ export function AssistantView(): HTMLElement {
   // Focus helper for the unified input
   const focusSearchInput = () => {
     if (typeof document !== 'undefined') {
-      const input = document.getElementById('assistant-unified-input') as HTMLTextAreaElement | HTMLInputElement | null;
+      const input = (document.getElementById('assistant-search-input') || document.getElementById('assistant-code-input') || document.getElementById('assistant-unified-input')) as HTMLTextAreaElement | HTMLInputElement | null;
       if (input) {
         input.focus();
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });

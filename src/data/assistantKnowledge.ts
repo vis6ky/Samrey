@@ -2067,7 +2067,8 @@ export function ModernCounter(): HTMLElement {
       docLinks: [
         { label: 'Reactivity Engine Overview', url: '#reactivity' },
         { label: 'Public API Reference', url: '#docs' }
-      ]
+      ],
+      isDirectMatch: true
     };
   }
 
@@ -2107,7 +2108,8 @@ export function TwoWayInput(): HTMLElement {
         'Attempting to use `v-model` or `$state` syntax in TypeScript files.'
       ],
       relatedApis: ['signal', 'computed', 'createField', 'createForm'],
-      docLinks: [{ label: 'Public API Specification', url: '#docs' }]
+      docLinks: [{ label: 'Public API Specification', url: '#docs' }],
+      isDirectMatch: true
     };
   }
 
@@ -2144,7 +2146,8 @@ export function SafeWrapper(): HTMLElement {
       relatedApis: ['ErrorBoundary', 'onError', 'onCleanup'],
       docLinks: [
         { label: 'Error Codes Reference Catalog', url: '#docs' }
-      ]
+      ],
+      isDirectMatch: true
     };
   }
 
