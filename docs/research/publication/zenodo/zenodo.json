@@ -1,0 +1,25 @@
+{
+  "title": "Samrey: A Fine-Grained Reactive Framework Architecture with Zero-Virtual-DOM Execution, Native Defense-in-Depth, and Integrated Developer Guidance",
+  "description": "Research paper artifact and reproducibility bundle for the Samrey Framework (v1.0.0). Samrey is an enterprise-grade TypeScript web application framework built on fine-grained push-pull reactivity, zero-VDOM template cloning, defense-in-depth security, and an integrated developer guidance ecosystem.",
+  "creators": [
+    {
+      "name": "[Author Name Placeholder]",
+      "affiliation": "[Institutional Placeholder]",
+      "orcid": "0000-0000-0000-0000"
+    }
+  ],
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "upload_type": "publication",
+  "publication_type": "article",
+  "keywords": [
+    "Web Application Frameworks",
+    "Fine-Grained Reactivity",
+    "Zero-Virtual-DOM Rendering",
+    "Web Security",
+    "W3C Trusted Types",
+    "Resumable Hydration",
+    "AI-Assisted Software Engineering",
+    "Developer Assistant"
+  ]
+}

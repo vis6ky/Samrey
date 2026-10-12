@@ -1,0 +1,10 @@
+# Table 7: Developer Assistant Capabilities & Pipeline Specifications
+
+| Assistant Subsystem | Operational Mechanism | Implementation Source | Functional Output |
+| :--- | :--- | :--- | :--- |
+| **Intent Classifier** | Multi-heuristic regex and keyword pattern matcher recognizing 8 distinct intent categories. | `src/lib/assistantProvider.ts` | Dispatches query to `QUESTION`, `HOW_TO`, `REQUIREMENT`, `DEBUG`, `CONVERT`, `ERROR`, `ARCHITECTURE`, or `API_LOOKUP`. |
+| **Deterministic Knowledge Engine** | Lexical TF-IDF and keyword retrieval across frozen framework documentation, recipes, and error catalogs. | `src/data/assistantKnowledge.ts`, `src/lib/docSearchEngine.ts` | Grounded, hallucination-free architectural answers with official `@samrey/*` package citations. |
+| **Code Help & AST Bug Diagnoser** | Syntactic pattern auditing scanning for stale closures, in-place array/object mutations, and missing reactive accessors. | `src/lib/codeHelpEngine.ts` | Pinpoints line-level causes and generates corrected, idiomatic Samrey code. |
+| **Foreign Framework Interceptor** | Pattern matcher detecting React hooks (`useState`, `useEffect`), Vue directives (`v-model`), Svelte runes (`$state`), and Angular primitives. | `src/lib/codeHelpEngine.ts`, `tests/phase24/code-help.test.ts` | Explicitly flags foreign APIs and provides native Samrey equivalents (`signal()`, `computed()`, `createField()`). |
+| **Diagnostic Error Resolver** | Structured registry mapping `[AETH-xxx]` codes (001–899) across 8 subsystems. | `src/data/assistantKnowledge.ts`, `docs/ERROR_CODES.md` | Returns error cause, source location guide, recovery code example, and related APIs. |
+| **Interactive In-Browser Sandbox** | Safe in-memory JavaScript transpiler stripping TypeScript types and mounting live DOM nodes with reactive signal bindings. | `src/lib/runtimeSandbox.ts`, `src/components/PlaygroundModal.ts` | Live interactive UI output, real-time reactive counter updates, task list rendering, and console logs. |

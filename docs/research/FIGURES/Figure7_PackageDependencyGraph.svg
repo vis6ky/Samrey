@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #64748b; }
+      .box { rx: 12px; stroke-width: 1.5px; }
+      .box-blue { fill: #eff6ff; stroke: #3b82f6; }
+      .box-indigo { fill: #eef2ff; stroke: #6366f1; }
+      .box-emerald { fill: #ecfdf5; stroke: #10b981; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-rose { fill: #fff1f2; stroke: #f43f5e; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-purple { fill: #faf5ff; stroke: #a855f7; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+      .box-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #475569; }
+      .arrow { stroke: #64748b; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #3b82f6; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-blue); }
+      .arrow-emerald { stroke: #10b981; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-emerald); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <text x="24" y="36" class="title">Figure 7: Samrey Monorepo Package Dependency Topology (Strict DAG)</text>
+  <text x="24" y="56" class="subtitle">Samrey Framework v1.0.0 Architectural Specification</text>
+  
+  <!-- CLI & DevTools (Top) -->
+  <rect x="150" y="80" width="220" height="45" class="box box-indigo" />
+  <text x="170" y="108" class="box-title">@samrey/cli</text>
+
+  <rect x="530" y="80" width="220" height="45" class="box box-indigo" />
+  <text x="550" y="108" class="box-title">@samrey/devtools</text>
+
+  <!-- Compiler & App Infra (Middle-Top) -->
+  <rect x="50" y="160" width="200" height="45" class="box box-blue" />
+  <text x="70" y="188" class="box-title">@samrey/compiler</text>
+
+  <rect x="270" y="160" width="180" height="45" class="box box-blue" />
+  <text x="290" y="188" class="box-title">@samrey/router</text>
+
+  <rect x="470" y="160" width="180" height="45" class="box box-blue" />
+  <text x="490" y="188" class="box-title">@samrey/forms</text>
+
+  <rect x="670" y="160" width="180" height="45" class="box box-blue" />
+  <text x="690" y="188" class="box-title">@samrey/ssr</text>
+
+  <!-- HTTP & Testing (Middle-Bottom) -->
+  <rect x="180" y="245" width="200" height="45" class="box box-slate" />
+  <text x="200" y="273" class="box-title">@samrey/http</text>
+
+  <rect x="520" y="245" width="200" height="45" class="box box-slate" />
+  <text x="540" y="273" class="box-title">@samrey/testing</text>
+
+  <!-- Runtime (Lower) -->
+  <rect x="330" y="320" width="240" height="45" class="box box-emerald" />
+  <text x="350" y="348" class="box-title">@samrey/runtime</text>
+
+  <!-- Base Foundational (Bottom) -->
+  <rect x="100" y="390" width="300" height="40" class="box box-amber" />
+  <text x="120" y="415" class="box-title">@samrey/reactivity (0 Dependencies)</text>
+
+  <rect x="500" y="390" width="300" height="40" class="box box-amber" />
+  <text x="520" y="415" class="box-title">@samrey/security (0 Dependencies)</text>
+
+  <!-- Arrows -->
+  <path d="M 260 125 L 150 160" class="arrow" />
+  <path d="M 640 125 L 250 390" class="arrow" />
+  <path d="M 450 365 L 250 390" class="arrow" />
+  <path d="M 450 365 L 650 390" class="arrow" />
+
+</svg>

@@ -19,10 +19,14 @@ import { SearchModal } from './components/SearchModal.js';
 import { AppShell } from './task-studio/components/AppShell.js';
 
 export function App(): HTMLElement {
-  // Initial tab from URL hash if present
+  // Initial tab from URL hash if present with legacy redirect support
+  const legacyTabs = ['recipes', 'code-help', 'fixer', 'documentation', 'recipes-and-docs', 'help'];
   const getInitialTab = (): string => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const hash = window.location.hash.replace('#', '').trim();
+      if (legacyTabs.includes(hash)) {
+        return 'assistant';
+      }
       if (['assistant', 'competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
         return hash;
       }
@@ -33,10 +37,15 @@ export function App(): HTMLElement {
   const activeTab = signal<string>(getInitialTab());
   const isSearchOpen = signal<boolean>(false);
 
-  // Sync hash changes
+  // Sync hash changes and redirect legacy routes to the unified assistant
   if (typeof window !== 'undefined') {
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.replace('#', '').trim();
+      if (legacyTabs.includes(hash)) {
+        activeTab.value = 'assistant';
+        window.history.replaceState(null, '', '#assistant');
+        return;
+      }
       if (hash && hash !== activeTab.value) {
         activeTab.value = hash;
       }

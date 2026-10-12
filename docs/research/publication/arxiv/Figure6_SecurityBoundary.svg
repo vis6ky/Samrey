@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #64748b; }
+      .box { rx: 12px; stroke-width: 1.5px; }
+      .box-blue { fill: #eff6ff; stroke: #3b82f6; }
+      .box-indigo { fill: #eef2ff; stroke: #6366f1; }
+      .box-emerald { fill: #ecfdf5; stroke: #10b981; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-rose { fill: #fff1f2; stroke: #f43f5e; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-purple { fill: #faf5ff; stroke: #a855f7; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+      .box-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #475569; }
+      .arrow { stroke: #64748b; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #3b82f6; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-blue); }
+      .arrow-emerald { stroke: #10b981; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-emerald); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <text x="24" y="36" class="title">Figure 6: Context-Aware Defensive Security Boundary</text>
+  <text x="24" y="56" class="subtitle">Samrey Framework v1.0.0 Architectural Specification</text>
+  
+  <rect x="340" y="80" width="220" height="50" class="box box-indigo" />
+  <text x="355" y="110" class="box-title">Dynamic User Input</text>
+
+  <path d="M 370 130 L 100 170" class="arrow" />
+  <path d="M 400 130 L 280 170" class="arrow" />
+  <path d="M 450 130 L 450 170" class="arrow" />
+  <path d="M 500 130 L 620 170" class="arrow" />
+  <path d="M 530 130 L 780 170" class="arrow" />
+
+  <rect x="30" y="180" width="150" height="90" class="box box-blue" />
+  <text x="45" y="205" class="box-title">1. HTML Text</text>
+  <text x="45" y="225" class="box-text">node.textContent</text>
+  <text x="45" y="245" class="box-text">HTML parser bypass</text>
+
+  <rect x="200" y="180" width="160" height="90" class="box box-emerald" />
+  <text x="215" y="205" class="box-title">2. Safe Attributes</text>
+  <text x="215" y="225" class="box-text">setAttribute(k, v)</text>
+  <text x="215" y="245" class="box-text">Escapes quotes</text>
+
+  <rect x="380" y="180" width="150" height="90" class="box box-amber" />
+  <text x="395" y="205" class="box-title">3. Hyperlinks/URIs</text>
+  <text x="395" y="225" class="box-text">sanitizeUri()</text>
+  <text x="395" y="245" class="box-text">Blocks javascript:</text>
+
+  <rect x="550" y="180" width="150" height="90" class="box box-purple" />
+  <text x="565" y="205" class="box-title">4. CSS Styles</text>
+  <text x="565" y="225" class="box-text">CSSOM validator</text>
+  <text x="565" y="245" class="box-text">Blocks expression()</text>
+
+  <rect x="720" y="180" width="150" height="90" class="box box-rose" />
+  <text x="735" y="205" class="box-title">5. Raw Markup</text>
+  <text x="735" y="225" class="box-text">W3C Trusted Types</text>
+  <text x="735" y="245" class="box-text">samrey#html policy</text>
+
+  <rect x="30" y="295" width="840" height="60" class="box box-slate" />
+  <text x="50" y="320" class="box-title">Zero-Eval Guarantee: Prohibits eval(), new Function(), and string script injections across all 11 packages.</text>
+  <text x="50" y="338" class="box-text">Full compatibility with strict Content Security Policy (CSP): script-src 'self' (No 'unsafe-eval' or 'unsafe-inline' needed).</text>
+
+</svg>

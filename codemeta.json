@@ -1,0 +1,35 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "Samrey Framework",
+  "version": "1.0.0",
+  "description": "High-performance TypeScript-native frontend web framework featuring single-execution components, fine-grained push-pull reactivity, zero-VDOM template cloning, defense-in-depth security, and integrated developer guidance.",
+  "license": "https://spdx.org/licenses/Apache-2.0",
+  "codeRepository": "https://github.com/samrey-dev/samrey",
+  "programmingLanguage": [
+    "TypeScript",
+    "JavaScript"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "[Author Given Name Placeholder]",
+      "familyName": "[Author Family Name Placeholder]",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "[Institutional Placeholder]"
+      }
+    }
+  ],
+  "datePublished": "2026-10-01",
+  "keywords": [
+    "Web Frameworks",
+    "Fine-Grained Reactivity",
+    "Push-Pull Signals",
+    "Zero Virtual DOM",
+    "Web Security",
+    "Trusted Types",
+    "Resumable Hydration",
+    "Developer Assistant"
+  ]
+}
