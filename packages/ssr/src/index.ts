@@ -18,5 +18,8 @@ import { escapeHtmlText } from '@samrey/security';
 
 export const sanitizeSsrState = stripSecrets;
 export const escapeJsonState = serializeStateForHydration;
+export const serializeState = serializeStateForHydration;
 export const hydrateFromSSR = hydrate;
 export const escapeHtml = escapeHtmlText;
+import { getDelegatedEventScript } from './hydration.js';
+export const generatePreHydrationScript = getDelegatedEventScript;

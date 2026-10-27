@@ -27,7 +27,7 @@ export function bindText(node: Node, getter: () => unknown): void {
   let prevText: string | null = null;
   effect(() => {
     const val = getter();
-    const nextText = val === null || val === undefined ? '' : typeof val === 'object' && 'nodeType' in (val as any) ? '' : String(val);
+    const nextText = val === null || val === undefined || val === false || val === true ? '' : typeof val === 'object' && 'nodeType' in (val as any) ? '' : String(val);
     if (nextText !== prevText) {
       prevText = nextText;
       node.textContent = nextText;
@@ -84,10 +84,8 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
           p.removeChild(oldNode);
         }
       }
-      for (const newNode of nextNodes) {
-        if (newNode.parentNode !== p) {
-          p.insertBefore(newNode, marker);
-        }
+      for (let i = 0; i < nextNodes.length; i++) {
+        p.insertBefore(nextNodes[i], marker);
       }
     }
     currentNodes = nextNodes;
@@ -108,11 +106,6 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
 
   effect(() => {
     let val = getter();
-    if (URI_ATTRS.has(lowerName)) {
-      val = sanitizeUri(val as string);
-    } else if (lowerName === 'style') {
-      val = sanitizeCssStyle(val);
-    }
 
     if (val === null || val === undefined || val === false) {
       if (!prevNull) {
@@ -129,23 +122,38 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
           // Ignore removal errors on mock/detached nodes
         }
       }
-    } else {
-      const nextStr = String(val);
-      if (prevNull || nextStr !== prevVal) {
-        prevNull = false;
-        prevVal = nextStr;
-        try {
-          element.setAttribute(attrName, nextStr);
-          if (attrName === 'value' && 'value' in element) {
-            (element as any).value = nextStr;
-          } else if (attrName === 'checked' && 'checked' in element) {
-            (element as any).checked = Boolean(val);
-          }
-        } catch (err) {
-          console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
+      return;
+    }
+
+    if (URI_ATTRS.has(lowerName)) {
+      val = sanitizeUri(String(val));
+    } else if (lowerName === 'style') {
+      val = sanitizeCssStyle(val);
+    }
+
+    const nextStr = String(val);
+    if (prevNull || nextStr !== prevVal) {
+      prevNull = false;
+      prevVal = nextStr;
+      try {
+        element.setAttribute(attrName, nextStr);
+        if (attrName === 'value' && 'value' in element) {
+          (element as any).value = nextStr;
+        } else if (attrName === 'checked' && 'checked' in element) {
+          (element as any).checked = Boolean(val);
         }
+      } catch (err) {
+        console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
       }
     }
+  });
+}
+
+export const bindAttribute = bindAttr;
+
+export function bindProperty(element: Element, propName: string, getter: () => unknown): void {
+  effect(() => {
+    (element as any)[propName] = getter();
   });
 }
 
@@ -163,3 +171,4 @@ export function bindClass(element: Element, className: string, getter: () => boo
     }
   });
 }
+

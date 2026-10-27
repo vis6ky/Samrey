@@ -23,6 +23,7 @@ export interface InspectedHttpRequest {
 
 export class NetworkInspector {
   private requests = new Map<string, InspectedHttpRequest>();
+  private maxRequests = 200;
 
   recordRequest(id: string, method: string, url: string, headers?: Record<string, string>, body?: unknown): void {
     const safeHeaders: Record<string, string> = {};
@@ -36,14 +37,40 @@ export class NetworkInspector {
       }
     }
 
+    let safeUrl = url;
+    try {
+      const qIdx = url.indexOf('?');
+      if (qIdx !== -1) {
+        const base = url.slice(0, qIdx);
+        const search = url.slice(qIdx + 1);
+        const hIdx = search.indexOf('#');
+        const queryPart = hIdx === -1 ? search : search.slice(0, hIdx);
+        const hashPart = hIdx === -1 ? '' : search.slice(hIdx);
+        const sp = new URLSearchParams(queryPart);
+        for (const [k] of Array.from(sp.entries())) {
+          if (/auth|token|key|secret|password|credential|access_token|api_key/i.test(k)) {
+            sp.set(k, '[REDACTED]');
+          }
+        }
+        safeUrl = base + '?' + sp.toString() + hashPart;
+      }
+    } catch {
+      safeUrl = url;
+    }
+
     const req: InspectedHttpRequest = {
       id,
       method: method.toUpperCase(),
-      url,
+      url: safeUrl,
       headers: safeHeaders,
       body: sanitizePayload(body),
       startTime: Date.now()
     };
+
+    if (this.requests.size >= this.maxRequests) {
+      const oldestKey = this.requests.keys().next().value;
+      if (oldestKey) this.requests.delete(oldestKey);
+    }
 
     this.requests.set(id, req);
     samreyDevToolsBridge.emit('http:request', req);

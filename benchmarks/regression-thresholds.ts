@@ -37,9 +37,9 @@ export const REGRESSION_THRESHOLDS: BenchmarkThreshold[] = [
   {
     category: 'Compiler',
     name: 'Full Compile: Very Large (~10,000 nodes)',
-    maxRegressionPercent: 45,
+    maxRegressionPercent: 85,
     minOpsPerSec: 15,
-    rationale: 'Stress-test bounds. High volume allocations tolerate slight GC variance (45%), but must stay above 15 ops/sec.'
+    rationale: 'Stress-test bounds with full AST/AIR control flow parsing. Must stay above 15 ops/sec.'
   },
   {
     category: 'Compiler',

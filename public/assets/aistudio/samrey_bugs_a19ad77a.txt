@@ -1,0 +1,118 @@
+I cloned the repo, ran its typecheck and tests, and wrote jsdom probes for each item below. tsc passes, but the test suite runs 278 tests with 4 failing (the README badge says 130 passed, 0 failed). I reproduced everything below unless it’s tagged (read), which means I found it in the code but didn’t run it. XSS items are confirmed by parsing the sanitizer output in jsdom, not by executing in a real browser.
+
+1. Features that don’t work or aren’t implemented
+CLI commands are stubs. In an empty directory:
+build writes nothing but prints “Build finished” and lists dist/client.js.
+test runs no tests and always exits 0 (“All test suites passed”).
+analyze prints hard-coded numbers (14.2 KB, 18 signals).
+preview starts no server.
+audit scans two hard-coded sample strings, reports “Audit passed”, and exits 0 unless --strict. Its checker misses javascript: hrefs and inline onclick.
+The compiler emits wrong code.
+bindText(root.childNodes[slotIndex]) ignores the computed DOM path. <h2>Count: {n}</h2> renders 0 because the whole <h2> is replaced.
+Dynamic attributes and events bind to the root element, so a click anywhere fires the handler.
+<Show>, <For> and components compile to HTML comments only.
+{'Hello ' + name + '!'} is folded into the constant text Hello ' + name + '!. This hits any expression that starts and ends with a quote or backtick.
+{null}{undefined}{false} renders nullundefinedfalse.
+Whitespace between inline elements is dropped (<b>a</b> <i>b</i> becomes “ab”).
+A literal < in text is dropped.
+<style>.a { color: red }</style> turns the CSS braces into an interpolation and the CSS is lost.
+Broken templates still generate code, and options is ignored.
+lintA11y and the security classifier’s output are never used by the compile path.
+The README Quick Start crashes.
+bindEvent isn’t exported (neither are the bindAttribute and bindProperty that the docs list).
+template() returns only clone.firstChild. For the README’s own indented template that’s a whitespace text node with no querySelectorAll. Multi-root templates silently drop every node after the first.
+No real hydration. ssr.hydrate always calls replaceChildren, and its mismatch check only compares nodeType (<button> and <section> match). Replayed events go to the old SSR nodes after they’ve been removed, so pre-hydration clicks are lost. runtime.hydrate is just mount.
+Stubs and dead code:
+onError() is an empty function.
+Suspense is a try/catch.
+RequestCache (deduplication) is never used by createResource or HttpClient.
+createHttpCache ignores its options.
+The CHANGELOG claims LIS reconciliation, but For doesn’t do it.
+2. Security
+sanitizeHtmlString bypasses. Event-handler attributes survive in <svg/onload=…> and <img src="x"/onerror=…>. href values survive as javascript: (unquoted, &#106;avascript:) or data:text/html;base64. rawHtml and the Trusted Types policy both use this sanitizer.
+Static attributes skip sanitization in el(). el('a',{href:'javascript:…'}), {onclick:'…'} (a string) and {srcdoc:…} are set raw. Only function-valued attributes go through bindAttr.
+bindAttr with null yields href="" and src="". An empty href reloads the current page.
+Open redirect. sanitizeRedirectUri('/\t/evil.com') passes, and browsers strip the tab to get //evil.com.
+SSR head injection. addMeta values and clientScript/clientStyles aren’t escaped, and I injected <script> that way.
+SSG path traversal. A param of .. wrote to /tmp/index.html, outside outDir, and /blog/.. overwrites the root index.html. Params that are prefixes of other params also collide (:id inside :idx).
+Dev-server traversal. GET /../secret.txt served a file outside the root. The server also listened on a non-loopback interface even with the default host localhost.
+stripSecrets (two copies):
+Shared references are silently dropped ({a: u, b: u} loses b).
+Date and Map become {}.
+It strips author, authorId, hashtags, sessions and tokenCount.
+It misses passwd, pwd, accessKey and ssn.
+/api/assistant in vite.config.ts (read). It’s unauthenticated, reads an unbounded body, and lets the caller inject the system prompt via retrievedDocs. The dev script binds 0.0.0.0, so anyone on the network can spend your Gemini quota.
+Trusted Types:
+createScriptURL allows any https: origin.
+The runtime never calls the policy (read, no usages found), so rawHtml would throw under require-trusted-types-for.
+DevTools bridge (read). It installs on import (production too) and broadcasts every event with postMessage(…, '*'). isOriginAllowed is never called.
+CSRF tokens (read). They fall back to Math.random() when the global crypto is missing, which Node 18 lacks and the README claims to support. A string “secret” argument is silently ignored.
+The inline event-delegator <script> has no nonce option, which conflicts with the “CSP strict” badge.
+3. Reactivity and store
+Owner.dispose skips every other child. Four children disposed [0,2].
+One throwing effect kills its siblings and its own future runs.
+Disposed-while-queued effects resurrect.
+Nested effects accumulate on re-run (3 runs instead of 1).
+computed has no equality cutoff, so effects re-run on unchanged values.
+Writes made during an effect’s own run are lost (s.value++ inside an effect stopped at 1).
+A signal holding a function treats the new value as an updater.
+createStore:
+Array mutations aren’t reactive.
+Date and Map throw TypeError (the proxy is the receiver).
+delete and Object.keys aren’t tracked.
+4. Runtime
+Show and For don’t untrack. Any signal read in a child re-renders the whole branch.
+Show re-mounts when a truthy value changes identity.
+For never passes updated items to existing rows. Same key plus new data leaves the old UI.
+For and Show mount in a microtask. An update before the flush leaves ghost rows (I got a,b,c instead of c).
+Portal never cleans up on dispose.
+bindDynamicChild doesn’t reorder retained nodes ([A,B] to [B,A] stays AB).
+Dynamic leaks a children="…" attribute.
+Headless el() renders function children as source text and doesn’t escape text in outerHTML, which is the SSR path (read).
+Dev diagnostics are dead in browsers, because isDev depends on process. The messages still carry AETH- codes left over from a rename.
+5. Router, HTTP, Forms, SSR
+Router:
+The initial path ignores window.location.
+Back and Forward don’t update the router (after Back, window was /a and router was /b).
+Matching fails with ?query or #hash (and /users/:id captures 5?tab=2).
+navigate('about') and navigate('?x') are silent no-ops.
+Link returns a plain object, not a Node. It rewrites external hrefs to / and ignores activeClass.
+createLink swallows external link clicks.
+A module-level router singleton leaks between concurrent SSR requests (read).
+useSearchParams never syncs with the URL.
+HTTP:
+createResource never re-fetches when its source signal changes.
+Out-of-order responses win (stale “a” overwrote “b”).
+timeoutMs is ignored.
+A Headers instance in options drops all custom headers.
+DELETE returning 204 throws on .json().
+FormData is sent as {} with a JSON content-type.
+Forms:
+Double submit runs onSubmit twice.
+Schema paths like [{key:'email'}] (the Standard Schema object form) become a form-level error.
+Schema-set field errors never clear when the user fixes the value.
+dirty is true for equal-but-new arrays.
+SSR:
+createServerData runs every loader twice per request.
+The second-pass render shows loading=true (“LOADING...” in the HTML despite state).
+A failing second-pass loader causes unhandledRejection, which crashes Node by default.
+renderToStream loses <title> and meta tags and doesn’t actually stream.
+The abortSignal and timeoutMs options are ignored.
+The client data cache never invalidates.
+6. Tooling, testing, repo
+CI can’t run. Only bun.lock is tracked, so npm ci and setup-node with cache: npm fail. CI never tests Node 18, and lint is a duplicate of typecheck.
+Metadata and docs:
+Package versions are 1.0.0 but the README says 0.1.0.
+repository and homepage point to samrey-framework/samrey and samrey.dev, not this repo.
+Packages ship raw .ts as main.
+The root package.json has leftover AI Studio dependencies.
+CLI:
+samrey create --template x creates a directory named --template.
+create . overwrites existing files, and generate overwrites without checking.
+samrey generate component my-widget emits invalid identifiers (My-widgetProps).
+Scaffolds use JSX with "jsx": "react-jsx" but there’s no React or Samrey JSX runtime.
+Testing package:
+fireEvent sends a plain Event, so e.button is undefined and Link/createLink handlers silently do nothing in tests (T1 stayed on /, a real MouseEvent navigated).
+cleanupAllTestContainers targets a marker nothing creates.
+createMockResource isn’t reactive and doesn’t match the real API.
+The 4 failing tests are all in tests/phase24/ (assistant UI and hybrid doc search), so main is red.

@@ -15,17 +15,27 @@ export function signal<T>(initialValue: T): Signal<T> {
     subscribers: new Set<Subscriber>()
   };
 
-  function write(next: T | ((prev: T) => T)): void {
-    const nextValue = typeof next === 'function' ? (next as (prev: T) => T)(currentValue) : next;
+  function write(next: T | ((prev: T) => T), direct = false): void {
+    let nextValue: T;
+    if (direct) {
+      nextValue = next as T;
+    } else if (typeof next === 'function' && typeof currentValue !== 'function') {
+      nextValue = (next as (prev: T) => T)(currentValue);
+    } else {
+      nextValue = next as T;
+    }
+
     if (nextValue !== currentValue) {
       currentValue = nextValue;
       node.version = incrementClock();
 
-      batch(() => {
-        for (const sub of node.subscribers) {
-          sub.notify(node.version);
-        }
-      });
+      if (node.subscribers.size > 0) {
+        batch(() => {
+          for (const sub of node.subscribers) {
+            sub.notify(node.version);
+          }
+        });
+      }
     }
   }
 
@@ -43,11 +53,11 @@ export function signal<T>(initialValue: T): Signal<T> {
 
   Object.defineProperty(accessor, 'value', {
     get: read,
-    set: write,
+    set: (val: T) => write(val, true),
     enumerable: true
   });
 
-  accessor.set = write;
+  accessor.set = (val: T | ((prev: T) => T)) => write(val, false);
 
   return accessor;
 }

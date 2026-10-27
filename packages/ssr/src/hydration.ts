@@ -27,19 +27,22 @@ export interface HydrationResult {
   replayedEventsCount: number;
 }
 
+import { escapeHtmlAttribute } from '@samrey/security';
+
 /**
  * Returns the ultra-lightweight inline event listener script for zero-overhead initial interaction capture.
  * Captures user interactions during the gap between initial HTML paint and client JS initialization.
  */
-export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown']): string {
+export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown'], nonce?: string): string {
   const eventsList = JSON.stringify(events);
-  return `<script>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList};e.forEach(function(t){document.addEventListener(t,function(e){window.__SAMREY_EVENTS__.push(e)},{capture:!0})})}();</script>`;
+  const nonceAttr = nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : '';
+  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList};e.forEach(function(t){document.addEventListener(t,function(e){window.__SAMREY_EVENTS__.push(e)},{capture:!0})})}();</script>`;
 }
 
 /**
  * Replays any user interactions captured by the inline delegator prior to client JS hydration.
  */
-export function replayCapturedEvents(): number {
+export function replayCapturedEvents(container?: HTMLElement): number {
   if (typeof window === 'undefined' || !window.__SAMREY_EVENTS__) {
     return 0;
   }
@@ -50,10 +53,19 @@ export function replayCapturedEvents(): number {
   if (count === 0) return 0;
 
   for (const event of queue) {
-    const target = event.target as Element | null;
+    let target = event.target as Element | null;
+    if (target && typeof document !== 'undefined' && typeof document.contains === 'function' && !document.contains(target) && container && typeof container.querySelector === 'function') {
+      if (target.id) {
+        target = container.querySelector(`#${target.id}`) || target;
+      } else if (target.className && typeof target.className === 'string') {
+        const cls = target.className.trim().split(/\s+/).join('.');
+        target = container.querySelector(`.${cls}`) || target;
+      } else if (target.tagName) {
+        target = container.querySelector(target.tagName.toLowerCase()) || target;
+      }
+    }
     if (target && typeof target.dispatchEvent === 'function') {
       try {
-        // Re-dispatch original event to the hydrated target
         target.dispatchEvent(event);
       } catch (err) {
         console.warn('[Samrey Hydration] Failed to replay captured event:', err);
@@ -96,23 +108,30 @@ export function hydrate(
       const clientNodes = Array.isArray(clientNodeOrNodes) ? clientNodeOrNodes : [clientNodeOrNodes];
 
       if (isSsrPresent) {
-        // Check for basic tag-level match
+        // Check for tag-level and node-type match
         let hasMismatch = false;
 
-        for (let i = 0; i < clientNodes.length; i++) {
-          const clientNode = clientNodes[i];
-          const serverNode = existingChildren[i];
+        if (clientNodes.length !== existingChildren.length) {
+          hasMismatch = true;
+        } else {
+          for (let i = 0; i < clientNodes.length; i++) {
+            const clientNode = clientNodes[i];
+            const serverNode = existingChildren[i];
 
-          if (!serverNode || clientNode.nodeType !== serverNode.nodeType) {
-            hasMismatch = true;
-            if (options.onMismatch) {
-              options.onMismatch(
-                `NodeType: ${clientNode.nodeType}`,
-                serverNode ? `NodeType: ${serverNode.nodeType}` : 'missing',
-                serverNode || container
-              );
+            const clientTag = (clientNode as Element).tagName?.toUpperCase();
+            const serverTag = (serverNode as Element).tagName?.toUpperCase();
+
+            if (!serverNode || clientNode.nodeType !== serverNode.nodeType || (clientTag && serverTag && clientTag !== serverTag)) {
+              hasMismatch = true;
+              if (options.onMismatch) {
+                options.onMismatch(
+                  clientTag || `NodeType: ${clientNode.nodeType}`,
+                  serverTag || (serverNode ? `NodeType: ${serverNode.nodeType}` : 'missing'),
+                  serverNode || container
+                );
+              }
+              break;
             }
-            break;
           }
         }
 
@@ -128,8 +147,8 @@ export function hydrate(
         container.replaceChildren(...clientNodes);
       }
 
-      // Replay all events captured before hydration finished
-      replayedCount = replayCapturedEvents();
+      // Replay all events captured before hydration finished, targeting container elements
+      replayedCount = replayCapturedEvents(container);
     });
   });
 

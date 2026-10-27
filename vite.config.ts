@@ -26,16 +26,28 @@ function assistantApiPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         if (req.url === '/api/assistant' && req.method === 'POST') {
           let bodyStr = '';
+          const MAX_SIZE = 64 * 1024; // 64KB
+          let exceeded = false;
+
           req.on('data', (chunk) => {
+            if (exceeded) return;
             bodyStr += chunk;
+            if (bodyStr.length > MAX_SIZE) {
+              exceeded = true;
+              res.writeHead(413, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Payload Too Large: maximum allowed body size is 64KB' }));
+              req.destroy();
+            }
           });
           req.on('end', async () => {
+            if (exceeded) return;
             try {
               const body = JSON.parse(bodyStr || '{}');
-              const prompt = body.prompt || '';
-              const history = body.history || [];
-              const retrievedDocs = body.retrievedDocs || '';
-              const code = body.code || '';
+              const prompt = typeof body.prompt === 'string' ? body.prompt.slice(0, 8192) : '';
+              const history = Array.isArray(body.history) ? body.history.slice(-10) : [];
+              const rawDocs = typeof body.retrievedDocs === 'string' ? body.retrievedDocs.slice(0, 16384) : '';
+              const retrievedDocs = rawDocs.replace(/<\/?system-context>/gi, '');
+              const code = typeof body.code === 'string' ? body.code.slice(0, 16384) : '';
               const mode = body.mode || 'standard';
 
               const ai = getGeminiClient();

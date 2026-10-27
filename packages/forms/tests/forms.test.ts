@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createField, createForm, computeAriaAttributes, StandardSchemaV1 } from '../src/index.js';
+import { createField, createForm, computeAriaAttributes, StandardSchemaV1, bindField, validators } from '../src/index.js';
 
 describe('@samrey/forms', () => {
   it('tracks field value, dirty, and error state reactively', () => {
@@ -158,5 +158,20 @@ describe('@samrey/forms', () => {
     assert.equal(success2, true);
     assert.equal(form.formError.value, null);
     assert.deepEqual(submittedData, { username: 'clean_user' });
+  });
+
+  it('validates using built-in validators and binds element with bindField', () => {
+    assert.equal(validators.required()(''), 'Field is required');
+    assert.equal(validators.required()('ok'), null);
+    assert.equal(validators.email()('invalid'), 'Invalid email address');
+    assert.equal(validators.email()('test@example.com'), null);
+    assert.equal(validators.minLength(3)('ab'), 'Minimum length is 3');
+    assert.equal(validators.minLength(3)('abc'), null);
+
+    const field = createField('test', 'init');
+    const input: any = { value: '', listeners: {} as Record<string, Function> };
+    input.addEventListener = (ev: string, fn: Function) => { input.listeners[ev] = fn; };
+    bindField(input, field);
+    assert.equal(input.value, 'init');
   });
 });

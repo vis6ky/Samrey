@@ -19,14 +19,15 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     notify() {
       if (!this.isDirty) {
         this.isDirty = true;
-        // Propagate dirty flag down to downstream subscribers
-        for (const sub of this.subscribers) {
+        for (const sub of [...this.subscribers]) {
           sub.notify(this.version);
         }
       }
     },
     update() {
-      // Lazy evaluation: actual update happens on read
+      if (this.isDirty) {
+        evaluate();
+      }
     }
   };
 
@@ -43,10 +44,13 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
     const prevSub = setActiveSubscriber(node);
     try {
-      cachedValue = fn();
+      const nextVal = fn();
+      if (!isInitialized || !Object.is(cachedValue, nextVal)) {
+        node.version = incrementClock();
+      }
+      cachedValue = nextVal;
       isInitialized = true;
       node.isDirty = false;
-      node.version = incrementClock();
     } finally {
       setActiveSubscriber(prevSub);
     }

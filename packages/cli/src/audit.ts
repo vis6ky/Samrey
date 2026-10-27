@@ -29,6 +29,21 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
     messages.push(`${filename}: Explicit <script> tag found in template. Violates CSP.`);
   }
 
+  // Scan for javascript: URIs in attributes
+  if (/(?:href|src|action|formaction)\s*=\s*['"]?\s*javascript:/i.test(source)) {
+    messages.push(`${filename}: Insecure "javascript:" URI detected in template attribute.`);
+  }
+
+  // Scan for inline event handlers (onclick, onload, onerror, etc.)
+  if (/[\s/](?:on[a-zA-Z0-9_-]+)\s*=\s*['"][^'"]*['"]/i.test(source)) {
+    messages.push(`${filename}: Inline event handler attribute detected (violates CSP strict policy).`);
+  }
+
+  // Scan for srcdoc
+  if (/[\s/]srcdoc\s*=/i.test(source)) {
+    messages.push(`${filename}: Dangerous "srcdoc" attribute detected.`);
+  }
+
   return {
     filesScanned: 1,
     violationsCount: messages.length,

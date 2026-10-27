@@ -6,6 +6,7 @@
 export interface ReactiveNode {
   version: number;
   isDirty: boolean;
+  isDisposed?: boolean;
   cleanups?: (() => void)[];
 }
 
@@ -40,6 +41,7 @@ export interface Owner {
   parent: Owner | null;
   children: Owner[];
   cleanups: (() => void)[];
+  errorHandlers?: ((err: unknown) => void)[];
   context?: Record<string | symbol, unknown>;
   dispose(): void;
 }

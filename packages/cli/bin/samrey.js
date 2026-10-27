@@ -46,7 +46,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // ../../node_modules/.bun/rollup@4.62.4/node_modules/rollup/dist/native.js
 var require_native = __commonJS({
   "../../node_modules/.bun/rollup@4.62.4/node_modules/rollup/dist/native.js"(exports, module2) {
-    var { existsSync: existsSync5 } = __require("node:fs");
+    var { existsSync: existsSync6 } = __require("node:fs");
     var path9 = __require("node:path");
     var { platform: platform3, arch: arch2, report: report2 } = __require("node:process");
     var { spawnSync: spawnSync2 } = __require("node:child_process");
@@ -147,7 +147,7 @@ var require_native = __commonJS({
       }
     };
     var { parse: parse8, parseAsync: parseAsync3, xxhashBase64Url: xxhashBase64Url2, xxhashBase36: xxhashBase362, xxhashBase16: xxhashBase162 } = requireWithFriendlyError(
-      existsSync5(path9.join(__dirname, localName)) ? localName : `@rollup/rollup-${packageBase}`
+      existsSync6(path9.join(__dirname, localName)) ? localName : `@rollup/rollup-${packageBase}`
     );
     function getPackageBase() {
       const imported = bindingsByPlatformAndArch[platform3]?.[arch2];
@@ -4993,7 +4993,7 @@ is not a problem with esbuild. You need to fix your environment instead.
         let latestResultPromise;
         let provideLatestResult;
         if (isContext)
-          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve9) => {
+          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve10) => {
             buildResponseToResult(request2, (err2, result, onEndErrors, onEndWarnings) => {
               const response = {
                 errors: onEndErrors,
@@ -5003,7 +5003,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               latestResultPromise = void 0;
               provideLatestResult = void 0;
               sendResponse(id3, response);
-              resolve9();
+              resolve10();
             });
           });
         sendRequest(refs, request, (error3, response) => {
@@ -5020,10 +5020,10 @@ is not a problem with esbuild. You need to fix your environment instead.
           let didDispose = false;
           const result = {
             rebuild: () => {
-              if (!latestResultPromise) latestResultPromise = new Promise((resolve9, reject) => {
+              if (!latestResultPromise) latestResultPromise = new Promise((resolve10, reject) => {
                 let settlePromise;
                 provideLatestResult = (err2, result2) => {
-                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve9(result2);
+                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve10(result2);
                 };
                 const triggerAnotherBuild = () => {
                   const request2 = {
@@ -5044,7 +5044,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               });
               return latestResultPromise;
             },
-            watch: (options22 = {}) => new Promise((resolve9, reject) => {
+            watch: (options22 = {}) => new Promise((resolve10, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "watch" API in this environment`);
               const keys = {};
               const delay = getFlag(options22, keys, "delay", mustBeInteger);
@@ -5056,10 +5056,10 @@ is not a problem with esbuild. You need to fix your environment instead.
               if (delay) request2.delay = delay;
               sendRequest(refs, request2, (error22) => {
                 if (error22) reject(new Error(error22));
-                else resolve9(void 0);
+                else resolve10(void 0);
               });
             }),
-            serve: (options22 = {}) => new Promise((resolve9, reject) => {
+            serve: (options22 = {}) => new Promise((resolve10, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "serve" API in this environment`);
               const keys = {};
               const port = getFlag(options22, keys, "port", mustBeValidPortNumber);
@@ -5097,28 +5097,28 @@ is not a problem with esbuild. You need to fix your environment instead.
                     sendResponse(id3, {});
                   };
                 }
-                resolve9(response2);
+                resolve10(response2);
               });
             }),
-            cancel: () => new Promise((resolve9) => {
-              if (didDispose) return resolve9();
+            cancel: () => new Promise((resolve10) => {
+              if (didDispose) return resolve10();
               const request2 = {
                 command: "cancel",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve9();
+                resolve10();
               });
             }),
-            dispose: () => new Promise((resolve9) => {
-              if (didDispose) return resolve9();
+            dispose: () => new Promise((resolve10) => {
+              if (didDispose) return resolve10();
               didDispose = true;
               const request2 = {
                 command: "dispose",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve9();
+                resolve10();
                 scheduleOnDisposeCallbacks();
                 refs.unref();
               });
@@ -5157,7 +5157,7 @@ is not a problem with esbuild. You need to fix your environment instead.
             onLoad: []
           };
           i5++;
-          let resolve9 = (path32, options2 = {}) => {
+          let resolve10 = (path32, options2 = {}) => {
             if (!isSetupDone) throw new Error('Cannot call "resolve" before plugin setup has completed');
             if (typeof path32 !== "string") throw new Error(`The path to resolve must be a string`);
             let keys2 = /* @__PURE__ */ Object.create(null);
@@ -5201,7 +5201,7 @@ is not a problem with esbuild. You need to fix your environment instead.
           };
           let promise2 = setup({
             initialOptions,
-            resolve: resolve9,
+            resolve: resolve10,
             onStart(callback2) {
               let registeredText = `This error came from the "onStart" callback registered here:`;
               let registeredNote = extractCallerV8(new Error(registeredText), streamIn, "onStart");
@@ -6079,46 +6079,46 @@ More information: The file containing the code for esbuild's JavaScript API (${_
         }
       };
       longLivedService = {
-        build: (options2) => new Promise((resolve9, reject) => {
+        build: (options2) => new Promise((resolve10, reject) => {
           service.buildOrContext({
             callName: "build",
             refs,
             options: options2,
             isTTY: isTTY(),
             defaultWD,
-            callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+            callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
           });
         }),
-        context: (options2) => new Promise((resolve9, reject) => service.buildOrContext({
+        context: (options2) => new Promise((resolve10, reject) => service.buildOrContext({
           callName: "context",
           refs,
           options: options2,
           isTTY: isTTY(),
           defaultWD,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        transform: (input, options2) => new Promise((resolve9, reject) => service.transform({
+        transform: (input, options2) => new Promise((resolve10, reject) => service.transform({
           callName: "transform",
           refs,
           input,
           options: options2 || {},
           isTTY: isTTY(),
           fs: fsAsync,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        formatMessages: (messages2, options2) => new Promise((resolve9, reject) => service.formatMessages({
+        formatMessages: (messages2, options2) => new Promise((resolve10, reject) => service.formatMessages({
           callName: "formatMessages",
           refs,
           messages: messages2,
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        analyzeMetafile: (metafile, options2) => new Promise((resolve9, reject) => service.analyzeMetafile({
+        analyzeMetafile: (metafile, options2) => new Promise((resolve10, reject) => service.analyzeMetafile({
           callName: "analyzeMetafile",
           refs,
           metafile: typeof metafile === "string" ? metafile : JSON.stringify(metafile),
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         }))
       };
       return longLivedService;
@@ -6196,13 +6196,13 @@ error: ${text}`);
         worker.postMessage(msg);
         let status2 = Atomics.wait(sharedBufferView, 0, 0);
         if (status2 !== "ok" && status2 !== "not-equal") throw new Error("Internal error: Atomics.wait() failed: " + status2);
-        let { message: { id: id22, resolve: resolve9, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
+        let { message: { id: id22, resolve: resolve10, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
         if (id3 !== id22) throw new Error(`Internal error: Expected id ${id3} but got id ${id22}`);
         if (reject) {
           applyProperties(reject, properties);
           throw reject;
         }
-        return resolve9;
+        return resolve10;
       };
       worker.unref();
       return {
@@ -9761,7 +9761,7 @@ is not a problem with esbuild. You need to fix your environment instead.
         let latestResultPromise;
         let provideLatestResult;
         if (isContext)
-          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve9) => {
+          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve10) => {
             buildResponseToResult(request2, (err2, result, onEndErrors, onEndWarnings) => {
               const response = {
                 errors: onEndErrors,
@@ -9771,7 +9771,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               latestResultPromise = void 0;
               provideLatestResult = void 0;
               sendResponse(id3, response);
-              resolve9();
+              resolve10();
             });
           });
         sendRequest(refs, request, (error3, response) => {
@@ -9788,10 +9788,10 @@ is not a problem with esbuild. You need to fix your environment instead.
           let didDispose = false;
           const result = {
             rebuild: () => {
-              if (!latestResultPromise) latestResultPromise = new Promise((resolve9, reject) => {
+              if (!latestResultPromise) latestResultPromise = new Promise((resolve10, reject) => {
                 let settlePromise;
                 provideLatestResult = (err2, result2) => {
-                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve9(result2);
+                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve10(result2);
                 };
                 const triggerAnotherBuild = () => {
                   const request2 = {
@@ -9812,7 +9812,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               });
               return latestResultPromise;
             },
-            watch: (options22 = {}) => new Promise((resolve9, reject) => {
+            watch: (options22 = {}) => new Promise((resolve10, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "watch" API in this environment`);
               const keys = {};
               const delay = getFlag(options22, keys, "delay", mustBeInteger);
@@ -9824,10 +9824,10 @@ is not a problem with esbuild. You need to fix your environment instead.
               if (delay) request2.delay = delay;
               sendRequest(refs, request2, (error22) => {
                 if (error22) reject(new Error(error22));
-                else resolve9(void 0);
+                else resolve10(void 0);
               });
             }),
-            serve: (options22 = {}) => new Promise((resolve9, reject) => {
+            serve: (options22 = {}) => new Promise((resolve10, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "serve" API in this environment`);
               const keys = {};
               const port = getFlag(options22, keys, "port", mustBeValidPortNumber);
@@ -9865,28 +9865,28 @@ is not a problem with esbuild. You need to fix your environment instead.
                     sendResponse(id3, {});
                   };
                 }
-                resolve9(response2);
+                resolve10(response2);
               });
             }),
-            cancel: () => new Promise((resolve9) => {
-              if (didDispose) return resolve9();
+            cancel: () => new Promise((resolve10) => {
+              if (didDispose) return resolve10();
               const request2 = {
                 command: "cancel",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve9();
+                resolve10();
               });
             }),
-            dispose: () => new Promise((resolve9) => {
-              if (didDispose) return resolve9();
+            dispose: () => new Promise((resolve10) => {
+              if (didDispose) return resolve10();
               didDispose = true;
               const request2 = {
                 command: "dispose",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve9();
+                resolve10();
                 scheduleOnDisposeCallbacks();
                 refs.unref();
               });
@@ -9925,7 +9925,7 @@ is not a problem with esbuild. You need to fix your environment instead.
             onLoad: []
           };
           i5++;
-          let resolve9 = (path32, options2 = {}) => {
+          let resolve10 = (path32, options2 = {}) => {
             if (!isSetupDone) throw new Error('Cannot call "resolve" before plugin setup has completed');
             if (typeof path32 !== "string") throw new Error(`The path to resolve must be a string`);
             let keys2 = /* @__PURE__ */ Object.create(null);
@@ -9969,7 +9969,7 @@ is not a problem with esbuild. You need to fix your environment instead.
           };
           let promise2 = setup({
             initialOptions,
-            resolve: resolve9,
+            resolve: resolve10,
             onStart(callback2) {
               let registeredText = `This error came from the "onStart" callback registered here:`;
               let registeredNote = extractCallerV8(new Error(registeredText), streamIn, "onStart");
@@ -10856,46 +10856,46 @@ More information: The file containing the code for esbuild's JavaScript API (${_
         }
       };
       longLivedService = {
-        build: (options2) => new Promise((resolve9, reject) => {
+        build: (options2) => new Promise((resolve10, reject) => {
           service.buildOrContext({
             callName: "build",
             refs,
             options: options2,
             isTTY: isTTY(),
             defaultWD,
-            callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+            callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
           });
         }),
-        context: (options2) => new Promise((resolve9, reject) => service.buildOrContext({
+        context: (options2) => new Promise((resolve10, reject) => service.buildOrContext({
           callName: "context",
           refs,
           options: options2,
           isTTY: isTTY(),
           defaultWD,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        transform: (input, options2) => new Promise((resolve9, reject) => service.transform({
+        transform: (input, options2) => new Promise((resolve10, reject) => service.transform({
           callName: "transform",
           refs,
           input,
           options: options2 || {},
           isTTY: isTTY(),
           fs: fsAsync,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        formatMessages: (messages2, options2) => new Promise((resolve9, reject) => service.formatMessages({
+        formatMessages: (messages2, options2) => new Promise((resolve10, reject) => service.formatMessages({
           callName: "formatMessages",
           refs,
           messages: messages2,
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         })),
-        analyzeMetafile: (metafile, options2) => new Promise((resolve9, reject) => service.analyzeMetafile({
+        analyzeMetafile: (metafile, options2) => new Promise((resolve10, reject) => service.analyzeMetafile({
           callName: "analyzeMetafile",
           refs,
           metafile: typeof metafile === "string" ? metafile : JSON.stringify(metafile),
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve9(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve10(res)
         }))
       };
       return longLivedService;
@@ -10973,13 +10973,13 @@ error: ${text}`);
         worker.postMessage(msg);
         let status2 = Atomics.wait(sharedBufferView, 0, 0);
         if (status2 !== "ok" && status2 !== "not-equal") throw new Error("Internal error: Atomics.wait() failed: " + status2);
-        let { message: { id: id22, resolve: resolve9, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
+        let { message: { id: id22, resolve: resolve10, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
         if (id3 !== id22) throw new Error(`Internal error: Expected id ${id3} but got id ${id22}`);
         if (reject) {
           applyProperties(reject, properties);
           throw reject;
         }
-        return resolve9;
+        return resolve10;
       };
       worker.unref();
       return {
@@ -28861,9 +28861,9 @@ function requireReaddirp() {
     return new ReaddirpStream2(options2);
   };
   const readdirpPromise2 = (root4, options2 = {}) => {
-    return new Promise((resolve9, reject) => {
+    return new Promise((resolve10, reject) => {
       const files = [];
-      readdirp2(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve9(files)).on("error", (error3) => reject(error3));
+      readdirp2(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve10(files)).on("error", (error3) => reject(error3));
     });
   };
   readdirp2.promise = readdirpPromise2;
@@ -31947,7 +31947,7 @@ function requireConstants() {
   if (hasRequiredConstants) return constants;
   hasRequiredConstants = 1;
   (function(exports) {
-    const { sep: sep3 } = require$$0$1;
+    const { sep: sep4 } = require$$0$1;
     const { platform: platform3 } = process;
     const os2 = require$$2$1;
     exports.EV_ALL = "all";
@@ -31976,7 +31976,7 @@ function requireConstants() {
     exports.KEY_ERR = "errHandlers";
     exports.KEY_RAW = "rawEmitters";
     exports.HANDLER_KEYS = [exports.KEY_LISTENERS, exports.KEY_ERR, exports.KEY_RAW];
-    exports.DOT_SLASH = `.${sep3}`;
+    exports.DOT_SLASH = `.${sep4}`;
     exports.BACK_SLASH_RE = /\\/g;
     exports.DOUBLE_SLASH_RE = /\/\//;
     exports.SLASH_OR_BACK_SLASH_RE = /[/\\]/;
@@ -32367,13 +32367,13 @@ function requireNodefsHandler() {
         }
       }).on(EV_ERROR2, this._boundHandleError);
       return new Promise(
-        (resolve9) => stream3.once(STR_END2, () => {
+        (resolve10) => stream3.once(STR_END2, () => {
           if (this.fsw.closed) {
             stream3 = void 0;
             return;
           }
           const wasThrottled = throttler ? throttler.clear() : false;
-          resolve9();
+          resolve10();
           previous.getChildren().filter((item) => {
             return item !== directory && !current.has(item) && // in case of intersecting globs;
             // a path may have been filtered out of this readdir, but
@@ -48995,7 +48995,7 @@ var init_node_entry = __esm({
             };
           }
           case "amd": {
-            const resolve9 = compact ? "c" : "resolve";
+            const resolve10 = compact ? "c" : "resolve";
             const reject = compact ? "e" : "reject";
             const helper = getInteropHelper(resolution, exportMode, interop);
             const [resolveLeft, resolveRight] = getDirectReturnFunction(["m"], {
@@ -49003,8 +49003,8 @@ var init_node_entry = __esm({
               lineBreakIndent: null,
               name: null
             });
-            const resolveNamespace = helper ? `${resolveLeft}${resolve9}(/*#__PURE__*/${helper}(m))${resolveRight}` : resolve9;
-            const [handlerLeft, handlerRight] = getDirectReturnFunction([resolve9, reject], {
+            const resolveNamespace = helper ? `${resolveLeft}${resolve10}(/*#__PURE__*/${helper}(m))${resolveRight}` : resolve10;
+            const [handlerLeft, handlerRight] = getDirectReturnFunction([resolve10, reject], {
               functionReturn: false,
               lineBreakIndent: null,
               name: null
@@ -55194,8 +55194,8 @@ var init_node_entry = __esm({
         this.workerCount = 0;
       }
       run(task) {
-        return new Promise((resolve9, reject) => {
-          this.queue.push({ reject, resolve: resolve9, task });
+        return new Promise((resolve10, reject) => {
+          this.queue.push({ reject, resolve: resolve10, task });
           this.work();
         });
       }
@@ -55205,10 +55205,10 @@ var init_node_entry = __esm({
         this.workerCount++;
         let entry;
         while (entry = this.queue.shift()) {
-          const { reject, resolve: resolve9, task } = entry;
+          const { reject, resolve: resolve10, task } = entry;
           try {
             const result = await task();
-            resolve9(result);
+            resolve10(result);
           } catch (error3) {
             reject(error3);
           }
@@ -58810,7 +58810,7 @@ var require_util = __commonJS({
         return result;
       };
     }
-    var normalize4 = lruMemoize(function normalize5(aPath) {
+    var normalize5 = lruMemoize(function normalize6(aPath) {
       var path9 = aPath;
       var url2 = urlParse(aPath);
       if (url2) {
@@ -58862,7 +58862,7 @@ var require_util = __commonJS({
       }
       return path9;
     });
-    exports.normalize = normalize4;
+    exports.normalize = normalize5;
     function join6(aRoot, aPath) {
       if (aRoot === "") {
         aRoot = ".";
@@ -58888,7 +58888,7 @@ var require_util = __commonJS({
         aRootUrl.host = aPath;
         return urlGenerate(aRootUrl);
       }
-      var joined = aPath.charAt(0) === "/" ? aPath : normalize4(aRoot.replace(/\/+$/, "") + "/" + aPath);
+      var joined = aPath.charAt(0) === "/" ? aPath : normalize5(aRoot.replace(/\/+$/, "") + "/" + aPath);
       if (aRootUrl) {
         aRootUrl.path = joined;
         return urlGenerate(aRootUrl);
@@ -59111,7 +59111,7 @@ var require_util = __commonJS({
         }
         sourceURL = join6(urlGenerate(parsed), sourceURL);
       }
-      return normalize4(sourceURL);
+      return normalize5(sourceURL);
     }
     exports.computeSourceURL = computeSourceURL;
   }
@@ -60549,8 +60549,8 @@ var require_source_map = __commonJS({
 var require_previous_map = __commonJS({
   "../../node_modules/.bun/postcss@8.5.26/node_modules/postcss/lib/previous-map.js"(exports, module2) {
     "use strict";
-    var { existsSync: existsSync5, readFileSync: readFileSync3, realpathSync: realpathSync2 } = __require("fs");
-    var { dirname: dirname7, isAbsolute: isAbsolute7, join: join6, relative: relative5, sep: sep3 } = __require("path");
+    var { existsSync: existsSync6, readFileSync: readFileSync3, realpathSync: realpathSync2 } = __require("fs");
+    var { dirname: dirname7, isAbsolute: isAbsolute7, join: join6, relative: relative5, sep: sep4 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
     function realPath(path9) {
       try {
@@ -60624,12 +60624,12 @@ var require_previous_map = __commonJS({
           if (!/\.map$/i.test(path9)) return void 0;
           if (!cssFile) return void 0;
           let rel = relative5(realPath(dirname7(cssFile)), realPath(path9));
-          if (rel === ".." || rel.startsWith(".." + sep3) || isAbsolute7(rel)) {
+          if (rel === ".." || rel.startsWith(".." + sep4) || isAbsolute7(rel)) {
             return void 0;
           }
         }
         this.root = dirname7(path9);
-        if (existsSync5(path9)) {
+        if (existsSync6(path9)) {
           this.mapFile = path9;
           return readFileSync3(path9, "utf-8").toString().trim();
         }
@@ -60695,7 +60695,7 @@ var require_input = __commonJS({
   "../../node_modules/.bun/postcss@8.5.26/node_modules/postcss/lib/input.js"(exports, module2) {
     "use strict";
     var { nanoid: nanoid2 } = require_non_secure();
-    var { isAbsolute: isAbsolute7, resolve: resolve9 } = __require("path");
+    var { isAbsolute: isAbsolute7, resolve: resolve10 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
     var { fileURLToPath: fileURLToPath4, pathToFileURL: pathToFileURL2 } = __require("url");
     var CssSyntaxError2 = require_css_syntax_error();
@@ -60703,7 +60703,7 @@ var require_input = __commonJS({
     var terminalHighlight = require_terminal_highlight();
     var lineToIndexCache = Symbol("lineToIndexCache");
     var sourceMapAvailable = Boolean(SourceMapConsumer && SourceMapGenerator);
-    var pathAvailable = Boolean(resolve9 && isAbsolute7);
+    var pathAvailable = Boolean(resolve10 && isAbsolute7);
     function getLineToIndex(input) {
       if (input[lineToIndexCache]) return input[lineToIndexCache];
       let lines = input.css.split("\n");
@@ -60737,7 +60737,7 @@ var require_input = __commonJS({
           if (!pathAvailable || /^\w+:\/\//.test(opts.from) || isAbsolute7(opts.from)) {
             this.file = opts.from;
           } else {
-            this.file = resolve9(opts.from);
+            this.file = resolve10(opts.from);
           }
         }
         if (pathAvailable && sourceMapAvailable) {
@@ -60858,7 +60858,7 @@ var require_input = __commonJS({
         if (/^\w+:\/\//.test(file)) {
           return file;
         }
-        return resolve9(this.map.consumer().sourceRoot || this.map.root || ".", file);
+        return resolve10(this.map.consumer().sourceRoot || this.map.root || ".", file);
       }
       origin(line, column, endLine, endColumn) {
         if (!this.map) return false;
@@ -61055,8 +61055,8 @@ var require_rule = __commonJS({
       }
       set selectors(values) {
         let match = this.selector ? this.selector.match(/,\s*/) : null;
-        let sep3 = match ? match[0] : "," + this.raw("between", "beforeOpen");
-        this.selector = values.join(sep3);
+        let sep4 = match ? match[0] : "," + this.raw("between", "beforeOpen");
+        this.selector = values.join(sep4);
       }
       constructor(defaults) {
         super(defaults);
@@ -61168,12 +61168,12 @@ var require_fromJSON = __commonJS({
 var require_map_generator = __commonJS({
   "../../node_modules/.bun/postcss@8.5.26/node_modules/postcss/lib/map-generator.js"(exports, module2) {
     "use strict";
-    var { dirname: dirname7, relative: relative5, resolve: resolve9, sep: sep3 } = __require("path");
+    var { dirname: dirname7, relative: relative5, resolve: resolve10, sep: sep4 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
     var { pathToFileURL: pathToFileURL2 } = __require("url");
     var Input2 = require_input();
     var sourceMapAvailable = Boolean(SourceMapConsumer && SourceMapGenerator);
-    var pathAvailable = Boolean(dirname7 && resolve9 && relative5 && sep3);
+    var pathAvailable = Boolean(dirname7 && resolve10 && relative5 && sep4);
     var MapGenerator = class {
       constructor(stringify6, root4, opts, cssString) {
         this.stringify = stringify6;
@@ -61402,7 +61402,7 @@ var require_map_generator = __commonJS({
         if (cached) return cached;
         let from = this.opts.to ? dirname7(this.opts.to) : ".";
         if (typeof this.mapOpts.annotation === "string") {
-          from = dirname7(resolve9(from, this.mapOpts.annotation));
+          from = dirname7(resolve10(from, this.mapOpts.annotation));
         }
         let path9 = relative5(from, file);
         this.memoizedPaths.set(file, path9);
@@ -61477,7 +61477,7 @@ var require_map_generator = __commonJS({
       toUrl(path9) {
         let cached = this.memoizedURLs.get(path9);
         if (cached) return cached;
-        if (sep3 === "\\") {
+        if (sep4 === "\\") {
           path9 = path9.replace(/\\/g, "/");
         }
         let url2 = encodeURI(path9).replace(/[#?]/g, encodeURIComponent);
@@ -63049,11 +63049,11 @@ function unquote(str2) {
   return str2;
 }
 function saveJSON(cssFile, json) {
-  return new Promise((resolve9, reject) => {
+  return new Promise((resolve10, reject) => {
     const {
       writeFile
     } = (0, _fs$2.getFileSystem)();
-    writeFile(`${cssFile}.json`, JSON.stringify(json), (e5) => e5 ? reject(e5) : resolve9(json));
+    writeFile(`${cssFile}.json`, JSON.stringify(json), (e5) => e5 ? reject(e5) : resolve10(json));
   });
 }
 function arrayReduce(array, iteratee, accumulator, initAccum) {
@@ -64826,7 +64826,7 @@ var init_dep_DDtvSN7 = __esm({
         }
         const tokens = this.tokensByFile[fileRelativePath];
         if (tokens) return tokens;
-        return new Promise((resolve9, reject) => {
+        return new Promise((resolve10, reject) => {
           this.fs.readFile(fileRelativePath, "utf-8", async (err2, source) => {
             if (err2) reject(err2);
             const {
@@ -64836,7 +64836,7 @@ var init_dep_DDtvSN7 = __esm({
             this.sources[fileRelativePath] = injectableSource;
             this.traces[trace] = fileRelativePath;
             this.tokensByFile[fileRelativePath] = exportTokens;
-            resolve9(exportTokens);
+            resolve10(exportTokens);
           });
         });
       }
@@ -68208,7 +68208,7 @@ var init_dep_DDtvSN7 = __esm({
           if (options2 === void 0) {
             options2 = {};
           }
-          return new Promise(function(resolve9, reject) {
+          return new Promise(function(resolve10, reject) {
             try {
               var root4 = _this._root(rule2, options2);
               Promise.resolve(_this.func(root4)).then(function(transform4) {
@@ -68222,7 +68222,7 @@ var init_dep_DDtvSN7 = __esm({
                   root: root4,
                   string: string3
                 };
-              }).then(resolve9, reject);
+              }).then(resolve10, reject);
             } catch (e5) {
               reject(e5);
               return;
@@ -69093,14 +69093,14 @@ var require_filesystem = __commonJS({
       });
       return buffer.subarray(0, bytesRead);
     };
-    var readFile = (path9) => new Promise((resolve9, reject) => {
+    var readFile = (path9) => new Promise((resolve10, reject) => {
       fs7.open(path9, "r", (err2, fd) => {
         if (err2) {
           reject(err2);
         } else {
           const buffer = Buffer.alloc(MAX_LENGTH2);
           fs7.read(fd, buffer, 0, MAX_LENGTH2, 0, (_2, bytesRead) => {
-            resolve9(buffer.subarray(0, bytesRead));
+            resolve10(buffer.subarray(0, bytesRead));
             fs7.close(fd, () => {
             });
           });
@@ -69168,10 +69168,10 @@ var require_detect_libc = __commonJS({
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve9) => {
+        return new Promise((resolve10) => {
           childProcess2.exec(command, (err2, out) => {
             commandOut = err2 ? " " : out;
-            resolve9(commandOut);
+            resolve10(commandOut);
           });
         });
       }
@@ -69998,13 +69998,13 @@ function withTrailingSlash(path9) {
   return path9;
 }
 function promiseWithResolvers2() {
-  let resolve9;
+  let resolve10;
   let reject;
   const promise2 = new Promise((_resolve, _reject) => {
-    resolve9 = _resolve;
+    resolve10 = _resolve;
     reject = _reject;
   });
-  return { promise: promise2, resolve: resolve9, reject };
+  return { promise: promise2, resolve: resolve10, reject };
 }
 function walk$2(ast, { enter, leave }) {
   const instance = new SyncWalker$1(enter, leave);
@@ -74321,12 +74321,12 @@ function throttle(fn3) {
   };
 }
 function makePromise() {
-  let resolve9, reject;
+  let resolve10, reject;
   const promise2 = new Promise((res, rej) => {
-    resolve9 = res;
+    resolve10 = res;
     reject = rej;
   });
-  return { promise: promise2, resolve: resolve9, reject };
+  return { promise: promise2, resolve: resolve10, reject };
 }
 async function resolveTSConfigJson(filename, cache) {
   if (path$b.extname(filename) !== ".json") {
@@ -74499,16 +74499,16 @@ async function find(filename, options2) {
   const {
     /** @type {Promise<string|null>} */
     promise: promise2,
-    resolve: resolve9,
+    resolve: resolve10,
     reject
   } = makePromise();
   if (options2?.root && !path$b.isAbsolute(options2.root)) {
     options2.root = path$b.resolve(options2.root);
   }
-  findUp(dir, { promise: promise2, resolve: resolve9, reject }, options2);
+  findUp(dir, { promise: promise2, resolve: resolve10, reject }, options2);
   return promise2;
 }
-function findUp(dir, { resolve: resolve9, reject, promise: promise2 }, options2) {
+function findUp(dir, { resolve: resolve10, reject, promise: promise2 }, options2) {
   const { cache, root: root4, configName } = options2 ?? {};
   if (cache) {
     if (cache.hasConfigPath(dir, configName)) {
@@ -74520,9 +74520,9 @@ function findUp(dir, { resolve: resolve9, reject, promise: promise2 }, options2)
         return;
       }
       if (cached?.then) {
-        cached.then(resolve9).catch(reject);
+        cached.then(resolve10).catch(reject);
       } else {
-        resolve9(cached);
+        resolve10(cached);
       }
     } else {
       cache.setConfigPath(dir, promise2, configName);
@@ -74531,15 +74531,15 @@ function findUp(dir, { resolve: resolve9, reject, promise: promise2 }, options2)
   const tsconfig = path$b.join(dir, options2?.configName ?? "tsconfig.json");
   fs__default.stat(tsconfig, (err2, stats) => {
     if (stats && (stats.isFile() || stats.isFIFO())) {
-      resolve9(tsconfig);
+      resolve10(tsconfig);
     } else if (err2?.code !== "ENOENT") {
       reject(err2);
     } else {
       let parent;
       if (root4 === dir || (parent = path$b.dirname(dir)) === dir) {
-        resolve9(null);
+        resolve10(null);
       } else {
-        findUp(parent, { promise: promise2, resolve: resolve9, reject }, options2);
+        findUp(parent, { promise: promise2, resolve: resolve10, reject }, options2);
       }
     }
   });
@@ -74654,7 +74654,7 @@ async function parse$e(filename, options2) {
     return getParsedDeep(filename, cache, options2);
   }
   const {
-    resolve: resolve9,
+    resolve: resolve10,
     reject,
     /** @type {Promise<import('./public.d.ts').TSConfckParseResult>}*/
     promise: promise2
@@ -74663,7 +74663,7 @@ async function parse$e(filename, options2) {
   try {
     let tsconfigFile = await resolveTSConfigJson(filename, cache) || await find(filename, options2);
     if (!tsconfigFile) {
-      resolve9(not_found_result);
+      resolve10(not_found_result);
       return promise2;
     }
     let result;
@@ -74674,7 +74674,7 @@ async function parse$e(filename, options2) {
       await Promise.all([parseExtends(result, cache), parseReferences(result, options2)]);
     }
     replaceTokens(result);
-    resolve9(resolveSolutionTSConfig(filename, result));
+    resolve10(resolveSolutionTSConfig(filename, result));
   } catch (e5) {
     reject(e5);
   }
@@ -75232,12 +75232,12 @@ function genWorkerCode(fn3, isModule, parentFunctions) {
       lock.waitUnlock();
       const resArgs = receive(syncPort).message;
       if (resArgs.isAsync) {
-        let resolve9, reject;
+        let resolve10, reject;
         const promise2 = new Promise((res, rej) => {
-          resolve9 = res;
+          resolve10 = res;
           reject = rej;
         });
-        resolvers.set(id3, { resolve: resolve9, reject });
+        resolvers.set(id3, { resolve: resolve10, reject });
         return promise2;
       }
       if ("error" in resArgs) {
@@ -75249,10 +75249,10 @@ function genWorkerCode(fn3, isModule, parentFunctions) {
     asyncPort.on("message", (args2) => {
       const id22 = args2.id;
       if (resolvers.has(id22)) {
-        const { resolve: resolve9, reject } = resolvers.get(id22);
+        const { resolve: resolve10, reject } = resolvers.get(id22);
         resolvers.delete(id22);
         if ("result" in args2) {
-          resolve9(args2.result);
+          resolve10(args2.result);
         } else {
           reject(args2.error);
         }
@@ -76680,7 +76680,7 @@ function esbuildDepPlugin(environment, qualified, external) {
       packageCache: cjsPackageCache
     }
   );
-  const resolve9 = (id3, importer, kind, resolveDir) => {
+  const resolve10 = (id3, importer, kind, resolveDir) => {
     let _importer;
     {
       _importer = importer in qualified ? qualified[importer] : importer;
@@ -76734,7 +76734,7 @@ function esbuildDepPlugin(environment, qualified, external) {
               external: true
             };
           }
-          const resolved = await resolve9(id3, importer, kind);
+          const resolved = await resolve10(id3, importer, kind);
           if (resolved) {
             if (JS_TYPES_RE.test(resolved)) {
               return {
@@ -76790,7 +76790,7 @@ function esbuildDepPlugin(environment, qualified, external) {
               return entry;
             }
           }
-          const resolved = await resolve9(id3, importer, kind);
+          const resolved = await resolve10(id3, importer, kind);
           if (resolved) {
             return resolveResult(id3, resolved);
           }
@@ -77610,7 +77610,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
       { scan: true }
     );
   }
-  const resolve9 = async (id3, importer) => {
+  const resolve10 = async (id3, importer) => {
     const key = id3 + (importer && path$b.dirname(importer));
     if (seen2.has(key)) {
       return seen2.get(key);
@@ -77643,7 +77643,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
       transpiledContents,
       id3,
       environment.config.root,
-      resolve9
+      resolve10
     );
     return result?.s.toString() || transpiledContents;
   };
@@ -77670,7 +77670,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
         return scripts[path22];
       });
       build4.onResolve({ filter: htmlTypesRE }, async ({ path: path22, importer }) => {
-        const resolved = await resolve9(path22, importer);
+        const resolved = await resolve10(path22, importer);
         if (!resolved) return;
         if (isInNodeModules$1(resolved) && isOptimizable(resolved, optimizeDepsOptions))
           return;
@@ -77780,7 +77780,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
           if (depImports[id3]) {
             return externalUnlessEntry({ path: id3 });
           }
-          const resolved = await resolve9(id3, importer);
+          const resolved = await resolve10(id3, importer);
           if (resolved) {
             if (shouldExternalizeDep(resolved, id3)) {
               return externalUnlessEntry({ path: id3 });
@@ -77824,7 +77824,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
           filter: /.*/
         },
         async ({ path: id3, importer }) => {
-          const resolved = await resolve9(id3, importer);
+          const resolved = await resolve10(id3, importer);
           if (resolved) {
             if (shouldExternalizeDep(resolved, id3) || !isScannable(resolved, optimizeDepsOptions.extensions)) {
               return externalUnlessEntry({ path: id3 });
@@ -77895,7 +77895,7 @@ function isScannable(id3, extensions2) {
 }
 function createOptimizeDepsIncludeResolver(environment) {
   const topLevelConfig = environment.getTopLevelConfig();
-  const resolve9 = createBackCompatIdResolver(topLevelConfig, {
+  const resolve10 = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     packageCache: /* @__PURE__ */ new Map()
@@ -77903,7 +77903,7 @@ function createOptimizeDepsIncludeResolver(environment) {
   return async (id3) => {
     const lastArrowIndex = id3.lastIndexOf(">");
     if (lastArrowIndex === -1) {
-      return await resolve9(environment, id3, void 0);
+      return await resolve10(environment, id3, void 0);
     }
     const nestedRoot = id3.substring(0, lastArrowIndex).trim();
     const nestedPath = id3.substring(lastArrowIndex + 1).trim();
@@ -77912,7 +77912,7 @@ function createOptimizeDepsIncludeResolver(environment) {
       topLevelConfig.root,
       topLevelConfig.resolve.preserveSymlinks
     );
-    return await resolve9(
+    return await resolve10(
       environment,
       nestedPath,
       path$b.resolve(basedir, "package.json")
@@ -78456,11 +78456,11 @@ async function addManuallyIncludedOptimizeDeps(environment, deps) {
         i5 += globIds.length - 1;
       }
     }
-    const resolve9 = createOptimizeDepsIncludeResolver(environment);
+    const resolve10 = createOptimizeDepsIncludeResolver(environment);
     for (const id3 of includes) {
       const normalizedId = normalizeId(id3);
       if (!deps[normalizedId]) {
-        const entry = await resolve9(id3);
+        const entry = await resolve10(id3);
         if (entry) {
           if (isOptimizable(entry, optimizeDeps2)) {
             deps[normalizedId] = entry;
@@ -78795,12 +78795,12 @@ function shouldExternalize(environment, id3, importer) {
 }
 function createIsConfiguredAsExternal(environment) {
   const { config: config2 } = environment;
-  const { root: root4, resolve: resolve9 } = config2;
-  const { external, noExternal } = resolve9;
+  const { root: root4, resolve: resolve10 } = config2;
+  const { external, noExternal } = resolve10;
   const noExternalFilter = typeof noExternal !== "boolean" && !(Array.isArray(noExternal) && noExternal.length === 0) && createFilter$12(void 0, noExternal, { resolve: false });
-  const targetConditions = resolve9.externalConditions;
+  const targetConditions = resolve10.externalConditions;
   const resolveOptions = {
-    ...resolve9,
+    ...resolve10,
     root: root4,
     isProduction: false,
     isBuild: true,
@@ -81321,7 +81321,7 @@ async function readFileIfExists(value2) {
 }
 async function httpServerStart(httpServer, serverOptions) {
   let { port, strictPort, host, logger } = serverOptions;
-  return new Promise((resolve9, reject) => {
+  return new Promise((resolve10, reject) => {
     const onError3 = (e5) => {
       if (e5.code === "EADDRINUSE") {
         if (strictPort) {
@@ -81339,7 +81339,7 @@ async function httpServerStart(httpServer, serverOptions) {
     httpServer.on("error", onError3);
     httpServer.listen(port, host, () => {
       httpServer.removeListener("error", onError3);
-      resolve9(port);
+      resolve10(port);
     });
   });
 }
@@ -82220,12 +82220,12 @@ function isexe$1(path9, options2, cb) {
     if (typeof Promise !== "function") {
       throw new TypeError("callback not provided");
     }
-    return new Promise(function(resolve9, reject) {
+    return new Promise(function(resolve10, reject) {
       isexe$1(path9, options2 || {}, function(er3, is) {
         if (er3) {
           reject(er3);
         } else {
-          resolve9(is);
+          resolve10(is);
         }
       });
     });
@@ -82471,12 +82471,12 @@ async function startBrowserProcess(browser, browserArgs, url2, logger) {
   }
 }
 function execAsync(command, options2) {
-  return new Promise((resolve9, reject) => {
+  return new Promise((resolve10, reject) => {
     exec(command, options2, (error3, stdout) => {
       if (error3) {
         reject(error3);
       } else {
-        resolve9(stdout.toString());
+        resolve10(stdout.toString());
       }
     });
   });
@@ -83648,7 +83648,7 @@ ${e5.stack || e5.message}`),
         if (hmrServerWsListener && wsServer) {
           wsServer.off("upgrade", hmrServerWsListener);
         }
-        return new Promise((resolve9, reject) => {
+        return new Promise((resolve10, reject) => {
           wss.clients.forEach((client) => {
             client.terminate();
           });
@@ -83661,11 +83661,11 @@ ${e5.stack || e5.message}`),
                   if (err22) {
                     reject(err22);
                   } else {
-                    resolve9();
+                    resolve10();
                   }
                 });
               } else {
-                resolve9();
+                resolve10();
               }
             }
           });
@@ -87016,18 +87016,18 @@ function createServerCloseFn(server) {
   server.once("listening", () => {
     hasListened = true;
   });
-  return () => new Promise((resolve9, reject) => {
+  return () => new Promise((resolve10, reject) => {
     openSockets.forEach((s5) => s5.destroy());
     if (hasListened) {
       server.close((err2) => {
         if (err2) {
           reject(err2);
         } else {
-          resolve9();
+          resolve10();
         }
       });
     } else {
-      resolve9();
+      resolve10();
     }
   });
 }
@@ -89563,9 +89563,9 @@ function parseDynamicImportPattern(strings) {
     rawPattern
   };
 }
-async function transformDynamicImport(importSource, importer, resolve9, root4) {
+async function transformDynamicImport(importSource, importer, resolve10, root4) {
   if (importSource[1] !== "." && importSource[1] !== "/") {
-    const resolvedFileName = await resolve9(importSource.slice(1, -1), importer);
+    const resolvedFileName = await resolve10(importSource.slice(1, -1), importer);
     if (!resolvedFileName) {
       return null;
     }
@@ -89597,7 +89597,7 @@ async function transformDynamicImport(importSource, importer, resolve9, root4) {
   };
 }
 function dynamicImportVarsPlugin(config2) {
-  const resolve9 = createBackCompatIdResolver(config2, {
+  const resolve10 = createBackCompatIdResolver(config2, {
     preferRelative: true,
     tryIndex: false,
     extensions: []
@@ -89660,7 +89660,7 @@ function dynamicImportVarsPlugin(config2) {
             result = await transformDynamicImport(
               source.slice(start, end),
               importer,
-              (id3, importer2) => resolve9(environment, id3, importer2),
+              (id3, importer2) => resolve10(environment, id3, importer2),
               config2.root
             );
           } catch (error3) {
@@ -89941,19 +89941,19 @@ function createPluginContainer(environments) {
 }
 function createBackCompatIdResolver(config2, options2) {
   const compatResolve = config2.createResolver(options2);
-  let resolve9;
+  let resolve10;
   return async (environment, id3, importer, aliasOnly) => {
     if (environment.name === "client" || environment.name === "ssr") {
       return compatResolve(id3, importer, aliasOnly, environment.name === "ssr");
     }
-    resolve9 ??= createIdResolver(config2, options2);
-    return resolve9(environment, id3, importer, aliasOnly);
+    resolve10 ??= createIdResolver(config2, options2);
+    return resolve10(environment, id3, importer, aliasOnly);
   };
 }
 function createIdResolver(config2, options2) {
   const scan = options2?.scan;
   const pluginContainerMap = /* @__PURE__ */ new Map();
-  async function resolve9(environment, id3, importer) {
+  async function resolve10(environment, id3, importer) {
     let pluginContainer = pluginContainerMap.get(environment);
     if (!pluginContainer) {
       pluginContainer = await createEnvironmentPluginContainer(
@@ -89994,7 +89994,7 @@ function createIdResolver(config2, options2) {
     return await pluginContainer.resolveId(id3, importer, { scan });
   }
   return async (environment, id3, importer, aliasOnly) => {
-    const resolveFn = aliasOnly ? resolveAlias : resolve9;
+    const resolveFn = aliasOnly ? resolveAlias : resolve10;
     const resolved = await resolveFn(environment, id3, importer);
     return resolved?.id;
   };
@@ -91439,7 +91439,7 @@ function formatStylusSourceMap(mapBefore, root4) {
   map2.sources = map2.sources.map(resolveFromRoot);
   return map2;
 }
-async function getSource(source, filename, additionalData, enableSourcemap, sep3 = "") {
+async function getSource(source, filename, additionalData, enableSourcemap, sep4 = "") {
   if (!additionalData) return { content: source };
   if (typeof additionalData === "function") {
     const newContent = await additionalData(source, filename);
@@ -91449,10 +91449,10 @@ async function getSource(source, filename, additionalData, enableSourcemap, sep3
     return newContent;
   }
   if (!enableSourcemap) {
-    return { content: additionalData + sep3 + source };
+    return { content: additionalData + sep4 + source };
   }
   const ms2 = new MagicString3(source);
-  ms2.appendLeft(0, sep3);
+  ms2.appendLeft(0, sep4);
   ms2.appendLeft(0, additionalData);
   const map2 = ms2.generateMap({ hires: "boundary" });
   map2.file = filename;
@@ -92371,13 +92371,13 @@ async function buildEnvironment(environment) {
       )}`
     )
   );
-  const resolve9 = (p5) => path$b.resolve(root4, p5);
-  const input = libOptions ? options2.rollupOptions.input || (typeof libOptions.entry === "string" ? resolve9(libOptions.entry) : Array.isArray(libOptions.entry) ? libOptions.entry.map(resolve9) : Object.fromEntries(
+  const resolve10 = (p5) => path$b.resolve(root4, p5);
+  const input = libOptions ? options2.rollupOptions.input || (typeof libOptions.entry === "string" ? resolve10(libOptions.entry) : Array.isArray(libOptions.entry) ? libOptions.entry.map(resolve10) : Object.fromEntries(
     Object.entries(libOptions.entry).map(([alias2, file]) => [
       alias2,
-      resolve9(file)
+      resolve10(file)
     ])
-  )) : typeof options2.ssr === "string" ? resolve9(options2.ssr) : options2.rollupOptions.input || resolve9("index.html");
+  )) : typeof options2.ssr === "string" ? resolve10(options2.ssr) : options2.rollupOptions.input || resolve10("index.html");
   if (ssr && typeof input === "string" && input.endsWith(".html")) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. Please specify a dedicated SSR entry.`
@@ -92391,7 +92391,7 @@ async function buildEnvironment(environment) {
       );
     }
   }
-  const outDir = resolve9(options2.outDir);
+  const outDir = resolve10(options2.outDir);
   const plugins2 = environment.plugins.map(
     (p5) => injectEnvironmentAndFilterToHooks(environment, p5)
   );
@@ -93239,7 +93239,7 @@ function createDepsOptimizer(environment) {
       if (noDiscovery) {
         runOptimizer();
       } else {
-        depsOptimizer.scanProcessing = new Promise((resolve9) => {
+        depsOptimizer.scanProcessing = new Promise((resolve10) => {
           (async () => {
             try {
               debug$1?.(colors$1.green(`scanning for dependencies...`));
@@ -93272,7 +93272,7 @@ function createDepsOptimizer(environment) {
             } catch (e5) {
               logger.error(e5.stack || e5.message);
             } finally {
-              resolve9();
+              resolve10();
               depsOptimizer.scanProcessing = void 0;
             }
           })();
@@ -94125,7 +94125,7 @@ function resolveEnvironmentOptions(options2, alias2, preserveSymlinks, forceOpti
       }
     }
   }
-  const resolve9 = resolveEnvironmentResolveOptions(
+  const resolve10 = resolveEnvironmentResolveOptions(
     options2.resolve,
     alias2,
     preserveSymlinks,
@@ -94135,12 +94135,12 @@ function resolveEnvironmentOptions(options2, alias2, preserveSymlinks, forceOpti
   );
   return {
     define: options2.define,
-    resolve: resolve9,
+    resolve: resolve10,
     keepProcessEnv: options2.keepProcessEnv ?? (isSsrTargetWebworkerEnvironment ? false : consumer === "server"),
     consumer,
     optimizeDeps: resolveDepOptimizationOptions(
       options2.optimizeDeps,
-      resolve9.preserveSymlinks,
+      resolve10.preserveSymlinks,
       forceOptimizeDeps,
       consumer
     ),
@@ -94194,21 +94194,21 @@ function checkBadCharactersInPath(name, path22, logger) {
     );
   }
 }
-function resolveEnvironmentResolveOptions(resolve9, alias2, preserveSymlinks, logger, consumer, isSsrTargetWebworkerEnvironment) {
+function resolveEnvironmentResolveOptions(resolve10, alias2, preserveSymlinks, logger, consumer, isSsrTargetWebworkerEnvironment) {
   const resolvedResolve = mergeWithDefaults(
     {
       ...configDefaults.resolve,
       mainFields: consumer === void 0 || consumer === "client" || isSsrTargetWebworkerEnvironment ? DEFAULT_CLIENT_MAIN_FIELDS : DEFAULT_SERVER_MAIN_FIELDS,
       conditions: consumer === void 0 || consumer === "client" || isSsrTargetWebworkerEnvironment ? DEFAULT_CLIENT_CONDITIONS : DEFAULT_SERVER_CONDITIONS.filter((c4) => c4 !== "browser"),
-      builtins: resolve9?.builtins ?? (consumer === "server" ? isSsrTargetWebworkerEnvironment && resolve9?.noExternal === true ? [] : nodeLikeBuiltins : [])
+      builtins: resolve10?.builtins ?? (consumer === "server" ? isSsrTargetWebworkerEnvironment && resolve10?.noExternal === true ? [] : nodeLikeBuiltins : [])
     },
-    resolve9 ?? {}
+    resolve10 ?? {}
   );
   resolvedResolve.preserveSymlinks = preserveSymlinks;
   resolvedResolve.alias = alias2;
   if (
     // @ts-expect-error removed field
-    resolve9?.browserField === false && resolvedResolve.mainFields.includes("browser")
+    resolve10?.browserField === false && resolvedResolve.mainFields.includes("browser")
   ) {
     logger.warn(
       colors$1.yellow(
@@ -94218,11 +94218,11 @@ function resolveEnvironmentResolveOptions(resolve9, alias2, preserveSymlinks, lo
   }
   return resolvedResolve;
 }
-function resolveResolveOptions(resolve9, logger) {
+function resolveResolveOptions(resolve10, logger) {
   const alias2 = normalizeAlias(
-    mergeAlias(clientAlias, resolve9?.alias || configDefaults.resolve.alias)
+    mergeAlias(clientAlias, resolve10?.alias || configDefaults.resolve.alias)
   );
-  const preserveSymlinks = resolve9?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks;
+  const preserveSymlinks = resolve10?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks;
   if (alias2.some((a6) => a6.find === "/")) {
     logger.warn(
       colors$1.yellow(
@@ -94231,7 +94231,7 @@ function resolveResolveOptions(resolve9, logger) {
     );
   }
   return resolveEnvironmentResolveOptions(
-    resolve9,
+    resolve10,
     alias2,
     preserveSymlinks,
     logger,
@@ -94595,14 +94595,14 @@ async function resolveConfig(inlineConfig, command, defaultMode = "development",
      * optimizer & handling css @imports
      */
     createResolver(options2) {
-      const resolve9 = createIdResolver(this, options2);
+      const resolve10 = createIdResolver(this, options2);
       const clientEnvironment = new PartialEnvironment("client", this);
       let ssrEnvironment;
       return async (id3, importer, aliasOnly, ssr2) => {
         if (ssr2) {
           ssrEnvironment ??= new PartialEnvironment("ssr", this);
         }
-        return await resolve9(
+        return await resolve10(
           ssr2 ? ssrEnvironment : clientEnvironment,
           id3,
           importer,
@@ -97278,8 +97278,8 @@ export function getAugmentedNamespace(n) {
       }
       async run(...args2) {
         const worker = await this._getAvailableWorker();
-        return new Promise((resolve9, reject) => {
-          worker.currentResolve = resolve9;
+        return new Promise((resolve10, reject) => {
+          worker.currentResolve = resolve10;
           worker.currentReject = reject;
           worker.postMessage({ args: args2 });
         });
@@ -97365,20 +97365,20 @@ export function getAugmentedNamespace(n) {
           this._pool.push(worker);
           return worker;
         }
-        let resolve9;
+        let resolve10;
         let reject;
         const onWorkerAvailablePromise = new Promise((r4, rj) => {
-          resolve9 = r4;
+          resolve10 = r4;
           reject = rj;
         });
-        this._queue.push([resolve9, reject]);
+        this._queue.push([resolve10, reject]);
         return onWorkerAvailablePromise;
       }
       /** @internal */
       _assignDoneWorker(worker) {
         if (this._queue.length) {
-          const [resolve9] = this._queue.shift();
-          resolve9(worker);
+          const [resolve10] = this._queue.shift();
+          resolve10(worker);
           return;
         }
         this._idlePool.push(worker);
@@ -100360,9 +100360,9 @@ ${e5.message}`);
       return new ReaddirpStream(options2);
     };
     readdirpPromise = (root4, options2 = {}) => {
-      return new Promise((resolve9, reject) => {
+      return new Promise((resolve10, reject) => {
         const files = [];
-        readdirp$1(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve9(files)).on("error", (error3) => reject(error3));
+        readdirp$1(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve10(files)).on("error", (error3) => reject(error3));
       });
     };
     readdirp$1.promise = readdirpPromise;
@@ -101718,7 +101718,7 @@ ${e5.message}`);
     isBinaryPath$1 = (filePath) => extensions.has(path$7.extname(filePath).slice(1).toLowerCase());
     constants$12 = {};
     (function(exports) {
-      const { sep: sep3 } = require$$0$23;
+      const { sep: sep4 } = require$$0$23;
       const { platform: platform3 } = process;
       const os2 = require$$22;
       exports.EV_ALL = "all";
@@ -101747,7 +101747,7 @@ ${e5.message}`);
       exports.KEY_ERR = "errHandlers";
       exports.KEY_RAW = "rawEmitters";
       exports.HANDLER_KEYS = [exports.KEY_LISTENERS, exports.KEY_ERR, exports.KEY_RAW];
-      exports.DOT_SLASH = `.${sep3}`;
+      exports.DOT_SLASH = `.${sep4}`;
       exports.BACK_SLASH_RE = /\\/g;
       exports.DOUBLE_SLASH_RE = /\/\//;
       exports.SLASH_OR_BACK_SLASH_RE = /[/\\]/;
@@ -102115,13 +102115,13 @@ ${e5.message}`);
           }
         }).on(EV_ERROR$2, this._boundHandleError);
         return new Promise(
-          (resolve9) => stream3.once(STR_END$2, () => {
+          (resolve10) => stream3.once(STR_END$2, () => {
             if (this.fsw.closed) {
               stream3 = void 0;
               return;
             }
             const wasThrottled = throttler ? throttler.clear() : false;
-            resolve9();
+            resolve10();
             previous.getChildren().filter((item) => {
               return item !== directory && !current.has(item) && // in case of intersecting globs;
               // a path may have been filtered out of this readdir, but
@@ -104085,14 +104085,14 @@ ${e5.message}`);
       }
       const subprocess = childProcess$2.spawn(command, cliArguments, childProcessOptions);
       if (options2.wait) {
-        return new Promise((resolve9, reject) => {
+        return new Promise((resolve10, reject) => {
           subprocess.once("error", reject);
           subprocess.once("close", (exitCode) => {
             if (!options2.allowNonzeroExitCode && exitCode > 0) {
               reject(new Error(`Exited with code ${exitCode}`));
               return;
             }
-            resolve9(subprocess);
+            resolve10(subprocess);
           });
         });
       }
@@ -104177,27 +104177,27 @@ ${e5.message}`);
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found3 = [];
-      const step = (i5) => new Promise((resolve9, reject) => {
+      const step = (i5) => new Promise((resolve10, reject) => {
         if (i5 === pathEnv.length)
-          return opt.all && found3.length ? resolve9(found3) : reject(getNotFoundError(cmd));
+          return opt.all && found3.length ? resolve10(found3) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i5];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path$22.join(pathPart, cmd);
         const p5 = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve9(subStep(p5, i5, 0));
+        resolve10(subStep(p5, i5, 0));
       });
-      const subStep = (p5, i5, ii) => new Promise((resolve9, reject) => {
+      const subStep = (p5, i5, ii) => new Promise((resolve10, reject) => {
         if (ii === pathExt.length)
-          return resolve9(step(i5 + 1));
+          return resolve10(step(i5 + 1));
         const ext = pathExt[ii];
         isexe(p5 + ext, { pathExt: pathExtExe }, (er3, is) => {
           if (!er3 && is) {
             if (opt.all)
               found3.push(p5 + ext);
             else
-              return resolve9(p5 + ext);
+              return resolve10(p5 + ext);
           }
-          return resolve9(subStep(p5, i5, ii + 1));
+          return resolve10(subStep(p5, i5, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -110219,12 +110219,12 @@ ${err22.stack || err22.message}
               sourceMapRoot: path22.dirname(options2.filename)
             } : {}
           };
-          return new Promise((resolve9, reject) => {
+          return new Promise((resolve10, reject) => {
             sass.render(finalOptions, (err2, res) => {
               if (err2) {
                 reject(err2);
               } else {
-                resolve9({
+                resolve10({
                   css: res.css.toString(),
                   map: res.map?.toString(),
                   stats: res.stats
@@ -112237,6 +112237,20 @@ async function runCreateCommand(options2) {
   try {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
+    } else {
+      const conflicting = [];
+      for (const relPath of Object.keys(files)) {
+        if (fs.existsSync(path.join(targetDir, relPath))) {
+          conflicting.push(relPath);
+        }
+      }
+      if (conflicting.length > 0) {
+        return {
+          success: false,
+          message: `[Samrey Create Error] Target directory contains conflicting files that would be overwritten: ${conflicting.slice(0, 5).join(", ")}${conflicting.length > 5 ? "..." : ""}`,
+          exitCode: 1
+        };
+      }
     }
     for (const [relPath, content] of Object.entries(files)) {
       const fullPath = path.join(targetDir, relPath);
@@ -112329,12 +112343,19 @@ async function runDevCommand(options2 = {}) {
   } catch {
   }
   const rootDir = process.cwd();
+  const absoluteRoot = path7.resolve(rootDir);
   const server = http2.createServer((req2, res) => {
     let reqPath = req2.url?.split("?")[0] || "/";
     if (reqPath === "/") reqPath = "/index.html";
-    let filePath = path7.join(rootDir, reqPath);
+    const cleanPath2 = path7.normalize(reqPath).replace(/^(\.\.[\/\\])+/, "");
+    let filePath = path7.resolve(absoluteRoot, "." + cleanPath2);
+    if (!filePath.startsWith(absoluteRoot + path7.sep) && filePath !== path7.join(absoluteRoot, "index.html")) {
+      res.writeHead(403, { "Content-Type": "text/plain" });
+      res.end("403 Forbidden");
+      return;
+    }
     if (!fs5.existsSync(filePath)) {
-      filePath = path7.join(rootDir, "index.html");
+      filePath = path7.join(absoluteRoot, "index.html");
     }
     if (fs5.existsSync(filePath) && fs5.statSync(filePath).isFile()) {
       const ext = path7.extname(filePath).toLowerCase();
@@ -112346,10 +112367,11 @@ async function runDevCommand(options2 = {}) {
       res.end("404 Not Found");
     }
   });
-  return new Promise((resolve9) => {
-    server.listen(port, () => {
+  const listenHost = options2.host ? typeof options2.host === "string" ? options2.host : "0.0.0.0" : "127.0.0.1";
+  return new Promise((resolve10) => {
+    server.listen(port, listenHost, () => {
       console.log(banner);
-      resolve9({
+      resolve10({
         success: true,
         message: banner,
         exitCode: 0,
@@ -112357,7 +112379,7 @@ async function runDevCommand(options2 = {}) {
       });
     });
     server.on("error", (err2) => {
-      resolve9({
+      resolve10({
         success: false,
         message: `[Samrey Dev Error] ${err2.message}`,
         exitCode: 1
@@ -112384,6 +112406,21 @@ function classifyBindingContext(targetType, attrName) {
     }
   }
   return "safe-attr";
+}
+
+// ../compiler/src/a11y-linter.ts
+function lintA11y(tag3, attributes) {
+  const diagnostics = [];
+  if (tag3 === "img" && !("alt" in attributes)) {
+    diagnostics.push(`[AETH-202] [a11y warning] <img> elements must provide an 'alt' attribute for screen reader accessibility.`);
+  }
+  if (tag3 === "a" && (!("href" in attributes) && !("aria-label" in attributes))) {
+    diagnostics.push(`[AETH-202] [a11y warning] <a> anchor tags must specify a valid 'href' or 'aria-label'.`);
+  }
+  if (tag3 === "button" && !("type" in attributes)) {
+    diagnostics.push(`[AETH-202] [a11y warning] <button> should explicitly declare type="button" | "submit" | "reset".`);
+  }
+  return diagnostics;
 }
 
 // ../compiler/src/codegen.ts
@@ -112440,35 +112477,24 @@ function evaluateConstantExpression(expr) {
   if (!trimmed) {
     return { isConstant: false, value: null };
   }
-  if (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2 || trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2) {
+  if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
     try {
-      if (trimmed.startsWith('"')) {
-        const parsed = JSON.parse(trimmed);
-        return { isConstant: true, value: parsed };
-      }
-      const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'");
-      return { isConstant: true, value: rawInner };
+      return { isConstant: true, value: JSON.parse(trimmed) };
     } catch {
-      const rawInner = trimmed.slice(1, -1);
-      return { isConstant: true, value: rawInner };
+      return { isConstant: true, value: trimmed.slice(1, -1) };
     }
   }
-  if (trimmed.startsWith("`") && trimmed.endsWith("`") && trimmed.length >= 2) {
+  if (/^'(?:[^'\\]|\\.)*'$/.test(trimmed)) {
+    const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+    return { isConstant: true, value: rawInner };
+  }
+  if (/^`(?:\\[\s\S]|[^`\\])*`$/.test(trimmed)) {
     if (!trimmed.includes("${")) {
       return { isConstant: true, value: trimmed.slice(1, -1) };
     }
   }
-  if (trimmed === "true") {
-    return { isConstant: true, value: "true" };
-  }
-  if (trimmed === "false") {
-    return { isConstant: true, value: "false" };
-  }
-  if (trimmed === "null") {
-    return { isConstant: true, value: "null" };
-  }
-  if (trimmed === "undefined") {
-    return { isConstant: true, value: "undefined" };
+  if (trimmed === "null" || trimmed === "undefined" || trimmed === "false" || trimmed === "true") {
+    return { isConstant: true, value: trimmed };
   }
   if (/^[+-]?(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$/.test(trimmed)) {
     return { isConstant: true, value: trimmed };
@@ -112826,7 +112852,18 @@ var TemplateParser = class {
         if (this.peekCode() === 62) this.advance(1);
         return null;
       }
-      return this.parseTagNode();
+      const next = this.peekCode(1);
+      if (next === 123 || next === 60) {
+        const pos = this.getPosition();
+        this.recordDiagnostic(`Invalid tag syntax "${String.fromCharCode(ch)}${String.fromCharCode(next)}"`, pos, "AETH-104");
+        this.advance(1);
+        return null;
+      }
+      const isLetter = next >= 65 && next <= 90 || next >= 97 && next <= 122;
+      if (isLetter) {
+        return this.parseTagNode();
+      }
+      return this.parseText();
     }
     if (ch === 123) {
       return this.parseInterpolation();
@@ -112895,10 +112932,22 @@ var TemplateParser = class {
     const isComponent = tagName.charCodeAt(0) >= 65 && tagName.charCodeAt(0) <= 90;
     const children = [];
     let foundClosing = isSelfClosing;
-    if (!isSelfClosing) {
+    if (tagName.toLowerCase() === "style" || tagName.toLowerCase() === "script") {
+      const closingTag = `</${tagName}>`;
+      const endIdx = this.source.toLowerCase().indexOf(closingTag.toLowerCase(), this.cursor);
+      if (endIdx !== -1) {
+        const rawContent = this.source.slice(this.cursor, endIdx);
+        this.advance(endIdx - this.cursor + closingTag.length);
+        children.push({
+          type: "Text",
+          value: rawContent,
+          loc: { start: startPos, end: this.getPosition() }
+        });
+        foundClosing = true;
+      }
+    } else if (!isSelfClosing) {
       const closingTag = `</${tagName}>`;
       while (this.cursor < this.length) {
-        this.skipWhitespace();
         if (this.peekString(closingTag)) {
           this.advance(closingTag.length);
           foundClosing = true;
@@ -113216,8 +113265,18 @@ var TemplateParser = class {
     const startOffset = this.cursor;
     while (this.cursor < this.length) {
       const code = this.source.charCodeAt(this.cursor);
-      if (code === 60 || code === 123) {
+      if (code === 123) {
         break;
+      }
+      if (code === 60) {
+        const next = this.cursor + 1 < this.length ? this.source.charCodeAt(this.cursor + 1) : 0;
+        const isTagStart = next >= 65 && next <= 90 || // A-Z
+        next >= 97 && next <= 122 || // a-z
+        next === 47 || // '/'
+        next === 33 && this.source.startsWith("!--", this.cursor + 1);
+        if (isTagStart) {
+          break;
+        }
       }
       if (code === 10) {
         this.line++;
@@ -113263,26 +113322,29 @@ function buildAIRFromAST(ast) {
   const diagnostics = [];
   let templateCounter = 0;
   function processNodes(nodes, currentPath) {
-    let html2 = "";
+    const htmlParts = [];
     const slots2 = [];
     let childIndex = 0;
     for (let i5 = 0; i5 < nodes.length; i5++) {
       const node3 = nodes[i5];
-      const nodePath = [...currentPath, childIndex];
       if (node3.type === "Text") {
-        html2 += node3.value;
+        htmlParts.push(node3.value);
         childIndex++;
       } else if (node3.type === "Interpolation") {
         const fold = evaluateConstantExpression(node3.expression);
         if (fold.isConstant && fold.value !== null) {
-          html2 += escapeHtmlText(fold.value);
-          childIndex++;
+          const trimmedExpr = node3.expression.trim();
+          if (trimmedExpr === "null" || trimmedExpr === "undefined" || trimmedExpr === "false" || trimmedExpr === "true") {
+          } else {
+            htmlParts.push(escapeHtmlText(fold.value));
+            childIndex++;
+          }
         } else {
-          html2 += "<!-- dynamic-slot -->";
+          htmlParts.push("<!-- dynamic-slot -->");
           const dynamicSlot = {
             type: "dynamic-text",
             expression: node3.expression,
-            path: nodePath,
+            path: currentPath.concat(childIndex),
             securityContext: node3.securityContext
           };
           slots2.push(dynamicSlot);
@@ -113290,6 +113352,7 @@ function buildAIRFromAST(ast) {
         }
       } else if (node3.type === "Element") {
         let tagOpen = `<${node3.tag}`;
+        const nodePath = currentPath.concat(childIndex);
         for (let a6 = 0; a6 < node3.attributes.length; a6++) {
           const attr = node3.attributes[a6];
           if (attr.isEvent && attr.eventName) {
@@ -113332,50 +113395,69 @@ function buildAIRFromAST(ast) {
         }
         if (node3.isSelfClosing) {
           tagOpen += " />";
-          html2 += tagOpen;
+          htmlParts.push(tagOpen);
         } else {
           tagOpen += ">";
-          const childrenResult = processNodes(node3.children, [...nodePath]);
+          const childrenResult = processNodes(node3.children, nodePath);
           slots2.push(...childrenResult.slots);
-          html2 += `${tagOpen}${childrenResult.html}</${node3.tag}>`;
+          htmlParts.push(`${tagOpen}${childrenResult.html}</${node3.tag}>`);
+        }
+        const lowerTag = node3.tag.toLowerCase();
+        if (lowerTag === "img" || lowerTag === "a" || lowerTag === "button") {
+          const attrMap = {};
+          for (const a6 of node3.attributes) {
+            if (a6.value !== null) attrMap[a6.name] = a6.value;
+            else if (a6.expression) attrMap[a6.name] = a6.expression;
+            else attrMap[a6.name] = "";
+          }
+          const a11yDiags = lintA11y(lowerTag, attrMap);
+          diagnostics.push(...a11yDiags);
         }
         childIndex++;
       } else if (node3.type === "Component") {
-        html2 += "<!-- component-slot -->";
+        htmlParts.push("<!-- component-slot -->");
         const helper = `createComponent(${node3.name}, { ${node3.props.map((p5) => `${p5.name}: ${p5.expression || JSON.stringify(p5.value)}`).join(", ")} })`;
         slots2.push({
           type: "control-flow-slot",
           flowType: "Show",
           expression: helper,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       } else if (node3.type === "Show") {
-        html2 += "<!-- show-slot -->";
+        htmlParts.push("<!-- show-slot -->");
         const helper = `Show({ when: ${node3.when.startsWith("(") ? node3.when : `() => (${node3.when})`}, children: () => /* sub-render */ null })`;
         slots2.push({
           type: "control-flow-slot",
           flowType: "Show",
           expression: node3.when,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       } else if (node3.type === "For") {
-        html2 += "<!-- for-slot -->";
+        htmlParts.push("<!-- for-slot -->");
         const helper = `For({ each: ${node3.each.startsWith("(") ? node3.each : `() => (${node3.each})`}, key: ${node3.key || "undefined"}, children: (item, i) => /* sub-render */ null })`;
         slots2.push({
           type: "control-flow-slot",
           flowType: "For",
           expression: node3.each,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       }
     }
-    return { html: html2, slots: slots2 };
+    return { html: htmlParts.join(""), slots: slots2 };
+  }
+  function getNodeExpr(path9) {
+    if (!path9 || path9.length <= 1) return "root";
+    let expr = "root";
+    for (let i5 = 1; i5 < path9.length; i5++) {
+      expr += `.childNodes[${path9[i5]}]`;
+    }
+    return expr;
   }
   const { html, slots } = processNodes(ast.children, [0]);
   templateCounter++;
@@ -113387,20 +113469,27 @@ function buildAIRFromAST(ast) {
   templates.push(templateUnit);
   for (let idx = 0; idx < slots.length; idx++) {
     const slot = slots[idx];
+    const target = getNodeExpr(slot.path);
     if (slot.type === "dynamic-text") {
-      bindingsCode.push(`bindText(root.childNodes[${idx}], () => (${slot.expression}));`);
+      bindingsCode.push(`bindText(${target}, () => (${slot.expression}));`);
     } else if (slot.type === "dynamic-attr") {
-      bindingsCode.push(`bindAttr(root, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
+      bindingsCode.push(`bindAttr(${target}, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
     } else if (slot.type === "dynamic-event") {
-      bindingsCode.push(`on(root, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
+      bindingsCode.push(`on(${target}, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
+    } else if (slot.type === "control-flow-slot") {
+      bindingsCode.push(`bindDynamicChild(${target}.parentNode || root, () => ${slot.helperCode});`);
     }
   }
   return { templates, bindingsCode, diagnostics };
 }
 function compileTemplate(rawSource, options2) {
-  const parser2 = new TemplateParser(rawSource);
-  const { ast, diagnostics } = parser2.parse();
-  const { templates, bindingsCode } = buildAIRFromAST(ast);
+  const parser2 = new TemplateParser(rawSource, options2);
+  const { ast, diagnostics, errors } = parser2.parse();
+  if (errors.length > 0) {
+    throw errors[0];
+  }
+  const { templates, bindingsCode, diagnostics: airDiags } = buildAIRFromAST(ast);
+  diagnostics.push(...airDiags);
   const componentBody = bindingsCode.join("\n  ");
   const generatedCode = generateModuleCode(templates, componentBody);
   return {
@@ -113496,6 +113585,15 @@ function auditSource(source, filename = "Component.tsx") {
   }
   if (source.includes("<script")) {
     messages2.push(`${filename}: Explicit <script> tag found in template. Violates CSP.`);
+  }
+  if (/(?:href|src|action|formaction)\s*=\s*['"]?\s*javascript:/i.test(source)) {
+    messages2.push(`${filename}: Insecure "javascript:" URI detected in template attribute.`);
+  }
+  if (/[\s/](?:on[a-zA-Z0-9_-]+)\s*=\s*['"][^'"]*['"]/i.test(source)) {
+    messages2.push(`${filename}: Inline event handler attribute detected (violates CSP strict policy).`);
+  }
+  if (/[\s/]srcdoc\s*=/i.test(source)) {
+    messages2.push(`${filename}: Dangerous "srcdoc" attribute detected.`);
   }
   return {
     filesScanned: 1,
@@ -113594,9 +113692,16 @@ async function runAnalyzeCommand(options2 = {}) {
 // src/commands/generate.ts
 import * as fs6 from "node:fs";
 import * as path8 from "node:path";
+function toPascalCase(str2) {
+  return str2.replace(/[-_]+([a-zA-Z0-9])/g, (_2, chr) => chr.toUpperCase()).replace(/^([a-z])/, (_2, chr) => chr.toUpperCase());
+}
+function toCamelCase(str2) {
+  const p5 = toPascalCase(str2);
+  return p5.charAt(0).toLowerCase() + p5.slice(1);
+}
 function scaffoldArtifact(type, name) {
-  const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
-  const camelName = name.charAt(0).toLowerCase() + name.slice(1);
+  const pascalName = toPascalCase(name);
+  const camelName = toCamelCase(name);
   if (type === "component") {
     const code2 = `import { signal } from '@samrey/reactivity';
 
@@ -113780,6 +113885,13 @@ async function runGenerateCommand(options2) {
   try {
     const filePath = path8.join(targetDir, scaffold.filename);
     const testPath = path8.join(targetDir, scaffold.testFilename);
+    if (fs6.existsSync(filePath) || fs6.existsSync(testPath)) {
+      return {
+        success: false,
+        message: `[Samrey Generate Error] File already exists at target (${scaffold.filename} or ${scaffold.testFilename}). Aborting to avoid overwrite.`,
+        exitCode: 1
+      };
+    }
     fs6.writeFileSync(filePath, scaffold.code, "utf8");
     fs6.writeFileSync(testPath, scaffold.testCode, "utf8");
     return {
@@ -113855,14 +113967,6 @@ async function runCLI(args2) {
   const dryRun = args2.includes("--dry-run");
   switch (command) {
     case "create": {
-      const name = args2[1];
-      if (!name) {
-        return {
-          success: false,
-          message: "[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]",
-          exitCode: 1
-        };
-      }
       const templateIdx = args2.indexOf("--template");
       const templateVal = templateIdx !== -1 && args2[templateIdx + 1] ? args2[templateIdx + 1] : "ssr";
       const validTemplates = ["ssr", "spa", "minimal", "ssg"];
@@ -113870,6 +113974,24 @@ async function runCLI(args2) {
         return {
           success: false,
           message: `[Samrey Create Error] Invalid template "${templateVal}". Valid templates are: ${validTemplates.join(", ")}.`,
+          exitCode: 1
+        };
+      }
+      const positionalArgs = [];
+      for (let i5 = 1; i5 < args2.length; i5++) {
+        if (args2[i5].startsWith("-")) {
+          if (args2[i5] === "--template" || args2[i5] === "--targetDir") {
+            i5++;
+          }
+        } else {
+          positionalArgs.push(args2[i5]);
+        }
+      }
+      const name = positionalArgs[0];
+      if (!name) {
+        return {
+          success: false,
+          message: "[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]",
           exitCode: 1
         };
       }
@@ -113962,6 +114084,10 @@ runCLI(args).then((result) => {
 /**
  * @license Apache-2.0
  * @samrey/compiler - Contextual Security Classifier
+ */
+/**
+ * @license Apache-2.0
+ * @samrey/compiler - Static A11y Verification Pass
  */
 /**
  * @license Apache-2.0

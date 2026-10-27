@@ -25,47 +25,31 @@ export function evaluateConstantExpression(expr: string): ConstantFoldResult {
   }
 
   // 1. String literals: "...", '...', `...` (without interpolation)
-  if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
-  ) {
+  if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
     try {
-      // Safely parse JSON/JS string escape sequences
-      if (trimmed.startsWith('"')) {
-        const parsed = JSON.parse(trimmed);
-        return { isConstant: true, value: parsed };
-      }
-      const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'");
-      return { isConstant: true, value: rawInner };
+      return { isConstant: true, value: JSON.parse(trimmed) };
     } catch {
-      const rawInner = trimmed.slice(1, -1);
-      return { isConstant: true, value: rawInner };
+      return { isConstant: true, value: trimmed.slice(1, -1) };
     }
   }
 
-  if (trimmed.startsWith('`') && trimmed.endsWith('`') && trimmed.length >= 2) {
+  if (/^'(?:[^'\\]|\\.)*'$/.test(trimmed)) {
+    const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+    return { isConstant: true, value: rawInner };
+  }
+
+  if (/^`(?:\\[\s\S]|[^`\\])*`$/.test(trimmed)) {
     if (!trimmed.includes('${')) {
       return { isConstant: true, value: trimmed.slice(1, -1) };
     }
   }
 
-  // 2. Boolean literals
-  if (trimmed === 'true') {
-    return { isConstant: true, value: 'true' };
-  }
-  if (trimmed === 'false') {
-    return { isConstant: true, value: 'false' };
+  // 2. Boolean & Null & Undefined literals
+  if (trimmed === 'null' || trimmed === 'undefined' || trimmed === 'false' || trimmed === 'true') {
+    return { isConstant: true, value: trimmed };
   }
 
-  // 3. Null / undefined literals
-  if (trimmed === 'null') {
-    return { isConstant: true, value: 'null' };
-  }
-  if (trimmed === 'undefined') {
-    return { isConstant: true, value: 'undefined' };
-  }
-
-  // 4. Number literals: integer, float, hex, negative
+  // 3. Number literals: integer, float, hex, negative
   if (/^[+-]?(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$/.test(trimmed)) {
     return { isConstant: true, value: trimmed };
   }

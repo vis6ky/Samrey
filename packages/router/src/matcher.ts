@@ -14,8 +14,10 @@ function safeDecodeURIComponent(str: string): string {
 }
 
 export function matchPath(pattern: string, pathname: string): Record<string, string> | null {
-  const patternSegments = pattern.split('/').filter(Boolean);
-  const pathSegments = pathname.split('/').filter(Boolean);
+  const cleanPath = pathname.split(/[?#]/)[0] || '/';
+  const cleanPattern = pattern.split(/[?#]/)[0] || '/';
+  const patternSegments = cleanPattern.split('/').filter(Boolean);
+  const pathSegments = cleanPath.split('/').filter(Boolean);
 
   if (patternSegments.length !== pathSegments.length) {
     return null;

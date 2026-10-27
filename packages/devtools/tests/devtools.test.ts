@@ -11,7 +11,9 @@ import {
   defaultPerformanceInspector,
   sanitizePayload,
   isSensitiveKey,
-  DevToolsEvent
+  DevToolsEvent,
+  initDevtools,
+  getGraphSnapshot
 } from '../src/index.js';
 
 describe('@samrey/devtools - Extended Inspection Suite', () => {
@@ -123,7 +125,7 @@ describe('@samrey/devtools - Extended Inspection Suite', () => {
   it('inspects network requests and redacts authorization headers', () => {
     defaultNetworkInspector.clear();
 
-    defaultNetworkInspector.recordRequest('req-1', 'POST', '/api/v1/auth/login', {
+    defaultNetworkInspector.recordRequest('req-1', 'POST', '/api/v1/auth/login?access_token=SECRET123&client_id=myApp', {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer super_secret_token_123'
     }, { password: 'rawPassword123' });
@@ -133,10 +135,18 @@ describe('@samrey/devtools - Extended Inspection Suite', () => {
     const requests = defaultNetworkInspector.getRequests();
     assert.equal(requests.length, 1);
     const req = requests[0]!;
+    assert.ok(req.url.includes('access_token=%5BREDACTED%5D') || req.url.includes('access_token=[REDACTED]'));
+    assert.ok(!req.url.includes('SECRET123'));
     assert.equal(req.headers?.Authorization, '[REDACTED]');
     assert.equal((req.body as any)?.password, '[REDACTED]');
     assert.equal((req.responseBody as any)?.token, '[REDACTED]');
     assert.equal(req.status, 200);
+  });
+
+  it('exports initDevtools and getGraphSnapshot', () => {
+    assert.equal(typeof initDevtools, 'function');
+    assert.equal(typeof getGraphSnapshot, 'function');
+    assert.ok(Array.isArray(getGraphSnapshot()));
   });
 
   it('inspects form validation and field states', () => {

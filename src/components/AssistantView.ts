@@ -188,6 +188,54 @@ export function AssistantView(): HTMLElement {
     }
   };
 
+  // Direct Code Analysis & AST Repair Handler
+  const handleCodeAnalyze = async () => {
+    const code = codeInput.value.trim();
+    if (!code || isLoading.value) return;
+
+    isLoading.value = true;
+    errorMessage.value = null;
+    loadingStage.value = 'Analyzing AST, linting rules, and detecting anti-patterns...';
+
+    try {
+      const codeRes = await provider.analyzeCode({
+        code,
+        question: 'Analyze and fix this Samrey code'
+      });
+      currentCodeResult.value = codeRes;
+
+      const ans: AssistantAnswer = {
+        id: `code-fix-${Date.now()}`,
+        query: code,
+        category: 'reactivity',
+        title: 'Code Analysis & AST Repair',
+        shortAnswer: codeRes.problem,
+        concept: codeRes.explanation,
+        recommendedApi: codeRes.relatedApis?.join(', ') || '@samrey/reactivity, @samrey/runtime',
+        whenToUse: 'When debugging reactive state updates, lifecycle bindings, or foreign framework code.',
+        implementationSteps: codeRes.changesExplanation || ['Audit reactive subscriptions', 'Apply fine-grained DOM bindings'],
+        tsCodeExample: codeRes.fixedCode,
+        completeWorkingExample: codeRes.fixedCode,
+        codeExplanation: codeRes.explanation,
+        commonMistakes: [
+          'Evaluating signal .value statically inside el() without accessor closure.',
+          'Mutating array/object signals in-place without triggering reactive setters.'
+        ],
+        relatedApis: codeRes.relatedApis || ['signal', 'computed', 'effect', 'el'],
+        docLinks: codeRes.docLinks || [{ label: 'Reactivity Specification', url: '#reactivity' }],
+        intentType: 'DEBUG',
+        isDirectMatch: true,
+        isAiGenerated: codeRes.isAiGenerated,
+        provider: codeRes.provider
+      };
+      currentAnswer.value = ans;
+    } catch (err: any) {
+      errorMessage.value = err?.message || 'Failed to analyze code.';
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   // Follow-up question submission
   const handleFollowUp = async () => {
     const q = followUpText.value.trim();
@@ -350,7 +398,7 @@ export function AssistantView(): HTMLElement {
   };
 
   // Main Root Container
-  const root = el('div', { class: 'space-y-8 pb-16', id: 'samrey-unified-assistant-view' });
+  const root = el('div', { class: 'space-y-8 pb-16', id: 'samrey-assistant-view' });
 
   // 1. Hero Header & Subtitle
   const heroSection = el('div', {
@@ -402,29 +450,66 @@ export function AssistantView(): HTMLElement {
     class: 'p-6 sm:p-8 bg-white rounded-3xl border border-slate-200 shadow-md space-y-5'
   });
 
-  // Textarea / Input wrapper
-  const inputWrapper = el('div', { class: 'space-y-3' });
+  // Mode Selection Tabs (Documentation & QA vs Code Help & Repair)
+  const modeTabs = el('div', { class: 'flex items-center space-x-2 border-b border-slate-200 pb-3 mb-1' },
+    el('button', {
+      type: 'button',
+      id: 'tab-assistant-qa',
+      class: () => `px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center space-x-2 ${
+        activeInputMode.value === 'qa'
+          ? 'bg-indigo-600 text-white shadow-xs'
+          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+      }`,
+      onClick: () => {
+        activeInputMode.value = 'qa';
+      }
+    },
+      icon('help-circle', 'w-4 h-4'),
+      el('span', null, 'Documentation & QA')
+    ),
+    el('button', {
+      type: 'button',
+      id: 'tab-assistant-code-help',
+      class: () => `px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center space-x-2 ${
+        activeInputMode.value === 'code-help'
+          ? 'bg-indigo-600 text-white shadow-xs'
+          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+      }`,
+      onClick: () => {
+        activeInputMode.value = 'code-help';
+      }
+    },
+      icon('code', 'w-4 h-4'),
+      el('span', null, 'Code Help & Repair')
+    )
+  );
+  inputPanel.appendChild(modeTabs);
 
-  const textarea = el('textarea', {
-    id: 'assistant-unified-input',
-    rows: 4,
+  // QA Input Section
+  const qaSection = el('div', {
+    class: () => (activeInputMode.value === 'qa' ? 'space-y-3' : 'hidden')
+  });
+
+  const searchInput = el('input', {
+    type: 'text',
+    id: 'assistant-search-input',
     'aria-label': 'Unified input for questions, requirements, code debugging, and errors',
-    placeholder: 'Ask anything about Samrey, describe a requirement, paste code, or paste an error...',
-    class: 'w-full p-4 sm:p-5 text-sm sm:text-base bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-300 focus:border-indigo-600 rounded-2xl focus:ring-2 focus:ring-indigo-600/20 transition outline-hidden font-sans text-slate-900 shadow-inner resize-y leading-relaxed',
+    placeholder: 'Ask anything about Samrey, describe a requirement, or paste an error...',
+    class: 'w-full p-4 sm:p-5 text-sm sm:text-base bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-300 focus:border-indigo-600 rounded-2xl focus:ring-2 focus:ring-indigo-600/20 transition outline-hidden font-sans text-slate-900 shadow-inner leading-relaxed',
     value: () => searchQuery.value,
     onInput: (e: Event) => {
-      searchQuery.value = (e.target as HTMLTextAreaElement).value;
+      searchQuery.value = (e.target as HTMLInputElement).value;
     },
     onKeyDown: (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if (e.key === 'Enter') {
         e.preventDefault();
         handleAsk();
       }
     }
   });
-  inputWrapper.appendChild(textarea);
+  qaSection.appendChild(searchInput);
 
-  // Input Action Bar: Info hint + Clear + [ Ask Samrey ]
+  // QA Action Bar: Info hint + Clear + [ Ask Samrey ]
   const actionBar = el('div', { class: 'flex flex-wrap items-center justify-between gap-3' },
     el('div', { class: 'flex items-center space-x-2 text-xs text-slate-500 font-mono' },
       icon('shield-check', 'w-4 h-4 text-emerald-600'),
@@ -455,8 +540,66 @@ export function AssistantView(): HTMLElement {
       )
     )
   );
-  inputWrapper.appendChild(actionBar);
-  inputPanel.appendChild(inputWrapper);
+  qaSection.appendChild(actionBar);
+  inputPanel.appendChild(qaSection);
+
+  // Code Help Section
+  const codeHelpSection = el('div', {
+    class: () => (activeInputMode.value === 'code-help' ? 'space-y-3' : 'hidden')
+  });
+
+  const codeTextarea = el('textarea', {
+    id: 'assistant-code-input',
+    rows: 6,
+    'aria-label': 'Code input for analysis and repair',
+    placeholder: 'Paste your Samrey or foreign component code here for analysis and automatic repair...',
+    class: 'w-full p-4 sm:p-5 text-sm sm:text-base font-mono bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-300 focus:border-indigo-600 rounded-2xl focus:ring-2 focus:ring-indigo-600/20 transition outline-hidden text-slate-900 shadow-inner resize-y leading-relaxed',
+    value: () => codeInput.value,
+    onInput: (e: Event) => {
+      codeInput.value = (e.target as HTMLTextAreaElement).value;
+    },
+    onKeyDown: (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleCodeAnalyze();
+      }
+    }
+  });
+  codeHelpSection.appendChild(codeTextarea);
+
+  // Code Help Action Bar
+  const codeActionBar = el('div', { class: 'flex flex-wrap items-center justify-between gap-3' },
+    el('div', { class: 'flex items-center space-x-2 text-xs text-slate-500 font-mono' },
+      icon('code', 'w-4 h-4 text-indigo-500'),
+      el('span', null, 'AST Parser · Detects Stale Closures, In-Place Mutations & Foreign React Hooks')
+    ),
+    el('div', { class: 'flex items-center space-x-2' },
+      Show({
+        when: () => codeInput.value.length > 0,
+        children: () => el('button', {
+          type: 'button',
+          class: 'px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer',
+          onClick: () => {
+            codeInput.value = '';
+            focusSearchInput();
+          }
+        }, 'Clear')
+      }),
+      el('button', {
+        id: 'assistant-code-analyze-btn',
+        type: 'button',
+        'aria-label': 'Analyze and Fix Code',
+        disabled: () => isLoading.value,
+        class: 'px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs sm:text-sm font-bold transition disabled:opacity-50 flex items-center space-x-2 shadow-md cursor-pointer hover:shadow-lg',
+        onClick: () => handleCodeAnalyze()
+      },
+        icon('sparkles', 'w-4 h-4 text-indigo-200'),
+        el('span', null, () => isLoading.value ? 'Analyzing...' : 'Analyze & Fix')
+      )
+    )
+  );
+  codeHelpSection.appendChild(codeActionBar);
+  inputPanel.appendChild(codeHelpSection);
 
   // 3. TOPIC FILTERS (All 10 Categories)
   const topicFilterBox = el('div', { class: 'space-y-2 pt-2 border-t border-slate-100' },

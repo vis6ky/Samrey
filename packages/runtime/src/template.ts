@@ -8,15 +8,16 @@
  */
 export function template(htmlString: string): () => Node {
   let templateElement: HTMLTemplateElement | null = null;
-
   return function createNode(): Node {
+    const trimmed = htmlString.trim();
+
     if (typeof document === 'undefined') {
       // Mock Node for SSR/headless environments with outerHTML support
       return {
         nodeType: 1,
         textContent: '',
-        outerHTML: htmlString,
-        innerHTML: htmlString,
+        outerHTML: trimmed,
+        innerHTML: trimmed,
         childNodes: [],
         firstChild: null,
         nextSibling: null,
@@ -31,10 +32,13 @@ export function template(htmlString: string): () => Node {
 
     if (!templateElement) {
       templateElement = document.createElement('template');
-      templateElement.innerHTML = htmlString;
+      templateElement.innerHTML = trimmed;
     }
 
     const clone = templateElement.content.cloneNode(true);
-    return clone.firstChild || clone;
+    if (clone.childNodes.length === 1) {
+      return clone.firstChild!;
+    }
+    return clone;
   };
 }

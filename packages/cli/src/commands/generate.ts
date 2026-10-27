@@ -16,9 +16,20 @@ export interface GenerateCommandOptions {
   dryRun?: boolean;
 }
 
+function toPascalCase(str: string): string {
+  return str
+    .replace(/[-_]+([a-zA-Z0-9])/g, (_, chr) => chr.toUpperCase())
+    .replace(/^([a-z])/, (_, chr) => chr.toUpperCase());
+}
+
+function toCamelCase(str: string): string {
+  const p = toPascalCase(str);
+  return p.charAt(0).toLowerCase() + p.slice(1);
+}
+
 export function scaffoldArtifact(type: GenerateArtifactType, name: string): { filename: string; testFilename: string; code: string; testCode: string } {
-  const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
-  const camelName = name.charAt(0).toLowerCase() + name.slice(1);
+  const pascalName = toPascalCase(name);
+  const camelName = toCamelCase(name);
 
   if (type === 'component') {
     const code = `import { signal } from '@samrey/reactivity';
@@ -221,6 +232,14 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
   try {
     const filePath = path.join(targetDir, scaffold.filename);
     const testPath = path.join(targetDir, scaffold.testFilename);
+
+    if (fs.existsSync(filePath) || fs.existsSync(testPath)) {
+      return {
+        success: false,
+        message: `[Samrey Generate Error] File already exists at target (${scaffold.filename} or ${scaffold.testFilename}). Aborting to avoid overwrite.`,
+        exitCode: 1
+      };
+    }
 
     fs.writeFileSync(filePath, scaffold.code, 'utf8');
     fs.writeFileSync(testPath, scaffold.testCode, 'utf8');

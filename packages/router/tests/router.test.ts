@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchPath, createRouter, matchRoutes } from '../src/index.js';
+import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -25,5 +25,20 @@ describe('@samrey/router', () => {
     router.navigate('/users/100');
     assert.equal(router.currentPath.value, '/users/100');
     assert.deepEqual(router.currentParams.value, { id: '100' });
+  });
+
+  it('renders active route via Router and Route children', () => {
+    const outlet = Router({
+      initialPath: '/',
+      children: [
+        Route({ path: '/', component: () => 'Home Page' }),
+        Route({ path: '/about', component: () => 'About Page' })
+      ]
+    });
+    assert.ok(outlet != null);
+
+    const navigate = useNavigate();
+    assert.equal(typeof navigate, 'function');
+    navigate('/about');
   });
 });

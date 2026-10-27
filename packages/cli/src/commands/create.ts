@@ -61,6 +61,20 @@ export async function runCreateCommand(options: CreateCommandOptions): Promise<C
   try {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
+    } else {
+      const conflicting: string[] = [];
+      for (const relPath of Object.keys(files)) {
+        if (fs.existsSync(path.join(targetDir, relPath))) {
+          conflicting.push(relPath);
+        }
+      }
+      if (conflicting.length > 0) {
+        return {
+          success: false,
+          message: `[Samrey Create Error] Target directory contains conflicting files that would be overwritten: ${conflicting.slice(0, 5).join(', ')}${conflicting.length > 5 ? '...' : ''}`,
+          exitCode: 1
+        };
+      }
     }
 
     for (const [relPath, content] of Object.entries(files)) {

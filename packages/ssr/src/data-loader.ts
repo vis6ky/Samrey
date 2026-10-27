@@ -39,6 +39,14 @@ function primeClientCache(): void {
   }
 }
 
+export function invalidateClientDataCache(key?: string): void {
+  if (key) {
+    clientDataCache.delete(key);
+  } else {
+    clientDataCache.clear();
+  }
+}
+
 /**
  * Reactive primitive for server-side data loading with zero-waterfall client hydration.
  *
@@ -54,16 +62,30 @@ export function createServerData<T>(
 
   // 1. SERVER EXECUTION
   if (ssrContext) {
-    let initialVal = options.initialValue;
     if (ssrContext.state[key] !== undefined) {
-      initialVal = ssrContext.state[key] as T;
+      // Pass 2: Data already loaded and resolved!
+      const resolvedVal = ssrContext.state[key] as T;
+      const dataSig = signal<T | undefined>(resolvedVal);
+      const loadingSig = signal(false);
+      const errorSig = signal<Error | null>(null);
+
+      return [
+        dataSig,
+        {
+          loading: loadingSig,
+          error: errorSig,
+          refetch: async () => resolvedVal,
+          mutate: (val: T) => dataSig.set(val)
+        }
+      ];
     }
 
+    const initialVal = options.initialValue;
     const dataSig = signal<T | undefined>(initialVal);
     const loadingSig = signal(true);
     const errorSig = signal<Error | null>(null);
 
-    // Register loader promise in the request context
+    // Register loader promise in the request context (Pass 1)
     const promise = loader()
       .then((res) => {
         dataSig.set(res);

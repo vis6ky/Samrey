@@ -3,7 +3,7 @@
  * @samrey/runtime - Reactive Control Flow Primitives (<Show>, <For>)
  */
 
-import { effect, createOwner, onCleanup, Owner, runWithOwner, signal, Signal } from '@samrey/reactivity';
+import { effect, createOwner, getOwner, onCleanup, Owner, runWithOwner, signal, Signal, untrack } from '@samrey/reactivity';
 import { reportDuplicateKey } from './diagnostics.js';
 import { el, text } from './dom.js';
 import { createComponent } from './component.js';
@@ -95,8 +95,10 @@ function normalizeNodes(val: unknown): Node[] {
  * Conditionally mounts and unmounts DOM subtrees and nested owners based on a reactive condition.
  */
 export function Show<T>(props: ShowProps<T>): Node {
+  const outerOwner = getOwner();
   let currentOwner: Owner | null = null;
   let currentNodes: Node[] = [];
+  let prevTruthy: boolean | null = null;
 
   const marker = createControlFlowMarker('samrey:show', (parent) => {
     if (currentNodes.length > 0) {
@@ -125,19 +127,6 @@ export function Show<T>(props: ShowProps<T>): Node {
       for (const node of nodes) {
         parent.insertBefore(node, nextSibling);
       }
-    } else if (typeof queueMicrotask === 'function') {
-      // Fallback microtask for asynchronous mounting
-      queueMicrotask(() => {
-        if (marker.parentNode && currentNodes === nodes) {
-          const p = marker.parentNode;
-          const next = marker.nextSibling;
-          for (const node of nodes) {
-            if (node.parentNode !== p) {
-              p.insertBefore(node, next);
-            }
-          }
-        }
-      });
     }
   }
 
@@ -145,6 +134,11 @@ export function Show<T>(props: ShowProps<T>): Node {
     const whenProp = props.when;
     const condition = typeof whenProp === 'function' ? (whenProp as () => unknown)() : (whenProp && typeof whenProp === 'object' && 'value' in whenProp) ? (whenProp as { value: unknown }).value : whenProp;
     const isTruthy = Boolean(condition);
+
+    if (isTruthy === prevTruthy) {
+      return;
+    }
+    prevTruthy = isTruthy;
 
     // Clean up previous branch
     if (currentOwner) {
@@ -154,28 +148,33 @@ export function Show<T>(props: ShowProps<T>): Node {
     removeNodes();
 
     if (isTruthy) {
-      currentOwner = createOwner();
+      currentOwner = createOwner(outerOwner);
+      const condVal = condition as NonNullable<T>;
       let rendered: unknown = null;
 
-      runWithOwner(currentOwner, () => {
-        if (typeof props.children === 'function') {
-          rendered = (props.children as (item: NonNullable<T>) => unknown)(condition as NonNullable<T>);
-        } else {
-          rendered = props.children;
-        }
+      untrack(() => {
+        runWithOwner(currentOwner, () => {
+          if (typeof props.children === 'function') {
+            rendered = (props.children as any)(condVal);
+          } else {
+            rendered = props.children;
+          }
+        });
       });
 
       const nodes = normalizeNodes(rendered);
       currentNodes = nodes;
       insertNodes(nodes);
     } else if (props.fallback) {
-      currentOwner = createOwner();
+      currentOwner = createOwner(outerOwner);
       let fallbackRendered: unknown = null;
 
-      runWithOwner(currentOwner, () => {
-        if (props.fallback) {
-          fallbackRendered = props.fallback();
-        }
+      untrack(() => {
+        runWithOwner(currentOwner, () => {
+          if (props.fallback) {
+            fallbackRendered = props.fallback();
+          }
+        });
       });
 
       const nodes = normalizeNodes(fallbackRendered);
@@ -192,6 +191,15 @@ export function Show<T>(props: ShowProps<T>): Node {
     removeNodes();
   });
 
+  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(marker);
+    for (const node of currentNodes) {
+      frag.appendChild(node);
+    }
+    return frag;
+  }
+
   return marker;
 }
 
@@ -202,20 +210,62 @@ export interface ForProps<T, K = unknown> {
   children: (item: T, index: () => number) => Node | Node[] | null | undefined;
 }
 
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice();
+  const result: number[] = [0];
+  let i: number, j: number, u: number, v: number, c: number;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== -1) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
+}
+
 interface KeyedEntry<T> {
   key: unknown;
   item: T;
   nodes: Node[];
   owner: Owner;
-  indexSignal: Signal<number>;
+  indexSignal?: Signal<number>;
 }
 
 /**
  * <For> Reactive Keyed List Reconciliation Primitive
  *
- * Reconciles keyed lists with fine-grained DOM node reuse, index signal updates, and owner disposals.
+ * Reconciles keyed lists with LIS-optimized DOM node reuse, index & item signal updates, and owner disposals.
  */
 export function For<T, K = unknown>(props: ForProps<T, K>): Node {
+  const outerOwner = getOwner();
   let cache = new Map<unknown, KeyedEntry<T>>();
   let currentEntries: KeyedEntry<T>[] = [];
   let fallbackOwner: Owner | null = null;
@@ -259,12 +309,14 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     if (!props.fallback) return;
     removeFallback();
 
-    fallbackOwner = createOwner();
+    fallbackOwner = createOwner(outerOwner);
     let rendered: unknown = null;
-    runWithOwner(fallbackOwner, () => {
-      if (props.fallback) {
-        rendered = props.fallback();
-      }
+    untrack(() => {
+      runWithOwner(fallbackOwner, () => {
+        if (props.fallback) {
+          rendered = props.fallback();
+        }
+      });
     });
 
     fallbackNodes = normalizeNodes(rendered);
@@ -315,17 +367,27 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 
       let entry = cache.get(key);
       if (entry) {
-        // Reuse existing entry & update index signal
-        entry.indexSignal.value = i;
+        if (entry.indexSignal) {
+          entry.indexSignal.value = i;
+        }
         entry.item = item;
       } else {
-        // Create new entry
-        const owner = createOwner();
-        const indexSignal = signal(i);
+        const owner = createOwner(outerOwner);
+        let idxSig: Signal<number> | undefined;
+        const getIndex = () => {
+          if (!idxSig) {
+            idxSig = signal(i);
+            if (entry) entry.indexSignal = idxSig;
+          }
+          return idxSig.value;
+        };
+
         let rendered: unknown = null;
 
-        runWithOwner(owner, () => {
-          rendered = props.children(item, () => indexSignal.value);
+        untrack(() => {
+          runWithOwner(owner, () => {
+            rendered = props.children(item, getIndex);
+          });
         });
 
         const nodes = normalizeNodes(rendered);
@@ -334,7 +396,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
           item,
           nodes,
           owner,
-          indexSignal
+          indexSignal: idxSig
         };
       }
 
@@ -354,37 +416,41 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       }
     }
 
-    // Reconcile DOM positions
+    // LIS-Optimized Reconcile DOM positions
     const parent = marker.parentNode;
     if (parent) {
-      let currentDomSibling = marker.nextSibling;
+      const oldKeyToIdx = new Map<unknown, number>();
+      for (let i = 0; i < currentEntries.length; i++) {
+        oldKeyToIdx.set(currentEntries[i].key, i);
+      }
+
+      const sources = new Array(newEntries.length).fill(-1);
       for (let i = 0; i < newEntries.length; i++) {
-        const entry = newEntries[i];
-        for (const node of entry.nodes) {
-          if (node !== currentDomSibling) {
-            parent.insertBefore(node, currentDomSibling);
-          } else {
-            currentDomSibling = currentDomSibling.nextSibling;
-          }
+        const oldIdx = oldKeyToIdx.get(newEntries[i].key);
+        if (oldIdx !== undefined) {
+          sources[i] = oldIdx;
         }
       }
-    } else if (typeof queueMicrotask === 'function') {
-      queueMicrotask(() => {
-        if (marker.parentNode) {
-          const p = marker.parentNode;
-          let currentDomSibling = marker.nextSibling;
-          for (let i = 0; i < newEntries.length; i++) {
-            const entry = newEntries[i];
-            for (const node of entry.nodes) {
-              if (node !== currentDomSibling) {
-                p.insertBefore(node, currentDomSibling);
-              } else {
-                currentDomSibling = currentDomSibling.nextSibling;
-              }
-            }
+
+      const lis = sources.length > 0 ? getSequence(sources) : [];
+      let lisIdx = lis.length - 1;
+
+      let nextSibling: Node | null = marker.nextSibling;
+      for (let i = newEntries.length - 1; i >= 0; i--) {
+        const entry = newEntries[i];
+        const shouldMove = lisIdx < 0 || lis[lisIdx] !== i;
+        if (sources[i] === -1 || shouldMove) {
+          for (let n = entry.nodes.length - 1; n >= 0; n--) {
+            const node = entry.nodes[n];
+            parent.insertBefore(node, nextSibling);
           }
+        } else {
+          lisIdx--;
         }
-      });
+        if (entry.nodes.length > 0) {
+          nextSibling = entry.nodes[0];
+        }
+      }
     }
 
     cache = newCache;
@@ -404,6 +470,19 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     cache.clear();
     currentEntries = [];
   });
+
+  if (!marker.parentNode && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(marker);
+    if (fallbackNodes.length > 0) {
+      for (const node of fallbackNodes) frag.appendChild(node);
+    } else {
+      for (const entry of currentEntries) {
+        for (const node of entry.nodes) frag.appendChild(node);
+      }
+    }
+    return frag;
+  }
 
   return marker;
 }
@@ -477,11 +556,11 @@ export interface DynamicProps {
 }
 
 export function Dynamic(props: DynamicProps): Node | Node[] {
-  const { component, ...rest } = props;
+  const { component, children, ...rest } = props;
   if (typeof component === 'string') {
-    return (props.children ? [el(component as any, rest, props.children)] : [el(component as any, rest)]) as unknown as Node;
+    return (children ? [el(component as any, rest, children)] : [el(component as any, rest)]) as unknown as Node;
   }
-  return createComponent(component, rest);
+  return createComponent(component, { ...rest, children });
 }
 
 export interface PortalProps {
@@ -492,13 +571,21 @@ export interface PortalProps {
 export function Portal(props: PortalProps): Node {
   const target = props.mount || (typeof document !== 'undefined' ? document.body : null);
   const rendered = props.children();
-  if (target && rendered) {
-    if (Array.isArray(rendered)) {
-      rendered.forEach((n) => target.appendChild(n));
-    } else {
-      target.appendChild(rendered);
+  const nodes = normalizeNodes(rendered);
+  if (target) {
+    for (const n of nodes) {
+      target.appendChild(n);
     }
   }
+  onCleanup(() => {
+    if (target) {
+      for (const n of nodes) {
+        if (n.parentNode === target) {
+          target.removeChild(n);
+        }
+      }
+    }
+  });
   return text('');
 }
 
@@ -508,10 +595,28 @@ export interface SuspenseProps {
 }
 
 export function Suspense(props: SuspenseProps): Node {
+  const isPending = signal(false);
+  const content = signal<Node | Node[] | null>(null);
+
   try {
     const res = props.children();
+    if (res instanceof Promise) {
+      isPending.value = true;
+      res.then((resolved) => {
+        content.value = resolved as any;
+        isPending.value = false;
+      }).catch(() => {
+        isPending.value = false;
+      });
+      return Show({
+        when: () => !isPending.value,
+        fallback: props.fallback,
+        children: () => content.value || text('')
+      });
+    }
     return (res || text('')) as Node;
   } catch (e) {
     return (props.fallback() || text('')) as Node;
   }
 }
+

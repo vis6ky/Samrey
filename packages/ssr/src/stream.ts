@@ -6,7 +6,7 @@
 import { serializeStateForHydration } from './serializer.js';
 import { getDelegatedEventScript } from './hydration.js';
 import { createSSRContext, runWithSSRContext, resolveSSRContext, SSRContext } from './context.js';
-import { escapeHtmlText } from '@samrey/security';
+import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@samrey/security';
 
 export interface RenderToStringOptions {
   title?: string;
@@ -16,6 +16,7 @@ export interface RenderToStringOptions {
   clientStyles?: string[];
   headTags?: string;
   events?: string[];
+  scriptNonce?: string;
   strictSecrets?: boolean;
   errorBoundary?: (error: Error) => string;
 }
@@ -23,6 +24,29 @@ export interface RenderToStringOptions {
 export interface RenderToStreamOptions extends RenderToStringOptions {
   abortSignal?: AbortSignal;
   timeoutMs?: number;
+}
+
+function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions, titleText: string): {
+  stylesTags: string;
+  clientScriptTag: string;
+  metaTags: string;
+  delegatorScript: string;
+} {
+  const delegatorScript = getDelegatedEventScript(options.events, options.scriptNonce);
+  const clientScriptTag = options.clientScript
+    ? `<script type="module" src="${escapeHtmlAttribute(sanitizeUri(options.clientScript))}"${options.scriptNonce ? ` nonce="${escapeHtmlAttribute(options.scriptNonce)}"` : ''}></script>`
+    : '';
+  const stylesTags = options.clientStyles
+    ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${escapeHtmlAttribute(sanitizeUri(s))}">`).join('\n  ')
+    : '';
+  const metaTags = ctx.head.meta
+    .map((m) => {
+      const attr = m.name ? `name="${escapeHtmlAttribute(m.name)}"` : `property="${escapeHtmlAttribute(m.property || '')}"`;
+      return `<meta ${attr} content="${escapeHtmlAttribute(m.content || '')}">`;
+    })
+    .join('\n  ');
+
+  return { stylesTags, clientScriptTag, metaTags, delegatorScript };
 }
 
 /**
@@ -66,16 +90,13 @@ export async function renderToString(
     }
   }
 
+  const title = options.title || ctx.head.title || 'Samrey Application';
+  const { stylesTags, clientScriptTag, metaTags, delegatorScript } = renderHeadElements(ctx, options, title);
+
   // Generate serialized state script
   const stateScript = serializeStateForHydration(ctx.state, {
     strict: options.strictSecrets
   });
-
-  const delegatorScript = getDelegatedEventScript(options.events);
-  const title = options.title || ctx.head.title || 'Samrey Application';
-  const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
-  const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';
-  const metaTags = ctx.head.meta.map((m) => `<meta ${m.name ? `name="${m.name}"` : `property="${m.property}"`} content="${m.content}">`).join('\n  ');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -108,14 +129,48 @@ export function renderToStream(
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
+      let isClosed = false;
+      let timeoutId: any;
+
+      const safeClose = () => {
+        if (!isClosed) {
+          isClosed = true;
+          if (timeoutId) clearTimeout(timeoutId);
+          controller.close();
+        }
+      };
+
+      const safeError = (err: unknown) => {
+        if (!isClosed) {
+          isClosed = true;
+          if (timeoutId) clearTimeout(timeoutId);
+          controller.error(err);
+        }
+      };
+
+      if (options.abortSignal?.aborted) {
+        safeError(options.abortSignal.reason);
+        return;
+      }
+
+      if (options.abortSignal) {
+        options.abortSignal.addEventListener('abort', () => safeError(options.abortSignal?.reason));
+      }
+
+      if (options.timeoutMs && options.timeoutMs > 0) {
+        timeoutId = setTimeout(() => {
+          safeError(new Error(`[Samrey SSR] renderToStream timed out after ${options.timeoutMs}ms`));
+        }, options.timeoutMs);
+      }
+
       const send = (chunk: string) => {
-        controller.enqueue(encoder.encode(chunk));
+        if (!isClosed) {
+          controller.enqueue(encoder.encode(chunk));
+        }
       };
 
       const title = options.title || ctx.head.title || 'Samrey Application';
-      const delegatorScript = getDelegatedEventScript(options.events);
-      const clientScriptTag = options.clientScript ? `<script type="module" src="${options.clientScript}"></script>` : '';
-      const stylesTags = options.clientStyles ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${s}">`).join('\n  ') : '';
+      const { stylesTags, clientScriptTag, metaTags, delegatorScript } = renderHeadElements(ctx, options, title);
 
       // 1. Send initial head & shell immediately
       send(`<!DOCTYPE html>
@@ -124,6 +179,7 @@ export function renderToStream(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtmlText(title)}</title>
+  ${metaTags}
   ${stylesTags}
   ${options.headTags || ''}
   ${delegatorScript}
@@ -137,6 +193,8 @@ export function renderToStream(
         if (typeof app === 'function') {
           runWithSSRContext(ctx, () => app());
           await resolveSSRContext(ctx);
+
+          if (isClosed) return;
 
           const finalPass = runWithSSRContext(ctx, () => app());
           if (finalPass && typeof finalPass === 'object' && 'outerHTML' in finalPass) {
@@ -156,6 +214,8 @@ export function renderToStream(
           : `<div class="samrey-ssr-error" role="alert"><h2>Stream Error</h2><p>${escapeHtmlText(errorObj.message)}</p></div>`;
       }
 
+      if (isClosed) return;
+
       send(bodyContent);
       send(`</div>`);
 
@@ -170,7 +230,7 @@ export function renderToStream(
       }
       send(`\n</body>\n</html>`);
 
-      controller.close();
+      safeClose();
     }
   });
 }
