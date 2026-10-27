@@ -4,9 +4,18 @@
  */
 
 import { signal } from './signal.js';
+import { incrementClock } from './batch.js';
 
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const PROXIED = Symbol('SAMREY_PROXIED');
+
+function isWrappable(val: unknown): val is object {
+  if (!val || typeof val !== 'object') return false;
+  if (Array.isArray(val)) return true;
+  // Check if it's a plain object (not Date, Map, Set, RegExp, etc.)
+  const proto = Object.getPrototypeOf(val);
+  return proto === Object.prototype || proto === null;
+}
 
 export function createStore<T extends object>(initialObject: T): T {
   if (!initialObject || typeof initialObject !== 'object') return initialObject;
@@ -14,6 +23,7 @@ export function createStore<T extends object>(initialObject: T): T {
 
   const signalMap = new Map<string | symbol, ReturnType<typeof signal>>();
   const childStores = new Map<string | symbol, any>();
+  const iterationSignal = signal(0);
 
   const handler: ProxyHandler<T> = {
     get(target, prop, receiver) {
@@ -22,15 +32,22 @@ export function createStore<T extends object>(initialObject: T): T {
         return undefined;
       }
 
+      const rawVal = Reflect.get(target, prop, target);
+      if (typeof rawVal === 'function') {
+        if (target instanceof Map || target instanceof Set || target instanceof Date || target instanceof RegExp) {
+          return rawVal.bind(target);
+        }
+        return rawVal.bind(receiver);
+      }
+
       let s = signalMap.get(prop);
       if (!s) {
-        const rawVal = Reflect.get(target, prop, receiver);
         s = signal(rawVal);
         signalMap.set(prop, s);
       }
 
       const currentVal = s.value;
-      if (currentVal && typeof currentVal === 'object' && !Array.isArray(currentVal)) {
+      if (isWrappable(currentVal)) {
         let child = childStores.get(prop);
         if (!child) {
           child = createStore(currentVal);
@@ -47,6 +64,9 @@ export function createStore<T extends object>(initialObject: T): T {
       }
 
       childStores.delete(prop);
+      const hadKey = Reflect.has(target, prop);
+      const res = Reflect.set(target, prop, val, target);
+
       let s = signalMap.get(prop);
       if (!s) {
         s = signal(val);
@@ -55,7 +75,41 @@ export function createStore<T extends object>(initialObject: T): T {
         s.value = val;
       }
 
-      return Reflect.set(target, prop, val, receiver);
+      if (!hadKey || (Array.isArray(target) && prop === 'length')) {
+        iterationSignal.value = incrementClock();
+      }
+
+      return res;
+    },
+    deleteProperty(target, prop) {
+      if (PROTOTYPE_POLLUTION_KEYS.has(String(prop))) {
+        return false;
+      }
+      const hadKey = Reflect.has(target, prop);
+      const success = Reflect.deleteProperty(target, prop);
+      if (hadKey && success) {
+        childStores.delete(prop);
+        const s = signalMap.get(prop);
+        if (s) {
+          s.value = undefined;
+        }
+        iterationSignal.value = incrementClock();
+      }
+      return success;
+    },
+    has(target, prop) {
+      if (prop === PROXIED) return true;
+      let s = signalMap.get(prop);
+      if (!s) {
+        s = signal(Reflect.get(target, prop));
+        signalMap.set(prop, s);
+      }
+      s.value;
+      return Reflect.has(target, prop);
+    },
+    ownKeys(target) {
+      iterationSignal.value;
+      return Reflect.ownKeys(target);
     }
   };
 

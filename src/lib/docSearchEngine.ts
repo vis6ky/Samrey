@@ -226,12 +226,23 @@ export function detectIntent(normalized: NormalizedQuery): UserIntent {
   // 1. Error intent: AETH-xxx or error message
   if (detectedErrorCode || /\b(aeth|error\s*\d+|typeerror|referenceerror|stack\s*trace|failed\s*to\s*mount)\b/i.test(raw)) {
     return {
-      type: 'ERROR',
+      type: 'ERROR_DIAGNOSTICS',
       category: 'errors',
       confidence: 0.98,
       matchedEntity: detectedErrorCode,
       isDirectAnswerable: true,
       description: `Diagnostic troubleshooting for ${detectedErrorCode || 'runtime error'}`
+    };
+  }
+
+  // 1b. Security intent
+  if (/\b(security|xss|csrf|trusted types|trusted-types|sanitize|sanitizer)\b/i.test(raw)) {
+    return {
+      type: 'SECURITY',
+      category: 'security',
+      confidence: 0.96,
+      isDirectAnswerable: true,
+      description: 'Samrey security model, Trusted Types, and XSS prevention'
     };
   }
 
@@ -250,7 +261,7 @@ export function detectIntent(normalized: NormalizedQuery): UserIntent {
   // 3. Convert intent: Foreign framework translation / migration
   if (isForeignFramework || /\b(convert|translate|migrate|from react|from vue|from svelte|from solid|from angular|from redux)\b/i.test(raw)) {
     return {
-      type: 'CONVERT',
+      type: 'MIGRATION_FOREIGN',
       category: 'migration',
       confidence: 0.95,
       matchedEntity: foreignFrameworkName,

@@ -29,6 +29,7 @@ import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
 import { SamreyCompilerError, SamreyErrorCode } from './errors.js';
 import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@samrey/security';
+import { lintA11y } from './a11y-linter.js';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
@@ -195,7 +196,18 @@ export class TemplateParser {
         if (this.peekCode() === 62) this.advance(1);
         return null;
       }
-      return this.parseTagNode();
+      const next = this.peekCode(1);
+      if (next === 123 || next === 60) {
+        const pos = this.getPosition();
+        this.recordDiagnostic(`Invalid tag syntax "${String.fromCharCode(ch)}${String.fromCharCode(next)}"`, pos, 'AETH-104');
+        this.advance(1);
+        return null;
+      }
+      const isLetter = (next >= 65 && next <= 90) || (next >= 97 && next <= 122);
+      if (isLetter) {
+        return this.parseTagNode();
+      }
+      return this.parseText();
     }
 
     if (ch === 123) { // '{'
@@ -282,10 +294,23 @@ export class TemplateParser {
 
     const children: ASTNode[] = [];
     let foundClosing = isSelfClosing;
-    if (!isSelfClosing) {
+
+    if (tagName.toLowerCase() === 'style' || tagName.toLowerCase() === 'script') {
+      const closingTag = `</${tagName}>`;
+      const endIdx = this.source.toLowerCase().indexOf(closingTag.toLowerCase(), this.cursor);
+      if (endIdx !== -1) {
+        const rawContent = this.source.slice(this.cursor, endIdx);
+        this.advance(endIdx - this.cursor + closingTag.length);
+        children.push({
+          type: 'Text',
+          value: rawContent,
+          loc: { start: startPos, end: this.getPosition() }
+        });
+        foundClosing = true;
+      }
+    } else if (!isSelfClosing) {
       const closingTag = `</${tagName}>`;
       while (this.cursor < this.length) {
-        this.skipWhitespace();
         if (this.peekString(closingTag)) {
           this.advance(closingTag.length);
           foundClosing = true;
@@ -657,8 +682,19 @@ export class TemplateParser {
 
     while (this.cursor < this.length) {
       const code = this.source.charCodeAt(this.cursor);
-      if (code === 60 || code === 123) { // '<' or '{'
+      if (code === 123) { // '{'
         break;
+      }
+      if (code === 60) { // '<'
+        const next = this.cursor + 1 < this.length ? this.source.charCodeAt(this.cursor + 1) : 0;
+        const isTagStart =
+          (next >= 65 && next <= 90) || // A-Z
+          (next >= 97 && next <= 122) || // a-z
+          next === 47 || // '/'
+          (next === 33 && this.source.startsWith('!--', this.cursor + 1)); // '!--'
+        if (isTagStart) {
+          break;
+        }
       }
       if (code === 10) {
         this.line++;
@@ -721,30 +757,34 @@ export function buildAIRFromAST(ast: ASTRootNode): {
     html: string;
     slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[];
   } {
-    let html = '';
+    const htmlParts: string[] = [];
     const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
 
     let childIndex = 0;
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      const nodePath = [...currentPath, childIndex];
 
       if (node.type === 'Text') {
-        html += node.value;
+        htmlParts.push(node.value);
         childIndex++;
       } else if (node.type === 'Interpolation') {
         // Compile-time Constant Expression Folding for static interpolations
         const fold = evaluateConstantExpression(node.expression);
         if (fold.isConstant && fold.value !== null) {
-          html += escapeHtmlText(fold.value);
-          childIndex++;
+          const trimmedExpr = node.expression.trim();
+          if (trimmedExpr === 'null' || trimmedExpr === 'undefined' || trimmedExpr === 'false' || trimmedExpr === 'true') {
+            // Null, undefined, and booleans render empty string in text interpolations
+          } else {
+            htmlParts.push(escapeHtmlText(fold.value));
+            childIndex++;
+          }
         } else {
-          html += '<!-- dynamic-slot -->';
+          htmlParts.push('<!-- dynamic-slot -->');
           const dynamicSlot: AIRDynamicTextNode = {
             type: 'dynamic-text',
             expression: node.expression,
-            path: nodePath,
+            path: currentPath.concat(childIndex),
             securityContext: node.securityContext
           };
           slots.push(dynamicSlot);
@@ -752,6 +792,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         }
       } else if (node.type === 'Element') {
         let tagOpen = `<${node.tag}`;
+        const nodePath = currentPath.concat(childIndex);
 
         for (let a = 0; a < node.attributes.length; a++) {
           const attr = node.attributes[a];
@@ -797,16 +838,29 @@ export function buildAIRFromAST(ast: ASTRootNode): {
 
         if (node.isSelfClosing) {
           tagOpen += ' />';
-          html += tagOpen;
+          htmlParts.push(tagOpen);
         } else {
           tagOpen += '>';
-          const childrenResult = processNodes(node.children, [...nodePath]);
+          const childrenResult = processNodes(node.children, nodePath);
           slots.push(...childrenResult.slots);
-          html += `${tagOpen}${childrenResult.html}</${node.tag}>`;
+          htmlParts.push(`${tagOpen}${childrenResult.html}</${node.tag}>`);
         }
+
+        const lowerTag = node.tag.toLowerCase();
+        if (lowerTag === 'img' || lowerTag === 'a' || lowerTag === 'button') {
+          const attrMap: Record<string, string> = {};
+          for (const a of node.attributes) {
+            if (a.value !== null) attrMap[a.name] = a.value;
+            else if (a.expression) attrMap[a.name] = a.expression;
+            else attrMap[a.name] = '';
+          }
+          const a11yDiags = lintA11y(lowerTag, attrMap);
+          diagnostics.push(...a11yDiags);
+        }
+
         childIndex++;
       } else if (node.type === 'Component') {
-        html += '<!-- component-slot -->';
+        htmlParts.push('<!-- component-slot -->');
         const helper = `createComponent(${node.name}, { ${node.props
           .map((p) => `${p.name}: ${p.expression || JSON.stringify(p.value)}`)
           .join(', ')} })`;
@@ -814,36 +868,45 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: helper,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       } else if (node.type === 'Show') {
-        html += '<!-- show-slot -->';
+        htmlParts.push('<!-- show-slot -->');
         const helper = `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, children: () => /* sub-render */ null })`;
         slots.push({
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: node.when,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       } else if (node.type === 'For') {
-        html += '<!-- for-slot -->';
+        htmlParts.push('<!-- for-slot -->');
         const helper = `For({ each: ${node.each.startsWith('(') ? node.each : `() => (${node.each})`}, key: ${node.key || 'undefined'}, children: (item, i) => /* sub-render */ null })`;
         slots.push({
           type: 'control-flow-slot',
           flowType: 'For',
           expression: node.each,
-          path: nodePath,
+          path: currentPath.concat(childIndex),
           helperCode: helper
         });
         childIndex++;
       }
     }
 
-    return { html, slots };
+    return { html: htmlParts.join(''), slots };
+  }
+
+  function getNodeExpr(path: number[]): string {
+    if (!path || path.length <= 1) return 'root';
+    let expr = 'root';
+    for (let i = 1; i < path.length; i++) {
+      expr += `.childNodes[${path[i]}]`;
+    }
+    return expr;
   }
 
   const { html, slots } = processNodes(ast.children, [0]);
@@ -859,12 +922,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   // Generate binding instructions from slots
   for (let idx = 0; idx < slots.length; idx++) {
     const slot = slots[idx];
+    const target = getNodeExpr(slot.path);
     if (slot.type === 'dynamic-text') {
-      bindingsCode.push(`bindText(root.childNodes[${idx}], () => (${slot.expression}));`);
+      bindingsCode.push(`bindText(${target}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-attr') {
-      bindingsCode.push(`bindAttr(root, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
+      bindingsCode.push(`bindAttr(${target}, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-event') {
-      bindingsCode.push(`on(root, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
+      bindingsCode.push(`on(${target}, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
+    } else if (slot.type === 'control-flow-slot') {
+      bindingsCode.push(`bindDynamicChild(${target}.parentNode || root, () => ${slot.helperCode});`);
     }
   }
 
@@ -875,10 +941,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
  * Compiles raw template or JSX source code into AIR and standalone JS code.
  */
 export function compileTemplate(rawSource: string, options?: ParseOptions): AIRCompilationResult {
-  const parser = new TemplateParser(rawSource);
-  const { ast, diagnostics } = parser.parse();
+  const parser = new TemplateParser(rawSource, options);
+  const { ast, diagnostics, errors } = parser.parse();
 
-  const { templates, bindingsCode } = buildAIRFromAST(ast);
+  if (errors.length > 0) {
+    throw errors[0];
+  }
+
+  const { templates, bindingsCode, diagnostics: airDiags } = buildAIRFromAST(ast);
+  diagnostics.push(...airDiags);
   const componentBody = bindingsCode.join('\n  ');
   const generatedCode = generateModuleCode(templates, componentBody);
 

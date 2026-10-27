@@ -57,6 +57,10 @@ export function createForm<TValues extends Record<string, any>>(
       e.preventDefault();
     }
 
+    if (isSubmittingSignal.value) {
+      return false;
+    }
+
     formErrorSignal.value = null;
     let allValid = true;
 
@@ -86,7 +90,17 @@ export function createForm<TValues extends Record<string, any>>(
         if (result.issues && result.issues.length > 0) {
           allValid = false;
           for (const issue of result.issues) {
-            const fieldKey = issue.path && issue.path.length > 0 ? String(issue.path[0]) : null;
+            let fieldKey: string | null = null;
+            if (issue.path && issue.path.length > 0) {
+              const seg: any = issue.path[0];
+              if (seg != null) {
+                if (typeof seg === 'object' && 'key' in seg) {
+                  fieldKey = String(seg.key);
+                } else {
+                  fieldKey = String(seg);
+                }
+              }
+            }
             if (fieldKey && fieldKey in fields) {
               fields[fieldKey as keyof TValues].setError(issue.message);
             } else {

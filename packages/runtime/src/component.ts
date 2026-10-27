@@ -41,12 +41,9 @@ export function mount(componentFn: () => Node | Node[], container: HTMLElement):
   };
 }
 
-export { onCleanup } from '@samrey/reactivity';
-
-export function onError(fn: (err: unknown) => void): void {
-  // Registers error boundary callback within local owner scope
-}
+export { onCleanup, onError } from '@samrey/reactivity';
 
 export function hydrate(componentFn: () => Node | Node[], container: HTMLElement): () => void {
   return mount(componentFn, container);
 }
+

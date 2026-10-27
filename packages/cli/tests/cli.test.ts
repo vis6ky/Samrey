@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
-  samreyVitePlugin, 
+  samreyVitePlugin,
+  samreyPlugin,
   auditSource,
   runCLI,
   generateStarterProject,
@@ -13,10 +14,18 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
   it('integrates Vite plugin transform hook with compiler', () => {
     const plugin = samreyVitePlugin();
     assert.equal(plugin.name, 'vite-plugin-samrey');
+    assert.equal(samreyPlugin, samreyVitePlugin);
 
     const transformed = plugin.transform('<div>{title}</div>', 'App.tsx');
     assert.ok(transformed !== null);
     assert.ok(transformed.code.includes('/*#__PURE__*/ template('));
+
+    // Excludes node_modules
+    assert.equal(plugin.transform('<div>{title}</div>', 'node_modules/pkg/App.tsx'), null);
+
+    // Preserves TypeScript modules in .tsx
+    const realTsx = "import { signal } from '@samrey/reactivity';\nexport function App() { return null; }";
+    assert.equal(plugin.transform(realTsx, 'src/App.tsx'), null);
   });
 
   it('audits template for security and a11y non-conformances', () => {

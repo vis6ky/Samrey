@@ -74,14 +74,6 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
 
   switch (command) {
     case 'create': {
-      const name = args[1];
-      if (!name) {
-        return {
-          success: false,
-          message: '[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]',
-          exitCode: 1
-        };
-      }
       const templateIdx = args.indexOf('--template');
       const templateVal = templateIdx !== -1 && args[templateIdx + 1] ? args[templateIdx + 1] : 'ssr';
       const validTemplates = ['ssr', 'spa', 'minimal', 'ssg'];
@@ -92,6 +84,28 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
           exitCode: 1
         };
       }
+
+      // Collect positional arguments that are not flags or flag arguments
+      const positionalArgs: string[] = [];
+      for (let i = 1; i < args.length; i++) {
+        if (args[i].startsWith('-')) {
+          if (args[i] === '--template' || args[i] === '--targetDir') {
+            i++; // skip value
+          }
+        } else {
+          positionalArgs.push(args[i]);
+        }
+      }
+
+      const name = positionalArgs[0];
+      if (!name) {
+        return {
+          success: false,
+          message: '[Samrey Create Error] Project name is required.\nUsage: samrey create <project-name> [--template ssr|spa|minimal|ssg]',
+          exitCode: 1
+        };
+      }
+
       return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun });
     }
 

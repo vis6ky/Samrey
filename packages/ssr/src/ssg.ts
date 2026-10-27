@@ -47,13 +47,12 @@ export interface SSGResult {
   sitemapXml?: string;
 }
 
-/**
- * Replaces route segment placeholders like `:slug` or `:id` with actual param values.
- */
 function interpolatePath(routePattern: string, params: Record<string, string>): string {
   let resolved = routePattern;
-  for (const [key, value] of Object.entries(params)) {
-    resolved = resolved.replace(`:${key}`, encodeURIComponent(value));
+  const sortedKeys = Object.keys(params).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    const regex = new RegExp(`:${key}(?![a-zA-Z0-9_])`, 'g');
+    resolved = resolved.replace(regex, encodeURIComponent(params[key]));
   }
   return resolved;
 }
@@ -62,14 +61,29 @@ function interpolatePath(routePattern: string, params: Record<string, string>): 
  * Computes standard output file path (e.g. '/' -> 'index.html', '/about' -> 'about/index.html').
  */
 function toOutputFilePath(routePath: string, outDir: string): string {
+  const segments = routePath.split(/[/\\]/);
+  if (segments.includes('..')) {
+    throw new Error(`[Samrey SSG] Path traversal blocked for route: "${routePath}"`);
+  }
+
   const normalized = routePath === '/' ? 'index' : routePath.replace(/^\//, '');
+  let relativeTarget: string;
   if (normalized.endsWith('.html')) {
-    return path.join(outDir, normalized);
+    relativeTarget = normalized;
+  } else if (normalized === '404' || normalized === '500') {
+    relativeTarget = `${normalized}.html`;
+  } else {
+    relativeTarget = path.join(normalized, 'index.html');
   }
-  if (normalized === '404' || normalized === '500') {
-    return path.join(outDir, `${normalized}.html`);
+
+  const absoluteOut = path.resolve(outDir);
+  const targetPath = path.resolve(absoluteOut, relativeTarget);
+
+  if (!targetPath.startsWith(absoluteOut + path.sep) && targetPath !== path.join(absoluteOut, 'index.html')) {
+    throw new Error(`[Samrey SSG] Path traversal blocked outside target directory: "${routePath}"`);
   }
-  return path.join(outDir, normalized, 'index.html');
+
+  return targetPath;
 }
 
 /**

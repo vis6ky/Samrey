@@ -88,14 +88,24 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
 
   // Native lightweight dev server fallback
   const rootDir = process.cwd();
+  const absoluteRoot = path.resolve(rootDir);
+
   const server = http.createServer((req, res) => {
     let reqPath = req.url?.split('?')[0] || '/';
     if (reqPath === '/') reqPath = '/index.html';
 
-    let filePath = path.join(rootDir, reqPath);
+    const cleanPath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
+    let filePath = path.resolve(absoluteRoot, '.' + cleanPath);
+
+    if (!filePath.startsWith(absoluteRoot + path.sep) && filePath !== path.join(absoluteRoot, 'index.html')) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('403 Forbidden');
+      return;
+    }
+
     if (!fs.existsSync(filePath)) {
       // SPA Fallback to index.html
-      filePath = path.join(rootDir, 'index.html');
+      filePath = path.join(absoluteRoot, 'index.html');
     }
 
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -109,8 +119,10 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
     }
   });
 
+  const listenHost = options.host ? (typeof options.host === 'string' ? options.host : '0.0.0.0') : '127.0.0.1';
+
   return new Promise((resolve) => {
-    server.listen(port, () => {
+    server.listen(port, listenHost, () => {
       console.log(banner);
       resolve({
         success: true,

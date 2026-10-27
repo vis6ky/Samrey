@@ -8,20 +8,27 @@
  */
 const SENSITIVE_KEY_PATTERNS = [
   /password/i,
+  /passwd/i,
+  /(^|[a-z0-9_-])pwd([A-Z0-9_-]|$)/i,
   /secret/i,
   /api[_-]?key/i,
-  /auth(entication|orization)?/i,
+  /access[_-]?key/i,
+  /(^|[_-])auth([A-Z_-]|$|token|secret|key|header)/i,
+  /authorization/i,
+  /authentication/i,
   /bearer/i,
-  /token/i,
+  /(^|[a-z0-9_-])token([A-Z_-]|$)(?!count)/i,
   /jwt/i,
   /private[_-]?key/i,
-  /credential/i,
-  /cookie/i,
-  /session/i,
+  /(^|[_-])credentials?($|[_-])/i,
+  /(^|[_-])cookies?($|[_-])/i,
+  /(^|[_-])session(id)?($|[_-])/i,
+  /(^|[_-])ssn($|[_-])/i,
   /database[_-]?url/i,
   /connection[_-]?string/i,
-  /salt/i,
-  /hash/i,
+  /(^|[_-])salt($|[_-])/i,
+  /(^|[a-z0-9_-])(pass(word)?|secret|salt)hash/i,
+  /(^|[_-])hash($|[_-])/i,
   /^env\./i,
   /^process\.env/i,
   /^_secret/i,
@@ -63,23 +70,72 @@ export function isSensitiveKey(key: string, additionalKeys?: (string | RegExp)[]
  * Defends against circular references and prototype pollution.
  */
 export function stripSecrets<T>(data: T, options: SecretGuardOptions = {}): T {
-  const visited = new WeakSet<object>();
+  const ancestors = new WeakSet<object>();
+  const memo = new WeakMap<object, any>();
 
   function sanitize(val: unknown, currentPath = ''): unknown {
     if (val === null || val === undefined) return val;
     if (typeof val !== 'object') return val;
 
-    // Defend against circular structures
-    if (visited.has(val as object)) {
+    // Detect circular reference in current ancestor stack
+    if (ancestors.has(val as object)) {
       return undefined;
     }
-    visited.add(val as object);
+
+    // Reuse previously sanitized object in DAG (shared references)
+    if (memo.has(val as object)) {
+      return memo.get(val as object);
+    }
+
+    // Preserve Date, RegExp, Map, Set
+    if (val instanceof Date) {
+      return new Date(val.getTime());
+    }
+    if (val instanceof RegExp) {
+      return new RegExp(val.source, val.flags);
+    }
+    if (val instanceof Map) {
+      ancestors.add(val as object);
+      const cleanMap = new Map();
+      memo.set(val as object, cleanMap);
+      for (const [k, v] of val.entries()) {
+        if (typeof k === 'string' && isSensitiveKey(k, options.additionalKeys)) {
+          if (options.strict) {
+            throw new Error(`[Samrey SSR Security Violation] Attempted to serialize secret field "${currentPath}.${String(k)}".`);
+          }
+          if (options.onSecretFound) options.onSecretFound(`${currentPath}.${String(k)}`, k);
+          continue;
+        }
+        cleanMap.set(k, sanitize(v, `${currentPath}.${String(k)}`));
+      }
+      ancestors.delete(val as object);
+      return cleanMap;
+    }
+    if (val instanceof Set) {
+      ancestors.add(val as object);
+      const cleanSet = new Set();
+      memo.set(val as object, cleanSet);
+      for (const item of val.values()) {
+        cleanSet.add(sanitize(item, currentPath));
+      }
+      ancestors.delete(val as object);
+      return cleanSet;
+    }
+
+    ancestors.add(val as object);
 
     if (Array.isArray(val)) {
-      return val.map((item, idx) => sanitize(item, `${currentPath}[${idx}]`));
+      const cleanArr: unknown[] = [];
+      memo.set(val as object, cleanArr);
+      for (let idx = 0; idx < val.length; idx++) {
+        cleanArr.push(sanitize(val[idx], `${currentPath}[${idx}]`));
+      }
+      ancestors.delete(val as object);
+      return cleanArr;
     }
 
     const cleanObj: Record<string, unknown> = {};
+    memo.set(val as object, cleanObj);
     const entries = Object.entries(val as Record<string, unknown>);
 
     for (const [key, value] of entries) {
@@ -107,6 +163,7 @@ export function stripSecrets<T>(data: T, options: SecretGuardOptions = {}): T {
       cleanObj[key] = sanitize(value, fullPath);
     }
 
+    ancestors.delete(val as object);
     return cleanObj;
   }
 

@@ -16,3 +16,6 @@ export function on(
     element.removeEventListener(eventName, handler, options);
   });
 }
+
+export const bindEvent = on;
+

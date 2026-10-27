@@ -5,6 +5,8 @@
 
 import { Subscriber, Dependency } from './types.js';
 
+import { handleError } from './owner.js';
+
 let activeSubscriber: Subscriber | null = null;
 let globalClock = 1;
 let batchDepth = 0;
@@ -36,11 +38,20 @@ export function trackDependency(dep: Dependency): void {
 }
 
 export function queueEffect(sub: Subscriber): void {
+  if (sub.isDisposed) return;
   if (batchDepth > 0) {
     pendingEffects.add(sub);
   } else {
-    sub.update();
+    try {
+      sub.update();
+    } catch (err) {
+      handleError(err);
+    }
   }
+}
+
+export function cancelPendingEffect(sub: Subscriber): void {
+  pendingEffects.delete(sub);
 }
 
 export function batch<T>(fn: () => T): T {
@@ -52,13 +63,18 @@ export function batch<T>(fn: () => T): T {
     if (batchDepth === 0 && pendingEffects.size > 0) {
       // Drain queue safely handling re-entrant queuing
       while (pendingEffects.size > 0) {
-        const effectsToRun: Subscriber[] = [];
-        for (const effect of pendingEffects) {
-          effectsToRun.push(effect);
-        }
+        const current = Array.from(pendingEffects);
         pendingEffects.clear();
-        for (let i = 0; i < effectsToRun.length; i++) {
-          effectsToRun[i].update();
+        const len = current.length;
+        for (let i = 0; i < len; i++) {
+          const sub = current[i];
+          if (!sub.isDisposed) {
+            try {
+              sub.update();
+            } catch (err) {
+              handleError(err);
+            }
+          }
         }
       }
     }

@@ -27,3 +27,10 @@ export function initDevTools(options?: { targetOrigin?: string }) {
   }
   return samreyDevToolsBridge;
 }
+
+export const initDevtools = initDevTools;
+
+export function getGraphSnapshot() {
+  const inspector = new GraphInspector();
+  return inspector.getSnapshot();
+}

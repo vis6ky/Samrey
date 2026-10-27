@@ -5,7 +5,7 @@
 
 import { bindText, bindAttr, bindClass, bindDynamicChild } from './bindings.js';
 import { on } from './events.js';
-import { sanitizeHtmlString } from '@samrey/security';
+import { sanitizeHtmlString, sanitizeUri, sanitizeCssStyle, escapeHtmlText, escapeHtmlAttribute, TrustedTypesPolicy } from '@samrey/security';
 import { effect } from '@samrey/reactivity';
 
 export type ChildValue =
@@ -21,6 +21,8 @@ export type ChildValue =
 export type ElementProps = Record<string, unknown>;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const DANGEROUS_ATTR_NAMES = new Set(['innerhtml', 'outerhtml', 'srcdoc']);
+const URI_ATTRS = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'data', 'poster', 'codebase']);
 
 export function appendChildren(parent: Node, children: ChildValue[]): void {
   for (const child of children) {
@@ -53,23 +55,30 @@ export function el<K extends keyof HTMLElementTagNameMap>(
     if (attrs) {
       for (const [k, v] of Object.entries(attrs)) {
         if (v !== undefined && v !== null && typeof v !== 'function') {
-          attributes[k] = String(v);
+          const lk = k.toLowerCase();
+          if (DANGEROUS_ATTR_NAMES.has(lk) || lk.startsWith('on')) continue;
+          let safeV = String(v);
+          if (URI_ATTRS.has(lk)) safeV = sanitizeUri(safeV);
+          else if (lk === 'style') safeV = sanitizeCssStyle(safeV);
+          attributes[k] = safeV;
         }
       }
     }
     const childNodes: any[] = [];
     for (const c of children) {
       if (c === null || c === undefined || c === false || c === true) continue;
-      if (Array.isArray(c)) {
-        for (const item of c) {
-          if (item !== null && item !== undefined) {
-            childNodes.push(typeof item === 'object' ? item : { nodeType: 3, nodeName: '#text', textContent: String(item) });
+      const resolved = typeof c === 'function' ? (c as () => unknown)() : c;
+      if (resolved === null || resolved === undefined || resolved === false || resolved === true) continue;
+      if (Array.isArray(resolved)) {
+        for (const item of resolved) {
+          if (item !== null && item !== undefined && item !== false && item !== true) {
+            childNodes.push(typeof item === 'object' && item !== null && 'nodeType' in item ? item : { nodeType: 3, nodeName: '#text', textContent: String(item) });
           }
         }
-      } else if (typeof c === 'object') {
-        childNodes.push(c);
+      } else if (typeof resolved === 'object' && resolved !== null && 'nodeType' in resolved) {
+        childNodes.push(resolved);
       } else {
-        childNodes.push({ nodeType: 3, nodeName: '#text', textContent: String(c) });
+        childNodes.push({ nodeType: 3, nodeName: '#text', textContent: String(resolved) });
       }
     }
 
@@ -233,9 +242,13 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         const tag = String(tagName).toLowerCase();
         let attrStr = '';
         for (const [k, v] of Object.entries(attributes)) {
-          attrStr += ` ${k}="${String(v).replace(/"/g, '&quot;')}"`;
+          attrStr += ` ${k}="${escapeHtmlAttribute(v)}"`;
         }
-        const childrenHtml = childNodes.map((ch: any) => ch.outerHTML ?? ch.textContent ?? '').join('');
+        const childrenHtml = childNodes.map((ch: any) => {
+          if (ch.outerHTML !== undefined) return ch.outerHTML;
+          if (ch.textContent !== undefined) return escapeHtmlText(ch.textContent);
+          return '';
+        }).join('');
         return `<${tag}${attrStr}>${childrenHtml}</${tag}>`;
       },
       get textContent() {
@@ -316,9 +329,12 @@ export function frag(...children: ChildValue[]): DocumentFragment {
 }
 
 export function rawHtml(html: string | (() => string)): Node {
+  const sanitize = (str: string) => {
+    return TrustedTypesPolicy.createHTML(str);
+  };
   if (typeof document === 'undefined') {
     const val = typeof html === 'function' ? html() : html;
-    return { nodeType: 1, nodeName: 'SPAN', innerHTML: sanitizeHtmlString(val || '') } as unknown as Node;
+    return { nodeType: 1, nodeName: 'SPAN', innerHTML: sanitize(val || '') } as unknown as Node;
   }
 
   const span = document.createElement('span');
@@ -328,11 +344,11 @@ export function rawHtml(html: string | (() => string)): Node {
       const val = html();
       if (val !== prev) {
         prev = val;
-        span.innerHTML = sanitizeHtmlString(val || '');
+        span.innerHTML = sanitize(val || '') as unknown as string;
       }
     });
   } else {
-    span.innerHTML = sanitizeHtmlString(html || '');
+    span.innerHTML = sanitize(html || '') as unknown as string;
   }
   return span;
 }
@@ -342,11 +358,25 @@ function applyAttributes(elem: Element, attrs?: ElementProps | null): void {
 
   for (const [key, val] of Object.entries(attrs)) {
     if (val === undefined || val === null) continue;
+    const lowerKey = key.toLowerCase();
 
-    if (key.startsWith('on') && typeof val === 'function') {
-      const eventName = key.slice(2).toLowerCase();
-      on(elem, eventName, val as (e: Event) => void);
-    } else if (key === 'className' || key === 'class') {
+    // Defend against arbitrary inline event handler injection and dangerous attributes
+    if (lowerKey.startsWith('on')) {
+      if (typeof val === 'function') {
+        const eventName = key.slice(2).toLowerCase();
+        on(elem, eventName, val as (e: Event) => void);
+      } else {
+        console.warn(`[Samrey Security Warning] Refusing to bind inline event attribute "${key}".`);
+      }
+      continue;
+    }
+
+    if (DANGEROUS_ATTR_NAMES.has(lowerKey)) {
+      console.warn(`[Samrey Security Warning] Refusing to set dangerous attribute "${key}".`);
+      continue;
+    }
+
+    if (key === 'className' || key === 'class') {
       if (typeof val === 'function') {
         bindAttr(elem, 'class', val as () => unknown);
       } else {
@@ -356,7 +386,7 @@ function applyAttributes(elem: Element, attrs?: ElementProps | null): void {
       if (typeof val === 'function') {
         bindAttr(elem, 'style', val as () => unknown);
       } else {
-        elem.setAttribute('style', String(val));
+        elem.setAttribute('style', sanitizeCssStyle(val));
       }
     } else if (key.startsWith('class:')) {
       const clsName = key.slice(6);
@@ -372,7 +402,11 @@ function applyAttributes(elem: Element, attrs?: ElementProps | null): void {
         elem.setAttribute(key, '');
       }
     } else {
-      elem.setAttribute(key, String(val));
+      let finalVal = String(val);
+      if (URI_ATTRS.has(lowerKey)) {
+        finalVal = sanitizeUri(finalVal);
+      }
+      elem.setAttribute(key, finalVal);
     }
   }
 }

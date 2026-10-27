@@ -11,17 +11,17 @@
 
 | Package | Expected Exports | Actual Exports | Missing | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `@samrey/reactivity` | 15 | 23 | 0 | **PASS** |
-| `@samrey/runtime` | 18 | 39 | 0 | **PASS** |
+| `@samrey/reactivity` | 15 | 26 | 0 | **PASS** |
+| `@samrey/runtime` | 18 | 42 | 0 | **PASS** |
 | `@samrey/security` | 10 | 25 | 0 | **PASS** |
 | `@samrey/compiler` | 9 | 18 | 0 | **PASS** |
-| `@samrey/router` | 14 | 14 | 0 | **PASS** |
+| `@samrey/router` | 14 | 17 | 0 | **PASS** |
 | `@samrey/http` | 4 | 8 | 0 | **PASS** |
-| `@samrey/forms` | 4 | 5 | 0 | **PASS** |
-| `@samrey/ssr` | 9 | 20 | 0 | **PASS** |
-| `@samrey/testing` | 6 | 8 | 0 | **PASS** |
-| `@samrey/devtools` | 9 | 22 | 0 | **PASS** |
-| `@samrey/cli` | 13 | 17 | 0 | **PASS** |
+| `@samrey/forms` | 4 | 7 | 0 | **PASS** |
+| `@samrey/ssr` | 9 | 23 | 0 | **PASS** |
+| `@samrey/testing` | 6 | 9 | 0 | **PASS** |
+| `@samrey/devtools` | 9 | 24 | 0 | **PASS** |
+| `@samrey/cli` | 13 | 18 | 0 | **PASS** |
 
 ## 2. Detailed Symbol Breakdown
 

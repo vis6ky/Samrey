@@ -28,19 +28,24 @@ export function createOwner(parent = currentOwner): Owner {
         try {
           this.cleanups[i]();
         } catch (err) {
-          console.error('[Samrey Reactivity] Error during cleanup:', err);
+          handleError(err, this);
         }
       }
       this.cleanups.length = 0;
 
-      for (let i = 0; i < this.children.length; i++) {
-        this.children[i].dispose();
+      if (this.children.length > 0) {
+        const ch = this.children;
+        this.children = [];
+        for (let i = 0; i < ch.length; i++) {
+          ch[i].parent = null;
+          ch[i].dispose();
+        }
       }
-      this.children.length = 0;
 
       if (this.parent) {
         const idx = this.parent.children.indexOf(this);
         if (idx !== -1) this.parent.children.splice(idx, 1);
+        this.parent = null;
       }
     }
   };
@@ -97,4 +102,29 @@ export function useContext<T>(context: Context<T>): T {
     curr = curr.parent;
   }
   return context.defaultValue as T;
+}
+
+export function onError(fn: (err: unknown) => void): void {
+  if (currentOwner) {
+    if (!currentOwner.errorHandlers) currentOwner.errorHandlers = [];
+    currentOwner.errorHandlers.push(fn);
+  }
+}
+
+export function handleError(err: unknown, owner: Owner | null = currentOwner): void {
+  let curr = owner;
+  while (curr) {
+    if (curr.errorHandlers && curr.errorHandlers.length > 0) {
+      for (const handler of curr.errorHandlers) {
+        try {
+          handler(err);
+        } catch (e) {
+          console.error('[Samrey Reactivity] Error inside onError handler:', e);
+        }
+      }
+      return;
+    }
+    curr = curr.parent;
+  }
+  console.error('[Samrey Reactivity] Unhandled error:', err);
 }
