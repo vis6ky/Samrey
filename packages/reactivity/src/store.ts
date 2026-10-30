@@ -7,7 +7,11 @@ import { signal } from './signal.js';
 import { incrementClock } from './batch.js';
 
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const PROXIED = Symbol('SAMREY_PROXIED');
+export const PROXIED = Symbol.for('SAMREY_PROXIED');
+
+export function isStore(val: unknown): boolean {
+  return Boolean(val && typeof val === 'object' && (val as any)[PROXIED]);
+}
 
 function isWrappable(val: unknown): val is object {
   if (!val || typeof val !== 'object') return false;

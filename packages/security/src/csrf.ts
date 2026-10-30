@@ -3,24 +3,52 @@
  * @samrey/security - Anti-CSRF Token Generation & Verification
  */
 
+import * as nodeCrypto from 'node:crypto';
+
+function getRandomBytes(count: number): Uint8Array {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(count);
+    globalThis.crypto.getRandomValues(bytes);
+    return bytes;
+  }
+  if (nodeCrypto) {
+    if (nodeCrypto.webcrypto?.getRandomValues) {
+      const bytes = new Uint8Array(count);
+      nodeCrypto.webcrypto.getRandomValues(bytes);
+      return bytes;
+    }
+    if (typeof nodeCrypto.randomBytes === 'function') {
+      const buf = nodeCrypto.randomBytes(count);
+      return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    }
+  }
+  throw new Error('[Samrey Security] Cryptographically secure random generator is unavailable.');
+}
+
 /**
  * Generates a pseudo-random CSRF token or action HMAC identifier.
  */
 export function generateCsrfToken(entropyOrSecret?: number | string): string {
-  const entropy = typeof entropyOrSecret === 'number' ? entropyOrSecret : 32;
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  let token = '';
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const bytes = new Uint8Array(entropy);
-    crypto.getRandomValues(bytes);
-    for (let i = 0; i < entropy; i++) {
-      token += chars[bytes[i]! % chars.length];
+  let entropy = 32;
+  if (typeof entropyOrSecret === 'number') {
+    if (!Number.isInteger(entropyOrSecret) || entropyOrSecret <= 0) {
+      throw new RangeError('[Samrey Security] Entropy must be a positive integer.');
     }
-    return token;
+    entropy = entropyOrSecret;
+  } else if (typeof entropyOrSecret === 'string') {
+    if (entropyOrSecret.length > 8192) {
+      throw new RangeError('[Samrey Security] CSRF secret argument exceeds maximum length.');
+    }
+    entropy = 32;
+  } else if (entropyOrSecret !== undefined) {
+    throw new TypeError('[Samrey Security] entropyOrSecret must be a number or string.');
   }
-  // Deterministic fallback if crypto is absent
+
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const bytes = getRandomBytes(entropy);
+  let token = '';
   for (let i = 0; i < entropy; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
+    token += chars[bytes[i]! % chars.length];
   }
   return token;
 }

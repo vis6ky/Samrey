@@ -104,6 +104,16 @@ export function useContext<T>(context: Context<T>): T {
   return context.defaultValue as T;
 }
 
+let globalErrorHandler: ((err: unknown) => void) | null = null;
+
+export function setGlobalErrorHandler(handler: ((err: unknown) => void) | null): void {
+  globalErrorHandler = handler;
+}
+
+export function getGlobalErrorHandler(): ((err: unknown) => void) | null {
+  return globalErrorHandler;
+}
+
 export function onError(fn: (err: unknown) => void): void {
   if (currentOwner) {
     if (!currentOwner.errorHandlers) currentOwner.errorHandlers = [];
@@ -115,16 +125,29 @@ export function handleError(err: unknown, owner: Owner | null = currentOwner): v
   let curr = owner;
   while (curr) {
     if (curr.errorHandlers && curr.errorHandlers.length > 0) {
-      for (const handler of curr.errorHandlers) {
+      for (let i = 0; i < curr.errorHandlers.length; i++) {
         try {
-          handler(err);
-        } catch (e) {
-          console.error('[Samrey Reactivity] Error inside onError handler:', e);
+          curr.errorHandlers[i](err);
+        } catch (handlerErr) {
+          console.error('[Samrey Reactivity] Error inside onError handler:', handlerErr);
+          console.error('[Samrey Reactivity] Original unhandled error:', err);
         }
       }
       return;
     }
     curr = curr.parent;
   }
-  console.error('[Samrey Reactivity] Unhandled error:', err);
+
+  if (globalErrorHandler) {
+    try {
+      globalErrorHandler(err);
+      return;
+    } catch (globalErr) {
+      console.error('[Samrey Reactivity] Error inside global error handler:', globalErr);
+      console.error('[Samrey Reactivity] Original unhandled error:', err);
+      return;
+    }
+  }
+
+  console.error('[Samrey Reactivity] Unhandled error in effect:', err);
 }

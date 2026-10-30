@@ -3,7 +3,7 @@
  * @samrey/ssr - Unicode Safe State Serialization & Validation
  */
 
-import { escapeForScriptPayload } from '@samrey/security';
+import { escapeForScriptPayload, escapeHtmlAttribute } from '@samrey/security';
 import { stripSecrets, SecretGuardOptions } from './secret-guard.js';
 
 export interface SerializeOptions extends SecretGuardOptions {
@@ -11,6 +11,10 @@ export interface SerializeOptions extends SecretGuardOptions {
    * DOM script element ID. Defaults to '__SAMREY_STATE__'.
    */
   id?: string;
+  /**
+   * Cryptographic nonce for inline script execution under Content Security Policy (CSP).
+   */
+  nonce?: string;
 }
 
 export type StateValidator<T> = (data: unknown) => { success: true; data: T } | { success: false; error: string | Error } | boolean;
@@ -33,14 +37,21 @@ export interface DeserializeOptions<T = unknown> {
 /**
  * Serializes state to a safe inline JSON `<script>` payload.
  * Automatically scans and strips secrets and escapes script breakout tokens.
+ *
+ * NOTE: SSR hydration state must be JSON-serializable (plain objects, arrays, primitives, Date).
+ * Non-JSON data structures like Map and Set must be converted prior to serialization:
+ * - Map: Array.from(myMap.entries())
+ * - Set: Array.from(mySet)
+ * In development, non-JSON types trigger a diagnostic warning; in strict mode ({ strict: true }), an error is thrown.
  */
 export function serializeStateForHydration(state: unknown, options: SerializeOptions = {}): string {
   const scriptId = options.id || '__SAMREY_STATE__';
   const cleanState = stripSecrets(state, options);
   const rawJson = JSON.stringify(cleanState);
   const safePayload = escapeForScriptPayload(rawJson);
+  const nonceAttr = options.nonce ? ` nonce="${escapeHtmlAttribute(options.nonce)}"` : '';
 
-  return `<script id="${scriptId}" type="application/json">${safePayload}</script>`;
+  return `<script id="${scriptId}" type="application/json"${nonceAttr}>${safePayload}</script>`;
 }
 
 /**

@@ -24,13 +24,31 @@ const URI_ATTRS = new Set([
 ]);
 
 export function bindText(node: Node, getter: () => unknown): void {
+  let targetNode: Node = node;
+  if (node && node.nodeType === 8) {
+    const textNode = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
+      ? document.createTextNode('')
+      : ({ nodeType: 3, nodeName: '#text', textContent: '', parentNode: node.parentNode } as unknown as Node);
+    if (node.parentNode) {
+      if (typeof node.parentNode.replaceChild === 'function') {
+        node.parentNode.replaceChild(textNode, node);
+      } else if (typeof node.parentNode.insertBefore === 'function') {
+        node.parentNode.insertBefore(textNode, node);
+        if (typeof node.parentNode.removeChild === 'function') {
+          node.parentNode.removeChild(node);
+        }
+      }
+    }
+    targetNode = textNode;
+  }
+
   let prevText: string | null = null;
   effect(() => {
     const val = getter();
     const nextText = val === null || val === undefined || val === false || val === true ? '' : typeof val === 'object' && 'nodeType' in (val as any) ? '' : String(val);
     if (nextText !== prevText) {
       prevText = nextText;
-      node.textContent = nextText;
+      targetNode.textContent = nextText;
     }
   });
 }

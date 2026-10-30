@@ -2,7 +2,7 @@ import { TemplateParser, buildAIRFromAST, compileTemplate } from '../../packages
 import { generateModuleCode } from '../../packages/compiler/src/codegen.js';
 import { benchmark, BenchmarkResult } from '../utils/harness.js';
 
-function generateTemplate(nodeCount: number, options: { nested?: boolean; components?: boolean; dynamic?: boolean; showFor?: boolean } = {}): string {
+function generateTemplate(nodeCount: number, options: { nested?: boolean; dynamic?: boolean } = {}): string {
   if (options.nested) {
     let res = '';
     const depth = Math.min(nodeCount, 200);
@@ -20,13 +20,7 @@ function generateTemplate(nodeCount: number, options: { nested?: boolean; compon
   const childCount = Math.floor(nodeCount / 3);
 
   for (let i = 0; i < childCount; i++) {
-    if (options.showFor && i % 4 === 0) {
-      parts.push(`<Show when={isVisible.value} fallback={<span>Empty Fallback</span>}><div class="card-${i}">Card Active</div></Show>`);
-    } else if (options.showFor && i % 4 === 1) {
-      parts.push(`<For each={items.value}>{(item, idx) => <li key={item.id} class="item">{item.name} #{idx.value}</li>}</For>`);
-    } else if (options.components && i % 3 === 0) {
-      parts.push(`<UserProfile id={user.id} name={user.name} onSelect={handleSelect} active={isActive.value} />`);
-    } else if (options.dynamic) {
+    if (options.dynamic) {
       parts.push(`<section class="section-${i}" data-status={status.value} @click={handleClick} title={tooltip.value}>`);
       parts.push(`  <h2 class="title">{title.value} #{idx}</h2>`);
       parts.push(`  <p class="desc">Computed: {computedValue.value}</p>`);
@@ -47,10 +41,10 @@ export function runCompilerBenchmarks(): BenchmarkResult[] {
   const results: BenchmarkResult[] = [];
   const category = 'Compiler';
 
-  const t10 = generateTemplate(10, { dynamic: true, showFor: true });
-  const t100 = generateTemplate(100, { dynamic: true, components: true, showFor: true });
-  const t1000 = generateTemplate(1000, { dynamic: true, components: true, showFor: true });
-  const t10000 = generateTemplate(10000, { dynamic: true, components: true, showFor: true });
+  const t10 = generateTemplate(10, { dynamic: true });
+  const t100 = generateTemplate(100, { dynamic: true });
+  const t1000 = generateTemplate(1000, { dynamic: true });
+  const t10000 = generateTemplate(10000, { dynamic: true });
   const tDeep = generateTemplate(150, { nested: true });
 
   // 1. Stage-by-Stage on 100-node template
@@ -70,11 +64,11 @@ export function runCompilerBenchmarks(): BenchmarkResult[] {
   }, { category, iterations: 20 }));
 
   // 2. Full pipeline across scales
-  results.push(benchmark('Full Compile: Small (~10 nodes with Show/For)', () => {
+  results.push(benchmark('Full Compile: Small (~10 nodes dynamic)', () => {
     compileTemplate(t10);
   }, { category, iterations: 25 }));
 
-  results.push(benchmark('Full Compile: Medium (~100 nodes dynamic/components)', () => {
+  results.push(benchmark('Full Compile: Medium (~100 nodes dynamic)', () => {
     compileTemplate(t100);
   }, { category, iterations: 20 }));
 

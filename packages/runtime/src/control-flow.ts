@@ -3,8 +3,8 @@
  * @samrey/runtime - Reactive Control Flow Primitives (<Show>, <For>)
  */
 
-import { effect, createOwner, getOwner, onCleanup, Owner, runWithOwner, signal, Signal, untrack } from '@samrey/reactivity';
-import { reportDuplicateKey } from './diagnostics.js';
+import { effect, createOwner, getOwner, onCleanup, Owner, runWithOwner, signal, Signal, untrack, isStore } from '@samrey/reactivity';
+import { reportDuplicateKey, reportStaleItemWarning, isDev } from './diagnostics.js';
 import { el, text } from './dom.js';
 import { createComponent } from './component.js';
 
@@ -270,6 +270,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   let currentEntries: KeyedEntry<T>[] = [];
   let fallbackOwner: Owner | null = null;
   let fallbackNodes: Node[] = [];
+  const warnedKeys = isDev ? new Set<unknown>() : undefined;
 
   const marker = createControlFlowMarker('samrey:for', (parent) => {
     if (fallbackNodes.length > 0) {
@@ -343,6 +344,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
           }
         }
       }
+      if (warnedKeys) {
+        warnedKeys.clear();
+      }
       cache.clear();
       currentEntries = [];
       renderFallback();
@@ -369,6 +373,10 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       if (entry) {
         if (entry.indexSignal) {
           entry.indexSignal.value = i;
+        }
+        if (isDev && props.key && entry.item !== item && !warnedKeys!.has(key) && !isStore(item)) {
+          warnedKeys!.add(key);
+          reportStaleItemWarning(key);
         }
         entry.item = item;
       } else {
@@ -407,6 +415,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     // Clean up removed items
     for (const [key, oldEntry] of cache.entries()) {
       if (!newCache.has(key)) {
+        if (warnedKeys) {
+          warnedKeys.delete(key);
+        }
         oldEntry.owner.dispose();
         for (const node of oldEntry.nodes) {
           if (node.parentNode) {

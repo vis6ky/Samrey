@@ -68,6 +68,13 @@ function Counter() {
 document.getElementById('app')?.appendChild(Counter());
 ```
 
+### Keyed Identity Semantics (`<For>`)
+
+In Samrey, `<For>` preserves DOM elements and owner scopes using keyed identity reconciliation. Row render functions execute **once** upon mounting; when a row's key matches, the existing DOM row is reused.
+
+- **Wrong**: Passing a new object reference under an existing key (`todos.value = [{ id: 1, text: 'New' }]`) leaves the row displaying initial data and emits a dev warning (`AETH-502`).
+- **Correct**: Use fine-grained signals inside item properties (`{ id: 1, text: signal('New') }`) for surgical DOM updates, or provide a key that changes when data changes (`key={(item) => `${item.id}:${item.updatedAt}`}`).
+
 ---
 
 ## Framework Packages
@@ -76,7 +83,7 @@ document.getElementById('app')?.appendChild(Counter());
 | :--- | :--- | :--- |
 | [`@samrey/reactivity`](./packages/reactivity) | `1.0.0` | Topological push-pull signal graph, computed signals, effects, and Owner scopes |
 | [`@samrey/compiler`](./packages/compiler) | `1.0.0` | Ahead-of-Time AST parser, AIR generator, constant folding & static HTML hoister |
-| [`@samrey/runtime`](./packages/runtime) | `1.0.0` | Template cloning, direct DOM hole bindings, control flow (`<Show>`, `<For>`) |
+| [`@samrey/runtime`](./packages/runtime) | `1.0.0` | Template cloning, direct DOM hole bindings, runtime control flow (`Show()`, `For()`) |
 | [`@samrey/security`](./packages/security) | `1.0.0` | W3C Trusted Types, HTML/URI sanitizers, timing-safe CSRF, secret guard |
 | [`@samrey/router`](./packages/router) | `1.0.0` | Reactive client/server router with parameterized segments & redirect security |
 | [`@samrey/http`](./packages/http) | `1.0.0` | Async `createResource`, in-flight request deduplication, fetch client |

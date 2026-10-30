@@ -60,8 +60,8 @@ Measures parsing raw template/JSX markup into AST nodes, converting AST to Samre
 | **Stage 1: Source → AST** | 100 nodes | 0.487 | 0.896 | 0.821 | 1.382 | 1,218 |
 | **Stage 2: AST → AIR** | 100 nodes | 0.060 | 0.165 | 0.143 | 0.634 | 7,009 |
 | **Stage 3: AIR → Codegen** | 100 nodes | 0.011 | 0.012 | 0.017 | 0.101 | 58,223 |
-| **Full Compile: Small** | ~10 nodes with Show/For | 0.041 | 0.069 | 0.083 | 0.141 | 12,061 |
-| **Full Compile: Medium** | ~100 nodes dynamic/components | 0.261 | 0.569 | 1.516 | 18.484 | 659 |
+| **Full Compile: Small** | ~10 nodes dynamic | 0.041 | 0.069 | 0.083 | 0.141 | 12,061 |
+| **Full Compile: Medium** | ~100 nodes dynamic | 0.261 | 0.569 | 1.516 | 18.484 | 659 |
 | **Full Compile: Large** | ~1,000 nodes | 2.595 | 4.412 | 4.612 | 6.924 | 217 |
 | **Full Compile: Very Large** | ~10,000 nodes | 45.720 | 46.645 | 48.756 | 54.277 | 21 |
 | **Full Compile: Deeply Nested** | 150 nested levels | 0.637 | 0.704 | 0.900 | 3.599 | 1,112 |

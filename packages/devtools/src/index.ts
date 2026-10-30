@@ -22,6 +22,18 @@ export const ReactiveGraphInspector = GraphInspector;
 export const PerfInspector = PerformanceInspector;
 
 export function initDevTools(options?: { targetOrigin?: string }) {
+  if (process.env.NODE_ENV === 'production') {
+    return samreyDevToolsBridge;
+  }
+  if (typeof window !== 'undefined') {
+    (window as any).__SAMREY_DEVTOOLS_BRIDGE__ = samreyDevToolsBridge;
+    if (window.location && window.location.origin && window.location.origin !== 'null') {
+      samreyDevToolsBridge.addAllowedOrigin(window.location.origin);
+      if (!options?.targetOrigin) {
+        samreyDevToolsBridge.setTargetOrigin(window.location.origin);
+      }
+    }
+  }
   if (options?.targetOrigin) {
     samreyDevToolsBridge.setTargetOrigin(options.targetOrigin);
   }

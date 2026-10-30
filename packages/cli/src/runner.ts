@@ -24,12 +24,12 @@ USAGE:
 
 COMMANDS:
   create <name>        Initialize a new production Samrey starter project
-  dev                  Start the high-performance local dev server with DevTools
-  build                Compile and bundle Samrey application for production
-  preview              Serve production bundle locally for previewing
-  test                 Execute application test suites
-  audit                Run static security, CSP & a11y accessibility audit
-  analyze              Inspect reactive graph, static hoisting & bundle metrics
+  dev                  Start the local dev server
+  build                Compile and bundle Samrey application using project Vite
+  preview              Serve production bundle locally using project Vite preview
+  test                 Execute application test suites using project test runner
+  audit                Run small static checks (img alt, javascript: URIs, inline handlers, <script>)
+  analyze              Inspect real build artifact file sizes (raw and gzip)
   generate <type> <n>  Scaffold components, routes, stores, or async resources
 
 OPTIONS:
@@ -39,20 +39,21 @@ OPTIONS:
   --port <number>      Port number for dev and preview servers [default: 3000]
   --host               Expose server to local network (0.0.0.0)
   --outDir <path>      Output directory for build artifacts [default: dist]
+  --warn-only          Report audit violations without non-zero exit code
   --dry-run            Simulate command execution without writing to disk
   --json               Output machine-readable JSON format (where supported)
 
 EXAMPLES:
   $ samrey create my-app --template ssr
-  $ samrey create quick-demo --template minimal
-  $ samrey dev --port 3000
-  $ samrey build --ssr
+  $ samrey build
   $ samrey preview --port 4173
-  $ samrey audit --strict
+  $ samrey test
+  $ samrey audit --warn-only
+  $ samrey analyze --json
   $ samrey generate component UserProfile
 `;
 
-export async function runCLI(args: string[]): Promise<CommandResult> {
+export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}): Promise<CommandResult> {
   if (args.length === 0 || args.includes('-h') || args.includes('--help') || args[0] === 'help') {
     return {
       success: true,
@@ -71,6 +72,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
 
   const command = args[0];
   const dryRun = args.includes('--dry-run');
+  const cwd = cliOptions.cwd || process.cwd();
 
   switch (command) {
     case 'create': {
@@ -106,7 +108,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
         };
       }
 
-      return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun });
+      return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun, targetDir: cwd });
     }
 
     case 'dev': {
@@ -120,7 +122,7 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       const ssr = args.includes('--ssr');
       const outDirIdx = args.indexOf('--outDir');
       const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
-      return runBuildCommand({ ssr, outDir, dryRun });
+      return runBuildCommand({ cwd, ssr, outDir, dryRun });
     }
 
     case 'preview': {
@@ -129,24 +131,27 @@ export async function runCLI(args: string[]): Promise<CommandResult> {
       const host = args.includes('--host');
       const outDirIdx = args.indexOf('--outDir');
       const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
-      return runPreviewCommand({ port, host, outDir, dryRun });
+      return runPreviewCommand({ cwd, port, host, outDir, dryRun });
     }
 
     case 'test': {
       const watch = args.includes('--watch');
       const coverage = args.includes('--coverage');
-      return runTestCommand({ watch, coverage, dryRun });
+      return runTestCommand({ cwd, watch, coverage, dryRun });
     }
 
     case 'audit': {
       const strict = args.includes('--strict');
+      const warnOnly = args.includes('--warn-only');
       const fix = args.includes('--fix');
-      return runAuditCommand({ strict, fix });
+      return runAuditCommand({ cwd, strict, warnOnly, fix });
     }
 
     case 'analyze': {
       const json = args.includes('--json');
-      return runAnalyzeCommand({ json });
+      const outDirIdx = args.indexOf('--outDir');
+      const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
+      return runAnalyzeCommand({ cwd, outDir, json });
     }
 
     case 'generate': {

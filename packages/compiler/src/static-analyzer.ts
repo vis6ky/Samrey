@@ -24,23 +24,42 @@ export function evaluateConstantExpression(expr: string): ConstantFoldResult {
     return { isConstant: false, value: null };
   }
 
+function decodeStringEscapes(str: string): string {
+  return str.replace(/\\([bfnrtv'"\\0]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})/g, (match, esc) => {
+    switch (esc[0]) {
+      case 'b': return '\b';
+      case 'f': return '\f';
+      case 'n': return '\n';
+      case 'r': return '\r';
+      case 't': return '\t';
+      case 'v': return '\v';
+      case "'": return "'";
+      case '"': return '"';
+      case '\\': return '\\';
+      case '0': return '\0';
+      case 'x': return String.fromCharCode(parseInt(esc.slice(1), 16));
+      case 'u': return String.fromCharCode(parseInt(esc.slice(1), 16));
+      default: return match;
+    }
+  });
+}
+
   // 1. String literals: "...", '...', `...` (without interpolation)
   if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
     try {
       return { isConstant: true, value: JSON.parse(trimmed) };
     } catch {
-      return { isConstant: true, value: trimmed.slice(1, -1) };
+      return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
     }
   }
 
   if (/^'(?:[^'\\]|\\.)*'$/.test(trimmed)) {
-    const rawInner = trimmed.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, '\\');
-    return { isConstant: true, value: rawInner };
+    return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
   }
 
   if (/^`(?:\\[\s\S]|[^`\\])*`$/.test(trimmed)) {
     if (!trimmed.includes('${')) {
-      return { isConstant: true, value: trimmed.slice(1, -1) };
+      return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
     }
   }
 

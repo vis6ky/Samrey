@@ -38,16 +38,24 @@ export class DevToolsBridge {
   private listeners: ((event: DevToolsEvent) => void)[] = [];
   private eventLog: DevToolsEvent[] = [];
   private maxLogLength = 200;
-  private targetOrigin: string = '*';
+  private targetOrigin: string = '';
   private allowedOrigins: Set<string> = new Set();
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      (window as any).__SAMREY_DEVTOOLS_BRIDGE__ = this;
-      if (window.location && window.location.origin) {
-        this.allowedOrigins.add(window.location.origin);
-      }
+    if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+      this.targetOrigin = window.location.origin;
+      this.allowedOrigins.add(window.location.origin);
     }
+  }
+
+  /**
+   * Returns the current target origin, falling back to window.location.origin if available.
+   */
+  getTargetOrigin(): string {
+    if (!this.targetOrigin && typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+      return window.location.origin;
+    }
+    return this.targetOrigin || '*';
   }
 
   /**
@@ -97,7 +105,8 @@ export class DevToolsBridge {
 
     if (typeof window !== 'undefined' && typeof window.postMessage === 'function') {
       try {
-        window.postMessage({ source: 'samrey-devtools-bridge', ...event }, this.targetOrigin);
+        const target = this.getTargetOrigin();
+        window.postMessage({ source: 'samrey-devtools-bridge', ...event }, target);
       } catch {
         // Ignore iframe postMessage failures
       }

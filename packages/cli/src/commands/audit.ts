@@ -3,46 +3,67 @@
  * @samrey/cli - "samrey audit" Command
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { CommandResult } from './create.js';
 import { auditSource, AuditReport } from '../audit.js';
 
 export interface AuditCommandOptions {
+  cwd?: string;
   files?: string[];
   strict?: boolean;
+  warnOnly?: boolean;
   fix?: boolean;
-  sampleSources?: { filename: string; source: string }[];
+}
+
+const AUDIT_FILE_REGEX = /\.(ts|tsx|js|jsx|samrey|html)$/;
+const IGNORE_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage', '.cache']);
+
+function findAuditFiles(dir: string, baseDir = dir): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const results: string[] = [];
+  for (const entry of entries) {
+    if (IGNORE_DIRS.has(entry.name)) continue;
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...findAuditFiles(fullPath, baseDir));
+    } else if (entry.isFile() && AUDIT_FILE_REGEX.test(entry.name)) {
+      results.push(path.relative(baseDir, fullPath).replace(/\\/g, '/'));
+    }
+  }
+  return results;
 }
 
 export async function runAuditCommand(options: AuditCommandOptions = {}): Promise<CommandResult> {
-  const sources = options.sampleSources || [
-    {
-      filename: 'src/components/Header.tsx',
-      source: '<header><nav><a href="/">Home</a><a href="/about">About</a></nav></header>'
-    },
-    {
-      filename: 'src/components/Avatar.tsx',
-      source: '<div class="avatar"><img src="/profile.jpg" alt="User avatar" /></div>'
-    }
-  ];
+  const projectRoot = options.cwd || process.cwd();
+
+  const explicitFiles = options.files && options.files.length > 0 ? options.files : null;
+  const discoveredFiles = explicitFiles || findAuditFiles(projectRoot);
 
   let totalViolations = 0;
   const allMessages: string[] = [];
 
-  for (const item of sources) {
-    const report: AuditReport = auditSource(item.source, item.filename);
-    totalViolations += report.violationsCount;
-    allMessages.push(...report.messages);
+  for (const relFile of discoveredFiles) {
+    const absPath = path.resolve(projectRoot, relFile);
+    try {
+      const content = fs.readFileSync(absPath, 'utf8');
+      const report: AuditReport = auditSource(content, relFile);
+      totalViolations += report.violationsCount;
+      allMessages.push(...report.messages);
+    } catch {
+      // Ignore unreadable files
+    }
   }
 
-  const passed = totalViolations === 0 || !options.strict;
+  const passed = totalViolations === 0 || Boolean(options.warnOnly);
   const reportText = [
-    `  ▲ Samrey Security & A11y Audit`,
-    `  ➜ Files Scanned:      ${sources.length}`,
-    `  ➜ Violations Found:   ${totalViolations}`,
-    `  ➜ Security Sandbox:   CSP & XSS Context Verified`,
-    `  ➜ A11y Verification: Screen Reader Attributes Verified`,
+    `  ▲ Samrey Security & A11y Static Check`,
+    `  ➜ Summary: ${discoveredFiles.length} files scanned, ${totalViolations} violations (checks: img alt, javascript: URIs, inline handlers, <script>)`,
     ...allMessages.map((m) => `    ✖ ${m}`),
-    passed ? `  ✓ Audit passed with 0 critical security flaws.` : `  ✖ Audit failed with ${totalViolations} violations.`
+    passed
+      ? (totalViolations === 0 ? `  ✓ Static check passed with 0 violations.` : `  ! Static check passed with warnings (--warn-only active).`)
+      : `  ✖ Static check failed with ${totalViolations} violation(s).`
   ].join('\n');
 
   return {
@@ -50,7 +71,7 @@ export async function runAuditCommand(options: AuditCommandOptions = {}): Promis
     message: reportText,
     exitCode: passed ? 0 : 1,
     data: {
-      filesScanned: sources.length,
+      filesScanned: discoveredFiles.length,
       violationsCount: totalViolations,
       messages: allMessages
     }

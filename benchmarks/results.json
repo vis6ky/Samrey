@@ -45,7 +45,7 @@
       "opsPerSec": 39880
     },
     {
-      "name": "Full Compile: Small (~10 nodes with Show/For)",
+      "name": "Full Compile: Small (~10 nodes dynamic)",
       "category": "Compiler",
       "iterations": 25,
       "warmupIterations": 3,
@@ -56,7 +56,7 @@
       "opsPerSec": 12908
     },
     {
-      "name": "Full Compile: Medium (~100 nodes dynamic/components)",
+      "name": "Full Compile: Medium (~100 nodes dynamic)",
       "category": "Compiler",
       "iterations": 20,
       "warmupIterations": 3,

@@ -32,6 +32,28 @@ const html = await renderToString(App);
 const scriptTag = serializeState('__SAMREY_STATE__', { user: 'Alice', theme: 'dark' });
 ```
 
+### State Serializability (`Map`, `Set`, and non-JSON structures)
+
+Hydration state serialized via `serializeState` / `serializeStateForHydration` must be RFC 8259 JSON-serializable (plain objects, arrays, strings, numbers, booleans, and `Date`).
+
+Non-JSON collections like `Map` and `Set` serialize to empty objects `{}` in standard JSON. Always convert them to plain arrays or entries before serialization:
+
+```ts
+const userPreferences = new Map([['notifications', true], ['compactView', false]]);
+const activeTags = new Set(['announcements', 'updates']);
+
+// Convert Map and Set to plain JSON-serializable structures before passing to SSR state:
+const serializableState = {
+  preferences: Array.from(userPreferences.entries()), // [["notifications", true], ...]
+  tags: Array.from(activeTags)                         // ["announcements", "updates"]
+};
+
+const stateTag = serializeState('__SAMREY_STATE__', serializableState);
+```
+
+In development (`NODE_ENV !== 'production'`), passing unconverted `Map` or `Set` triggers a diagnostic warning detailing the exact property path. Passing `{ strict: true }` throws an error to catch non-serializable state early.
+
+
 ## API
 
 - `renderToString(component: () => HTMLElement | Promise<HTMLElement>, options?: SsrOptions): Promise<string>` — Renders an Samrey component tree into an HTML string.

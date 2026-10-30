@@ -11,37 +11,50 @@ export interface AuditReport {
   messages: string[];
 }
 
+function getLineNumber(content: string, index: number): number {
+  return content.slice(0, index).split('\n').length;
+}
+
 export function auditSource(source: string, filename = 'Component.tsx'): AuditReport {
   const messages: string[] = [];
 
-  // Simple scan for img tags without alt
+  // Scan for img tags without alt
   const imgRegex = /<img\b([^>]*)>/gi;
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(source)) !== null) {
     const attrString = match[1] || '';
     if (!attrString.includes('alt=')) {
-      messages.push(`${filename}: <img> tag missing required 'alt' attribute.`);
+      const line = getLineNumber(source, match.index);
+      messages.push(`${filename}:${line}: <img> tag missing required 'alt' attribute.`);
     }
   }
 
   // Scan for inline script tags
-  if (source.includes('<script')) {
-    messages.push(`${filename}: Explicit <script> tag found in template. Violates CSP.`);
+  const scriptRegex = /<script\b/gi;
+  while ((match = scriptRegex.exec(source)) !== null) {
+    const line = getLineNumber(source, match.index);
+    messages.push(`${filename}:${line}: Explicit <script> tag found in template. Violates CSP.`);
   }
 
   // Scan for javascript: URIs in attributes
-  if (/(?:href|src|action|formaction)\s*=\s*['"]?\s*javascript:/i.test(source)) {
-    messages.push(`${filename}: Insecure "javascript:" URI detected in template attribute.`);
+  const jsUriRegex = /(?:href|src|action|formaction)\s*=\s*['"]?\s*javascript:/gi;
+  while ((match = jsUriRegex.exec(source)) !== null) {
+    const line = getLineNumber(source, match.index);
+    messages.push(`${filename}:${line}: Insecure "javascript:" URI detected in template attribute.`);
   }
 
   // Scan for inline event handlers (onclick, onload, onerror, etc.)
-  if (/[\s/](?:on[a-zA-Z0-9_-]+)\s*=\s*['"][^'"]*['"]/i.test(source)) {
-    messages.push(`${filename}: Inline event handler attribute detected (violates CSP strict policy).`);
+  const onHandlerRegex = /(?:^|[\s/])(?:on[a-zA-Z0-9_-]+)\s*=\s*['"][^'"]*['"]/gi;
+  while ((match = onHandlerRegex.exec(source)) !== null) {
+    const line = getLineNumber(source, match.index);
+    messages.push(`${filename}:${line}: Inline event handler attribute detected (violates CSP strict policy).`);
   }
 
   // Scan for srcdoc
-  if (/[\s/]srcdoc\s*=/i.test(source)) {
-    messages.push(`${filename}: Dangerous "srcdoc" attribute detected.`);
+  const srcdocRegex = /(?:^|[\s/])srcdoc\s*=/gi;
+  while ((match = srcdocRegex.exec(source)) !== null) {
+    const line = getLineNumber(source, match.index);
+    messages.push(`${filename}:${line}: Dangerous "srcdoc" attribute detected.`);
   }
 
   return {
