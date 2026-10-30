@@ -45,7 +45,7 @@
   - `@samrey/testing@1.0.0`
   - `@samrey/devtools@1.0.0`
   - `@samrey/cli@1.0.0`
-- **Source Repository:** `https://github.com/samrey-dev/samrey` [Placeholder / Configurable]
+- **Source Repository:** `https://github.com/vis6ky/Samrey` [Placeholder / Configurable]
 - **DOI (Digital Object Identifier):** `10.5281/zenodo.XXXXXXX` [Zenodo Deposit Placeholder]
 - **Software Heritage ID (SWHID):** `swh:1:dir:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` [Placeholder]
 

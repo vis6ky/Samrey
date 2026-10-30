@@ -12,22 +12,38 @@ export interface SourceLocationInfo {
 }
 
 export type SamreyErrorCode =
-  | 'AETH-101' // Unclosed Tag
-  | 'AETH-102' // Invalid Expression / Unclosed Interpolation
-  | 'AETH-103' // Missing Required Directive Prop (e.g. <For> missing 'each' or 'key')
-  | 'AETH-104' // Unexpected Closing Tag
-  | 'AETH-105' // Invalid Attribute Syntax
-  | 'AETH-106' // Unclosed Comment
-  | 'AETH-107' // Duplicate Attribute
-  | 'AETH-201' // Security Violation: Dangerous Scheme / Insecure Payload
-  | 'AETH-202' // Accessibility Violation: Missing required accessibility attributes
-  | 'AETH-301' // Reactivity: Cyclic Dependency / Infinite Effect Loop
-  | 'AETH-302' // Runtime: Duplicate Key in <For> Reconciliation
-  | 'AETH-303' // SSR/Hydration: DOM Tree / Attribute Mismatch
-  | 'AETH-401' // Router: Route Not Found / Invalid Route Configuration
-  | 'AETH-402' // HTTP: Resource Request Failure
-  | 'AETH-501' // Forms: Standard Schema Validation Error
-  | 'SAMREY-108'; // Unsupported Template-Level Control Flow or Custom Component Tag
+  | 'SAMREY-101' // Unclosed Tag
+  | 'SAMREY-102' // Invalid Expression / Unclosed Interpolation
+  | 'SAMREY-103' // Missing Required Directive Prop
+  | 'SAMREY-104' // Unexpected Closing Tag
+  | 'SAMREY-105' // Invalid Attribute Syntax
+  | 'SAMREY-106' // Unclosed Comment
+  | 'SAMREY-107' // Duplicate Attribute
+  | 'SAMREY-108' // Unsupported Template-Level Control Flow or Custom Component Tag
+  | 'SAMREY-201' // Security Violation: Dangerous Scheme / Insecure Payload
+  | 'SAMREY-202' // Accessibility Violation: Missing required accessibility attributes
+  | 'SAMREY-301' // Reactivity: Cyclic Dependency / Infinite Effect Loop
+  | 'SAMREY-302' // Runtime: Duplicate Key in <For> Reconciliation
+  | 'SAMREY-303' // SSR/Hydration: DOM Tree / Attribute Mismatch
+  | 'SAMREY-401' // Router: Route Not Found / Invalid Route Configuration
+  | 'SAMREY-402' // HTTP: Resource Request Failure
+  | 'SAMREY-501' // Forms: Standard Schema Validation Error
+  | 'AETH-101'
+  | 'AETH-102'
+  | 'AETH-103'
+  | 'AETH-104'
+  | 'AETH-105'
+  | 'AETH-106'
+  | 'AETH-107'
+  | 'AETH-108'
+  | 'AETH-201'
+  | 'AETH-202'
+  | 'AETH-301'
+  | 'AETH-302'
+  | 'AETH-303'
+  | 'AETH-401'
+  | 'AETH-402'
+  | 'AETH-501';
 
 export interface ErrorDefinition {
   code: SamreyErrorCode;
@@ -36,104 +52,115 @@ export interface ErrorDefinition {
   defaultSuggestion: string;
 }
 
-export const ERROR_REGISTRY: Record<SamreyErrorCode, ErrorDefinition> = {
-  'AETH-101': {
-    code: 'AETH-101',
+export const ERROR_REGISTRY: Record<string, ErrorDefinition> = {
+  'SAMREY-101': {
+    code: 'SAMREY-101',
     title: 'Unclosed HTML/JSX Tag',
     defaultExplanation: 'An opening tag was not matched with a corresponding closing tag before the end of the template.',
     defaultSuggestion: 'Check for missing closing tags (e.g. </div> or self-closing <Component />).'
   },
-  'AETH-102': {
-    code: 'AETH-102',
+  'SAMREY-102': {
+    code: 'SAMREY-102',
     title: 'Invalid Expression',
     defaultExplanation: 'An interpolation expression was started with "{" but not properly closed with "}" or contains malformed syntax.',
     defaultSuggestion: 'Ensure all curly braces "{" are paired with closing "}" and expressions are syntactically valid.'
   },
-  'AETH-103': {
-    code: 'AETH-103',
+  'SAMREY-103': {
+    code: 'SAMREY-103',
     title: 'Missing Required Directive Prop',
     defaultExplanation: 'A built-in control flow component (<Show> or <For>) is missing one of its required props.',
     defaultSuggestion: 'Provide "when" for <Show>, or "each" and "key" for <For> (e.g. <For each={items()} key="id">).'
   },
-  'AETH-104': {
-    code: 'AETH-104',
+  'SAMREY-104': {
+    code: 'SAMREY-104',
     title: 'Unexpected Closing Tag',
     defaultExplanation: 'Encountered a closing tag that does not correspond to any active open tag in the hierarchy.',
     defaultSuggestion: 'Check tag nesting order and ensure closing tags match their opening counterpart.'
   },
-  'AETH-105': {
-    code: 'AETH-105',
+  'SAMREY-105': {
+    code: 'SAMREY-105',
     title: 'Invalid Attribute Syntax',
     defaultExplanation: 'Attribute name or value contains invalid characters or an unclosed quote string.',
     defaultSuggestion: 'Ensure attribute values are properly quoted or enclosed in dynamic curly brackets "{...}".'
   },
-  'AETH-106': {
-    code: 'AETH-106',
+  'SAMREY-106': {
+    code: 'SAMREY-106',
     title: 'Unclosed Comment',
     defaultExplanation: 'An HTML comment "<!--" was opened but reached the end of the file without "-->".',
     defaultSuggestion: 'Add "-->" to close the comment block.'
   },
-  'AETH-107': {
-    code: 'AETH-107',
+  'SAMREY-107': {
+    code: 'SAMREY-107',
     title: 'Duplicate Attribute',
     defaultExplanation: 'The same attribute is defined multiple times on a single element.',
     defaultSuggestion: 'Remove or consolidate duplicate attribute declarations.'
-  },
-  'AETH-201': {
-    code: 'AETH-201',
-    title: 'Security Violation',
-    defaultExplanation: 'The template contains potentially dangerous code constructs such as javascript: URLs, unescaped raw HTML injection, or forbidden inline scripts.',
-    defaultSuggestion: 'Use safe URLs (http, https, relative) and avoid inline script injections.'
-  },
-  'AETH-202': {
-    code: 'AETH-202',
-    title: 'Accessibility Non-Conformance',
-    defaultExplanation: 'Element fails WCAG accessibility guidelines (e.g. <img> without alt, <button> without accessible label).',
-    defaultSuggestion: 'Add meaningful alt attributes or aria-label attributes to the element.'
-  },
-  'AETH-301': {
-    code: 'AETH-301',
-    title: 'Cyclic Reactive Graph Dependency',
-    defaultExplanation: 'A signal or computed dependency graph cycle was detected during propagation or effect execution.',
-    defaultSuggestion: 'Avoid writing to a signal inside an effect that synchronously reads that same signal without untrack().'
-  },
-  'AETH-302': {
-    code: 'AETH-302',
-    title: 'Duplicate Key in Keyed List',
-    defaultExplanation: 'Multiple items in a <For> keyed collection share the exact same key value.',
-    defaultSuggestion: 'Ensure the key function or property generates unique identifiers across all list items.'
-  },
-  'AETH-303': {
-    code: 'AETH-303',
-    title: 'SSR Hydration Mismatch',
-    defaultExplanation: 'The DOM structure or attribute rendered on the server does not match the client initial render.',
-    defaultSuggestion: 'Ensure server-rendered state and client initial state are identical, or defer browser-only attributes to onMount.'
-  },
-  'AETH-401': {
-    code: 'AETH-401',
-    title: 'Route Resolution Error',
-    defaultExplanation: 'The requested path did not match any registered routes and no fallback route was defined.',
-    defaultSuggestion: 'Register a catch-all route (path: "*") or verify the navigation URL.'
-  },
-  'AETH-402': {
-    code: 'AETH-402',
-    title: 'HTTP Resource Error',
-    defaultExplanation: 'A createResource request failed or returned a non-2xx status code.',
-    defaultSuggestion: 'Check endpoint availability, network status, and error boundary fallback handlers.'
-  },
-  'AETH-501': {
-    code: 'AETH-501',
-    title: 'Form Validation Schema Error',
-    defaultExplanation: 'Form input values failed Standard Schema validation constraints.',
-    defaultSuggestion: 'Verify field validation requirements and error message displays.'
   },
   'SAMREY-108': {
     code: 'SAMREY-108',
     title: 'Unsupported Template-Level Control Flow or Custom Component Tag',
     defaultExplanation: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.',
     defaultSuggestion: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.'
+  },
+  'SAMREY-201': {
+    code: 'SAMREY-201',
+    title: 'Security Violation',
+    defaultExplanation: 'The template contains potentially dangerous code constructs such as javascript: URLs, unescaped raw HTML injection, or forbidden inline scripts.',
+    defaultSuggestion: 'Use safe URLs (http, https, relative) and avoid inline script injections.'
+  },
+  'SAMREY-202': {
+    code: 'SAMREY-202',
+    title: 'Accessibility Non-Conformance',
+    defaultExplanation: 'Element fails WCAG accessibility guidelines (e.g. <img> without alt, <button> without accessible label).',
+    defaultSuggestion: 'Add meaningful alt attributes or aria-label attributes to the element.'
+  },
+  'SAMREY-301': {
+    code: 'SAMREY-301',
+    title: 'Cyclic Reactive Graph Dependency',
+    defaultExplanation: 'A signal or computed dependency graph cycle was detected during propagation or effect execution.',
+    defaultSuggestion: 'Avoid writing to a signal inside an effect that synchronously reads that same signal without untrack().'
+  },
+  'SAMREY-302': {
+    code: 'SAMREY-302',
+    title: 'Duplicate Key in Keyed List',
+    defaultExplanation: 'Multiple items in a <For> keyed collection share the exact same key value.',
+    defaultSuggestion: 'Ensure the key function or property generates unique identifiers across all list items.'
+  },
+  'SAMREY-303': {
+    code: 'SAMREY-303',
+    title: 'SSR Hydration Mismatch',
+    defaultExplanation: 'The DOM structure or attribute rendered on the server does not match the client initial render.',
+    defaultSuggestion: 'Ensure server-rendered state and client initial state are identical, or defer browser-only attributes to onMount.'
+  },
+  'SAMREY-401': {
+    code: 'SAMREY-401',
+    title: 'Route Resolution Error',
+    defaultExplanation: 'The requested path did not match any registered routes and no fallback route was defined.',
+    defaultSuggestion: 'Register a catch-all route (path: "*") or verify the navigation URL.'
+  },
+  'SAMREY-402': {
+    code: 'SAMREY-402',
+    title: 'HTTP Resource Error',
+    defaultExplanation: 'A createResource request failed or returned a non-2xx status code.',
+    defaultSuggestion: 'Check endpoint availability, network status, and error boundary fallback handlers.'
+  },
+  'SAMREY-501': {
+    code: 'SAMREY-501',
+    title: 'Form Validation Schema Error',
+    defaultExplanation: 'Form input values failed Standard Schema validation constraints.',
+    defaultSuggestion: 'Verify field validation requirements and error message displays.'
   }
 };
+
+// Aliases for backward-compatibility with tests and legacy lookups
+for (const [key, val] of Object.entries(ERROR_REGISTRY)) {
+  if (key.startsWith('SAMREY-')) {
+    const legacyKey = key.replace('SAMREY-', 'AETH-');
+    (ERROR_REGISTRY as any)[legacyKey] = { ...val, code: legacyKey as SamreyErrorCode };
+  } else if (key.startsWith('AETH-')) {
+    const samreyKey = key.replace('AETH-', 'SAMREY-');
+    (ERROR_REGISTRY as any)[samreyKey] = { ...val, code: samreyKey as SamreyErrorCode };
+  }
+}
 
 /**
  * Generate a visual source frame highlighting error location with line numbers and pointer.

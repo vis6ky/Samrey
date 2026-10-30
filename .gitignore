@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.aistudio/artifacts/**
+packages/cli/bin/aether.js
+packages/cli/bin/gati.js

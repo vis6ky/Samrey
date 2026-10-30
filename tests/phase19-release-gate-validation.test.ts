@@ -331,13 +331,14 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
     });
 
     it('verifies standard error codes catalog in ERROR_REGISTRY', () => {
-      assert.ok(ERROR_REGISTRY['AETH-101'], 'AETH-101 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-102'], 'AETH-102 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-103'], 'AETH-103 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-201'], 'AETH-201 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-301'], 'AETH-301 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-401'], 'AETH-401 must exist');
-      assert.ok(ERROR_REGISTRY['AETH-501'], 'AETH-501 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-101'], 'SAMREY-101 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-102'], 'SAMREY-102 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-103'], 'SAMREY-103 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-201'], 'SAMREY-201 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-301'], 'SAMREY-301 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-401'], 'SAMREY-401 must exist');
+      assert.ok(ERROR_REGISTRY['SAMREY-501'], 'SAMREY-501 must exist');
+      assert.ok(ERROR_REGISTRY['AETH-101'], 'AETH-101 alias must exist');
     });
   });
 });

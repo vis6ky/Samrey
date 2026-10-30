@@ -31,7 +31,7 @@
     "release:report": "tsx scripts/release/release-report.ts",
     "release:rc": "tsx scripts/release/publish.ts --tag rc",
     "release:latest": "tsx scripts/release/publish.ts --tag latest",
-    "test": "node --import tsx --test packages/security/tests/*.test.ts packages/compiler/tests/*.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/*.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts tests/integration/task-studio.test.ts tests/examples.test.ts tests/lifecycle-stress.test.ts tests/phase18-real-world-validation.test.ts tests/phase19-release-gate-validation.test.ts tests/phase20-release-readiness.test.ts tests/phase21-release-execution.test.ts tests/phase24/*.test.ts"
+    "test": "node --import tsx --test packages/security/tests/*.test.ts packages/compiler/tests/*.test.ts packages/reactivity/tests/reactivity.test.ts packages/runtime/tests/runtime.test.ts packages/forms/tests/forms.test.ts packages/http/tests/http.test.ts packages/router/tests/router.test.ts packages/ssr/tests/*.test.ts packages/testing/tests/testing.test.ts packages/cli/tests/cli.test.ts packages/devtools/tests/devtools.test.ts tests/integration/full-pipeline.test.ts tests/integration/task-studio.test.ts tests/examples.test.ts tests/lifecycle-stress.test.ts tests/phase*.test.ts tests/phase24/*.test.ts tests/issue*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

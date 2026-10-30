@@ -19,30 +19,7 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
-// Rate limiter for /api/assistant: sliding window, 30 requests per minute per IP
-interface RateLimitRecord {
-  timestamps: number[];
-}
-const assistantRateLimitMap = new Map<string, RateLimitRecord>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 30;
-
-function checkAssistantRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  let record = assistantRateLimitMap.get(ip);
-  if (!record) {
-    record = { timestamps: [] };
-    assistantRateLimitMap.set(ip, record);
-  }
-  record.timestamps = record.timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  if (record.timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
-    const oldest = record.timestamps[0];
-    const retryAfter = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - oldest)) / 1000);
-    return { allowed: false, retryAfter };
-  }
-  record.timestamps.push(now);
-  return { allowed: true };
-}
+import { assistantRateLimiter } from './src/server/rate-limiter.js';
 
 function assistantApiPlugin(): Plugin {
   return {
@@ -50,12 +27,9 @@ function assistantApiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (req.url === '/api/assistant' && req.method === 'POST') {
-          // Check rate limit per client IP
-          const clientIp =
-            (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-            req.socket.remoteAddress ||
-            '127.0.0.1';
-          const rateCheck = checkAssistantRateLimit(clientIp);
+          // Check rate limit per client IP (socket address unless trust-proxy is active)
+          const clientIp = assistantRateLimiter.getClientIp(req);
+          const rateCheck = assistantRateLimiter.check(clientIp);
           if (!rateCheck.allowed) {
             res.writeHead(429, {
               'Content-Type': 'application/json',

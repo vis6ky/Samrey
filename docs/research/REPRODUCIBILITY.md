@@ -26,7 +26,7 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/samrey-dev/samrey.git
+git clone https://github.com/vis6ky/Samrey.git
 cd samrey
 
 # 2. Install workspace dependencies

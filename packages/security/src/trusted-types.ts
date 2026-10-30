@@ -99,9 +99,47 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
   return cachedPolicy;
 }
 
+let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
+
+/**
+ * Returns or initializes the pass-through Trusted Types policy for developer-authored static HTML templates.
+ */
+export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
+  if (cachedTemplatePolicy) return cachedTemplatePolicy;
+
+  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: { createPolicy: (name: string, rules: unknown) => SamreyTrustedPolicy } }).trustedTypes;
+
+  if (tt) {
+    try {
+      cachedTemplatePolicy = tt.createPolicy('samrey#template', {
+        createHTML: (input: string) => input,
+        createScript: () => {
+          throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+        },
+        createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+      });
+      return cachedTemplatePolicy;
+    } catch {
+      // Policy may already exist
+    }
+  }
+
+  cachedTemplatePolicy = {
+    createHTML: (input: string) => input,
+    createScript: () => {
+      throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+    },
+    createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+  };
+
+  return cachedTemplatePolicy;
+}
+
 export const TrustedTypesPolicy = {
   getPolicy: getSamreyTrustedPolicy,
+  getTemplatePolicy: getSamreyTemplateTrustedPolicy,
   createHTML: (input: string) => getSamreyTrustedPolicy().createHTML(input),
+  createTemplateHTML: (input: string) => getSamreyTemplateTrustedPolicy().createHTML(input),
   createScriptURL: (url: string, options?: TrustedTypesOptions) => {
     if (options?.allowedScriptOrigins) {
       configuredAllowedOrigins = [...options.allowedScriptOrigins];
@@ -109,3 +147,4 @@ export const TrustedTypesPolicy = {
     return getSamreyTrustedPolicy().createScriptURL(url);
   }
 };
+

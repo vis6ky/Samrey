@@ -8,6 +8,10 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { runCLI, generateStarterProject, CLI_VERSION } from '../../packages/cli/src/index.js';
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
+
 describe('Phase 24 — CLI Tooling Final Gate', () => {
   it('1. Verifies CLI version matches v1.0.0', async () => {
     assert.strictEqual(CLI_VERSION, '1.0.0');
@@ -40,14 +44,31 @@ describe('Phase 24 — CLI Tooling Final Gate', () => {
     }
   });
 
-  it('4. Simulates CLI build and dev dry-run executions', async () => {
+  it('4. Simulates CLI build and dev dry-run executions and isolated audit checks', async () => {
     const buildRes = await runCLI(['build', '--dry-run']);
     assert.strictEqual(buildRes.success, true);
 
     const devRes = await runCLI(['dev', '--dry-run', '--port', '3000']);
     assert.strictEqual(devRes.success, true);
 
-    const auditRes = await runCLI(['audit', '--strict']);
-    assert.strictEqual(auditRes.success, true);
+    // Clean temp fixture for audit --strict pass case
+    const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-cli-audit-'));
+    const cleanDir = path.join(tmpBase, 'clean');
+    fs.mkdirSync(cleanDir, { recursive: true });
+    fs.writeFileSync(path.join(cleanDir, 'app.ts'), 'export const title = "Samrey Clean App";\n');
+
+    const cleanAuditRes = await runCLI(['audit', '--strict', cleanDir]);
+    assert.strictEqual(cleanAuditRes.success, true, 'Clean fixture must pass audit --strict');
+
+    // Violating fixture for audit --strict fail case
+    const badDir = path.join(tmpBase, 'violating');
+    fs.mkdirSync(badDir, { recursive: true });
+    fs.writeFileSync(path.join(badDir, 'bad.tsx'), 'export const Bad = () => <img src="test.jpg" />;\n');
+
+    const badAuditRes = await runCLI(['audit', '--strict', badDir]);
+    assert.strictEqual(badAuditRes.success, false, 'Violating fixture must fail audit --strict');
+
+    // Cleanup
+    fs.rmSync(tmpBase, { recursive: true, force: true });
   });
 });
