@@ -26,7 +26,8 @@ export type SamreyErrorCode =
   | 'AETH-303' // SSR/Hydration: DOM Tree / Attribute Mismatch
   | 'AETH-401' // Router: Route Not Found / Invalid Route Configuration
   | 'AETH-402' // HTTP: Resource Request Failure
-  | 'AETH-501'; // Forms: Standard Schema Validation Error
+  | 'AETH-501' // Forms: Standard Schema Validation Error
+  | 'SAMREY-108'; // Unsupported Template-Level Control Flow or Custom Component Tag
 
 export interface ErrorDefinition {
   code: SamreyErrorCode;
@@ -125,6 +126,12 @@ export const ERROR_REGISTRY: Record<SamreyErrorCode, ErrorDefinition> = {
     title: 'Form Validation Schema Error',
     defaultExplanation: 'Form input values failed Standard Schema validation constraints.',
     defaultSuggestion: 'Verify field validation requirements and error message displays.'
+  },
+  'SAMREY-108': {
+    code: 'SAMREY-108',
+    title: 'Unsupported Template-Level Control Flow or Custom Component Tag',
+    defaultExplanation: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.',
+    defaultSuggestion: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.'
   }
 };
 
@@ -216,6 +223,7 @@ export class SamreyCompilerError extends Error {
     const formatted = `[${options.code}] ${title} at ${locStr}\n\n${sourceFrame ? `${sourceFrame}\n\n` : ''}Explanation: ${explanation}\nSuggestion:  ${suggestion}`;
 
     super(formatted);
+    Object.setPrototypeOf(this, SamreyCompilerError.prototype);
     this.name = 'SamreyCompilerError';
     this.code = options.code;
     this.filename = options.filename;

@@ -42,18 +42,18 @@ describe('@samrey/compiler - Structured Error Code System & Source Framing', () 
     assert.ok(err.suggestion.includes('}'));
   });
 
-  it('records AETH-103 for missing required props on <Show> and <For>', () => {
+  it('records SAMREY-108 error for <Show> and <For> in templates', () => {
     const showSource = `<Show fallback="Loading..."><span>Content</span></Show>`;
-    const showParser = new TemplateParser(showSource);
+    const showParser = new TemplateParser(showSource, { filename: 'test.html' });
     const showResult = showParser.parse();
-    assert.ok(showResult.diagnostics.some((d) => d.includes('AETH-103')));
-    assert.ok(showResult.errors.some((e) => e.code === 'AETH-103' && e.message.includes('when')));
+    assert.ok(showResult.diagnostics.some((d) => d.includes('SAMREY-108')));
+    assert.ok(showResult.errors.some((e) => e.code === 'SAMREY-108' && e.message.includes('Show') && e.suggestion.includes('Show()')));
 
     const forSource = `<For fallback="Empty">{(item) => <div>{item}</div>}</For>`;
-    const forParser = new TemplateParser(forSource);
+    const forParser = new TemplateParser(forSource, { filename: 'test.html' });
     const forResult = forParser.parse();
-    assert.ok(forResult.diagnostics.some((d) => d.includes('AETH-103')));
-    assert.ok(forResult.errors.some((e) => e.code === 'AETH-103' && e.message.includes('each')));
+    assert.ok(forResult.diagnostics.some((d) => d.includes('SAMREY-108')));
+    assert.ok(forResult.errors.some((e) => e.code === 'SAMREY-108' && e.message.includes('For') && e.suggestion.includes('For()')));
   });
 
   it('records AETH-104 for unexpected or mismatched closing tags', () => {

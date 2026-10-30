@@ -15,14 +15,14 @@ export const REGRESSION_THRESHOLDS: BenchmarkThreshold[] = [
   // 1. Compiler Thresholds
   {
     category: 'Compiler',
-    name: 'Full Compile: Small (~10 nodes with Show/For)',
+    name: 'Full Compile: Small (~10 nodes dynamic)',
     maxRegressionPercent: 35,
     minOpsPerSec: 7000,
     rationale: 'Small templates represent hot inline JSX/AIR compilation in dev mode. Must remain > 7k ops/sec with < 35% jitter.'
   },
   {
     category: 'Compiler',
-    name: 'Full Compile: Medium (~100 nodes dynamic/components)',
+    name: 'Full Compile: Medium (~100 nodes dynamic)',
     maxRegressionPercent: 40,
     minOpsPerSec: 600,
     rationale: 'Standard UI components with nested tags & dynamic bindings. 40% allowance accounts for CI CPU jitter while preventing O(N^2) regressions.'

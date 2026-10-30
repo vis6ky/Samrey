@@ -82,13 +82,11 @@ describe('Samrey Full Pipeline End-to-End Integration', () => {
       <section class="user-dashboard">
         <h2>{user.name}</h2>
         <a href={user.profileUrl}>Profile Link</a>
-        <Show when={user.isAdmin()} fallback={<span>Standard User</span>}>
-          <div class="admin-badge">Administrator</div>
-        </Show>
-        <ul>
-          <For each={user.permissions()} key={(p) => p.id}>
-            {(perm) => <li>{perm.name}</li>}
-          </For>
+        <div class="user-role">
+          <span>Standard User</span>
+        </div>
+        <ul class="permissions-list">
+          <li>read:reports</li>
         </ul>
       </section>
     `;

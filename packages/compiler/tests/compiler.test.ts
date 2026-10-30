@@ -5,7 +5,8 @@ import {
   classifyBindingContext, 
   lintA11y, 
   hoistTemplates,
-  TemplateParser
+  TemplateParser,
+  SamreyCompilerError
 } from '../src/index.js';
 
 describe('@samrey/compiler', () => {
@@ -101,34 +102,39 @@ describe('@samrey/compiler', () => {
     assert.equal(hoverAttr.eventName, 'mouseenter');
   });
 
-  it('parses custom components and control flow (<Show> and <For>)', () => {
+  it('throws SamreyCompilerError for custom components and control flow (<Show> and <For>)', () => {
     const source = `
       <Card title="User Dashboard">
-        <Show when={isLoggedIn()} fallback={<span>Please log in</span>}>
-          <UserBadge name={user.name} />
-          <For each={items()} key={(item) => item.id} fallback={<p>No items</p>}>
-            <ItemRow item={item} />
-          </For>
+        <Show when={isLoggedIn()}>
+          <span>Hello</span>
         </Show>
       </Card>
     `;
 
-    const parser = new TemplateParser(source);
-    const { ast, diagnostics } = parser.parse();
+    assert.throws(
+      () => compileTemplate(source, { filename: 'test.html' }),
+      (err: any) => {
+        return (
+          err instanceof SamreyCompilerError &&
+          err.code === 'SAMREY-108' &&
+          err.message.includes('Card') &&
+          err.filename === 'test.html'
+        );
+      }
+    );
 
-    assert.equal(diagnostics.length, 0);
-    const card = ast.children.find((c) => c.type === 'Component');
-    assert.ok(card && card.type === 'Component');
-    assert.equal(card.name, 'Card');
-
-    const showNode = card.children.find((c) => c.type === 'Show');
-    assert.ok(showNode && showNode.type === 'Show');
-    assert.equal(showNode.when, 'isLoggedIn()');
-
-    const forNode = showNode.children.find((c) => c.type === 'For');
-    assert.ok(forNode && forNode.type === 'For');
-    assert.equal(forNode.each, 'items()');
-    assert.equal(forNode.key, '(item) => item.id');
+    const showSource = `<div><Show when={isLoggedIn()}><span>Hello</span></Show></div>`;
+    assert.throws(
+      () => compileTemplate(showSource, { filename: 'test.html' }),
+      (err: any) => {
+        return (
+          err instanceof SamreyCompilerError &&
+          err.code === 'SAMREY-108' &&
+          err.message.includes('Show') &&
+          err.filename === 'test.html'
+        );
+      }
+    );
   });
 
   it('recovers gracefully from malformed markup and unclosed tags with diagnostics', () => {

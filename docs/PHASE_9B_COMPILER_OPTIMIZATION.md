@@ -14,8 +14,8 @@ Every architectural optimization was verified against empirical benchmark data g
 |---|---|---|---|---|---|---|
 | **Stage 1: Source -> AST (100 nodes)** | 0.505 ms | 1,770 | **0.409 ms** (min 0.310 ms) | **1,962** | **-19.0%** | **+10.8%** |
 | **Stage 3: AIR -> Codegen (100 nodes)** | 0.024 ms | 33,639 | **0.016 ms** (min 0.013 ms) | **51,251** | **-33.3%** | **+52.4%** |
-| **Full Compile: Small (~10 nodes with Show/For)** | 0.038 ms | 21,805 | **0.027 ms** (min 0.020 ms) | **27,199** | **-28.9%** | **+24.7%** |
-| **Full Compile: Medium (~100 nodes dynamic/components)** | 0.428 ms | 2,130 | **0.411 ms** (min 0.179 ms) | **2,578** | **-4.0%** (min -36.3%) | **+21.0%** |
+| **Full Compile: Small (~10 nodes dynamic)** | 0.038 ms | 21,805 | **0.027 ms** (min 0.020 ms) | **27,199** | **-28.9%** | **+24.7%** |
+| **Full Compile: Medium (~100 nodes dynamic)** | 0.428 ms | 2,130 | **0.411 ms** (min 0.179 ms) | **2,578** | **-4.0%** (min -36.3%) | **+21.0%** |
 | **Full Compile: Large (~1,000 nodes)** | 3.513 ms | 240 | **2.180 ms** (min 1.404 ms) | **258** | **-38.0%** | **+7.5%** |
 | **Full Compile: Very Large (~10,000 nodes)** | 46.593 ms | 21 | **33.264 ms** (min 24.087 ms) | **28** | **-28.6%** | **+33.3%** |
 | **Full Compile: Deeply Nested (150 levels)** | 0.490 ms | 1,770 | **0.316 ms** (min 0.305 ms) | **861** | **-35.5%** | **+34.8%** |

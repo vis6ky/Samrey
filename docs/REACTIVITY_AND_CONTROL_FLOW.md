@@ -61,11 +61,13 @@ dispose();
 
 ---
 
-## 3. Declarative Control Flow (`<Show>` & `<For>`)
+## 3. Declarative Control Flow (`Show()` & `For()`)
 
-Instead of JavaScript ternary operators or `.map()` in Virtual DOM templates, Samrey provides fine-grained control flow primitives that surgically insert, swap, and remove DOM nodes without destroying surrounding state.
+Instead of JavaScript ternary operators or `.map()` in Virtual DOM templates, Samrey provides fine-grained control flow primitives in TypeScript that surgically insert, swap, and remove DOM nodes without destroying surrounding state.
 
-### `<Show>` (Conditional Rendering)
+> **Note**: Control flow is composed at the TypeScript layer using `Show()` and `For()`. Template-level `<Show>`, `<For>`, `<Switch>`, etc., inside raw templates are rejected at compile time (`SAMREY-108`) to ensure explicit ownership and fine-grained reactivity.
+
+### `Show` (Conditional Rendering)
 
 ```typescript
 import { Show } from '@samrey/runtime';
@@ -100,7 +102,7 @@ const todos = signal<Todo[]>([
 
 const listNode = For({
   each: () => todos.value,
-  by: (item) => item.id,
+  key: (item) => item.id,
   children: (item, index) => {
     const li = document.createElement('li');
     li.textContent = `${item.id}: ${item.text}`;
@@ -108,3 +110,50 @@ const listNode = For({
   }
 });
 ```
+
+#### Keyed Identity Semantics
+
+In Samrey, the `key` function (`key={(item) => item.id}`) defines the persistent identity of each row. The reconciliation algorithm uses keys to preserve DOM elements, component owners, and local state across list reorders, insertions, and removals via Longest Increasing Subsequence (LIS) optimization.
+
+**What happens when an item changes under the same key:**
+Because `<For>` reuses existing DOM rows when their key matches, the child render function (`children: (item, index) => ...`) runs **once** at row creation and is **not** re-invoked on existing keys. If a new object reference is provided under an already mounted key, the row is reused without re-rendering, leaving the row displaying its initial data and emitting a development warning (`AETH-502`).
+
+**Wrong Pattern (Row Stays Stale):**
+```typescript
+// ❌ WRONG: Passing a new plain object under the same key; row does not re-render
+const todos = signal([{ id: 1, text: 'Initial' }]);
+For({
+  each: () => todos.value,
+  key: (item) => item.id,
+  children: (item) => <li>{item.text}</li>
+});
+
+// Later update:
+todos.value = [{ id: 1, text: 'Updated Text' }]; // Row retains 'Initial'
+```
+
+**Correct Patterns:**
+```typescript
+// ✅ PATTERN 1: Fine-grained signals or reactive store inside item properties
+const todos = signal([
+  { id: 1, text: signal('Initial') }
+]);
+For({
+  each: () => todos.value,
+  key: (item) => item.id,
+  children: (item) => {
+    const li = document.createElement('li');
+    bindText(li, () => item.text.value);
+    return li;
+  }
+});
+todos.value[0].text.value = 'Updated Text'; // Surgical text update!
+
+// ✅ PATTERN 2: Key that changes when item data changes
+For({
+  each: () => todos.value,
+  key: (item) => `${item.id}:${item.updatedAt}`, // Key changes -> row re-creates
+  children: (item) => <li>{item.text}</li>
+});
+```
+

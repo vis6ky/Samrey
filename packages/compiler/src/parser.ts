@@ -108,6 +108,37 @@ export class TemplateParser {
       loc: { start: startPos, end: endPos }
     };
 
+    // Detect unsupported control flow and component tags on the parsed AST
+    const unsupported = findUnsupportedTemplateTags(root);
+    if (unsupported.length > 0) {
+      const first = unsupported[0];
+      const totalCount = unsupported.length;
+      const filename = this.filename || 'template.html';
+      const line = first.loc.start.line;
+      const column = first.loc.start.column;
+
+      const countText = totalCount === 1
+        ? '1 occurrence'
+        : `${totalCount} total occurrences, first at ${filename}:${line}:${column}`;
+
+      const msg = `Unsupported template tag <${first.tag}> (${countText}): Template-level control flow is not supported. Compose it with Show()/For() in TypeScript (use runtime Show(), runtime For(), or createComponent(${first.tag}, props) in code).`;
+
+      this.diagnostics.push(`[SAMREY-108] [${line}:${column}] ${msg}`);
+      this.errors.push(
+        new SamreyCompilerError({
+          code: 'SAMREY-108',
+          message: msg,
+          source: this.source,
+          filename: this.filename,
+          line,
+          column,
+          offset: first.loc.start.offset,
+          explanation: `Found ${totalCount} unsupported control flow or component tag(s) in template. First occurrence: <${first.tag}> at ${filename}:${line}:${column}.`,
+          suggestion: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.'
+        })
+      );
+    }
+
     return {
       ast: root,
       diagnostics: this.diagnostics,
@@ -248,6 +279,7 @@ export class TemplateParser {
       this.recordDiagnostic('Invalid or missing tag name after "<"', startPos);
       return null;
     }
+    const isComponent = tagName.charCodeAt(0) >= 65 && tagName.charCodeAt(0) <= 90;
 
     // Parse attributes
     const attributes: ASTAttributeNode[] = [];
@@ -278,19 +310,6 @@ export class TemplateParser {
     } else {
       this.recordDiagnostic(`Unclosed opening tag for <${tagName}>`, startPos);
     }
-
-    // Control Flow Handling: <Show>
-    if (tagName === 'Show') {
-      return this.parseShowComponent(startPos, attributes, isSelfClosing);
-    }
-
-    // Control Flow Handling: <For>
-    if (tagName === 'For') {
-      return this.parseForComponent(startPos, attributes, isSelfClosing);
-    }
-
-    // Component Node (PascalCase / Capitalized tag name)
-    const isComponent = tagName.charCodeAt(0) >= 65 && tagName.charCodeAt(0) <= 90;
 
     const children: ASTNode[] = [];
     let foundClosing = isSelfClosing;
@@ -753,7 +772,9 @@ export function buildAIRFromAST(ast: ASTRootNode): {
 
   let templateCounter = 0;
 
-  function processNodes(nodes: ASTNode[], currentPath: number[]): {
+  const isSingleRoot = ast.children.length === 1 && ast.children[0].type === 'Element';
+
+  function processNodes(nodes: ASTNode[], currentPath: number[], isRootLevel = false): {
     html: string;
     slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[];
   } {
@@ -764,6 +785,8 @@ export function buildAIRFromAST(ast: ASTRootNode): {
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
+      const isSingleRootElement = isRootLevel && isSingleRoot && i === 0 && node.type === 'Element';
+      const nodePath = isSingleRootElement ? [] : currentPath.concat(childIndex);
 
       if (node.type === 'Text') {
         htmlParts.push(node.value);
@@ -784,7 +807,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           const dynamicSlot: AIRDynamicTextNode = {
             type: 'dynamic-text',
             expression: node.expression,
-            path: currentPath.concat(childIndex),
+            path: nodePath,
             securityContext: node.securityContext
           };
           slots.push(dynamicSlot);
@@ -792,10 +815,19 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         }
       } else if (node.type === 'Element') {
         let tagOpen = `<${node.tag}`;
-        const nodePath = currentPath.concat(childIndex);
 
         for (let a = 0; a < node.attributes.length; a++) {
           const attr = node.attributes[a];
+          const lowerName = attr.name.toLowerCase();
+
+          // Reject / strip static inline event handlers (onclick, onload, etc.) and dangerous attributes (srcdoc, innerhtml)
+          if (lowerName.startsWith('on') && !attr.isEvent) {
+            continue;
+          }
+          if (lowerName === 'srcdoc' || lowerName === 'innerhtml' || lowerName === 'outerhtml') {
+            continue;
+          }
+
           if (attr.isEvent && attr.eventName) {
             const eventSlot: AIRDynamicEventNode = {
               type: 'dynamic-event',
@@ -809,8 +841,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
             const fold = evaluateConstantExpression(attr.expression);
             if (fold.isConstant && fold.value !== null) {
               let safeFoldVal = fold.value;
-              const lowerName = attr.name.toLowerCase();
-              if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href') {
+              if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href' || lowerName === 'data') {
                 safeFoldVal = sanitizeUri(safeFoldVal);
               }
               tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeFoldVal)}"`;
@@ -826,8 +857,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
             }
           } else if (attr.value !== null) {
             let safeAttrVal = attr.value;
-            const lowerName = attr.name.toLowerCase();
-            if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href') {
+            if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href' || lowerName === 'data') {
               safeAttrVal = sanitizeUri(safeAttrVal);
             }
             tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeAttrVal)}"`;
@@ -841,7 +871,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           htmlParts.push(tagOpen);
         } else {
           tagOpen += '>';
-          const childrenResult = processNodes(node.children, nodePath);
+          const childrenResult = processNodes(node.children, nodePath, false);
           slots.push(...childrenResult.slots);
           htmlParts.push(`${tagOpen}${childrenResult.html}</${node.tag}>`);
         }
@@ -868,7 +898,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: helper,
-          path: currentPath.concat(childIndex),
+          path: nodePath,
           helperCode: helper
         });
         childIndex++;
@@ -879,7 +909,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: node.when,
-          path: currentPath.concat(childIndex),
+          path: nodePath,
           helperCode: helper
         });
         childIndex++;
@@ -890,7 +920,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           type: 'control-flow-slot',
           flowType: 'For',
           expression: node.each,
-          path: currentPath.concat(childIndex),
+          path: nodePath,
           helperCode: helper
         });
         childIndex++;
@@ -901,15 +931,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   }
 
   function getNodeExpr(path: number[]): string {
-    if (!path || path.length <= 1) return 'root';
+    if (!path || path.length === 0) return 'root';
     let expr = 'root';
-    for (let i = 1; i < path.length; i++) {
+    for (let i = 0; i < path.length; i++) {
       expr += `.childNodes[${path[i]}]`;
     }
     return expr;
   }
 
-  const { html, slots } = processNodes(ast.children, [0]);
+  const { html, slots } = processNodes(ast.children, [], true);
 
   templateCounter++;
   const templateUnit: AIRTemplateUnit = {
@@ -960,3 +990,47 @@ export function compileTemplate(rawSource: string, options?: ParseOptions): AIRC
     diagnostics
   };
 }
+
+export function findUnsupportedTemplateTags(node: ASTNode): Array<{ tag: string; loc: SourceLocation }> {
+  const list: Array<{ tag: string; loc: SourceLocation }> = [];
+
+  function walk(n: ASTNode) {
+    if (!n) return;
+    if (n.type === 'Element') {
+      const firstCode = n.tag.charCodeAt(0);
+      const isCapitalized = firstCode >= 65 && firstCode <= 90;
+      if (isCapitalized) {
+        list.push({ tag: n.tag, loc: n.loc });
+      }
+      if (n.children) {
+        for (let i = 0; i < n.children.length; i++) {
+          walk(n.children[i]);
+        }
+      }
+    } else if (n.type === 'Component') {
+      list.push({ tag: n.name, loc: n.loc });
+      if (n.children) {
+        for (let i = 0; i < n.children.length; i++) {
+          walk(n.children[i]);
+        }
+      }
+    } else if (n.type === 'Show' || n.type === 'For') {
+      list.push({ tag: n.type, loc: n.loc });
+      if (n.children) {
+        for (let i = 0; i < n.children.length; i++) {
+          walk(n.children[i]);
+        }
+      }
+    } else if (n.type === 'Root') {
+      if (n.children) {
+        for (let i = 0; i < n.children.length; i++) {
+          walk(n.children[i]);
+        }
+      }
+    }
+  }
+
+  walk(node);
+  return list;
+}
+

@@ -17,8 +17,42 @@ type DiagnosticListener = (diagnostic: DevDiagnostic) => void;
 const listeners = new Set<DiagnosticListener>();
 const diagnosticHistory: DevDiagnostic[] = [];
 const MAX_HISTORY = 100;
+declare global {
+  interface ImportMeta {
+    env?: {
+      DEV?: boolean;
+      [key: string]: unknown;
+    };
+  }
+}
 
-export const isDev = typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';
+export function computeIsDev(
+  metaEnv?: { DEV?: boolean } | undefined,
+  proc?: { env?: { NODE_ENV?: string } } | null
+): boolean {
+  if (metaEnv !== undefined) {
+    if (metaEnv && typeof metaEnv.DEV === 'boolean') {
+      return metaEnv.DEV;
+    }
+  } else {
+    try {
+      if (typeof import.meta !== 'undefined' && import.meta.env && typeof import.meta.env.DEV === 'boolean') {
+        return import.meta.env.DEV;
+      }
+    } catch {
+      // environment lacking import.meta
+    }
+  }
+
+  const effectiveProcess = proc !== undefined ? proc : (typeof process !== 'undefined' ? process : undefined);
+  if (effectiveProcess && effectiveProcess.env) {
+    return effectiveProcess.env.NODE_ENV !== 'production';
+  }
+
+  return false;
+}
+
+export const isDev = computeIsDev();
 
 export function onDevDiagnostic(listener: DiagnosticListener): () => void {
   listeners.add(listener);
@@ -79,6 +113,26 @@ export function reportDuplicateKey(key: unknown, componentName?: string): void {
   emitDevDiagnostic({
     type: 'duplicate-key',
     code: 'AETH-501',
+    message: msg,
+    details: { key, componentName }
+  });
+}
+
+/**
+ * Reports stale item in <For> when an item reference changes under the same key.
+ */
+export function reportStaleItemWarning(key: unknown, componentName?: string): void {
+  if (!isDev) return;
+
+  const msg = `[Samrey Dev] Item changed under existing key "${String(key)}" in <For>${componentName ? ` inside <${componentName}>` : ''}, but the row was reused without re-rendering. Children receive the initial item object at mount time. To reflect updates, either: 1) Use fine-grained signals or reactive store properties inside the item, or 2) Use a key that changes when the item data changes.`;
+
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(msg);
+  }
+
+  emitDevDiagnostic({
+    type: 'unnecessary-update',
+    code: 'AETH-502',
     message: msg,
     details: { key, componentName }
   });

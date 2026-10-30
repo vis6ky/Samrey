@@ -162,55 +162,98 @@ export function safeJsonParse<T = any>(jsonString: string): T {
 }
 
 const SENSITIVE_KEY_PATTERNS = [
-  /password/i,
-  /passwd/i,
-  /(^|[a-z0-9_-])pwd([A-Z0-9_-]|$)/i,
-  /secret/i,
-  /api[_-]?key/i,
-  /access[_-]?key/i,
-  /(^|[_-])auth([A-Z_-]|$|token|secret|key|header)/i,
-  /authorization/i,
-  /authentication/i,
-  /bearer/i,
-  /(^|[a-z0-9_-])token([A-Z_-]|$)(?!count)/i,
-  /jwt/i,
-  /private[_-]?key/i,
-  /(^|[_-])credentials?($|[_-])/i,
-  /(^|[_-])cookies?($|[_-])/i,
-  /(^|[_-])session(id)?($|[_-])/i,
-  /(^|[_-])ssn($|[_-])/i,
-  /database[_-]?url/i,
-  /connection[_-]?string/i,
-  /(^|[_-])salt($|[_-])/i,
-  /(^|[a-z0-9_-])(pass(word)?|secret|salt)hash/i,
-  /(^|[_-])hash($|[_-])/i,
-  /^env\./i,
-  /^process\.env/i,
-  /^_secret/i,
-  /client[_-]?secret/i,
-  /service[_-]?role/i
+  /(^|[._-])(password|passwd|pwd)([._-]|$)/,
+  /(^|[._-])secret([._-]|$)/,
+  /(^|[._-])api[._-]?key([._-]|$)/,
+  /(^|[._-])access[._-]?key([._-]|$)/,
+  /(^|[._-])private[._-]?key([._-]|$)/,
+  /(^|[._-])auth([._-]|$|token|secret|key|header)/,
+  /(^|[._-])(authorization|authentication)([._-]|$)/,
+  /(^|[._-])bearer([._-]|$)/,
+  /(^|[._-])token([._-]|$)/,
+  /(^|[._-])jwt([._-]|$)/,
+  /(^|[._-])credentials?([._-]|$)/,
+  /(^|[._-])cookies?([._-]|$)/,
+  /(^|[._-])session(id)?([._-]|$)/,
+  /(^|[._-])ssn([._-]|$)/,
+  /(^|[._-])database[._-]?url([._-]|$)/,
+  /(^|[._-])connection[._-]?string([._-]|$)/,
+  /(^|[._-])salt([._-]|$)/,
+  /(^|[._-])(pass(word)?|secret|salt)hash([._-]|$)/,
+  /(^|[._-])hash([._-]|$)/,
+  /^env\./,
+  /^process\.env/,
+  /^_secret/,
+  /(^|[._-])client[._-]?secret([._-]|$)/,
+  /(^|[._-])service[._-]?role([._-]|$)/
 ];
 
+const KEY_SENSITIVITY_CACHE = new Map<string, boolean>();
+
 export function isSensitiveKey(key: string, additionalKeys?: (string | RegExp)[]): boolean {
-  if (SENSITIVE_KEY_PATTERNS.some((p) => p.test(key))) {
-    return true;
+  if (typeof key !== 'string') return false;
+
+  if (!additionalKeys) {
+    const cached = KEY_SENSITIVITY_CACHE.get(key);
+    if (cached !== undefined) return cached;
   }
-  if (additionalKeys) {
-    return additionalKeys.some((p) => (typeof p === 'string' ? p.toLowerCase() === key.toLowerCase() : p.test(key)));
+
+  const norm = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+
+  // Explicit non-sensitive exceptions: author, authorId, tokenCount, authority
+  let sensitive = false;
+  if (
+    !/(^|[._-])author([._-]|$)/.test(norm) &&
+    !/(^|[._-])authority([._-]|$)/.test(norm) &&
+    !/(^|[._-])token[._-]count(s)?([._-]|$)/.test(norm)
+  ) {
+    sensitive = SENSITIVE_KEY_PATTERNS.some((p) => p.test(norm));
   }
-  return false;
+
+  if (!sensitive && additionalKeys) {
+    sensitive = additionalKeys.some((p) => (typeof p === 'string' ? p.toLowerCase() === key.toLowerCase() : p.test(key)));
+  }
+
+  if (!additionalKeys && KEY_SENSITIVITY_CACHE.size < 2000) {
+    KEY_SENSITIVITY_CACHE.set(key, sensitive);
+  }
+
+  return sensitive;
+}
+
+export interface SecretGuardOptions {
+  strict?: boolean;
+  additionalKeys?: (string | RegExp)[];
+  onSecretFound?: (path: string, key: string) => void;
 }
 
 export function stripSecrets<T>(
   data: T,
-  options: { strict?: boolean; additionalKeys?: (string | RegExp)[]; onSecretFound?: (path: string, key: string) => void } = {}
+  options: SecretGuardOptions = {}
 ): T {
   const ancestors = new WeakSet<object>();
   const memo = new WeakMap<object, any>();
 
   function sanitize(val: unknown, currentPath = ''): unknown {
     if (val === null || val === undefined) return val;
-    if (typeof val !== 'object') return val;
+
+    const valType = typeof val;
+    if (valType === 'function' || valType === 'symbol' || valType === 'bigint') {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (${valType}) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (${valType}) detected at "${errPath}". In standard JSON serialization it will serialize as undefined/empty or fail. Convert to JSON-serializable value.`
+        );
+      }
+      return undefined;
+    }
+
+    if (valType !== 'object') return val;
 
     // Detect circular reference in current ancestor stack
     if (ancestors.has(val as object)) {
@@ -222,14 +265,26 @@ export function stripSecrets<T>(
       return memo.get(val as object);
     }
 
-    // Preserve Date, RegExp, Map, Set
+    // Preserve Date, RegExp
     if (val instanceof Date) {
       return new Date(val.getTime());
     }
     if (val instanceof RegExp) {
       return new RegExp(val.source, val.flags);
     }
+
     if (val instanceof Map) {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (Map) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (Map) detected at "${errPath}". Convert to plain object or array (e.g. Array.from(map.entries())) before serializing.`
+        );
+      }
       ancestors.add(val as object);
       const cleanMap = new Map();
       memo.set(val as object, cleanMap);
@@ -246,7 +301,19 @@ export function stripSecrets<T>(
       ancestors.delete(val as object);
       return cleanMap;
     }
+
     if (val instanceof Set) {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (Set) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (Set) detected at "${errPath}". Convert to array (e.g. Array.from(set)) before serializing.`
+        );
+      }
       ancestors.add(val as object);
       const cleanSet = new Set();
       memo.set(val as object, cleanSet);
@@ -319,6 +386,8 @@ export function escapeForScriptPayload(jsonString: string): string {
 
 export const escapeJsonStringForScript = escapeForScriptPayload;
 
+const SAFE_IMAGE_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=]+$/i;
+
 /**
  * Strips dangerous HTML tags and attributes for rich text boundaries.
  */
@@ -329,11 +398,16 @@ export function sanitizeHtmlString(html: string): string {
     .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*>.*?<\/\1>/gis, '')
     .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*\/?>/gis, '')
     .replace(/[\s/]+(on[a-z0-9_-]+|formaction|xlink:href|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '')
-    .replace(/(href|src)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, quoted, innerQuoted, unquoted) => {
+    .replace(/(href|src|action)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, quoted, innerQuoted, unquoted) => {
       const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
       const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
-      if (/^(javascript|vbscript|data:text\/html):/i.test(decoded)) {
+      if (/^(javascript|vbscript):/i.test(decoded)) {
         return `${attr}="about:blank"`;
+      }
+      if (/^data:/i.test(decoded)) {
+        if (!SAFE_IMAGE_DATA_URI.test(decoded)) {
+          return `${attr}="about:blank"`;
+        }
       }
       return match;
     });

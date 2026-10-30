@@ -5,10 +5,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samrey-framework/samrey.git",
+    "url": "git+https://github.com/vis6ky/Samrey.git",
     "directory": "packages/http"
   },
-  "homepage": "https://samrey.dev",
+  "homepage": "https://github.com/vis6ky/Samrey#readme",
   "bugs": {
     "url": "https://github.com/samrey-framework/samrey/issues"
   },

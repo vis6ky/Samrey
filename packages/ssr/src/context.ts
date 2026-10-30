@@ -19,6 +19,7 @@ export interface SSRContext {
   head: SSRHeadMetadata;
   statusCode: number;
   errors: Error[];
+  headFlushed?: boolean;
   registerLoader: <T>(key: string, promise: Promise<T>) => void;
   setError: (err: Error, status?: number) => void;
   setTitle: (title: string) => void;
@@ -42,6 +43,7 @@ export function createSSRContext(initialState: Record<string, unknown> = {}): SS
     loaders,
     statusCode: 200,
     errors,
+    headFlushed: false,
     head: {
       meta: [],
       links: [],
@@ -66,9 +68,16 @@ export function createSSRContext(initialState: Record<string, unknown> = {}): SS
       context.statusCode = status;
     },
     setTitle: (title: string) => {
+      if (context.headFlushed && typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(`Head change after flush ignored: title "${title}". Set it during shell render.`);
+      }
       context.head.title = title;
     },
     addMeta: (meta) => {
+      if (context.headFlushed && typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        const desc = meta.name ? `meta name="${meta.name}"` : `meta property="${meta.property || ''}"`;
+        console.warn(`Head change after flush ignored: ${desc}. Set it during shell render.`);
+      }
       context.head.meta.push(meta);
     }
   };

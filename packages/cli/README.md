@@ -46,10 +46,13 @@ export default defineConfig({
 ## API / Commands
 
 - `samrey create <name> [--template <type>]` — Scaffolds a new project (`minimal`, `spa`, `ssr`, `ssg`).
-- `samrey build` — Builds the application for production.
-- `samrey audit` — Performs static security and accessibility validation across all source templates.
-- `samreyPlugin(options?: SamreyPluginOptions)` — Vite plugin performing AOT compilation and JSX transforms.
-- `scaffold(targetDir: string, template: TemplateType): Promise<void>` — Programmatic scaffolding API.
+- `samrey dev [--port <number>] [--host]` — Starts the local dev server.
+- `samrey build [--outDir <path>] [--ssr]` — Compiles and bundles the application using the project's installed Vite (`vite build`) and reports real disk file and gzip sizes.
+- `samrey preview [--port <number>] [--host] [--outDir <path>]` — Serves existing build output using the project's Vite preview (`vite preview`).
+- `samrey test [--watch] [--coverage]` — Executes application test suites directly using Vitest (if installed) or Node.js test runner (`node:test`).
+- `samrey audit [--warn-only]` — Runs lightweight static checks on source files (`<img>` alt attributes, `javascript:` URIs, inline `on*` handlers, `<script>` tags). *Note:* this is a small static check, not a full security audit.
+- `samrey analyze [--json] [--outDir <path>]` — Measures and reports real build artifact raw and gzip file sizes from the output directory.
+- `samreyPlugin(options?: SamreyPluginOptions)` — Vite plugin performing AOT compilation and template transforms.
 
 ## Environment
 

@@ -11,10 +11,10 @@
 
 | Package | Expected Exports | Actual Exports | Missing | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `@samrey/reactivity` | 15 | 26 | 0 | **PASS** |
-| `@samrey/runtime` | 18 | 42 | 0 | **PASS** |
-| `@samrey/security` | 10 | 25 | 0 | **PASS** |
-| `@samrey/compiler` | 9 | 18 | 0 | **PASS** |
+| `@samrey/reactivity` | 15 | 30 | 0 | **PASS** |
+| `@samrey/runtime` | 18 | 44 | 0 | **PASS** |
+| `@samrey/security` | 10 | 27 | 0 | **PASS** |
+| `@samrey/compiler` | 9 | 19 | 0 | **PASS** |
 | `@samrey/router` | 14 | 17 | 0 | **PASS** |
 | `@samrey/http` | 4 | 8 | 0 | **PASS** |
 | `@samrey/forms` | 4 | 7 | 0 | **PASS** |
