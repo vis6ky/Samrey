@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "description": "High-performance TypeScript-native frontend web framework featuring single-execution components, fine-grained push-pull reactivity, zero-VDOM template cloning, defense-in-depth security, and integrated developer guidance.",
   "license": "https://spdx.org/licenses/Apache-2.0",
-  "codeRepository": "https://github.com/samrey-dev/samrey",
+  "codeRepository": "https://github.com/vis6ky/Samrey",
   "programmingLanguage": [
     "TypeScript",
     "JavaScript"

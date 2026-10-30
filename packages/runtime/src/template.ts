@@ -34,7 +34,7 @@ export function template(htmlString: string): () => Node {
 
     if (!templateElement) {
       templateElement = document.createElement('template');
-      templateElement.innerHTML = TrustedTypesPolicy.createHTML(trimmed) as unknown as string;
+      templateElement.innerHTML = TrustedTypesPolicy.createTemplateHTML(trimmed) as unknown as string;
     }
 
     const clone = templateElement.content.cloneNode(true);

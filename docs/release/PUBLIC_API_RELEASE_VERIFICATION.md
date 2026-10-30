@@ -13,14 +13,14 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `@samrey/reactivity` | 15 | 30 | 0 | **PASS** |
 | `@samrey/runtime` | 18 | 44 | 0 | **PASS** |
-| `@samrey/security` | 10 | 27 | 0 | **PASS** |
+| `@samrey/security` | 10 | 28 | 0 | **PASS** |
 | `@samrey/compiler` | 9 | 19 | 0 | **PASS** |
 | `@samrey/router` | 14 | 17 | 0 | **PASS** |
 | `@samrey/http` | 4 | 8 | 0 | **PASS** |
 | `@samrey/forms` | 4 | 7 | 0 | **PASS** |
 | `@samrey/ssr` | 9 | 23 | 0 | **PASS** |
 | `@samrey/testing` | 6 | 9 | 0 | **PASS** |
-| `@samrey/devtools` | 9 | 24 | 0 | **PASS** |
+| `@samrey/devtools` | 9 | 26 | 0 | **PASS** |
 | `@samrey/cli` | 13 | 18 | 0 | **PASS** |
 
 ## 2. Detailed Symbol Breakdown

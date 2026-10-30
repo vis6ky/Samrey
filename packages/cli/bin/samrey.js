@@ -11,10 +11,10 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
-var __glob = (map2) => (path15) => {
-  var fn3 = map2[path15];
+var __glob = (map2) => (path16) => {
+  var fn3 = map2[path16];
   if (fn3) return fn3();
-  throw new Error("Module not found in bundle: " + path15);
+  throw new Error("Module not found in bundle: " + path16);
 };
 var __esm = (fn3, res) => function __init() {
   return fn3 && (res = (0, fn3[__getOwnPropNames(fn3)[0]])(fn3 = 0)), res;
@@ -47,7 +47,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var require_native = __commonJS({
   "../../node_modules/.bun/rollup@4.62.4/node_modules/rollup/dist/native.js"(exports, module2) {
     var { existsSync: existsSync11 } = __require("node:fs");
-    var path15 = __require("node:path");
+    var path16 = __require("node:path");
     var { platform: platform3, arch: arch2, report: report2 } = __require("node:process");
     var { spawnSync: spawnSync2 } = __require("node:child_process");
     var getReportHeader = () => {
@@ -147,7 +147,7 @@ var require_native = __commonJS({
       }
     };
     var { parse: parse8, parseAsync: parseAsync3, xxhashBase64Url: xxhashBase64Url2, xxhashBase36: xxhashBase362, xxhashBase16: xxhashBase162 } = requireWithFriendlyError(
-      existsSync11(path15.join(__dirname, localName)) ? localName : `@rollup/rollup-${packageBase}`
+      existsSync11(path16.join(__dirname, localName)) ? localName : `@rollup/rollup-${packageBase}`
     );
     function getPackageBase() {
       const imported = bindingsByPlatformAndArch[platform3]?.[arch2];
@@ -280,14 +280,14 @@ ${indicator}`;
     return `${lineNumber}: ${displayedLine}`;
   }).join("\n");
 }
-function isAbsolute2(path15) {
-  return ABSOLUTE_PATH_REGEX.test(path15);
+function isAbsolute2(path16) {
+  return ABSOLUTE_PATH_REGEX.test(path16);
 }
-function isRelative(path15) {
-  return RELATIVE_PATH_REGEX.test(path15);
+function isRelative(path16) {
+  return RELATIVE_PATH_REGEX.test(path16);
 }
-function normalize(path15) {
-  return path15.replace(BACKSLASH_REGEX, "/");
+function normalize(path16) {
+  return path16.replace(BACKSLASH_REGEX, "/");
 }
 function printQuotedStringList(list2, verbs) {
   const isSingleItem = list2.length <= 1;
@@ -2560,8 +2560,8 @@ var require_utils = __commonJS({
       }
       return output;
     };
-    exports.basename = (path15, { windows: windows2 } = {}) => {
-      const segs = path15.split(windows2 ? /[\\/]/ : "/");
+    exports.basename = (path16, { windows: windows2 } = {}) => {
+      const segs = path16.split(windows2 ? /[\\/]/ : "/");
       const last = segs[segs.length - 1];
       if (last === "") {
         return segs[segs.length - 2];
@@ -4993,7 +4993,7 @@ is not a problem with esbuild. You need to fix your environment instead.
         let latestResultPromise;
         let provideLatestResult;
         if (isContext)
-          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve14) => {
+          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve15) => {
             buildResponseToResult(request2, (err2, result, onEndErrors, onEndWarnings) => {
               const response = {
                 errors: onEndErrors,
@@ -5003,7 +5003,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               latestResultPromise = void 0;
               provideLatestResult = void 0;
               sendResponse(id3, response);
-              resolve14();
+              resolve15();
             });
           });
         sendRequest(refs, request, (error3, response) => {
@@ -5020,10 +5020,10 @@ is not a problem with esbuild. You need to fix your environment instead.
           let didDispose = false;
           const result = {
             rebuild: () => {
-              if (!latestResultPromise) latestResultPromise = new Promise((resolve14, reject) => {
+              if (!latestResultPromise) latestResultPromise = new Promise((resolve15, reject) => {
                 let settlePromise;
                 provideLatestResult = (err2, result2) => {
-                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve14(result2);
+                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve15(result2);
                 };
                 const triggerAnotherBuild = () => {
                   const request2 = {
@@ -5044,7 +5044,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               });
               return latestResultPromise;
             },
-            watch: (options22 = {}) => new Promise((resolve14, reject) => {
+            watch: (options22 = {}) => new Promise((resolve15, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "watch" API in this environment`);
               const keys = {};
               const delay = getFlag(options22, keys, "delay", mustBeInteger);
@@ -5056,10 +5056,10 @@ is not a problem with esbuild. You need to fix your environment instead.
               if (delay) request2.delay = delay;
               sendRequest(refs, request2, (error22) => {
                 if (error22) reject(new Error(error22));
-                else resolve14(void 0);
+                else resolve15(void 0);
               });
             }),
-            serve: (options22 = {}) => new Promise((resolve14, reject) => {
+            serve: (options22 = {}) => new Promise((resolve15, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "serve" API in this environment`);
               const keys = {};
               const port = getFlag(options22, keys, "port", mustBeValidPortNumber);
@@ -5097,28 +5097,28 @@ is not a problem with esbuild. You need to fix your environment instead.
                     sendResponse(id3, {});
                   };
                 }
-                resolve14(response2);
+                resolve15(response2);
               });
             }),
-            cancel: () => new Promise((resolve14) => {
-              if (didDispose) return resolve14();
+            cancel: () => new Promise((resolve15) => {
+              if (didDispose) return resolve15();
               const request2 = {
                 command: "cancel",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve14();
+                resolve15();
               });
             }),
-            dispose: () => new Promise((resolve14) => {
-              if (didDispose) return resolve14();
+            dispose: () => new Promise((resolve15) => {
+              if (didDispose) return resolve15();
               didDispose = true;
               const request2 = {
                 command: "dispose",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve14();
+                resolve15();
                 scheduleOnDisposeCallbacks();
                 refs.unref();
               });
@@ -5157,7 +5157,7 @@ is not a problem with esbuild. You need to fix your environment instead.
             onLoad: []
           };
           i5++;
-          let resolve14 = (path32, options2 = {}) => {
+          let resolve15 = (path32, options2 = {}) => {
             if (!isSetupDone) throw new Error('Cannot call "resolve" before plugin setup has completed');
             if (typeof path32 !== "string") throw new Error(`The path to resolve must be a string`);
             let keys2 = /* @__PURE__ */ Object.create(null);
@@ -5201,7 +5201,7 @@ is not a problem with esbuild. You need to fix your environment instead.
           };
           let promise2 = setup({
             initialOptions,
-            resolve: resolve14,
+            resolve: resolve15,
             onStart(callback2) {
               let registeredText = `This error came from the "onStart" callback registered here:`;
               let registeredNote = extractCallerV8(new Error(registeredText), streamIn, "onStart");
@@ -5654,7 +5654,7 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
     }
     var fs13 = __require("fs");
     var os2 = __require("os");
-    var path15 = __require("path");
+    var path16 = __require("path");
     var ESBUILD_BINARY_PATH = process.env.ESBUILD_BINARY_PATH || ESBUILD_BINARY_PATH;
     var isValidBinaryPath = (x) => !!x && x !== "/usr/bin/esbuild";
     var packageDarwin_arm64 = "@esbuild/darwin-arm64";
@@ -5713,19 +5713,19 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
     }
     function pkgForSomeOtherPlatform() {
       const libMainJS = __require.resolve("esbuild");
-      const nodeModulesDirectory = path15.dirname(path15.dirname(path15.dirname(libMainJS)));
-      if (path15.basename(nodeModulesDirectory) === "node_modules") {
+      const nodeModulesDirectory = path16.dirname(path16.dirname(path16.dirname(libMainJS)));
+      if (path16.basename(nodeModulesDirectory) === "node_modules") {
         for (const unixKey in knownUnixlikePackages) {
           try {
             const pkg2 = knownUnixlikePackages[unixKey];
-            if (fs13.existsSync(path15.join(nodeModulesDirectory, pkg2))) return pkg2;
+            if (fs13.existsSync(path16.join(nodeModulesDirectory, pkg2))) return pkg2;
           } catch {
           }
         }
         for (const windowsKey in knownWindowsPackages) {
           try {
             const pkg2 = knownWindowsPackages[windowsKey];
-            if (fs13.existsSync(path15.join(nodeModulesDirectory, pkg2))) return pkg2;
+            if (fs13.existsSync(path16.join(nodeModulesDirectory, pkg2))) return pkg2;
           } catch {
           }
         }
@@ -5733,8 +5733,8 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
       return null;
     }
     function downloadedBinPath(pkg2, subpath) {
-      const esbuildLibDir = path15.dirname(__require.resolve("esbuild"));
-      return path15.join(esbuildLibDir, `downloaded-${pkg2.replace("/", "-")}-${path15.basename(subpath)}`);
+      const esbuildLibDir = path16.dirname(__require.resolve("esbuild"));
+      return path16.join(esbuildLibDir, `downloaded-${pkg2.replace("/", "-")}-${path16.basename(subpath)}`);
     }
     function generateBinPath() {
       if (isValidBinaryPath(ESBUILD_BINARY_PATH)) {
@@ -5824,15 +5824,15 @@ for your current platform.`);
         }
         if (pnpapi) {
           const root4 = pnpapi.getPackageInformation(pnpapi.topLevel).packageLocation;
-          const binTargetPath = path15.join(
+          const binTargetPath = path16.join(
             root4,
             "node_modules",
             ".cache",
             "esbuild",
-            `pnpapi-${pkg2.replace("/", "-")}-${"0.25.12"}-${path15.basename(subpath)}`
+            `pnpapi-${pkg2.replace("/", "-")}-${"0.25.12"}-${path16.basename(subpath)}`
           );
           if (!fs13.existsSync(binTargetPath)) {
-            fs13.mkdirSync(path15.dirname(binTargetPath), { recursive: true });
+            fs13.mkdirSync(path16.dirname(binTargetPath), { recursive: true });
             fs13.copyFileSync(binPath, binTargetPath);
             fs13.chmodSync(binTargetPath, 493);
           }
@@ -6079,46 +6079,46 @@ More information: The file containing the code for esbuild's JavaScript API (${_
         }
       };
       longLivedService = {
-        build: (options2) => new Promise((resolve14, reject) => {
+        build: (options2) => new Promise((resolve15, reject) => {
           service.buildOrContext({
             callName: "build",
             refs,
             options: options2,
             isTTY: isTTY(),
             defaultWD,
-            callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+            callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
           });
         }),
-        context: (options2) => new Promise((resolve14, reject) => service.buildOrContext({
+        context: (options2) => new Promise((resolve15, reject) => service.buildOrContext({
           callName: "context",
           refs,
           options: options2,
           isTTY: isTTY(),
           defaultWD,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        transform: (input, options2) => new Promise((resolve14, reject) => service.transform({
+        transform: (input, options2) => new Promise((resolve15, reject) => service.transform({
           callName: "transform",
           refs,
           input,
           options: options2 || {},
           isTTY: isTTY(),
           fs: fsAsync,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        formatMessages: (messages2, options2) => new Promise((resolve14, reject) => service.formatMessages({
+        formatMessages: (messages2, options2) => new Promise((resolve15, reject) => service.formatMessages({
           callName: "formatMessages",
           refs,
           messages: messages2,
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        analyzeMetafile: (metafile, options2) => new Promise((resolve14, reject) => service.analyzeMetafile({
+        analyzeMetafile: (metafile, options2) => new Promise((resolve15, reject) => service.analyzeMetafile({
           callName: "analyzeMetafile",
           refs,
           metafile: typeof metafile === "string" ? metafile : JSON.stringify(metafile),
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         }))
       };
       return longLivedService;
@@ -6196,13 +6196,13 @@ error: ${text}`);
         worker.postMessage(msg);
         let status2 = Atomics.wait(sharedBufferView, 0, 0);
         if (status2 !== "ok" && status2 !== "not-equal") throw new Error("Internal error: Atomics.wait() failed: " + status2);
-        let { message: { id: id22, resolve: resolve14, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
+        let { message: { id: id22, resolve: resolve15, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
         if (id3 !== id22) throw new Error(`Internal error: Expected id ${id3} but got id ${id22}`);
         if (reject) {
           applyProperties(reject, properties);
           throw reject;
         }
-        return resolve14;
+        return resolve15;
       };
       worker.unref();
       return {
@@ -6442,25 +6442,25 @@ var init_constants = __esm({
 import { createRequire } from "module";
 import { basename as basename2, dirname as dirname3, normalize as normalize2, relative as relative2, resolve as resolve4, sep } from "path";
 import * as nativeFs from "fs";
-function cleanPath(path15) {
-  let normalized = normalize2(path15);
+function cleanPath(path16) {
+  let normalized = normalize2(path16);
   if (normalized.length > 1 && normalized[normalized.length - 1] === sep) normalized = normalized.substring(0, normalized.length - 1);
   return normalized;
 }
-function convertSlashes(path15, separator) {
-  return path15.replace(SLASHES_REGEX, separator);
+function convertSlashes(path16, separator) {
+  return path16.replace(SLASHES_REGEX, separator);
 }
-function isRootDirectory(path15) {
-  return path15 === "/" || WINDOWS_ROOT_DIR_REGEX.test(path15);
+function isRootDirectory(path16) {
+  return path16 === "/" || WINDOWS_ROOT_DIR_REGEX.test(path16);
 }
-function normalizePath(path15, options2) {
+function normalizePath(path16, options2) {
   const { resolvePaths, normalizePath: normalizePath$12, pathSeparator } = options2;
-  const pathNeedsCleaning = process.platform === "win32" && path15.includes("/") || path15.startsWith(".");
-  if (resolvePaths) path15 = resolve4(path15);
-  if (normalizePath$12 || pathNeedsCleaning) path15 = cleanPath(path15);
-  if (path15 === ".") return "";
-  const needsSeperator = path15[path15.length - 1] !== pathSeparator;
-  return convertSlashes(needsSeperator ? path15 + pathSeparator : path15, pathSeparator);
+  const pathNeedsCleaning = process.platform === "win32" && path16.includes("/") || path16.startsWith(".");
+  if (resolvePaths) path16 = resolve4(path16);
+  if (normalizePath$12 || pathNeedsCleaning) path16 = cleanPath(path16);
+  if (path16 === ".") return "";
+  const needsSeperator = path16[path16.length - 1] !== pathSeparator;
+  return convertSlashes(needsSeperator ? path16 + pathSeparator : path16, pathSeparator);
 }
 function joinPathWithBasePath(filename, directoryPath) {
   return directoryPath + filename;
@@ -6516,9 +6516,9 @@ function build$2(options2, isSynchronous) {
   if (!options2.resolveSymlinks || options2.excludeSymlinks) return null;
   return isSynchronous ? resolveSymlinks : resolveSymlinksAsync;
 }
-function isRecursive(path15, resolved, state) {
+function isRecursive(path16, resolved, state) {
   if (state.options.useRealPaths) return isRecursiveUsingRealPaths(resolved, state);
-  let parent = dirname3(path15);
+  let parent = dirname3(path16);
   let depth = 1;
   while (parent !== state.root && depth < 2) {
     const resolvedPath = state.symlinks.get(parent);
@@ -6526,7 +6526,7 @@ function isRecursive(path15, resolved, state) {
     if (isSameRoot) depth++;
     else parent = dirname3(parent);
   }
-  state.symlinks.set(path15, resolved);
+  state.symlinks.set(path16, resolved);
   return depth > 1;
 }
 function isRecursiveUsingRealPaths(resolved, state) {
@@ -6572,8 +6572,8 @@ var init_dist = __esm({
       paths.push(directoryPath || ".");
     };
     pushDirectoryFilter = (directoryPath, paths, filters) => {
-      const path15 = directoryPath || ".";
-      if (filters.every((filter2) => filter2(path15, true))) paths.push(path15);
+      const path16 = directoryPath || ".";
+      if (filters.every((filter2) => filter2(path16, true))) paths.push(path16);
     };
     empty$2 = () => {
     };
@@ -6606,26 +6606,26 @@ var init_dist = __esm({
     };
     empty = () => {
     };
-    resolveSymlinksAsync = function(path15, state, callback$1) {
+    resolveSymlinksAsync = function(path16, state, callback$1) {
       const { queue, fs: fs13, options: { suppressErrors } } = state;
       queue.enqueue();
-      fs13.realpath(path15, (error3, resolvedPath) => {
+      fs13.realpath(path16, (error3, resolvedPath) => {
         if (error3) return queue.dequeue(suppressErrors ? null : error3, state);
         fs13.stat(resolvedPath, (error$1, stat3) => {
           if (error$1) return queue.dequeue(suppressErrors ? null : error$1, state);
-          if (stat3.isDirectory() && isRecursive(path15, resolvedPath, state)) return queue.dequeue(null, state);
+          if (stat3.isDirectory() && isRecursive(path16, resolvedPath, state)) return queue.dequeue(null, state);
           callback$1(stat3, resolvedPath);
           queue.dequeue(null, state);
         });
       });
     };
-    resolveSymlinks = function(path15, state, callback$1) {
+    resolveSymlinks = function(path16, state, callback$1) {
       const { queue, fs: fs13, options: { suppressErrors } } = state;
       queue.enqueue();
       try {
-        const resolvedPath = fs13.realpathSync(path15);
+        const resolvedPath = fs13.realpathSync(path16);
         const stat3 = fs13.statSync(resolvedPath);
-        if (stat3.isDirectory() && isRecursive(path15, resolvedPath, state)) return;
+        if (stat3.isDirectory() && isRecursive(path16, resolvedPath, state)) return;
         callback$1(stat3, resolvedPath);
       } catch (e5) {
         if (!suppressErrors) throw e5;
@@ -6783,19 +6783,19 @@ var init_dist = __esm({
             const filename = this.joinPath(entry.name, directoryPath);
             this.pushFile(filename, files, this.state.counts, filters);
           } else if (entry.isDirectory()) {
-            let path15 = joinDirectoryPath(entry.name, directoryPath, this.state.options.pathSeparator);
-            if (exclude && exclude(entry.name, path15)) continue;
-            this.pushDirectory(path15, paths, filters);
-            this.walkDirectory(this.state, path15, path15, depth - 1, this.walk);
+            let path16 = joinDirectoryPath(entry.name, directoryPath, this.state.options.pathSeparator);
+            if (exclude && exclude(entry.name, path16)) continue;
+            this.pushDirectory(path16, paths, filters);
+            this.walkDirectory(this.state, path16, path16, depth - 1, this.walk);
           } else if (this.resolveSymlink && entry.isSymbolicLink()) {
-            let path15 = joinPathWithBasePath(entry.name, directoryPath);
-            this.resolveSymlink(path15, this.state, (stat3, resolvedPath) => {
+            let path16 = joinPathWithBasePath(entry.name, directoryPath);
+            this.resolveSymlink(path16, this.state, (stat3, resolvedPath) => {
               if (stat3.isDirectory()) {
                 resolvedPath = normalizePath(resolvedPath, this.state.options);
-                if (exclude && exclude(entry.name, useRealPaths ? resolvedPath : path15 + pathSeparator)) return;
-                this.walkDirectory(this.state, resolvedPath, useRealPaths ? resolvedPath : path15 + pathSeparator, depth - 1, this.walk);
+                if (exclude && exclude(entry.name, useRealPaths ? resolvedPath : path16 + pathSeparator)) return;
+                this.walkDirectory(this.state, resolvedPath, useRealPaths ? resolvedPath : path16 + pathSeparator, depth - 1, this.walk);
               } else {
-                resolvedPath = useRealPaths ? resolvedPath : path15;
+                resolvedPath = useRealPaths ? resolvedPath : path16;
                 const filename = basename2(resolvedPath);
                 const directoryPath$1 = normalizePath(dirname3(resolvedPath), this.state.options);
                 resolvedPath = this.joinPath(filename, directoryPath$1);
@@ -6945,7 +6945,7 @@ var init_dist = __esm({
           isMatch2 = globFn(patterns, ...options2);
           this.globCache[patterns.join("\0")] = isMatch2;
         }
-        this.options.filters.push((path15) => isMatch2(path15));
+        this.options.filters.push((path16) => isMatch2(path16));
         return this;
       }
     };
@@ -6985,11 +6985,11 @@ function normalizeWindowsPath(input = "") {
 function cwd() {
   return typeof process < "u" && typeof process.cwd == "function" ? process.cwd().replace(/\\/g, "/") : "/";
 }
-function normalizeString(path15, allowAboveRoot) {
+function normalizeString(path16, allowAboveRoot) {
   let res = "", lastSegmentLength = 0, lastSlash = -1, dots = 0, char = null;
-  for (let index4 = 0; index4 <= path15.length; ++index4) {
-    if (index4 < path15.length)
-      char = path15[index4];
+  for (let index4 = 0; index4 <= path16.length; ++index4) {
+    if (index4 < path16.length)
+      char = path16[index4];
     else {
       if (char === "/")
         break;
@@ -7009,7 +7009,7 @@ function normalizeString(path15, allowAboveRoot) {
         }
         allowAboveRoot && (res += res.length > 0 ? "/.." : "..", lastSegmentLength = 2);
       } else
-        res.length > 0 ? res += `/${path15.slice(lastSlash + 1, index4)}` : res = path15.slice(lastSlash + 1, index4), lastSegmentLength = index4 - lastSlash - 1;
+        res.length > 0 ? res += `/${path16.slice(lastSlash + 1, index4)}` : res = path16.slice(lastSlash + 1, index4), lastSegmentLength = index4 - lastSlash - 1;
       lastSlash = index4, dots = 0;
     } else char === "." && dots !== -1 ? ++dots : dots = -1;
   }
@@ -7024,8 +7024,8 @@ function posixPathToFileHref(posixPath) {
   const filePathLast = posixPath.charCodeAt(posixPath.length - 1);
   return (filePathLast === CHAR_FORWARD_SLASH || isWindows && filePathLast === CHAR_BACKWARD_SLASH) && resolved[resolved.length - 1] !== "/" && (resolved += "/"), resolved = encodePathChars(resolved), resolved.indexOf("?") !== -1 && (resolved = resolved.replace(questionRegex, "%3F")), resolved.indexOf("#") !== -1 && (resolved = resolved.replace(hashRegex, "%23")), new URL(`file://${resolved}`).href;
 }
-function toWindowsPath(path15) {
-  return path15.replace(/\//g, "\\");
+function toWindowsPath(path16) {
+  return path16.replace(/\//g, "\\");
 }
 function decodeInteger(reader, relative8) {
   let value2 = 0, shift = 0, integer = 0;
@@ -7269,10 +7269,10 @@ function getRunnerSourceMap(position) {
   }
   return null;
 }
-function retrieveFile(path15) {
-  if (path15 in fileContentsCache) return fileContentsCache[path15];
-  const content = retrieveFileFromHandlers(path15);
-  return typeof content == "string" ? (fileContentsCache[path15] = content, content) : null;
+function retrieveFile(path16) {
+  if (path16 in fileContentsCache) return fileContentsCache[path16];
+  const content = retrieveFileFromHandlers(path16);
+  return typeof content == "string" ? (fileContentsCache[path16] = content, content) : null;
 }
 function retrieveSourceMapURL(source) {
   const fileData = retrieveFile(source);
@@ -7479,8 +7479,8 @@ var init_module_runner = __esm({
       arguments_ = arguments_.map((argument) => normalizeWindowsPath(argument));
       let resolvedPath = "", resolvedAbsolute = false;
       for (let index4 = arguments_.length - 1; index4 >= -1 && !resolvedAbsolute; index4--) {
-        const path15 = index4 >= 0 ? arguments_[index4] : cwd();
-        !path15 || path15.length === 0 || (resolvedPath = `${path15}/${resolvedPath}`, resolvedAbsolute = isAbsolute3(path15));
+        const path16 = index4 >= 0 ? arguments_[index4] : cwd();
+        !path16 || path16.length === 0 || (resolvedPath = `${path16}/${resolvedPath}`, resolvedAbsolute = isAbsolute3(path16));
       }
       return resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute), resolvedAbsolute && !isAbsolute3(resolvedPath) ? `/${resolvedPath}` : resolvedPath.length > 0 ? resolvedPath : ".";
     };
@@ -7767,18 +7767,18 @@ var init_module_runner = __esm({
       // (e.g. style injections)
       async prunePaths(paths) {
         await Promise.all(
-          paths.map((path15) => {
-            const disposer = this.disposeMap.get(path15);
-            if (disposer) return disposer(this.dataMap.get(path15));
+          paths.map((path16) => {
+            const disposer = this.disposeMap.get(path16);
+            if (disposer) return disposer(this.dataMap.get(path16));
           })
-        ), paths.forEach((path15) => {
-          const fn3 = this.pruneMap.get(path15);
-          fn3 && fn3(this.dataMap.get(path15));
+        ), paths.forEach((path16) => {
+          const fn3 = this.pruneMap.get(path16);
+          fn3 && fn3(this.dataMap.get(path16));
         });
       }
-      warnFailedUpdate(err2, path15) {
+      warnFailedUpdate(err2, path16) {
         (!(err2 instanceof Error) || !err2.message.includes("fetch")) && this.logger.error(err2), this.logger.error(
-          `Failed to reload ${path15}. This could be due to syntax errors or importing non-existent modules. (see errors above)`
+          `Failed to reload ${path16}. This could be due to syntax errors or importing non-existent modules. (see errors above)`
         );
       }
       updateQueue = [];
@@ -7796,11 +7796,11 @@ var init_module_runner = __esm({
         }
       }
       async fetchUpdate(update) {
-        const { path: path15, acceptedPath, firstInvalidatedBy } = update, mod = this.hotModulesMap.get(path15);
+        const { path: path16, acceptedPath, firstInvalidatedBy } = update, mod = this.hotModulesMap.get(path16);
         if (!mod)
           return;
         let fetchedModule;
-        const isSelfUpdate = path15 === acceptedPath, qualifiedCallbacks = mod.callbacks.filter(
+        const isSelfUpdate = path16 === acceptedPath, qualifiedCallbacks = mod.callbacks.filter(
           ({ deps }) => deps.includes(acceptedPath)
         );
         if (isSelfUpdate || qualifiedCallbacks.length > 0) {
@@ -7821,7 +7821,7 @@ var init_module_runner = __esm({
                   (dep) => dep === acceptedPath ? fetchedModule : void 0
                 )
               );
-            const loggedPath = isSelfUpdate ? path15 : `${acceptedPath} via ${path15}`;
+            const loggedPath = isSelfUpdate ? path16 : `${acceptedPath} via ${path16}`;
             this.logger.debug(`hot updated: ${loggedPath}`);
           } finally {
             this.currentFirstInvalidatedBy = void 0;
@@ -8319,13 +8319,13 @@ function buildRelative(cwd2, root4) {
     return p5[p5.length - 1] === "/" && result !== "" ? `${result}/` : result || ".";
   };
 }
-function ensureNonDriveRelativePath(path15) {
-  return path15.replace(DRIVE_RELATIVE_PATH, (match) => `${match}/`);
+function ensureNonDriveRelativePath(path16) {
+  return path16.replace(DRIVE_RELATIVE_PATH, (match) => `${match}/`);
 }
-function splitPattern(path15) {
+function splitPattern(path16) {
   var _result$parts;
-  const result = import_picomatch.default.scan(path15, splitPatternOptions);
-  return ((_result$parts = result.parts) === null || _result$parts === void 0 ? void 0 : _result$parts.length) ? result.parts : [path15];
+  const result = import_picomatch.default.scan(path16, splitPatternOptions);
+  return ((_result$parts = result.parts) === null || _result$parts === void 0 ? void 0 : _result$parts.length) ? result.parts : [path16];
 }
 function isDynamicPattern(pattern, options2) {
   if ((options2 === null || options2 === void 0 ? void 0 : options2.caseSensitiveMatch) === false) return true;
@@ -8430,13 +8430,13 @@ function buildCrawler(options2, patterns) {
   if (options2.deep !== void 0) maxDepth = Math.round(options2.deep - props.depthOffset);
   const crawler = new Builder({
     filters: [debug2 ? (p5, isDirectory2) => {
-      const path15 = format2(p5, isDirectory2);
-      const matches2 = matcher(path15) && !ignore(path15);
-      if (matches2) log(`matched ${path15}`);
+      const path16 = format2(p5, isDirectory2);
+      const matches2 = matcher(path16) && !ignore(path16);
+      if (matches2) log(`matched ${path16}`);
       return matches2;
     } : (p5, isDirectory2) => {
-      const path15 = format2(p5, isDirectory2);
-      return matcher(path15) && !ignore(path15);
+      const path16 = format2(p5, isDirectory2);
+      return matcher(path16) && !ignore(path16);
     }],
     exclude: debug2 ? (_2, p5) => {
       const skipped = excludePredicate(_2, p5);
@@ -8512,8 +8512,8 @@ var init_dist2 = __esm({
     splitPatternOptions = { parts: true };
     POSIX_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}*?|]|^!|[!+@](?=\()|\\(?![()[\]{}!*+?@|]))/g;
     WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
-    escapePosixPath = (path15) => path15.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, "\\$&");
-    escapeWin32Path = (path15) => path15.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, "\\$&");
+    escapePosixPath = (path16) => path16.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, "\\$&");
+    escapeWin32Path = (path16) => path16.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, "\\$&");
     escapePath = isWin ? escapeWin32Path : escapePosixPath;
     PARENT_DIRECTORY = /^(\/?\.\.)+/;
     ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -9761,7 +9761,7 @@ is not a problem with esbuild. You need to fix your environment instead.
         let latestResultPromise;
         let provideLatestResult;
         if (isContext)
-          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve14) => {
+          requestCallbacks["on-end"] = (id3, request2) => new Promise((resolve15) => {
             buildResponseToResult(request2, (err2, result, onEndErrors, onEndWarnings) => {
               const response = {
                 errors: onEndErrors,
@@ -9771,7 +9771,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               latestResultPromise = void 0;
               provideLatestResult = void 0;
               sendResponse(id3, response);
-              resolve14();
+              resolve15();
             });
           });
         sendRequest(refs, request, (error3, response) => {
@@ -9788,10 +9788,10 @@ is not a problem with esbuild. You need to fix your environment instead.
           let didDispose = false;
           const result = {
             rebuild: () => {
-              if (!latestResultPromise) latestResultPromise = new Promise((resolve14, reject) => {
+              if (!latestResultPromise) latestResultPromise = new Promise((resolve15, reject) => {
                 let settlePromise;
                 provideLatestResult = (err2, result2) => {
-                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve14(result2);
+                  if (!settlePromise) settlePromise = () => err2 ? reject(err2) : resolve15(result2);
                 };
                 const triggerAnotherBuild = () => {
                   const request2 = {
@@ -9812,7 +9812,7 @@ is not a problem with esbuild. You need to fix your environment instead.
               });
               return latestResultPromise;
             },
-            watch: (options22 = {}) => new Promise((resolve14, reject) => {
+            watch: (options22 = {}) => new Promise((resolve15, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "watch" API in this environment`);
               const keys = {};
               const delay = getFlag(options22, keys, "delay", mustBeInteger);
@@ -9824,10 +9824,10 @@ is not a problem with esbuild. You need to fix your environment instead.
               if (delay) request2.delay = delay;
               sendRequest(refs, request2, (error22) => {
                 if (error22) reject(new Error(error22));
-                else resolve14(void 0);
+                else resolve15(void 0);
               });
             }),
-            serve: (options22 = {}) => new Promise((resolve14, reject) => {
+            serve: (options22 = {}) => new Promise((resolve15, reject) => {
               if (!streamIn.hasFS) throw new Error(`Cannot use the "serve" API in this environment`);
               const keys = {};
               const port = getFlag(options22, keys, "port", mustBeValidPortNumber);
@@ -9865,28 +9865,28 @@ is not a problem with esbuild. You need to fix your environment instead.
                     sendResponse(id3, {});
                   };
                 }
-                resolve14(response2);
+                resolve15(response2);
               });
             }),
-            cancel: () => new Promise((resolve14) => {
-              if (didDispose) return resolve14();
+            cancel: () => new Promise((resolve15) => {
+              if (didDispose) return resolve15();
               const request2 = {
                 command: "cancel",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve14();
+                resolve15();
               });
             }),
-            dispose: () => new Promise((resolve14) => {
-              if (didDispose) return resolve14();
+            dispose: () => new Promise((resolve15) => {
+              if (didDispose) return resolve15();
               didDispose = true;
               const request2 = {
                 command: "dispose",
                 key: buildKey
               };
               sendRequest(refs, request2, () => {
-                resolve14();
+                resolve15();
                 scheduleOnDisposeCallbacks();
                 refs.unref();
               });
@@ -9925,7 +9925,7 @@ is not a problem with esbuild. You need to fix your environment instead.
             onLoad: []
           };
           i5++;
-          let resolve14 = (path32, options2 = {}) => {
+          let resolve15 = (path32, options2 = {}) => {
             if (!isSetupDone) throw new Error('Cannot call "resolve" before plugin setup has completed');
             if (typeof path32 !== "string") throw new Error(`The path to resolve must be a string`);
             let keys2 = /* @__PURE__ */ Object.create(null);
@@ -9969,7 +9969,7 @@ is not a problem with esbuild. You need to fix your environment instead.
           };
           let promise2 = setup({
             initialOptions,
-            resolve: resolve14,
+            resolve: resolve15,
             onStart(callback2) {
               let registeredText = `This error came from the "onStart" callback registered here:`;
               let registeredNote = extractCallerV8(new Error(registeredText), streamIn, "onStart");
@@ -10431,7 +10431,7 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
     }
     var fs13 = __require("fs");
     var os2 = __require("os");
-    var path15 = __require("path");
+    var path16 = __require("path");
     var ESBUILD_BINARY_PATH = process.env.ESBUILD_BINARY_PATH || ESBUILD_BINARY_PATH;
     var isValidBinaryPath = (x) => !!x && x !== "/usr/bin/esbuild";
     var packageDarwin_arm64 = "@esbuild/darwin-arm64";
@@ -10490,19 +10490,19 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
     }
     function pkgForSomeOtherPlatform() {
       const libMainJS = __require.resolve("esbuild");
-      const nodeModulesDirectory = path15.dirname(path15.dirname(path15.dirname(libMainJS)));
-      if (path15.basename(nodeModulesDirectory) === "node_modules") {
+      const nodeModulesDirectory = path16.dirname(path16.dirname(path16.dirname(libMainJS)));
+      if (path16.basename(nodeModulesDirectory) === "node_modules") {
         for (const unixKey in knownUnixlikePackages) {
           try {
             const pkg2 = knownUnixlikePackages[unixKey];
-            if (fs13.existsSync(path15.join(nodeModulesDirectory, pkg2))) return pkg2;
+            if (fs13.existsSync(path16.join(nodeModulesDirectory, pkg2))) return pkg2;
           } catch {
           }
         }
         for (const windowsKey in knownWindowsPackages) {
           try {
             const pkg2 = knownWindowsPackages[windowsKey];
-            if (fs13.existsSync(path15.join(nodeModulesDirectory, pkg2))) return pkg2;
+            if (fs13.existsSync(path16.join(nodeModulesDirectory, pkg2))) return pkg2;
           } catch {
           }
         }
@@ -10510,8 +10510,8 @@ ${file}:${line}:${column}: ERROR: ${pluginText}${e5.text}`;
       return null;
     }
     function downloadedBinPath(pkg2, subpath) {
-      const esbuildLibDir = path15.dirname(__require.resolve("esbuild"));
-      return path15.join(esbuildLibDir, `downloaded-${pkg2.replace("/", "-")}-${path15.basename(subpath)}`);
+      const esbuildLibDir = path16.dirname(__require.resolve("esbuild"));
+      return path16.join(esbuildLibDir, `downloaded-${pkg2.replace("/", "-")}-${path16.basename(subpath)}`);
     }
     function generateBinPath() {
       if (isValidBinaryPath(ESBUILD_BINARY_PATH)) {
@@ -10601,15 +10601,15 @@ for your current platform.`);
         }
         if (pnpapi) {
           const root4 = pnpapi.getPackageInformation(pnpapi.topLevel).packageLocation;
-          const binTargetPath = path15.join(
+          const binTargetPath = path16.join(
             root4,
             "node_modules",
             ".cache",
             "esbuild",
-            `pnpapi-${pkg2.replace("/", "-")}-${"0.28.2"}-${path15.basename(subpath)}`
+            `pnpapi-${pkg2.replace("/", "-")}-${"0.28.2"}-${path16.basename(subpath)}`
           );
           if (!fs13.existsSync(binTargetPath)) {
-            fs13.mkdirSync(path15.dirname(binTargetPath), { recursive: true });
+            fs13.mkdirSync(path16.dirname(binTargetPath), { recursive: true });
             fs13.copyFileSync(binPath, binTargetPath);
             fs13.chmodSync(binTargetPath, 493);
           }
@@ -10856,46 +10856,46 @@ More information: The file containing the code for esbuild's JavaScript API (${_
         }
       };
       longLivedService = {
-        build: (options2) => new Promise((resolve14, reject) => {
+        build: (options2) => new Promise((resolve15, reject) => {
           service.buildOrContext({
             callName: "build",
             refs,
             options: options2,
             isTTY: isTTY(),
             defaultWD,
-            callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+            callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
           });
         }),
-        context: (options2) => new Promise((resolve14, reject) => service.buildOrContext({
+        context: (options2) => new Promise((resolve15, reject) => service.buildOrContext({
           callName: "context",
           refs,
           options: options2,
           isTTY: isTTY(),
           defaultWD,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        transform: (input, options2) => new Promise((resolve14, reject) => service.transform({
+        transform: (input, options2) => new Promise((resolve15, reject) => service.transform({
           callName: "transform",
           refs,
           input,
           options: options2 || {},
           isTTY: isTTY(),
           fs: fsAsync,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        formatMessages: (messages2, options2) => new Promise((resolve14, reject) => service.formatMessages({
+        formatMessages: (messages2, options2) => new Promise((resolve15, reject) => service.formatMessages({
           callName: "formatMessages",
           refs,
           messages: messages2,
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         })),
-        analyzeMetafile: (metafile, options2) => new Promise((resolve14, reject) => service.analyzeMetafile({
+        analyzeMetafile: (metafile, options2) => new Promise((resolve15, reject) => service.analyzeMetafile({
           callName: "analyzeMetafile",
           refs,
           metafile: typeof metafile === "string" ? metafile : JSON.stringify(metafile),
           options: options2,
-          callback: (err2, res) => err2 ? reject(err2) : resolve14(res)
+          callback: (err2, res) => err2 ? reject(err2) : resolve15(res)
         }))
       };
       return longLivedService;
@@ -10973,13 +10973,13 @@ error: ${text}`);
         worker.postMessage(msg);
         let status2 = Atomics.wait(sharedBufferView, 0, 0);
         if (status2 !== "ok" && status2 !== "not-equal") throw new Error("Internal error: Atomics.wait() failed: " + status2);
-        let { message: { id: id22, resolve: resolve14, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
+        let { message: { id: id22, resolve: resolve15, reject, properties } } = worker_threads2.receiveMessageOnPort(mainPort);
         if (id3 !== id22) throw new Error(`Internal error: Expected id ${id3} but got id ${id22}`);
         if (reject) {
           applyProperties(reject, properties);
           throw reject;
         }
-        return resolve14;
+        return resolve15;
       };
       worker.unref();
       return {
@@ -26919,7 +26919,7 @@ import { platform } from "node:os";
 function requireConstants$3() {
   if (hasRequiredConstants$3) return constants$3;
   hasRequiredConstants$3 = 1;
-  const path15 = require$$0$1;
+  const path16 = require$$0$1;
   const WIN_SLASH = "\\\\/";
   const WIN_NO_SLASH = `[^${WIN_SLASH}]`;
   const DEFAULT_MAX_EXTGLOB_RECURSION = 0;
@@ -27093,7 +27093,7 @@ function requireConstants$3() {
     /* | */
     CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279,
     /* \uFEFF */
-    SEP: path15.sep,
+    SEP: path16.sep,
     /**
      * Create EXTGLOB_CHARS
      */
@@ -27119,7 +27119,7 @@ function requireUtils$2() {
   if (hasRequiredUtils$2) return utils$2;
   hasRequiredUtils$2 = 1;
   (function(exports) {
-    const path15 = require$$0$1;
+    const path16 = require$$0$1;
     const win323 = process.platform === "win32";
     const {
       REGEX_BACKSLASH,
@@ -27148,7 +27148,7 @@ function requireUtils$2() {
       if (options2 && typeof options2.windows === "boolean") {
         return options2.windows;
       }
-      return win323 === true || path15.sep === "\\";
+      return win323 === true || path16.sep === "\\";
     };
     exports.escapeLast = (input, char, lastIdx) => {
       const idx = input.lastIndexOf(char, lastIdx);
@@ -28502,7 +28502,7 @@ function requireParse$2() {
 function requirePicomatch$3() {
   if (hasRequiredPicomatch$3) return picomatch_1$1;
   hasRequiredPicomatch$3 = 1;
-  const path15 = require$$0$1;
+  const path16 = require$$0$1;
   const scan = /* @__PURE__ */ requireScan$1();
   const parse8 = /* @__PURE__ */ requireParse$2();
   const utils4 = /* @__PURE__ */ requireUtils$2();
@@ -28587,7 +28587,7 @@ function requirePicomatch$3() {
   };
   picomatch5.matchBase = (input, glob2, options2, posix4 = utils4.isWindows(options2)) => {
     const regex = glob2 instanceof RegExp ? glob2 : picomatch5.makeRe(glob2, options2);
-    return regex.test(path15.basename(input));
+    return regex.test(path16.basename(input));
   };
   picomatch5.isMatch = (str2, patterns, options2) => picomatch5(patterns, options2)(str2);
   picomatch5.parse = (pattern, options2) => {
@@ -28699,8 +28699,8 @@ function requireReaddirp() {
       return {
         root: ".",
         /* eslint-disable no-unused-vars */
-        fileFilter: (path15) => true,
-        directoryFilter: (path15) => true,
+        fileFilter: (path16) => true,
+        directoryFilter: (path16) => true,
         /* eslint-enable no-unused-vars */
         type: FILE_TYPE2,
         lstat: false,
@@ -28720,7 +28720,7 @@ function requireReaddirp() {
       this._directoryFilter = normalizeFilter3(opts.directoryFilter);
       const statMethod = opts.lstat ? lstat2 : stat3;
       if (wantBigintFsStats2) {
-        this._stat = (path15) => statMethod(path15, { bigint: true });
+        this._stat = (path16) => statMethod(path16, { bigint: true });
       } else {
         this._stat = statMethod;
       }
@@ -28741,9 +28741,9 @@ function requireReaddirp() {
       this.reading = true;
       try {
         while (!this.destroyed && batch > 0) {
-          const { path: path15, depth, files = [] } = this.parent || {};
+          const { path: path16, depth, files = [] } = this.parent || {};
           if (files.length > 0) {
-            const slice = files.splice(0, batch).map((dirent) => this._formatEntry(dirent, path15));
+            const slice = files.splice(0, batch).map((dirent) => this._formatEntry(dirent, path16));
             for (const entry of await Promise.all(slice)) {
               if (this.destroyed) return;
               const entryType = await this._getEntryType(entry);
@@ -28778,20 +28778,20 @@ function requireReaddirp() {
         this.reading = false;
       }
     }
-    async _exploreDir(path15, depth) {
+    async _exploreDir(path16, depth) {
       let files;
       try {
-        files = await readdir3(path15, this._rdOptions);
+        files = await readdir3(path16, this._rdOptions);
       } catch (error3) {
         this._onError(error3);
       }
-      return { files, depth, path: path15 };
+      return { files, depth, path: path16 };
     }
-    async _formatEntry(dirent, path15) {
+    async _formatEntry(dirent, path16) {
       let entry;
       try {
         const basename5 = this._isDirent ? dirent.name : dirent;
-        const fullPath = sysPath2.resolve(sysPath2.join(path15, basename5));
+        const fullPath = sysPath2.resolve(sysPath2.join(path16, basename5));
         entry = { path: sysPath2.relative(this._root, fullPath), fullPath, basename: basename5 };
         entry[this._statsProp] = this._isDirent ? dirent : await this._stat(fullPath);
       } catch (err2) {
@@ -28861,9 +28861,9 @@ function requireReaddirp() {
     return new ReaddirpStream2(options2);
   };
   const readdirpPromise2 = (root4, options2 = {}) => {
-    return new Promise((resolve14, reject) => {
+    return new Promise((resolve15, reject) => {
       const files = [];
-      readdirp2(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve14(files)).on("error", (error3) => reject(error3));
+      readdirp2(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve15(files)).on("error", (error3) => reject(error3));
     });
   };
   readdirp2.promise = readdirpPromise2;
@@ -28875,7 +28875,7 @@ function requireReaddirp() {
 function requireConstants$2() {
   if (hasRequiredConstants$2) return constants$2;
   hasRequiredConstants$2 = 1;
-  const path15 = require$$0$1;
+  const path16 = require$$0$1;
   const WIN_SLASH = "\\\\/";
   const WIN_NO_SLASH = `[^${WIN_SLASH}]`;
   const DEFAULT_MAX_EXTGLOB_RECURSION = 0;
@@ -29049,7 +29049,7 @@ function requireConstants$2() {
     /* | */
     CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279,
     /* \uFEFF */
-    SEP: path15.sep,
+    SEP: path16.sep,
     /**
      * Create EXTGLOB_CHARS
      */
@@ -29075,7 +29075,7 @@ function requireUtils$1() {
   if (hasRequiredUtils$1) return utils$1;
   hasRequiredUtils$1 = 1;
   (function(exports) {
-    const path15 = require$$0$1;
+    const path16 = require$$0$1;
     const win323 = process.platform === "win32";
     const {
       REGEX_BACKSLASH,
@@ -29104,7 +29104,7 @@ function requireUtils$1() {
       if (options2 && typeof options2.windows === "boolean") {
         return options2.windows;
       }
-      return win323 === true || path15.sep === "\\";
+      return win323 === true || path16.sep === "\\";
     };
     exports.escapeLast = (input, char, lastIdx) => {
       const idx = input.lastIndexOf(char, lastIdx);
@@ -30458,7 +30458,7 @@ function requireParse$1() {
 function requirePicomatch$1() {
   if (hasRequiredPicomatch$1) return picomatch_1;
   hasRequiredPicomatch$1 = 1;
-  const path15 = require$$0$1;
+  const path16 = require$$0$1;
   const scan = /* @__PURE__ */ requireScan();
   const parse8 = /* @__PURE__ */ requireParse$1();
   const utils4 = /* @__PURE__ */ requireUtils$1();
@@ -30543,7 +30543,7 @@ function requirePicomatch$1() {
   };
   picomatch5.matchBase = (input, glob2, options2, posix4 = utils4.isWindows(options2)) => {
     const regex = glob2 instanceof RegExp ? glob2 : picomatch5.makeRe(glob2, options2);
-    return regex.test(path15.basename(input));
+    return regex.test(path16.basename(input));
   };
   picomatch5.isMatch = (str2, patterns, options2) => picomatch5(patterns, options2)(str2);
   picomatch5.parse = (pattern, options2) => {
@@ -30603,22 +30603,22 @@ function requirePicomatch() {
 function requireNormalizePath() {
   if (hasRequiredNormalizePath) return normalizePath2;
   hasRequiredNormalizePath = 1;
-  normalizePath2 = function(path15, stripTrailing) {
-    if (typeof path15 !== "string") {
+  normalizePath2 = function(path16, stripTrailing) {
+    if (typeof path16 !== "string") {
       throw new TypeError("expected path to be a string");
     }
-    if (path15 === "\\" || path15 === "/") return "/";
-    var len = path15.length;
-    if (len <= 1) return path15;
+    if (path16 === "\\" || path16 === "/") return "/";
+    var len = path16.length;
+    if (len <= 1) return path16;
     var prefix = "";
-    if (len > 4 && path15[3] === "\\") {
-      var ch = path15[2];
-      if ((ch === "?" || ch === ".") && path15.slice(0, 2) === "\\\\") {
-        path15 = path15.slice(2);
+    if (len > 4 && path16[3] === "\\") {
+      var ch = path16[2];
+      if ((ch === "?" || ch === ".") && path16.slice(0, 2) === "\\\\") {
+        path16 = path16.slice(2);
         prefix = "//";
       }
     }
-    var segs = path15.split(/[/\\]+/);
+    var segs = path16.split(/[/\\]+/);
     if (stripTrailing !== false && segs[segs.length - 1] === "") {
       segs.pop();
     }
@@ -30654,17 +30654,17 @@ function requireAnymatch() {
     if (!isList && typeof _path2 !== "string") {
       throw new TypeError("anymatch: second argument must be a string: got " + Object.prototype.toString.call(_path2));
     }
-    const path15 = normalizePath7(_path2, false);
+    const path16 = normalizePath7(_path2, false);
     for (let index4 = 0; index4 < negPatterns.length; index4++) {
       const nglob = negPatterns[index4];
-      if (nglob(path15)) {
+      if (nglob(path16)) {
         return returnIndex ? -1 : false;
       }
     }
-    const applied = isList && [path15].concat(args2.slice(1));
+    const applied = isList && [path16].concat(args2.slice(1));
     for (let index4 = 0; index4 < patterns.length; index4++) {
       const pattern = patterns[index4];
-      if (isList ? pattern(...applied) : pattern(path15)) {
+      if (isList ? pattern(...applied) : pattern(path16)) {
         return returnIndex ? index4 : true;
       }
     }
@@ -31937,10 +31937,10 @@ function requireBinaryExtensions() {
 function requireIsBinaryPath() {
   if (hasRequiredIsBinaryPath) return isBinaryPath;
   hasRequiredIsBinaryPath = 1;
-  const path15 = require$$0$1;
+  const path16 = require$$0$1;
   const binaryExtensions3 = /* @__PURE__ */ requireBinaryExtensions();
   const extensions2 = new Set(binaryExtensions3);
-  isBinaryPath = (filePath) => extensions2.has(path15.extname(filePath).slice(1).toLowerCase());
+  isBinaryPath = (filePath) => extensions2.has(path16.extname(filePath).slice(1).toLowerCase());
   return isBinaryPath;
 }
 function requireConstants() {
@@ -32071,20 +32071,20 @@ function requireNodefsHandler() {
   };
   const isEmptySet2 = (val) => val instanceof Set ? val.size === 0 : !val;
   const FsWatchInstances2 = /* @__PURE__ */ new Map();
-  function createFsWatchInstance2(path15, options2, listener2, errHandler, emitRaw) {
+  function createFsWatchInstance2(path16, options2, listener2, errHandler, emitRaw) {
     const handleEvent = (rawEvent, evPath) => {
-      listener2(path15);
-      emitRaw(rawEvent, evPath, { watchedPath: path15 });
-      if (evPath && path15 !== evPath) {
+      listener2(path16);
+      emitRaw(rawEvent, evPath, { watchedPath: path16 });
+      if (evPath && path16 !== evPath) {
         fsWatchBroadcast2(
-          sysPath2.resolve(path15, evPath),
+          sysPath2.resolve(path16, evPath),
           KEY_LISTENERS2,
-          sysPath2.join(path15, evPath)
+          sysPath2.join(path16, evPath)
         );
       }
     };
     try {
-      return fs13.watch(path15, options2, handleEvent);
+      return fs13.watch(path16, options2, handleEvent);
     } catch (error3) {
       errHandler(error3);
     }
@@ -32096,13 +32096,13 @@ function requireNodefsHandler() {
       listener2(val1, val2, val3);
     });
   };
-  const setFsWatchListener2 = (path15, fullPath, options2, handlers) => {
+  const setFsWatchListener2 = (path16, fullPath, options2, handlers) => {
     const { listener: listener2, errHandler, rawEmitter } = handlers;
     let cont = FsWatchInstances2.get(fullPath);
     let watcher;
     if (!options2.persistent) {
       watcher = createFsWatchInstance2(
-        path15,
+        path16,
         options2,
         listener2,
         errHandler,
@@ -32116,7 +32116,7 @@ function requireNodefsHandler() {
       addAndConvert2(cont, KEY_RAW2, rawEmitter);
     } else {
       watcher = createFsWatchInstance2(
-        path15,
+        path16,
         options2,
         fsWatchBroadcast2.bind(null, fullPath, KEY_LISTENERS2),
         errHandler,
@@ -32129,7 +32129,7 @@ function requireNodefsHandler() {
         cont.watcherUnusable = true;
         if (isWindows3 && error3.code === "EPERM") {
           try {
-            const fd = await open2(path15, "r");
+            const fd = await open2(path16, "r");
             await close2(fd);
             broadcastErr(error3);
           } catch (err2) {
@@ -32160,7 +32160,7 @@ function requireNodefsHandler() {
     };
   };
   const FsWatchFileInstances2 = /* @__PURE__ */ new Map();
-  const setFsWatchFileListener2 = (path15, fullPath, options2, handlers) => {
+  const setFsWatchFileListener2 = (path16, fullPath, options2, handlers) => {
     const { listener: listener2, rawEmitter } = handlers;
     let cont = FsWatchFileInstances2.get(fullPath);
     const copts = cont && cont.options;
@@ -32182,7 +32182,7 @@ function requireNodefsHandler() {
           });
           const currmtime = curr.mtimeMs;
           if (curr.size !== prev.size || currmtime > prev.mtimeMs || currmtime === 0) {
-            foreach2(cont.listeners, (listener3) => listener3(path15, curr));
+            foreach2(cont.listeners, (listener3) => listener3(path16, curr));
           }
         })
       };
@@ -32213,24 +32213,24 @@ function requireNodefsHandler() {
      * @param {Function} listener on fs change
      * @returns {Function} closer for the watcher instance
      */
-    _watchWithNodeFs(path15, listener2) {
+    _watchWithNodeFs(path16, listener2) {
       const opts = this.fsw.options;
-      const directory = sysPath2.dirname(path15);
-      const basename5 = sysPath2.basename(path15);
+      const directory = sysPath2.dirname(path16);
+      const basename5 = sysPath2.basename(path16);
       const parent = this.fsw._getWatchedDir(directory);
       parent.add(basename5);
-      const absolutePath = sysPath2.resolve(path15);
+      const absolutePath = sysPath2.resolve(path16);
       const options2 = { persistent: opts.persistent };
       if (!listener2) listener2 = EMPTY_FN2;
       let closer;
       if (opts.usePolling) {
         options2.interval = opts.enableBinaryInterval && isBinaryPath3(basename5) ? opts.binaryInterval : opts.interval;
-        closer = setFsWatchFileListener2(path15, absolutePath, options2, {
+        closer = setFsWatchFileListener2(path16, absolutePath, options2, {
           listener: listener2,
           rawEmitter: this.fsw._emitRaw
         });
       } else {
-        closer = setFsWatchListener2(path15, absolutePath, options2, {
+        closer = setFsWatchListener2(path16, absolutePath, options2, {
           listener: listener2,
           errHandler: this._boundHandleError,
           rawEmitter: this.fsw._emitRaw
@@ -32254,7 +32254,7 @@ function requireNodefsHandler() {
       const parent = this.fsw._getWatchedDir(dirname7);
       let prevStats = stats;
       if (parent.has(basename5)) return;
-      const listener2 = async (path15, newStats) => {
+      const listener2 = async (path16, newStats) => {
         if (!this.fsw._throttle(THROTTLE_MODE_WATCH2, file, 5)) return;
         if (!newStats || newStats.mtimeMs === 0) {
           try {
@@ -32266,9 +32266,9 @@ function requireNodefsHandler() {
               this.fsw._emit(EV_CHANGE2, file, newStats2);
             }
             if (isLinux2 && prevStats.ino !== newStats2.ino) {
-              this.fsw._closeFile(path15);
+              this.fsw._closeFile(path16);
               prevStats = newStats2;
-              this.fsw._addPathCloser(path15, this._watchWithNodeFs(file, listener2));
+              this.fsw._addPathCloser(path16, this._watchWithNodeFs(file, listener2));
             } else {
               prevStats = newStats2;
             }
@@ -32299,7 +32299,7 @@ function requireNodefsHandler() {
      * @param {String} item basename of this item
      * @returns {Promise<Boolean>} true if no more processing is needed for this entry.
      */
-    async _handleSymlink(entry, directory, path15, item) {
+    async _handleSymlink(entry, directory, path16, item) {
       if (this.fsw.closed) {
         return;
       }
@@ -32309,7 +32309,7 @@ function requireNodefsHandler() {
         this.fsw._incrReadyCount();
         let linkPath;
         try {
-          linkPath = await fsrealpath2(path15);
+          linkPath = await fsrealpath2(path16);
         } catch (e5) {
           this.fsw._emitReady();
           return true;
@@ -32318,12 +32318,12 @@ function requireNodefsHandler() {
         if (dir.has(item)) {
           if (this.fsw._symlinkPaths.get(full) !== linkPath) {
             this.fsw._symlinkPaths.set(full, linkPath);
-            this.fsw._emit(EV_CHANGE2, path15, entry.stats);
+            this.fsw._emit(EV_CHANGE2, path16, entry.stats);
           }
         } else {
           dir.add(item);
           this.fsw._symlinkPaths.set(full, linkPath);
-          this.fsw._emit(EV_ADD2, path15, entry.stats);
+          this.fsw._emit(EV_ADD2, path16, entry.stats);
         }
         this.fsw._emitReady();
         return true;
@@ -32351,9 +32351,9 @@ function requireNodefsHandler() {
           return;
         }
         const item = entry.path;
-        let path15 = sysPath2.join(directory, item);
+        let path16 = sysPath2.join(directory, item);
         current.add(item);
-        if (entry.stats.isSymbolicLink() && await this._handleSymlink(entry, directory, path15, item)) {
+        if (entry.stats.isSymbolicLink() && await this._handleSymlink(entry, directory, path16, item)) {
           return;
         }
         if (this.fsw.closed) {
@@ -32362,18 +32362,18 @@ function requireNodefsHandler() {
         }
         if (item === target || !target && !previous.has(item)) {
           this.fsw._incrReadyCount();
-          path15 = sysPath2.join(dir, sysPath2.relative(dir, path15));
-          this._addToNodeFs(path15, initialAdd, wh, depth + 1);
+          path16 = sysPath2.join(dir, sysPath2.relative(dir, path16));
+          this._addToNodeFs(path16, initialAdd, wh, depth + 1);
         }
       }).on(EV_ERROR2, this._boundHandleError);
       return new Promise(
-        (resolve14) => stream3.once(STR_END2, () => {
+        (resolve15) => stream3.once(STR_END2, () => {
           if (this.fsw.closed) {
             stream3 = void 0;
             return;
           }
           const wasThrottled = throttler ? throttler.clear() : false;
-          resolve14();
+          resolve15();
           previous.getChildren().filter((item) => {
             return item !== directory && !current.has(item) && // in case of intersecting globs;
             // a path may have been filtered out of this readdir, but
@@ -32433,13 +32433,13 @@ function requireNodefsHandler() {
      * @param {String=} target Child path actually targeted for watch
      * @returns {Promise}
      */
-    async _addToNodeFs(path15, initialAdd, priorWh, depth, target) {
+    async _addToNodeFs(path16, initialAdd, priorWh, depth, target) {
       const ready = this.fsw._emitReady;
-      if (this.fsw._isIgnored(path15) || this.fsw.closed) {
+      if (this.fsw._isIgnored(path16) || this.fsw.closed) {
         ready();
         return false;
       }
-      const wh = this.fsw._getWatchHelpers(path15, depth);
+      const wh = this.fsw._getWatchHelpers(path16, depth);
       if (!wh.hasGlob && priorWh) {
         wh.hasGlob = priorWh.hasGlob;
         wh.globFilter = priorWh.globFilter;
@@ -32453,11 +32453,11 @@ function requireNodefsHandler() {
           ready();
           return false;
         }
-        const follow = this.fsw.options.followSymlinks && !path15.includes(STAR2) && !path15.includes(BRACE_START2);
+        const follow = this.fsw.options.followSymlinks && !path16.includes(STAR2) && !path16.includes(BRACE_START2);
         let closer;
         if (stats.isDirectory()) {
-          const absPath = sysPath2.resolve(path15);
-          const targetPath = follow ? await fsrealpath2(path15) : path15;
+          const absPath = sysPath2.resolve(path16);
+          const targetPath = follow ? await fsrealpath2(path16) : path16;
           if (this.fsw.closed) return;
           closer = await this._handleDir(wh.watchPath, stats, initialAdd, depth, target, wh, targetPath);
           if (this.fsw.closed) return;
@@ -32465,26 +32465,26 @@ function requireNodefsHandler() {
             this.fsw._symlinkPaths.set(absPath, targetPath);
           }
         } else if (stats.isSymbolicLink()) {
-          const targetPath = follow ? await fsrealpath2(path15) : path15;
+          const targetPath = follow ? await fsrealpath2(path16) : path16;
           if (this.fsw.closed) return;
           const parent = sysPath2.dirname(wh.watchPath);
           this.fsw._getWatchedDir(parent).add(wh.watchPath);
           this.fsw._emit(EV_ADD2, wh.watchPath, stats);
-          closer = await this._handleDir(parent, stats, initialAdd, depth, path15, wh, targetPath);
+          closer = await this._handleDir(parent, stats, initialAdd, depth, path16, wh, targetPath);
           if (this.fsw.closed) return;
           if (targetPath !== void 0) {
-            this.fsw._symlinkPaths.set(sysPath2.resolve(path15), targetPath);
+            this.fsw._symlinkPaths.set(sysPath2.resolve(path16), targetPath);
           }
         } else {
           closer = this._handleFile(wh.watchPath, stats, initialAdd);
         }
         ready();
-        this.fsw._addPathCloser(path15, closer);
+        this.fsw._addPathCloser(path16, closer);
         return false;
       } catch (error3) {
         if (this.fsw._handleError(error3)) {
           ready();
-          return path15;
+          return path16;
         }
       }
     }
@@ -32556,18 +32556,18 @@ function requireFseventsHandler() {
     131840,
     262912
   ]);
-  const createFSEventsInstance2 = (path15, callback2) => {
-    const stop = fsevents2.watch(path15, callback2);
+  const createFSEventsInstance2 = (path16, callback2) => {
+    const stop = fsevents2.watch(path16, callback2);
     return { stop };
   };
-  function setFSEventsListener2(path15, realPath, listener2, rawEmitter) {
+  function setFSEventsListener2(path16, realPath, listener2, rawEmitter) {
     let watchPath = sysPath2.extname(realPath) ? sysPath2.dirname(realPath) : realPath;
     const parentPath = sysPath2.dirname(watchPath);
     let cont = FSEventsWatchers2.get(watchPath);
     if (couldConsolidate2(parentPath)) {
       watchPath = parentPath;
     }
-    const resolvedPath = sysPath2.resolve(path15);
+    const resolvedPath = sysPath2.resolve(path16);
     const hasSymlink = resolvedPath !== realPath;
     const filteredListener = (fullPath, flags, info) => {
       if (hasSymlink) fullPath = fullPath.replace(realPath, resolvedPath);
@@ -32612,10 +32612,10 @@ function requireFseventsHandler() {
       }
     };
   }
-  const couldConsolidate2 = (path15) => {
+  const couldConsolidate2 = (path16) => {
     let count = 0;
     for (const watchPath of FSEventsWatchers2.keys()) {
-      if (watchPath.indexOf(path15) === 0) {
+      if (watchPath.indexOf(path16) === 0) {
         count++;
         if (count >= consolidateThreshhold2) {
           return true;
@@ -32625,9 +32625,9 @@ function requireFseventsHandler() {
     return false;
   };
   const canUse2 = () => fsevents2 && FSEventsWatchers2.size < 128;
-  const calcDepth2 = (path15, root4) => {
+  const calcDepth2 = (path16, root4) => {
     let i5 = 0;
-    while (!path15.indexOf(root4) && (path15 = sysPath2.dirname(path15)) !== root4) i5++;
+    while (!path16.indexOf(root4) && (path16 = sysPath2.dirname(path16)) !== root4) i5++;
     return i5;
   };
   const sameTypes2 = (info, stats) => info.type === FSEVENT_TYPE_DIRECTORY2 && stats.isDirectory() || info.type === FSEVENT_TYPE_SYMLINK2 && stats.isSymbolicLink() || info.type === FSEVENT_TYPE_FILE2 && stats.isFile();
@@ -32638,41 +32638,41 @@ function requireFseventsHandler() {
     constructor(fsw) {
       this.fsw = fsw;
     }
-    checkIgnored(path15, stats) {
+    checkIgnored(path16, stats) {
       const ipaths = this.fsw._ignoredPaths;
-      if (this.fsw._isIgnored(path15, stats)) {
-        ipaths.add(path15);
+      if (this.fsw._isIgnored(path16, stats)) {
+        ipaths.add(path16);
         if (stats && stats.isDirectory()) {
-          ipaths.add(path15 + ROOT_GLOBSTAR2);
+          ipaths.add(path16 + ROOT_GLOBSTAR2);
         }
         return true;
       }
-      ipaths.delete(path15);
-      ipaths.delete(path15 + ROOT_GLOBSTAR2);
+      ipaths.delete(path16);
+      ipaths.delete(path16 + ROOT_GLOBSTAR2);
     }
-    addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
+    addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
       const event = watchedDir.has(item) ? EV_CHANGE2 : EV_ADD2;
-      this.handleEvent(event, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+      this.handleEvent(event, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
     }
-    async checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
+    async checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
       try {
-        const stats = await stat3(path15);
+        const stats = await stat3(path16);
         if (this.fsw.closed) return;
         if (sameTypes2(info, stats)) {
-          this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+          this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
         } else {
-          this.handleEvent(EV_UNLINK2, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+          this.handleEvent(EV_UNLINK2, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
         }
       } catch (error3) {
         if (error3.code === "EACCES") {
-          this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+          this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
         } else {
-          this.handleEvent(EV_UNLINK2, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+          this.handleEvent(EV_UNLINK2, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
         }
       }
     }
-    handleEvent(event, path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
-      if (this.fsw.closed || this.checkIgnored(path15)) return;
+    handleEvent(event, path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
+      if (this.fsw.closed || this.checkIgnored(path16)) return;
       if (event === EV_UNLINK2) {
         const isDirectory2 = info.type === FSEVENT_TYPE_DIRECTORY2;
         if (isDirectory2 || watchedDir.has(item)) {
@@ -32680,16 +32680,16 @@ function requireFseventsHandler() {
         }
       } else {
         if (event === EV_ADD2) {
-          if (info.type === FSEVENT_TYPE_DIRECTORY2) this.fsw._getWatchedDir(path15);
+          if (info.type === FSEVENT_TYPE_DIRECTORY2) this.fsw._getWatchedDir(path16);
           if (info.type === FSEVENT_TYPE_SYMLINK2 && opts.followSymlinks) {
             const curDepth = opts.depth === void 0 ? void 0 : calcDepth2(fullPath, realPath) + 1;
-            return this._addToFsEvents(path15, false, true, curDepth);
+            return this._addToFsEvents(path16, false, true, curDepth);
           }
           this.fsw._getWatchedDir(parent).add(item);
         }
         const eventName = info.type === FSEVENT_TYPE_DIRECTORY2 ? event + DIR_SUFFIX2 : event;
-        this.fsw._emit(eventName, path15);
-        if (eventName === EV_ADD_DIR2) this._addToFsEvents(path15, false, true);
+        this.fsw._emit(eventName, path16);
+        if (eventName === EV_ADD_DIR2) this._addToFsEvents(path16, false, true);
       }
     }
     /**
@@ -32706,41 +32706,41 @@ function requireFseventsHandler() {
       const watchCallback = async (fullPath, flags, info) => {
         if (this.fsw.closed) return;
         if (opts.depth !== void 0 && calcDepth2(fullPath, realPath) > opts.depth) return;
-        const path15 = transform4(sysPath2.join(
+        const path16 = transform4(sysPath2.join(
           watchPath,
           sysPath2.relative(watchPath, fullPath)
         ));
-        if (globFilter && !globFilter(path15)) return;
-        const parent = sysPath2.dirname(path15);
-        const item = sysPath2.basename(path15);
+        if (globFilter && !globFilter(path16)) return;
+        const parent = sysPath2.dirname(path16);
+        const item = sysPath2.basename(path16);
         const watchedDir = this.fsw._getWatchedDir(
-          info.type === FSEVENT_TYPE_DIRECTORY2 ? path15 : parent
+          info.type === FSEVENT_TYPE_DIRECTORY2 ? path16 : parent
         );
         if (wrongEventFlags2.has(flags) || info.event === FSEVENT_UNKNOWN2) {
           if (typeof opts.ignored === FUNCTION_TYPE2) {
             let stats;
             try {
-              stats = await stat3(path15);
+              stats = await stat3(path16);
             } catch (error3) {
             }
             if (this.fsw.closed) return;
-            if (this.checkIgnored(path15, stats)) return;
+            if (this.checkIgnored(path16, stats)) return;
             if (sameTypes2(info, stats)) {
-              this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+              this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
             } else {
-              this.handleEvent(EV_UNLINK2, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+              this.handleEvent(EV_UNLINK2, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
             }
           } else {
-            this.checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+            this.checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           }
         } else {
           switch (info.event) {
             case FSEVENT_CREATED2:
             case FSEVENT_MODIFIED2:
-              return this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+              return this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
             case FSEVENT_DELETED2:
             case FSEVENT_MOVED2:
-              return this.checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+              return this.checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           }
         }
       };
@@ -32772,12 +32772,12 @@ function requireFseventsHandler() {
           return this.fsw._emitReady();
         }
         this.fsw._incrReadyCount();
-        this._addToFsEvents(linkTarget || linkPath, (path15) => {
+        this._addToFsEvents(linkTarget || linkPath, (path16) => {
           let aliasedPath = linkPath;
           if (linkTarget && linkTarget !== DOT_SLASH2) {
-            aliasedPath = path15.replace(linkTarget, linkPath);
-          } else if (path15 !== DOT_SLASH2) {
-            aliasedPath = sysPath2.join(linkPath, path15);
+            aliasedPath = path16.replace(linkTarget, linkPath);
+          } else if (path16 !== DOT_SLASH2) {
+            aliasedPath = sysPath2.join(linkPath, path16);
           }
           return transform4(aliasedPath);
         }, false, curDepth);
@@ -32804,7 +32804,7 @@ function requireFseventsHandler() {
         this.fsw._emit(isDir ? EV_ADD_DIR2 : EV_ADD2, pp, stats);
       }
     }
-    initWatch(realPath, path15, wh, processPath) {
+    initWatch(realPath, path16, wh, processPath) {
       if (this.fsw.closed) return;
       const closer = this._watchWithFsEvents(
         wh.watchPath,
@@ -32812,7 +32812,7 @@ function requireFseventsHandler() {
         processPath,
         wh.globFilter
       );
-      this.fsw._addPathCloser(path15, closer);
+      this.fsw._addPathCloser(path16, closer);
     }
     /**
      * Handle added path with fsevents
@@ -32822,13 +32822,13 @@ function requireFseventsHandler() {
      * @param {Number=} priorDepth Level of subdirectories already traversed.
      * @returns {Promise<void>}
      */
-    async _addToFsEvents(path15, transform4, forceAdd, priorDepth) {
+    async _addToFsEvents(path16, transform4, forceAdd, priorDepth) {
       if (this.fsw.closed) {
         return;
       }
       const opts = this.fsw.options;
       const processPath = typeof transform4 === FUNCTION_TYPE2 ? transform4 : IDENTITY_FN2;
-      const wh = this.fsw._getWatchHelpers(path15);
+      const wh = this.fsw._getWatchHelpers(path16);
       try {
         const stats = await statMethods2[wh.statMethod](wh.watchPath);
         if (this.fsw.closed) return;
@@ -32836,7 +32836,7 @@ function requireFseventsHandler() {
           throw null;
         }
         if (stats.isDirectory()) {
-          if (!wh.globFilter) this.emitAdd(processPath(path15), stats, processPath, opts, forceAdd);
+          if (!wh.globFilter) this.emitAdd(processPath(path16), stats, processPath, opts, forceAdd);
           if (priorDepth && priorDepth > opts.depth) return;
           this.fsw._readdirp(wh.watchPath, {
             fileFilter: (entry) => wh.filterPath(entry),
@@ -32870,14 +32870,14 @@ function requireFseventsHandler() {
       }
       if (opts.persistent && forceAdd !== true) {
         if (typeof transform4 === FUNCTION_TYPE2) {
-          this.initWatch(void 0, path15, wh, processPath);
+          this.initWatch(void 0, path16, wh, processPath);
         } else {
           let realPath;
           try {
             realPath = await realpath3(wh.watchPath);
           } catch (e5) {
           }
-          this.initWatch(realPath, path15, wh, processPath);
+          this.initWatch(realPath, path16, wh, processPath);
         }
       }
     }
@@ -32969,19 +32969,19 @@ function requireChokidar() {
     }
     return str2;
   };
-  const normalizePathToUnix2 = (path15) => toUnix2(sysPath2.normalize(toUnix2(path15)));
-  const normalizeIgnored2 = (cwd2 = EMPTY_STR2) => (path15) => {
-    if (typeof path15 !== STRING_TYPE2) return path15;
-    return normalizePathToUnix2(sysPath2.isAbsolute(path15) ? path15 : sysPath2.join(cwd2, path15));
+  const normalizePathToUnix2 = (path16) => toUnix2(sysPath2.normalize(toUnix2(path16)));
+  const normalizeIgnored2 = (cwd2 = EMPTY_STR2) => (path16) => {
+    if (typeof path16 !== STRING_TYPE2) return path16;
+    return normalizePathToUnix2(sysPath2.isAbsolute(path16) ? path16 : sysPath2.join(cwd2, path16));
   };
-  const getAbsolutePath2 = (path15, cwd2) => {
-    if (sysPath2.isAbsolute(path15)) {
-      return path15;
+  const getAbsolutePath2 = (path16, cwd2) => {
+    if (sysPath2.isAbsolute(path16)) {
+      return path16;
     }
-    if (path15.startsWith(BANG2)) {
-      return BANG2 + sysPath2.join(cwd2, path15.slice(1));
+    if (path16.startsWith(BANG2)) {
+      return BANG2 + sysPath2.join(cwd2, path16.slice(1));
     }
-    return sysPath2.join(cwd2, path15);
+    return sysPath2.join(cwd2, path16);
   };
   const undef2 = (opts, key) => opts[key] === void 0;
   class DirEntry2 {
@@ -33037,16 +33037,16 @@ function requireChokidar() {
   const STAT_METHOD_F2 = "stat";
   const STAT_METHOD_L2 = "lstat";
   class WatchHelper2 {
-    constructor(path15, watchPath, follow, fsw) {
+    constructor(path16, watchPath, follow, fsw) {
       this.fsw = fsw;
-      this.path = path15 = path15.replace(REPLACER_RE2, EMPTY_STR2);
+      this.path = path16 = path16.replace(REPLACER_RE2, EMPTY_STR2);
       this.watchPath = watchPath;
       this.fullWatchPath = sysPath2.resolve(watchPath);
-      this.hasGlob = watchPath !== path15;
-      if (path15 === EMPTY_STR2) this.hasGlob = false;
+      this.hasGlob = watchPath !== path16;
+      if (path16 === EMPTY_STR2) this.hasGlob = false;
       this.globSymlink = this.hasGlob && follow ? void 0 : false;
-      this.globFilter = this.hasGlob ? anymatch3(path15, void 0, ANYMATCH_OPTS2) : false;
-      this.dirParts = this.getDirParts(path15);
+      this.globFilter = this.hasGlob ? anymatch3(path16, void 0, ANYMATCH_OPTS2) : false;
+      this.dirParts = this.getDirParts(path16);
       this.dirParts.forEach((parts) => {
         if (parts.length > 1) parts.pop();
       });
@@ -33072,15 +33072,15 @@ function requireChokidar() {
       const { stats } = entry;
       if (stats && stats.isSymbolicLink()) return this.filterDir(entry);
       const resolvedPath = this.entryPath(entry);
-      const matchesGlob = this.hasGlob && typeof this.globFilter === FUNCTION_TYPE2 ? this.globFilter(resolvedPath) : true;
-      return matchesGlob && this.fsw._isntIgnored(resolvedPath, stats) && this.fsw._hasReadPermissions(stats);
+      const matchesGlob2 = this.hasGlob && typeof this.globFilter === FUNCTION_TYPE2 ? this.globFilter(resolvedPath) : true;
+      return matchesGlob2 && this.fsw._isntIgnored(resolvedPath, stats) && this.fsw._hasReadPermissions(stats);
     }
-    getDirParts(path15) {
+    getDirParts(path16) {
       if (!this.hasGlob) return [];
       const parts = [];
-      const expandedPath = path15.includes(BRACE_START2) ? braces2.expand(path15) : [path15];
-      expandedPath.forEach((path16) => {
-        parts.push(sysPath2.relative(this.watchPath, path16).split(SLASH_OR_BACK_SLASH_RE2));
+      const expandedPath = path16.includes(BRACE_START2) ? braces2.expand(path16) : [path16];
+      expandedPath.forEach((path17) => {
+        parts.push(sysPath2.relative(this.watchPath, path17).split(SLASH_OR_BACK_SLASH_RE2));
       });
       return parts;
     }
@@ -33186,34 +33186,34 @@ function requireChokidar() {
       this.closed = false;
       let paths = unifyPaths2(paths_);
       if (cwd2) {
-        paths = paths.map((path15) => {
-          const absPath = getAbsolutePath2(path15, cwd2);
-          if (disableGlobbing || !isGlob4(path15)) {
+        paths = paths.map((path16) => {
+          const absPath = getAbsolutePath2(path16, cwd2);
+          if (disableGlobbing || !isGlob4(path16)) {
             return absPath;
           }
           return normalizePath7(absPath);
         });
       }
-      paths = paths.filter((path15) => {
-        if (path15.startsWith(BANG2)) {
-          this._ignoredPaths.add(path15.slice(1));
+      paths = paths.filter((path16) => {
+        if (path16.startsWith(BANG2)) {
+          this._ignoredPaths.add(path16.slice(1));
           return false;
         }
-        this._ignoredPaths.delete(path15);
-        this._ignoredPaths.delete(path15 + SLASH_GLOBSTAR2);
+        this._ignoredPaths.delete(path16);
+        this._ignoredPaths.delete(path16 + SLASH_GLOBSTAR2);
         this._userIgnored = void 0;
         return true;
       });
       if (this.options.useFsEvents && this._fsEventsHandler) {
         if (!this._readyCount) this._readyCount = paths.length;
         if (this.options.persistent) this._readyCount += paths.length;
-        paths.forEach((path15) => this._fsEventsHandler._addToFsEvents(path15));
+        paths.forEach((path16) => this._fsEventsHandler._addToFsEvents(path16));
       } else {
         if (!this._readyCount) this._readyCount = 0;
         this._readyCount += paths.length;
         Promise.all(
-          paths.map(async (path15) => {
-            const res = await this._nodeFsHandler._addToNodeFs(path15, !_internal, 0, 0, _origAdd);
+          paths.map(async (path16) => {
+            const res = await this._nodeFsHandler._addToNodeFs(path16, !_internal, 0, 0, _origAdd);
             if (res) this._emitReady();
             return res;
           })
@@ -33235,15 +33235,15 @@ function requireChokidar() {
       if (this.closed) return this;
       const paths = unifyPaths2(paths_);
       const { cwd: cwd2 } = this.options;
-      paths.forEach((path15) => {
-        if (!sysPath2.isAbsolute(path15) && !this._closers.has(path15)) {
-          if (cwd2) path15 = sysPath2.join(cwd2, path15);
-          path15 = sysPath2.resolve(path15);
+      paths.forEach((path16) => {
+        if (!sysPath2.isAbsolute(path16) && !this._closers.has(path16)) {
+          if (cwd2) path16 = sysPath2.join(cwd2, path16);
+          path16 = sysPath2.resolve(path16);
         }
-        this._closePath(path15);
-        this._ignoredPaths.add(path15);
-        if (this._watched.has(path15)) {
-          this._ignoredPaths.add(path15 + SLASH_GLOBSTAR2);
+        this._closePath(path16);
+        this._ignoredPaths.add(path16);
+        if (this._watched.has(path16)) {
+          this._ignoredPaths.add(path16 + SLASH_GLOBSTAR2);
         }
         this._userIgnored = void 0;
       });
@@ -33301,36 +33301,36 @@ function requireChokidar() {
      * @param {*=} val3
      * @returns the error if defined, otherwise the value of the FSWatcher instance's `closed` flag
      */
-    async _emit(event, path15, val1, val2, val3) {
+    async _emit(event, path16, val1, val2, val3) {
       if (this.closed) return;
       const opts = this.options;
-      if (isWindows3) path15 = sysPath2.normalize(path15);
-      if (opts.cwd) path15 = sysPath2.relative(opts.cwd, path15);
-      const args2 = [event, path15];
+      if (isWindows3) path16 = sysPath2.normalize(path16);
+      if (opts.cwd) path16 = sysPath2.relative(opts.cwd, path16);
+      const args2 = [event, path16];
       if (val3 !== void 0) args2.push(val1, val2, val3);
       else if (val2 !== void 0) args2.push(val1, val2);
       else if (val1 !== void 0) args2.push(val1);
       const awf = opts.awaitWriteFinish;
       let pw;
-      if (awf && (pw = this._pendingWrites.get(path15))) {
+      if (awf && (pw = this._pendingWrites.get(path16))) {
         pw.lastChange = /* @__PURE__ */ new Date();
         return this;
       }
       if (opts.atomic) {
         if (event === EV_UNLINK2) {
-          this._pendingUnlinks.set(path15, args2);
+          this._pendingUnlinks.set(path16, args2);
           setTimeout(() => {
-            this._pendingUnlinks.forEach((entry, path16) => {
+            this._pendingUnlinks.forEach((entry, path17) => {
               this.emit(...entry);
               this.emit(EV_ALL2, ...entry);
-              this._pendingUnlinks.delete(path16);
+              this._pendingUnlinks.delete(path17);
             });
           }, typeof opts.atomic === "number" ? opts.atomic : 100);
           return this;
         }
-        if (event === EV_ADD2 && this._pendingUnlinks.has(path15)) {
+        if (event === EV_ADD2 && this._pendingUnlinks.has(path16)) {
           event = args2[0] = EV_CHANGE2;
-          this._pendingUnlinks.delete(path15);
+          this._pendingUnlinks.delete(path16);
         }
       }
       if (awf && (event === EV_ADD2 || event === EV_CHANGE2) && this._readyEmitted) {
@@ -33348,15 +33348,15 @@ function requireChokidar() {
             this.emitWithAll(event, args2);
           }
         };
-        this._awaitWriteFinish(path15, awf.stabilityThreshold, event, awfEmit);
+        this._awaitWriteFinish(path16, awf.stabilityThreshold, event, awfEmit);
         return this;
       }
       if (event === EV_CHANGE2) {
-        const isThrottled = !this._throttle(EV_CHANGE2, path15, 50);
+        const isThrottled = !this._throttle(EV_CHANGE2, path16, 50);
         if (isThrottled) return this;
       }
       if (opts.alwaysStat && val1 === void 0 && (event === EV_ADD2 || event === EV_ADD_DIR2 || event === EV_CHANGE2)) {
-        const fullPath = opts.cwd ? sysPath2.join(opts.cwd, path15) : path15;
+        const fullPath = opts.cwd ? sysPath2.join(opts.cwd, path16) : path16;
         let stats;
         try {
           stats = await stat3(fullPath);
@@ -33387,28 +33387,28 @@ function requireChokidar() {
      * @param {Number} timeout duration of time to suppress duplicate actions
      * @returns {Object|false} tracking object or false if action should be suppressed
      */
-    _throttle(actionType, path15, timeout2) {
+    _throttle(actionType, path16, timeout2) {
       if (!this._throttled.has(actionType)) {
         this._throttled.set(actionType, /* @__PURE__ */ new Map());
       }
       const action = this._throttled.get(actionType);
-      const actionPath = action.get(path15);
+      const actionPath = action.get(path16);
       if (actionPath) {
         actionPath.count++;
         return false;
       }
       let timeoutObject;
       const clear = () => {
-        const item = action.get(path15);
+        const item = action.get(path16);
         const count = item ? item.count : 0;
-        action.delete(path15);
+        action.delete(path16);
         clearTimeout(timeoutObject);
         if (item) clearTimeout(item.timeoutObject);
         return count;
       };
       timeoutObject = setTimeout(clear, timeout2);
       const thr = { timeoutObject, clear, count: 0 };
-      action.set(path15, thr);
+      action.set(path16, thr);
       return thr;
     }
     _incrReadyCount() {
@@ -33422,27 +33422,27 @@ function requireChokidar() {
      * @param {EventName} event
      * @param {Function} awfEmit Callback to be called when ready for event to be emitted.
      */
-    _awaitWriteFinish(path15, threshold, event, awfEmit) {
+    _awaitWriteFinish(path16, threshold, event, awfEmit) {
       let timeoutHandler;
-      let fullPath = path15;
-      if (this.options.cwd && !sysPath2.isAbsolute(path15)) {
-        fullPath = sysPath2.join(this.options.cwd, path15);
+      let fullPath = path16;
+      if (this.options.cwd && !sysPath2.isAbsolute(path16)) {
+        fullPath = sysPath2.join(this.options.cwd, path16);
       }
       const now = /* @__PURE__ */ new Date();
       const awaitWriteFinish = (prevStat) => {
         fs13.stat(fullPath, (err2, curStat) => {
-          if (err2 || !this._pendingWrites.has(path15)) {
+          if (err2 || !this._pendingWrites.has(path16)) {
             if (err2 && err2.code !== "ENOENT") awfEmit(err2);
             return;
           }
           const now2 = Number(/* @__PURE__ */ new Date());
           if (prevStat && curStat.size !== prevStat.size) {
-            this._pendingWrites.get(path15).lastChange = now2;
+            this._pendingWrites.get(path16).lastChange = now2;
           }
-          const pw = this._pendingWrites.get(path15);
+          const pw = this._pendingWrites.get(path16);
           const df = now2 - pw.lastChange;
           if (df >= threshold) {
-            this._pendingWrites.delete(path15);
+            this._pendingWrites.delete(path16);
             awfEmit(void 0, curStat);
           } else {
             timeoutHandler = setTimeout(
@@ -33453,11 +33453,11 @@ function requireChokidar() {
           }
         });
       };
-      if (!this._pendingWrites.has(path15)) {
-        this._pendingWrites.set(path15, {
+      if (!this._pendingWrites.has(path16)) {
+        this._pendingWrites.set(path16, {
           lastChange: now,
           cancelWait: () => {
-            this._pendingWrites.delete(path15);
+            this._pendingWrites.delete(path16);
             clearTimeout(timeoutHandler);
             return event;
           }
@@ -33477,20 +33477,20 @@ function requireChokidar() {
      * @param {fs.Stats=} stats result of fs.stat
      * @returns {Boolean}
      */
-    _isIgnored(path15, stats) {
-      if (this.options.atomic && DOT_RE2.test(path15)) return true;
+    _isIgnored(path16, stats) {
+      if (this.options.atomic && DOT_RE2.test(path16)) return true;
       if (!this._userIgnored) {
         const { cwd: cwd2 } = this.options;
         const ign = this.options.ignored;
         const ignored = ign && ign.map(normalizeIgnored2(cwd2));
-        const paths = arrify2(ignored).filter((path16) => typeof path16 === STRING_TYPE2 && !isGlob4(path16)).map((path16) => path16 + SLASH_GLOBSTAR2);
+        const paths = arrify2(ignored).filter((path17) => typeof path17 === STRING_TYPE2 && !isGlob4(path17)).map((path17) => path17 + SLASH_GLOBSTAR2);
         const list2 = this._getGlobIgnored().map(normalizeIgnored2(cwd2)).concat(ignored, paths);
         this._userIgnored = anymatch3(list2, void 0, ANYMATCH_OPTS2);
       }
-      return this._userIgnored([path15, stats]);
+      return this._userIgnored([path16, stats]);
     }
-    _isntIgnored(path15, stat4) {
-      return !this._isIgnored(path15, stat4);
+    _isntIgnored(path16, stat4) {
+      return !this._isIgnored(path16, stat4);
     }
     /**
      * Provides a set of common helpers and properties relating to symlink and glob handling.
@@ -33498,10 +33498,10 @@ function requireChokidar() {
      * @param {Number=} depth at any depth > 0, this isn't a glob
      * @returns {WatchHelper} object containing helpers for this path
      */
-    _getWatchHelpers(path15, depth) {
-      const watchPath = depth || this.options.disableGlobbing || !isGlob4(path15) ? path15 : globParent4(path15);
+    _getWatchHelpers(path16, depth) {
+      const watchPath = depth || this.options.disableGlobbing || !isGlob4(path16) ? path16 : globParent4(path16);
       const follow = this.options.followSymlinks;
-      return new WatchHelper2(path15, watchPath, follow, this);
+      return new WatchHelper2(path16, watchPath, follow, this);
     }
     // Directory helpers
     // -----------------
@@ -33540,66 +33540,66 @@ function requireChokidar() {
      * @returns {void}
     */
     _remove(directory, item, isDirectory2) {
-      const path15 = sysPath2.join(directory, item);
-      const fullPath = sysPath2.resolve(path15);
-      isDirectory2 = isDirectory2 != null ? isDirectory2 : this._watched.has(path15) || this._watched.has(fullPath);
-      if (!this._throttle("remove", path15, 100)) return;
+      const path16 = sysPath2.join(directory, item);
+      const fullPath = sysPath2.resolve(path16);
+      isDirectory2 = isDirectory2 != null ? isDirectory2 : this._watched.has(path16) || this._watched.has(fullPath);
+      if (!this._throttle("remove", path16, 100)) return;
       if (!isDirectory2 && !this.options.useFsEvents && this._watched.size === 1) {
         this.add(directory, item, true);
       }
-      const wp = this._getWatchedDir(path15);
+      const wp = this._getWatchedDir(path16);
       const nestedDirectoryChildren = wp.getChildren();
-      nestedDirectoryChildren.forEach((nested) => this._remove(path15, nested));
+      nestedDirectoryChildren.forEach((nested) => this._remove(path16, nested));
       const parent = this._getWatchedDir(directory);
       const wasTracked = parent.has(item);
       parent.remove(item);
       if (this._symlinkPaths.has(fullPath)) {
         this._symlinkPaths.delete(fullPath);
       }
-      let relPath = path15;
-      if (this.options.cwd) relPath = sysPath2.relative(this.options.cwd, path15);
+      let relPath = path16;
+      if (this.options.cwd) relPath = sysPath2.relative(this.options.cwd, path16);
       if (this.options.awaitWriteFinish && this._pendingWrites.has(relPath)) {
         const event = this._pendingWrites.get(relPath).cancelWait();
         if (event === EV_ADD2) return;
       }
-      this._watched.delete(path15);
+      this._watched.delete(path16);
       this._watched.delete(fullPath);
       const eventName = isDirectory2 ? EV_UNLINK_DIR2 : EV_UNLINK2;
-      if (wasTracked && !this._isIgnored(path15)) this._emit(eventName, path15);
+      if (wasTracked && !this._isIgnored(path16)) this._emit(eventName, path16);
       if (!this.options.useFsEvents) {
-        this._closePath(path15);
+        this._closePath(path16);
       }
     }
     /**
      * Closes all watchers for a path
      * @param {Path} path
      */
-    _closePath(path15) {
-      this._closeFile(path15);
-      const dir = sysPath2.dirname(path15);
-      this._getWatchedDir(dir).remove(sysPath2.basename(path15));
+    _closePath(path16) {
+      this._closeFile(path16);
+      const dir = sysPath2.dirname(path16);
+      this._getWatchedDir(dir).remove(sysPath2.basename(path16));
     }
     /**
      * Closes only file-specific watchers
      * @param {Path} path
      */
-    _closeFile(path15) {
-      const closers = this._closers.get(path15);
+    _closeFile(path16) {
+      const closers = this._closers.get(path16);
       if (!closers) return;
       closers.forEach((closer) => closer());
-      this._closers.delete(path15);
+      this._closers.delete(path16);
     }
     /**
      *
      * @param {Path} path
      * @param {Function} closer
      */
-    _addPathCloser(path15, closer) {
+    _addPathCloser(path16, closer) {
       if (!closer) return;
-      let list2 = this._closers.get(path15);
+      let list2 = this._closers.get(path16);
       if (!list2) {
         list2 = [];
-        this._closers.set(path15, list2);
+        this._closers.set(path16, list2);
       }
       list2.push(closer);
     }
@@ -34746,15 +34746,15 @@ function getMemberReturnExpressionWhenCalled(members, memberName) {
     return UNKNOWN_RETURN_EXPRESSION;
   return [members[memberName].returns, false];
 }
-function getGlobalAtPath(path15) {
+function getGlobalAtPath(path16) {
   let currentGlobal = knownGlobals;
-  for (const pathSegment of path15) {
+  for (const pathSegment of path16) {
     if (typeof pathSegment !== "string") {
       return null;
     }
     currentGlobal = currentGlobal[pathSegment];
     if (!currentGlobal) {
-      return path15[0] === "Symbol" && path15.length === 2 ? UNKNOWN_WELL_KNOWN : null;
+      return path16[0] === "Symbol" && path16.length === 2 ? UNKNOWN_WELL_KNOWN : null;
     }
   }
   return currentGlobal[ValueProperties];
@@ -34823,7 +34823,7 @@ function getToStringTagValue(getObject) {
     lineBreakIndent: null
   });
 }
-function getChainElementLiteralValueAtPath(element, object2, path15, recursionTracker, origin) {
+function getChainElementLiteralValueAtPath(element, object2, path16, recursionTracker, origin) {
   if ("getLiteralValueAtPathAsChainElement" in object2) {
     const calleeValue = object2.getLiteralValueAtPathAsChainElement(EMPTY_PATH, SHARED_RECURSION_TRACKER, origin);
     if (calleeValue === IS_SKIPPED_CHAIN || element.optional && calleeValue == null) {
@@ -34832,7 +34832,7 @@ function getChainElementLiteralValueAtPath(element, object2, path15, recursionTr
   } else if (element.optional && object2.getLiteralValueAtPath(EMPTY_PATH, SHARED_RECURSION_TRACKER, origin) == null) {
     return IS_SKIPPED_CHAIN;
   }
-  return element.getLiteralValueAtPath(path15, recursionTracker, origin);
+  return element.getLiteralValueAtPath(path16, recursionTracker, origin);
 }
 function getResolvablePropertyKey(memberExpression3) {
   return memberExpression3.computed ? getResolvableComputedPropertyKey(memberExpression3.property) : memberExpression3.property.name;
@@ -34860,29 +34860,29 @@ function getPathIfNotComputed(memberExpression3) {
   }
   return null;
 }
-function getStringFromPath(path15) {
-  let pathString = path15[0].key;
-  for (let index4 = 1; index4 < path15.length; index4++) {
-    pathString += "." + path15[index4].key;
+function getStringFromPath(path16) {
+  let pathString = path16[0].key;
+  for (let index4 = 1; index4 < path16.length; index4++) {
+    pathString += "." + path16[index4].key;
   }
   return pathString;
 }
-function resolveNamespaceVariables(baseVariable, path15, astContext) {
-  if (path15.length === 0)
+function resolveNamespaceVariables(baseVariable, path16, astContext) {
+  if (path16.length === 0)
     return baseVariable;
   if (!baseVariable.isNamespace || baseVariable instanceof ExternalVariable)
     return null;
-  const exportName = path15[0].key;
+  const exportName = path16[0].key;
   const [variable, options2] = baseVariable.context.traceExport(exportName);
   if (!variable) {
-    if (path15.length === 1) {
+    if (path16.length === 1) {
       const fileName = baseVariable.context.fileName;
-      astContext.log(LOGLEVEL_WARN, logMissingExport(exportName, astContext.module.id, fileName, !!options2?.missingButExportExists), path15[0].pos);
+      astContext.log(LOGLEVEL_WARN, logMissingExport(exportName, astContext.module.id, fileName, !!options2?.missingButExportExists), path16[0].pos);
       return "undefined";
     }
     return null;
   }
-  return resolveNamespaceVariables(variable, path15.slice(1), astContext);
+  return resolveNamespaceVariables(variable, path16.slice(1), astContext);
 }
 function formatAttributes2(attributes, { getObject }) {
   if (!attributes) {
@@ -35792,8 +35792,8 @@ function requireUtils2() {
       }
       return output;
     };
-    exports.basename = (path15, { windows: windows2 } = {}) => {
-      const segs = path15.split(windows2 ? /[\\/]/ : "/");
+    exports.basename = (path16, { windows: windows2 } = {}) => {
+      const segs = path16.split(windows2 ? /[\\/]/ : "/");
       const last = segs[segs.length - 1];
       if (last === "") {
         return segs[segs.length - 2];
@@ -38588,17 +38588,17 @@ function analyseModuleExecution(entryModules) {
 }
 function getCyclePath(module2, parent, parents) {
   const cycleSymbol = Symbol(module2.id);
-  const path15 = [module2.id];
+  const path16 = [module2.id];
   let nextModule = parent;
   module2.cycles.add(cycleSymbol);
   while (nextModule !== module2) {
     nextModule.cycles.add(cycleSymbol);
-    path15.push(nextModule.id);
+    path16.push(nextModule.id);
     nextModule = parents.get(nextModule);
   }
-  path15.push(path15[0]);
-  path15.reverse();
-  return path15;
+  path16.push(path16[0]);
+  path16.reverse();
+  return path16;
 }
 function getGenerateCodeSnippets({ compact, generatedCode: { arrowFunctions, constBindings, objectShorthand, reservedNamesAsProps } }) {
   const { _: _2, n: n5, s: s5 } = compact ? { _: "", n: "", s: "" } : { _: " ", n: "\n", s: ";" };
@@ -40265,11 +40265,11 @@ function watch(configs) {
   });
   return emitter;
 }
-function ensureTrailingSlash(path15) {
-  if (path15[path15.length - 1] !== "/") {
-    return `${path15}/`;
+function ensureTrailingSlash(path16) {
+  if (path16[path16.length - 1] !== "/") {
+    return `${path16}/`;
   }
-  return path15;
+  return path16;
 }
 function checkWatchConfig(config2) {
   for (const item of config2) {
@@ -41624,15 +41624,15 @@ var init_node_entry = __esm({
           [EntitiesKey]: { value: /* @__PURE__ */ new Set() }
         });
       }
-      trackEntityAtPathAndGetIfTracked(path15, entity) {
-        const trackedEntities = this.getEntities(path15);
+      trackEntityAtPathAndGetIfTracked(path16, entity) {
+        const trackedEntities = this.getEntities(path16);
         if (trackedEntities.has(entity))
           return true;
         trackedEntities.add(entity);
         return false;
       }
-      withTrackedEntityAtPath(path15, entity, onUntracked, returnIfTracked) {
-        const trackedEntities = this.getEntities(path15);
+      withTrackedEntityAtPath(path16, entity, onUntracked, returnIfTracked) {
+        const trackedEntities = this.getEntities(path16);
         if (trackedEntities.has(entity))
           return returnIfTracked;
         trackedEntities.add(entity);
@@ -41640,9 +41640,9 @@ var init_node_entry = __esm({
         trackedEntities.delete(entity);
         return result;
       }
-      getEntities(path15) {
+      getEntities(path16) {
         let currentPaths = this.entityPaths;
-        for (const pathSegment of path15) {
+        for (const pathSegment of path16) {
           currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
             [EntitiesKey]: { value: /* @__PURE__ */ new Set() }
           });
@@ -41657,9 +41657,9 @@ var init_node_entry = __esm({
           [EntitiesKey]: { value: /* @__PURE__ */ new Map() }
         });
       }
-      trackEntityAtPathAndGetIfTracked(path15, discriminator, entity) {
+      trackEntityAtPathAndGetIfTracked(path16, discriminator, entity) {
         let currentPaths = this.entityPaths;
-        for (const pathSegment of path15) {
+        for (const pathSegment of path16) {
           currentPaths = currentPaths[pathSegment] ||= Object.create(null, {
             [EntitiesKey]: { value: /* @__PURE__ */ new Map() }
           });
@@ -41676,12 +41676,12 @@ var init_node_entry = __esm({
       constructor() {
         this.includedPaths = null;
       }
-      includePathAndGetIfIncluded(path15) {
+      includePathAndGetIfIncluded(path16) {
         let included = true;
         let parent = this;
         let parentSegment = "includedPaths";
         let currentPaths = this.includedPaths ||= (included = false, /* @__PURE__ */ Object.create(null));
-        for (const pathSegment of path15) {
+        for (const pathSegment of path16) {
           if (currentPaths[UnknownKey]) {
             return true;
           }
@@ -41703,13 +41703,13 @@ var init_node_entry = __esm({
       constructor() {
         this.includedPaths = null;
       }
-      includePathAndGetIfIncluded(path15) {
+      includePathAndGetIfIncluded(path16) {
         let included = true;
         const includedPaths = this.includedPaths ||= (included = false, /* @__PURE__ */ Object.create(null));
         if (includedPaths[UnknownKey]) {
           return true;
         }
-        const [firstPathSegment, secondPathSegment] = path15;
+        const [firstPathSegment, secondPathSegment] = path16;
         if (!firstPathSegment) {
           return included;
         }
@@ -41922,8 +41922,8 @@ var init_node_entry = __esm({
         const name = this.renderName || this.name;
         return this.renderBaseName ? `${this.renderBaseName}${getPropertyAccess(name)}` : name;
       }
-      hasEffectsOnInteractionAtPath(path15, { type }, _context) {
-        return type !== INTERACTION_ACCESSED || path15.length > 0;
+      hasEffectsOnInteractionAtPath(path16, { type }, _context) {
+        return type !== INTERACTION_ACCESSED || path16.length > 0;
       }
       /**
        * Marks this variable as being part of the bundle, which is usually the case
@@ -41931,9 +41931,9 @@ var init_node_entry = __esm({
        * has not been included previously. Once a variable is included, it should
        * take care all its declarations are included.
        */
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
-        this.renderedLikeHoisted?.includePath(path15, context);
+        this.renderedLikeHoisted?.includePath(path16, context);
       }
       /**
        * Links the rendered name of this variable to another variable and includes
@@ -41964,11 +41964,11 @@ var init_node_entry = __esm({
           this.module.suggestName(identifier3.name);
         }
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return type !== INTERACTION_ACCESSED || path15.length > (this.isNamespace ? 1 : 0);
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return type !== INTERACTION_ACCESSED || path16.length > (this.isNamespace ? 1 : 0);
       }
-      includePath(path15, context) {
-        super.includePath(path15, context);
+      includePath(path16, context) {
+        super.includePath(path16, context);
         this.module.used = true;
       }
     };
@@ -42398,8 +42398,8 @@ var init_node_entry = __esm({
       }
     };
     UNDEFINED_EXPRESSION = new class UndefinedExpression extends ExpressionEntity {
-      getLiteralValueAtPath(path15) {
-        return path15.length > 0 ? UnknownValue : void 0;
+      getLiteralValueAtPath(path16) {
+        return path16.length > 0 ? UnknownValue : void 0;
       }
     }();
     returnsUnknown = {
@@ -42409,18 +42409,18 @@ var init_node_entry = __esm({
       }
     };
     UNKNOWN_LITERAL_BOOLEAN = new class UnknownBoolean extends ExpressionEntity {
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length === 1) {
-          return getMemberReturnExpressionWhenCalled(literalBooleanMembers, path15[0]);
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length === 1) {
+          return getMemberReturnExpressionWhenCalled(literalBooleanMembers, path16[0]);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         if (interaction.type === INTERACTION_ACCESSED) {
-          return path15.length > 1;
+          return path16.length > 1;
         }
-        if (interaction.type === INTERACTION_CALLED && path15.length === 1) {
-          return hasMemberEffectWhenCalled(literalBooleanMembers, path15[0], interaction, context);
+        if (interaction.type === INTERACTION_CALLED && path16.length === 1) {
+          return hasMemberEffectWhenCalled(literalBooleanMembers, path16[0], interaction, context);
         }
         return true;
       }
@@ -42432,18 +42432,18 @@ var init_node_entry = __esm({
       }
     };
     UNKNOWN_LITERAL_NUMBER = new class UnknownNumber extends ExpressionEntity {
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length === 1) {
-          return getMemberReturnExpressionWhenCalled(literalNumberMembers, path15[0]);
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length === 1) {
+          return getMemberReturnExpressionWhenCalled(literalNumberMembers, path16[0]);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         if (interaction.type === INTERACTION_ACCESSED) {
-          return path15.length > 1;
+          return path16.length > 1;
         }
-        if (interaction.type === INTERACTION_CALLED && path15.length === 1) {
-          return hasMemberEffectWhenCalled(literalNumberMembers, path15[0], interaction, context);
+        if (interaction.type === INTERACTION_CALLED && path16.length === 1) {
+          return hasMemberEffectWhenCalled(literalNumberMembers, path16[0], interaction, context);
         }
         return true;
       }
@@ -42455,18 +42455,18 @@ var init_node_entry = __esm({
       }
     };
     UNKNOWN_LITERAL_STRING = new class UnknownString extends ExpressionEntity {
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length === 1) {
-          return getMemberReturnExpressionWhenCalled(literalStringMembers, path15[0]);
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length === 1) {
+          return getMemberReturnExpressionWhenCalled(literalStringMembers, path16[0]);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         if (interaction.type === INTERACTION_ACCESSED) {
-          return path15.length > 1;
+          return path16.length > 1;
         }
-        if (interaction.type === INTERACTION_CALLED && path15.length === 1) {
-          return hasMemberEffectWhenCalled(literalStringMembers, path15[0], interaction, context);
+        if (interaction.type === INTERACTION_CALLED && path16.length === 1) {
+          return hasMemberEffectWhenCalled(literalStringMembers, path16[0], interaction, context);
         }
         return true;
       }
@@ -42567,8 +42567,8 @@ var init_node_entry = __esm({
         super();
         this.description = description;
       }
-      deoptimizeArgumentsOnInteractionAtPath({ args: args2, type }, path15) {
-        if (type === INTERACTION_CALLED && path15.length === 0) {
+      deoptimizeArgumentsOnInteractionAtPath({ args: args2, type }, path16) {
+        if (type === INTERACTION_CALLED && path16.length === 0) {
           if (this.description.mutatesSelfAsArray) {
             args2[0]?.deoptimizePath(UNKNOWN_INTEGER_PATH);
           }
@@ -42579,8 +42579,8 @@ var init_node_entry = __esm({
           }
         }
       }
-      getReturnExpressionWhenCalledAtPath(path15, { args: args2 }) {
-        if (path15.length > 0) {
+      getReturnExpressionWhenCalledAtPath(path16, { args: args2 }) {
+        if (path16.length > 0) {
           return UNKNOWN_RETURN_EXPRESSION;
         }
         return [
@@ -42588,8 +42588,8 @@ var init_node_entry = __esm({
           false
         ];
       }
-      hasEffectsOnInteractionAtPath(path15, { args: args2, type }, context) {
-        if (path15.length > (type === INTERACTION_ACCESSED ? 1 : 0)) {
+      hasEffectsOnInteractionAtPath(path16, { args: args2, type }, context) {
+        if (path16.length > (type === INTERACTION_ACCESSED ? 1 : 0)) {
           return true;
         }
         if (type === INTERACTION_CALLED) {
@@ -42725,15 +42725,15 @@ var init_node_entry = __esm({
         this.prototypeExpression?.deoptimizePath([UnknownKey, UnknownKey]);
         this.deoptimizeCachedEntities();
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        const [key, ...subPath] = path15;
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        const [key, ...subPath] = path16;
         const { args: args2, type } = interaction;
         if (this.hasLostTrack || // single paths that are deoptimized will not become getters or setters
-        (type === INTERACTION_CALLED || path15.length > 1) && (this.hasUnknownDeoptimizedProperty || isConcreteKey(key) && this.deoptimizedPaths.get(key))) {
+        (type === INTERACTION_CALLED || path16.length > 1) && (this.hasUnknownDeoptimizedProperty || isConcreteKey(key) && this.deoptimizedPaths.get(key))) {
           deoptimizeInteraction(interaction);
           return;
         }
-        const [propertiesForExactMatchByKey, relevantPropertiesByKey, relevantUnmatchableProperties] = type === INTERACTION_CALLED || path15.length > 1 ? [
+        const [propertiesForExactMatchByKey, relevantPropertiesByKey, relevantUnmatchableProperties] = type === INTERACTION_CALLED || path16.length > 1 ? [
           this.propertiesAndGettersByKey,
           this.propertiesAndGettersByKey,
           this.unmatchablePropertiesAndGetters
@@ -42783,7 +42783,7 @@ var init_node_entry = __esm({
             }
           }
         }
-        this.prototypeExpression?.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+        this.prototypeExpression?.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       deoptimizeIntegerProperties() {
         if (this.hasLostTrack || this.hasUnknownDeoptimizedProperty || this.hasUnknownDeoptimizedInteger) {
@@ -42800,12 +42800,12 @@ var init_node_entry = __esm({
         this.deoptimizeCachedIntegerEntities();
       }
       // Assumption: If only a specific path is deoptimized, no accessors are created
-      deoptimizePath(path15) {
+      deoptimizePath(path16) {
         if (this.hasLostTrack || this.immutable) {
           return;
         }
-        const key = path15[0];
-        if (path15.length === 1) {
+        const key = path16[0];
+        if (path16.length === 1) {
           if (key === UnknownInteger) {
             return this.deoptimizeIntegerProperties();
           } else if (!isConcreteKey(key)) {
@@ -42821,55 +42821,55 @@ var init_node_entry = __esm({
             }
           }
         }
-        const subPath = path15.length === 1 ? UNKNOWN_PATH : path15.slice(1);
+        const subPath = path16.length === 1 ? UNKNOWN_PATH : path16.slice(1);
         for (const property3 of isConcreteKey(key) ? [
           ...this.propertiesAndGettersByKey.get(key) || this.unmatchablePropertiesAndGetters,
           ...this.settersByKey.get(key) || this.unmatchableSetters
         ] : this.allProperties) {
           property3.deoptimizePath(subPath);
         }
-        this.prototypeExpression?.deoptimizePath(path15.length === 1 ? [path15[0], UnknownKey] : path15);
+        this.prototypeExpression?.deoptimizePath(path16.length === 1 ? [path16[0], UnknownKey] : path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        if (path15.length === 0) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        if (path16.length === 0) {
           return UnknownValue;
         }
-        const key = path15[0];
+        const key = path16[0];
         const expressionAtPath = this.getMemberExpressionAndTrackDeopt(key, origin);
         if (expressionAtPath) {
-          return expressionAtPath.getLiteralValueAtPath(path15.slice(1), recursionTracker, origin);
+          return expressionAtPath.getLiteralValueAtPath(path16.slice(1), recursionTracker, origin);
         }
         if (this.prototypeExpression) {
-          return this.prototypeExpression.getLiteralValueAtPath(path15, recursionTracker, origin);
+          return this.prototypeExpression.getLiteralValueAtPath(path16, recursionTracker, origin);
         }
-        if (path15.length === 1) {
+        if (path16.length === 1) {
           return void 0;
         }
         return UnknownValue;
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        if (path15.length === 0) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        if (path16.length === 0) {
           return UNKNOWN_RETURN_EXPRESSION;
         }
-        const [key, ...subPath] = path15;
+        const [key, ...subPath] = path16;
         const expressionAtPath = this.getMemberExpressionAndTrackDeopt(key, origin);
         if (expressionAtPath) {
           return expressionAtPath.getReturnExpressionWhenCalledAtPath(subPath, interaction, recursionTracker, origin);
         }
         if (this.prototypeExpression) {
-          return this.prototypeExpression.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+          return this.prototypeExpression.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        const [key, ...subPath] = path15;
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        const [key, ...subPath] = path16;
         if (subPath.length > 0 || interaction.type === INTERACTION_CALLED) {
           const expressionAtPath = this.getMemberExpression(key);
           if (expressionAtPath) {
             return expressionAtPath.hasEffectsOnInteractionAtPath(subPath, interaction, context);
           }
           if (this.prototypeExpression) {
-            return this.prototypeExpression.hasEffectsOnInteractionAtPath(path15, interaction, context);
+            return this.prototypeExpression.hasEffectsOnInteractionAtPath(path16, interaction, context);
           }
           return true;
         }
@@ -42903,7 +42903,7 @@ var init_node_entry = __esm({
           }
         }
         if (this.prototypeExpression) {
-          return this.prototypeExpression.hasEffectsOnInteractionAtPath(path15, interaction, context);
+          return this.prototypeExpression.hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
         return false;
       }
@@ -42916,14 +42916,14 @@ var init_node_entry = __esm({
         }
         this.prototypeExpression?.include(context, includeChildrenRecursively);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
         for (const property3 of this.alwaysIncludedProperties) {
           property3.includePath(UNKNOWN_PATH, context);
         }
-        if (path15.length === 0)
+        if (path16.length === 0)
           return;
-        const [key, ...subPath] = path15;
+        const [key, ...subPath] = path16;
         const [includedMembers, includedPath] = isConcreteKey(key) ? [
           /* @__PURE__ */ new Set([
             ...this.propertiesAndGettersByKey.get(key) || this.unmatchablePropertiesAndGetters,
@@ -42934,7 +42934,7 @@ var init_node_entry = __esm({
         for (const property3 of includedMembers) {
           property3.includePath(includedPath, context);
         }
-        this.prototypeExpression?.includePath(path15, context);
+        this.prototypeExpression?.includePath(path16, context);
       }
       buildPropertyMaps(properties) {
         const { allProperties, alwaysIncludedProperties, propertiesAndGettersByKey, propertiesAndSettersByKey, settersByKey, gettersByKey, unknownIntegerProps, unmatchablePropertiesAndGetters, unmatchablePropertiesAndSetters, unmatchableGetters, unmatchableSetters } = this;
@@ -43033,16 +43033,16 @@ var init_node_entry = __esm({
     };
     isInteger = (property3) => typeof property3 === "string" && /^\d+$/.test(property3);
     OBJECT_PROTOTYPE_FALLBACK = new class ObjectPrototypeFallbackExpression extends ExpressionEntity {
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15) {
-        if (interaction.type === INTERACTION_CALLED && path15.length === 1 && !isInteger(path15[0])) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16) {
+        if (interaction.type === INTERACTION_CALLED && path16.length === 1 && !isInteger(path16[0])) {
           deoptimizeInteraction(interaction);
         }
       }
-      getLiteralValueAtPath(path15) {
-        return path15.length === 1 && isInteger(path15[0]) ? void 0 : UnknownValue;
+      getLiteralValueAtPath(path16) {
+        return path16.length === 1 && isInteger(path16[0]) ? void 0 : UnknownValue;
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return path15.length > 1 || type === INTERACTION_CALLED;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return path16.length > 1 || type === INTERACTION_CALLED;
       }
     }();
     OBJECT_PROTOTYPE = new ObjectEntity(/* @__PURE__ */ new Map([
@@ -43194,8 +43194,8 @@ var init_node_entry = __esm({
       ["values", METHOD_DEOPTS_SELF_RETURNS_UNKNOWN]
     ]), OBJECT_PROTOTYPE, true);
     SpreadElement = class extends NodeBase {
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        if (path15.length > 0) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        if (path16.length > 0) {
           this.argument.deoptimizeArgumentsOnInteractionAtPath(interaction, UNKNOWN_PATH, recursionTracker);
         }
       }
@@ -43222,20 +43222,20 @@ var init_node_entry = __esm({
         super(...arguments);
         this.objectEntity = null;
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.getObjectEntity().deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.getObjectEntity().deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getObjectEntity().getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getObjectEntity().getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return this.getObjectEntity().hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return this.getObjectEntity().hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       includeNode(context) {
         this.included = true;
@@ -44245,45 +44245,45 @@ var init_node_entry = __esm({
         super(name);
         this.markReassigned();
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
         switch (interaction.type) {
           // While there is no point in testing these cases as at the moment, they
           // are also covered via other means, we keep them for completeness
           case INTERACTION_ACCESSED:
           case INTERACTION_ASSIGNED: {
-            if (!getGlobalAtPath([this.name, ...path15].slice(0, -1))) {
-              super.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+            if (!getGlobalAtPath([this.name, ...path16].slice(0, -1))) {
+              super.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
             }
             return;
           }
           case INTERACTION_CALLED: {
-            const globalAtPath = getGlobalAtPath([this.name, ...path15]);
+            const globalAtPath = getGlobalAtPath([this.name, ...path16]);
             if (globalAtPath) {
               globalAtPath.deoptimizeArgumentsOnCall(interaction);
             } else {
-              super.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+              super.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
             }
             return;
           }
         }
       }
-      getLiteralValueAtPath(path15, _recursionTracker, _origin) {
-        const globalAtPath = getGlobalAtPath([this.name, ...path15]);
+      getLiteralValueAtPath(path16, _recursionTracker, _origin) {
+        const globalAtPath = getGlobalAtPath([this.name, ...path16]);
         return globalAtPath ? globalAtPath.getLiteralValue() : UnknownValue;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         switch (interaction.type) {
           case INTERACTION_ACCESSED: {
-            if (path15.length === 0) {
+            if (path16.length === 0) {
               return this.name !== "undefined" && !getGlobalAtPath([this.name]);
             }
-            return !getGlobalAtPath([this.name, ...path15].slice(0, -1));
+            return !getGlobalAtPath([this.name, ...path16].slice(0, -1));
           }
           case INTERACTION_ASSIGNED: {
             return true;
           }
           case INTERACTION_CALLED: {
-            const globalAtPath = getGlobalAtPath([this.name, ...path15]);
+            const globalAtPath = getGlobalAtPath([this.name, ...path16]);
             return !globalAtPath || globalAtPath.hasEffectsWhenCalled(interaction, context);
           }
         }
@@ -44320,20 +44320,20 @@ var init_node_entry = __esm({
           }
         }
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        if (this.isReassigned || path15.length + this.initPath.length > MAX_PATH_DEPTH) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        if (this.isReassigned || path16.length + this.initPath.length > MAX_PATH_DEPTH) {
           deoptimizeInteraction(interaction);
           return;
         }
-        recursionTracker.withTrackedEntityAtPath(path15, this.init, () => {
-          this.init.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path15], recursionTracker);
+        recursionTracker.withTrackedEntityAtPath(path16, this.init, () => {
+          this.init.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path16], recursionTracker);
         }, void 0);
       }
-      deoptimizePath(path15) {
-        if (this.isReassigned || this.deoptimizationTracker.trackEntityAtPathAndGetIfTracked(path15, this)) {
+      deoptimizePath(path16) {
+        if (this.isReassigned || this.deoptimizationTracker.trackEntityAtPathAndGetIfTracked(path16, this)) {
           return;
         }
-        if (path15.length === 0) {
+        if (path16.length === 0) {
           this.markReassigned();
           const expressionsToBeDeoptimized = this.expressionsToBeDeoptimized;
           this.expressionsToBeDeoptimized = EMPTY_ARRAY;
@@ -44342,60 +44342,60 @@ var init_node_entry = __esm({
           }
           this.init.deoptimizePath([...this.initPath, UnknownKey]);
         } else {
-          this.init.deoptimizePath(limitConcatenatedPathDepth(this.initPath, path15));
+          this.init.deoptimizePath(limitConcatenatedPathDepth(this.initPath, path16));
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        if (this.isReassigned || path15.length + this.initPath.length > MAX_PATH_DEPTH) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        if (this.isReassigned || path16.length + this.initPath.length > MAX_PATH_DEPTH) {
           return UnknownValue;
         }
-        return recursionTracker.withTrackedEntityAtPath(path15, this.init, () => {
+        return recursionTracker.withTrackedEntityAtPath(path16, this.init, () => {
           this.expressionsToBeDeoptimized.push(origin);
-          return this.init.getLiteralValueAtPath([...this.initPath, ...path15], recursionTracker, origin);
+          return this.init.getLiteralValueAtPath([...this.initPath, ...path16], recursionTracker, origin);
         }, UnknownValue);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        if (this.isReassigned || path15.length + this.initPath.length > MAX_PATH_DEPTH) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        if (this.isReassigned || path16.length + this.initPath.length > MAX_PATH_DEPTH) {
           return UNKNOWN_RETURN_EXPRESSION;
         }
-        return recursionTracker.withTrackedEntityAtPath(path15, this.init, () => {
+        return recursionTracker.withTrackedEntityAtPath(path16, this.init, () => {
           this.expressionsToBeDeoptimized.push(origin);
-          return this.init.getReturnExpressionWhenCalledAtPath([...this.initPath, ...path15], interaction, recursionTracker, origin);
+          return this.init.getReturnExpressionWhenCalledAtPath([...this.initPath, ...path16], interaction, recursionTracker, origin);
         }, UNKNOWN_RETURN_EXPRESSION);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (path15.length + this.initPath.length > MAX_PATH_DEPTH) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (path16.length + this.initPath.length > MAX_PATH_DEPTH) {
           return true;
         }
         switch (interaction.type) {
           case INTERACTION_ACCESSED: {
             if (this.isReassigned)
               return true;
-            return !context.accessed.trackEntityAtPathAndGetIfTracked(path15, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path15], interaction, context);
+            return !context.accessed.trackEntityAtPathAndGetIfTracked(path16, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path16], interaction, context);
           }
           case INTERACTION_ASSIGNED: {
             if (this.included)
               return true;
-            if (path15.length === 0)
+            if (path16.length === 0)
               return false;
             if (this.isReassigned)
               return true;
-            return !context.assigned.trackEntityAtPathAndGetIfTracked(path15, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path15], interaction, context);
+            return !context.assigned.trackEntityAtPathAndGetIfTracked(path16, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path16], interaction, context);
           }
           case INTERACTION_CALLED: {
             if (this.isReassigned)
               return true;
-            return !(interaction.withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path15, interaction.args, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path15], interaction, context);
+            return !(interaction.withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path16, interaction.args, this) && this.init.hasEffectsOnInteractionAtPath([...this.initPath, ...path16], interaction, context);
           }
         }
       }
-      includePath(path15, context) {
-        if (!this.includedPathTracker.includePathAndGetIfIncluded(path15)) {
+      includePath(path16, context) {
+        if (!this.includedPathTracker.includePathAndGetIfIncluded(path16)) {
           this.module.scope.context.requestTreeshakingPass();
           if (!this.included) {
             this.module.scope.context.newlyIncludedVariableInits.add(this.init);
           }
-          super.includePath(path15, context);
+          super.includePath(path16, context);
           for (const declaration of this.declarations) {
             if (!declaration.included)
               declaration.include(context, false);
@@ -44407,8 +44407,8 @@ var init_node_entry = __esm({
               node3 = node3.parent;
             }
           }
-          if (path15.length > 0) {
-            this.init.includePath(limitConcatenatedPathDepth(this.initPath, path15), context);
+          if (path16.length > 0) {
+            this.init.includePath(limitConcatenatedPathDepth(this.initPath, path16), context);
             this.additionalInitializers?.forEach((initializer) => initializer.includePath(UNKNOWN_PATH, context));
           }
         }
@@ -44461,21 +44461,21 @@ var init_node_entry = __esm({
         this.flags = setFlag(this.flags, 4, true);
         this.flags = setFlag(this.flags, 8, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0 && !this.scope.contains(this.name)) {
+      deoptimizePath(path16) {
+        if (path16.length === 0 && !this.scope.contains(this.name)) {
           this.disallowImportReassignment();
         }
-        this.variable?.deoptimizePath(path15);
+        this.variable?.deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getVariableRespectingTDZ().getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getVariableRespectingTDZ().getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        const [expression, isPure] = this.getVariableRespectingTDZ().getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
-        return [expression, isPure || this.isPureFunction(path15)];
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        const [expression, isPure] = this.getVariableRespectingTDZ().getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
+        return [expression, isPure || this.isPureFunction(path16)];
       }
       hasEffects(context) {
         if (!this.deoptimized)
@@ -44485,16 +44485,16 @@ var init_node_entry = __esm({
         }
         return this.scope.context.options.treeshake.unknownGlobalSideEffects && this.variable instanceof GlobalVariable && !this.isPureFunction(EMPTY_PATH) && this.variable.hasEffectsOnInteractionAtPath(EMPTY_PATH, NODE_INTERACTION_UNKNOWN_ACCESS, context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         switch (interaction.type) {
           case INTERACTION_ACCESSED: {
-            return this.variable !== null && !this.isPureFunction(path15) && this.getVariableRespectingTDZ().hasEffectsOnInteractionAtPath(path15, interaction, context);
+            return this.variable !== null && !this.isPureFunction(path16) && this.getVariableRespectingTDZ().hasEffectsOnInteractionAtPath(path16, interaction, context);
           }
           case INTERACTION_ASSIGNED: {
-            return (path15.length > 0 ? this.getVariableRespectingTDZ() : this.variable).hasEffectsOnInteractionAtPath(path15, interaction, context);
+            return (path16.length > 0 ? this.getVariableRespectingTDZ() : this.variable).hasEffectsOnInteractionAtPath(path16, interaction, context);
           }
           case INTERACTION_CALLED: {
-            return !this.isPureFunction(path15) && this.getVariableRespectingTDZ().hasEffectsOnInteractionAtPath(path15, interaction, context);
+            return !this.isPureFunction(path16) && this.getVariableRespectingTDZ().hasEffectsOnInteractionAtPath(path16, interaction, context);
           }
         }
       }
@@ -44513,16 +44513,16 @@ var init_node_entry = __esm({
           this.scope.context.includeVariableInModule(this.variable, EMPTY_PATH, context);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included) {
           this.included = true;
           if (!this.deoptimized)
             this.applyDeoptimizations();
           if (this.variable !== null) {
-            this.scope.context.includeVariableInModule(this.variable, path15, context);
+            this.scope.context.includeVariableInModule(this.variable, path16, context);
           }
-        } else if (path15.length > 0) {
-          this.variable?.includePath(path15, context);
+        } else if (path16.length > 0) {
+          this.variable?.includePath(path16, context);
         }
       }
       includeCallArguments(interaction, context) {
@@ -44570,9 +44570,9 @@ var init_node_entry = __esm({
         }
         return this.variable;
       }
-      isPureFunction(path15) {
+      isPureFunction(path16) {
         let currentPureFunction = this.scope.context.manualPureFunctions[this.name];
-        for (const segment of path15) {
+        for (const segment of path16) {
           if (currentPureFunction) {
             if (currentPureFunction[PureFunctionKey]) {
               return true;
@@ -44586,25 +44586,25 @@ var init_node_entry = __esm({
       }
     };
     ObjectMember = class extends ExpressionEntity {
-      constructor(object2, path15) {
+      constructor(object2, path16) {
         super();
         this.object = object2;
-        this.path = path15;
+        this.path = path16;
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.object.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.path, ...path15], recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.object.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.path, ...path16], recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.object.deoptimizePath([...this.path, ...path15]);
+      deoptimizePath(path16) {
+        this.object.deoptimizePath([...this.path, ...path16]);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.object.getLiteralValueAtPath([...this.path, ...path15], recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.object.getLiteralValueAtPath([...this.path, ...path16], recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.object.getReturnExpressionWhenCalledAtPath([...this.path, ...path15], interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.object.getReturnExpressionWhenCalledAtPath([...this.path, ...path16], interaction, recursionTracker, origin);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return this.object.hasEffectsOnInteractionAtPath([...this.path, ...path15], interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return this.object.hasEffectsOnInteractionAtPath([...this.path, ...path16], interaction, context);
       }
     };
     Identifier2 = class extends IdentifierBase {
@@ -44843,41 +44843,41 @@ var init_node_entry = __esm({
       set computed(value2) {
         this.flags = setFlag(this.flags, 1024, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        if (interaction.type === INTERACTION_ACCESSED && this.kind === "get" && path15.length === 0) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        if (interaction.type === INTERACTION_ACCESSED && this.kind === "get" && path16.length === 0) {
           return this.value.deoptimizeArgumentsOnInteractionAtPath({
             args: interaction.args,
             type: INTERACTION_CALLED,
             withNew: false
           }, EMPTY_PATH, recursionTracker);
         }
-        if (interaction.type === INTERACTION_ASSIGNED && this.kind === "set" && path15.length === 0) {
+        if (interaction.type === INTERACTION_ASSIGNED && this.kind === "set" && path16.length === 0) {
           return this.value.deoptimizeArgumentsOnInteractionAtPath({
             args: interaction.args,
             type: INTERACTION_CALLED,
             withNew: false
           }, EMPTY_PATH, recursionTracker);
         }
-        this.getAccessedValue()[0].deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+        this.getAccessedValue()[0].deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       // As getter properties directly receive their values from fixed function
       // expressions, there is no known situation where a getter is deoptimized.
       deoptimizeCache() {
       }
-      deoptimizePath(path15) {
-        this.getAccessedValue()[0].deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.getAccessedValue()[0].deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getAccessedValue()[0].getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getAccessedValue()[0].getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.getAccessedValue()[0].getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.getAccessedValue()[0].getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
       }
       hasEffects(context) {
         return this.key.hasEffects(context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (this.kind === "get" && interaction.type === INTERACTION_ACCESSED && path15.length === 0) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (this.kind === "get" && interaction.type === INTERACTION_ACCESSED && path16.length === 0) {
           return this.value.hasEffectsOnInteractionAtPath(EMPTY_PATH, {
             args: interaction.args,
             type: INTERACTION_CALLED,
@@ -44891,7 +44891,7 @@ var init_node_entry = __esm({
             withNew: false
           }, context);
         }
-        return this.getAccessedValue()[0].hasEffectsOnInteractionAtPath(path15, interaction, context);
+        return this.getAccessedValue()[0].hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       getAccessedValue() {
         if (this.accessedValue === null) {
@@ -44972,20 +44972,20 @@ var init_node_entry = __esm({
       createScope(parentScope) {
         this.scope = new ChildScope(parentScope, parentScope.context);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       deoptimizeCache() {
         this.getObjectEntity().deoptimizeAllProperties();
       }
-      deoptimizePath(path15) {
-        this.getObjectEntity().deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.getObjectEntity().deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getObjectEntity().getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getObjectEntity().getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
       }
       hasEffects(context) {
         if (!this.deoptimized)
@@ -44994,8 +44994,8 @@ var init_node_entry = __esm({
         this.id?.markDeclarationReached();
         return initEffect || super.hasEffects(context) || checkEffectForNodes(this.decorators, context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return interaction.type === INTERACTION_CALLED && path15.length === 0 ? !interaction.withNew || (this.classConstructor === null ? this.superClass?.hasEffectsOnInteractionAtPath(path15, interaction, context) : this.classConstructor.hasEffectsOnInteractionAtPath(path15, interaction, context)) || false : this.getObjectEntity().hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return interaction.type === INTERACTION_CALLED && path16.length === 0 ? !interaction.withNew || (this.classConstructor === null ? this.superClass?.hasEffectsOnInteractionAtPath(path16, interaction, context) : this.classConstructor.hasEffectsOnInteractionAtPath(path16, interaction, context)) || false : this.getObjectEntity().hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         if (!this.included)
@@ -45130,11 +45130,11 @@ var init_node_entry = __esm({
         this.deoptimizedArguments = [];
         this.addArgumentToBeDeoptimized = addArgumentToBeDeoptimized;
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return type !== INTERACTION_ACCESSED || path15.length > 1;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return type !== INTERACTION_ACCESSED || path16.length > 1;
       }
-      includePath(path15, context) {
-        super.includePath(path15, context);
+      includePath(path16, context) {
+        super.includePath(path16, context);
         for (const argument of this.deoptimizedArguments) {
           argument.deoptimizePath(UNKNOWN_PATH);
         }
@@ -45175,8 +45175,8 @@ var init_node_entry = __esm({
           for (const field of this.deoptimizedFields) {
             entity.deoptimizePath([...this.initPath, field]);
           }
-          for (const { interaction, path: path15 } of this.deoptimizationInteractions) {
-            entity.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path15], SHARED_RECURSION_TRACKER);
+          for (const { interaction, path: path16 } of this.deoptimizationInteractions) {
+            entity.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path16], SHARED_RECURSION_TRACKER);
           }
         }
       }
@@ -45228,47 +45228,47 @@ var init_node_entry = __esm({
       getKnownValue() {
         return this.knownValue || UNKNOWN_EXPRESSION;
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        if (this.isReassigned || path15.length + this.initPath.length > MAX_PATH_DEPTH) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        if (this.isReassigned || path16.length + this.initPath.length > MAX_PATH_DEPTH) {
           return UnknownValue;
         }
         const knownValue = this.getKnownValue();
         this.expressionsDependingOnKnownValue.push(origin);
-        return recursionTracker.withTrackedEntityAtPath(path15, knownValue, () => knownValue.getLiteralValueAtPath([...this.initPath, ...path15], recursionTracker, origin), UnknownValue);
+        return recursionTracker.withTrackedEntityAtPath(path16, knownValue, () => knownValue.getLiteralValueAtPath([...this.initPath, ...path16], recursionTracker, origin), UnknownValue);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         const { type } = interaction;
-        if (this.isReassigned || type === INTERACTION_ASSIGNED || path15.length + this.initPath.length > MAX_PATH_DEPTH) {
-          return super.hasEffectsOnInteractionAtPath(path15, interaction, context);
+        if (this.isReassigned || type === INTERACTION_ASSIGNED || path16.length + this.initPath.length > MAX_PATH_DEPTH) {
+          return super.hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
-        return !(type === INTERACTION_CALLED ? (interaction.withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path15, interaction.args, this) : context.accessed.trackEntityAtPathAndGetIfTracked(path15, this)) && this.getKnownValue().hasEffectsOnInteractionAtPath([...this.initPath, ...path15], interaction, context);
+        return !(type === INTERACTION_CALLED ? (interaction.withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path16, interaction.args, this) : context.accessed.trackEntityAtPathAndGetIfTracked(path16, this)) && this.getKnownValue().hasEffectsOnInteractionAtPath([...this.initPath, ...path16], interaction, context);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15) {
-        if (path15.length >= 2 || this.argumentsToBeDeoptimized.has(UNKNOWN_EXPRESSION) || this.deoptimizationInteractions.length >= MAX_TRACKED_INTERACTIONS || path15.length === 1 && (this.deoptimizedFields.has(UnknownKey) || interaction.type === INTERACTION_CALLED && this.deoptimizedFields.has(path15[0])) || this.initPath.length + path15.length > MAX_PATH_DEPTH) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16) {
+        if (path16.length >= 2 || this.argumentsToBeDeoptimized.has(UNKNOWN_EXPRESSION) || this.deoptimizationInteractions.length >= MAX_TRACKED_INTERACTIONS || path16.length === 1 && (this.deoptimizedFields.has(UnknownKey) || interaction.type === INTERACTION_CALLED && this.deoptimizedFields.has(path16[0])) || this.initPath.length + path16.length > MAX_PATH_DEPTH) {
           deoptimizeInteraction(interaction);
           return;
         }
-        if (!this.deoptimizations.trackEntityAtPathAndGetIfTracked(path15, interaction.args)) {
+        if (!this.deoptimizations.trackEntityAtPathAndGetIfTracked(path16, interaction.args)) {
           for (const entity of this.argumentsToBeDeoptimized) {
-            entity.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path15], SHARED_RECURSION_TRACKER);
+            entity.deoptimizeArgumentsOnInteractionAtPath(interaction, [...this.initPath, ...path16], SHARED_RECURSION_TRACKER);
           }
           if (!this.argumentsToBeDeoptimized.has(UNKNOWN_EXPRESSION)) {
             this.deoptimizationInteractions.push({
               interaction,
-              path: path15
+              path: path16
             });
           }
         }
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0) {
+      deoptimizePath(path16) {
+        if (path16.length === 0) {
           this.markReassigned();
           return;
         }
         if (this.deoptimizedFields.has(UnknownKey)) {
           return;
         }
-        const key = path15[0];
+        const key = path16[0];
         if (this.deoptimizedFields.has(key)) {
           return;
         }
@@ -45283,11 +45283,11 @@ var init_node_entry = __esm({
           this.argumentsToBeDeoptimized = UNKNOWN_DEOPTIMIZED_ENTITY;
         }
       }
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length === 0) {
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length === 0) {
           this.deoptimizePath(UNKNOWN_PATH);
-        } else if (!this.deoptimizedFields.has(path15[0])) {
-          this.deoptimizePath([path15[0]]);
+        } else if (!this.deoptimizedFields.has(path16[0])) {
+          this.deoptimizePath([path16[0]]);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
@@ -45299,8 +45299,8 @@ var init_node_entry = __esm({
       constructor(context) {
         super("this", null, EMPTY_PATH, context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return (context.replacedVariableInits.get(this) || UNKNOWN_EXPRESSION).hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return (context.replacedVariableInits.get(this) || UNKNOWN_EXPRESSION).hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
     };
     CatchBodyScope = class extends ChildScope {
@@ -45651,13 +45651,13 @@ var init_node_entry = __esm({
       deoptimizeAssignment(destructuredInitPath, init2) {
         this.argument.deoptimizeAssignment(getIncludedPatternPath$1(destructuredInitPath), init2);
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0) {
+      deoptimizePath(path16) {
+        if (path16.length === 0) {
           this.argument.deoptimizePath(EMPTY_PATH);
         }
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return path15.length > 0 || this.argument.hasEffectsOnInteractionAtPath(EMPTY_PATH, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return path16.length > 0 || this.argument.hasEffectsOnInteractionAtPath(EMPTY_PATH, interaction, context);
       }
       hasEffectsWhenDestructuring(context, destructuredInitPath, init2) {
         return this.argument.hasEffectsWhenDestructuring(context, getIncludedPatternPath$1(destructuredInitPath), init2);
@@ -45733,26 +45733,26 @@ var init_node_entry = __esm({
       set hasCachedEffects(value2) {
         this.flags = setFlag(this.flags, 67108864, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        if (interaction.type === INTERACTION_CALLED && path15.length === 0) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        if (interaction.type === INTERACTION_CALLED && path16.length === 0) {
           this.scope.deoptimizeArgumentsOnCall(interaction);
         } else {
-          this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+          this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
         }
       }
-      deoptimizePath(path15) {
-        this.getObjectEntity().deoptimizePath(path15);
-        if (path15.length === 1 && path15[0] === UnknownKey) {
+      deoptimizePath(path16) {
+        this.getObjectEntity().deoptimizePath(path16);
+        if (path16.length === 1 && path16[0] === UnknownKey) {
           this.scope.getReturnExpression().deoptimizePath(UNKNOWN_PATH);
           this.scope.deoptimizeAllParameters();
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getObjectEntity().getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getObjectEntity().getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        if (path15.length > 0) {
-          return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        if (path16.length > 0) {
+          return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
         }
         if (this.async) {
           if (!this.deoptimizedReturn) {
@@ -45764,9 +45764,9 @@ var init_node_entry = __esm({
         }
         return [this.scope.getReturnExpression(), false];
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (path15.length > 0 || interaction.type !== INTERACTION_CALLED) {
-          return this.getObjectEntity().hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (path16.length > 0 || interaction.type !== INTERACTION_CALLED) {
+          return this.getObjectEntity().hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
         if (this.hasCachedEffects) {
           return true;
@@ -45848,9 +45848,9 @@ var init_node_entry = __esm({
         this.constructedEntity = new ObjectEntity(/* @__PURE__ */ new Map(), OBJECT_PROTOTYPE);
         this.scope.thisVariable.addArgumentForDeoptimization(this.constructedEntity);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        super.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
-        if (interaction.type === INTERACTION_CALLED && path15.length === 0 && interaction.args[0]) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        super.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
+        if (interaction.type === INTERACTION_CALLED && path16.length === 0 && interaction.args[0]) {
           this.scope.thisVariable.addArgumentForDeoptimization(interaction.args[0]);
         }
       }
@@ -45860,14 +45860,14 @@ var init_node_entry = __esm({
         }
         return !!this.id?.hasEffects(context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (this.annotationNoSideEffects && path15.length === 0 && interaction.type === INTERACTION_CALLED) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (this.annotationNoSideEffects && path16.length === 0 && interaction.type === INTERACTION_CALLED) {
           return false;
         }
-        if (super.hasEffectsOnInteractionAtPath(path15, interaction, context)) {
+        if (super.hasEffectsOnInteractionAtPath(path16, interaction, context)) {
           return true;
         }
-        if (path15.length === 0 && interaction.type === INTERACTION_CALLED) {
+        if (path16.length === 0 && interaction.type === INTERACTION_CALLED) {
           const thisInit = context.replacedVariableInits.get(this.scope.thisVariable);
           context.replacedVariableInits.set(this.scope.thisVariable, interaction.withNew ? this.constructedEntity : UNKNOWN_EXPRESSION);
           const { brokenFlow, ignore, replacedVariableInits } = context;
@@ -45958,9 +45958,9 @@ var init_node_entry = __esm({
           this.scope.context.includeVariableInModule(this.variable, UNKNOWN_PATH, context);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
-        this.declaration.includePath(path15, context);
+        this.declaration.includePath(path16, context);
       }
       initialise() {
         super.initialise();
@@ -46181,23 +46181,23 @@ var init_node_entry = __esm({
     Literal2 = class extends NodeBase {
       deoptimizeArgumentsOnInteractionAtPath() {
       }
-      getLiteralValueAtPath(path15) {
-        if (path15.length > 0 || // unknown literals can also be null but do not start with an "n"
+      getLiteralValueAtPath(path16) {
+        if (path16.length > 0 || // unknown literals can also be null but do not start with an "n"
         this.value === null && this.scope.context.code.charCodeAt(this.start) !== 110 || typeof this.value === "bigint" || // to support shims for regular expressions
         this.scope.context.code.charCodeAt(this.start) === 47) {
           return UnknownValue;
         }
         return this.value;
       }
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length !== 1)
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length !== 1)
           return UNKNOWN_RETURN_EXPRESSION;
-        return getMemberReturnExpressionWhenCalled(this.members, path15[0]);
+        return getMemberReturnExpressionWhenCalled(this.members, path16[0]);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         switch (interaction.type) {
           case INTERACTION_ACCESSED: {
-            return path15.length > (this.value === null ? 0 : 1);
+            return path16.length > (this.value === null ? 0 : 1);
           }
           case INTERACTION_ASSIGNED: {
             return true;
@@ -46206,7 +46206,7 @@ var init_node_entry = __esm({
             if (this.included && this.value instanceof RegExp && (this.value.global || this.value.sticky)) {
               return true;
             }
-            return path15.length !== 1 || hasMemberEffectWhenCalled(this.members, path15[0], interaction, context);
+            return path16.length !== 1 || hasMemberEffectWhenCalled(this.members, path16[0], interaction, context);
           }
         }
       }
@@ -46285,30 +46285,30 @@ var init_node_entry = __esm({
       }
       bind() {
         this.bound = true;
-        const path15 = getPathIfNotComputed(this);
-        const baseVariable = path15 && this.scope.findVariable(path15[0].key);
+        const path16 = getPathIfNotComputed(this);
+        const baseVariable = path16 && this.scope.findVariable(path16[0].key);
         if (baseVariable?.isNamespace) {
-          const resolvedVariable = resolveNamespaceVariables(baseVariable, path15.slice(1), this.scope.context);
+          const resolvedVariable = resolveNamespaceVariables(baseVariable, path16.slice(1), this.scope.context);
           if (!resolvedVariable) {
             super.bind();
           } else if (resolvedVariable === "undefined") {
             this.isUndefined = true;
           } else {
             this.variable = resolvedVariable;
-            this.scope.addNamespaceMemberAccess(getStringFromPath(path15), resolvedVariable);
+            this.scope.addNamespaceMemberAccess(getStringFromPath(path16), resolvedVariable);
           }
         } else {
           super.bind();
         }
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
         if (this.promiseHandler) {
-          this.promiseHandler.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+          this.promiseHandler.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
         } else if (this.variable) {
-          this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+          this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
         } else if (!this.isUndefined) {
-          if (path15.length < MAX_PATH_DEPTH) {
-            this.object.deoptimizeArgumentsOnInteractionAtPath(interaction, this.propertyKey === UnknownKey ? UNKNOWN_PATH : [this.propertyKey, ...path15], recursionTracker);
+          if (path16.length < MAX_PATH_DEPTH) {
+            this.object.deoptimizeArgumentsOnInteractionAtPath(interaction, this.propertyKey === UnknownKey ? UNKNOWN_PATH : [this.propertyKey, ...path16], recursionTracker);
           } else {
             deoptimizeInteraction(interaction);
           }
@@ -46332,55 +46332,55 @@ var init_node_entry = __esm({
           expression.deoptimizeCache();
         }
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0)
+      deoptimizePath(path16) {
+        if (path16.length === 0)
           this.disallowNamespaceReassignment();
         if (this.variable) {
-          this.variable.deoptimizePath(path15);
+          this.variable.deoptimizePath(path16);
         } else if (!this.isUndefined) {
           const { propertyKey } = this;
           this.object.deoptimizePath([
             propertyKey === UnknownKey ? UnknownNonAccessorKey : propertyKey,
-            ...path15.length < MAX_PATH_DEPTH ? path15 : [...path15.slice(0, MAX_PATH_DEPTH), UnknownKey]
+            ...path16.length < MAX_PATH_DEPTH ? path16 : [...path16.slice(0, MAX_PATH_DEPTH), UnknownKey]
           ]);
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
         if (this.variable) {
-          return this.variable.getLiteralValueAtPath(path15, recursionTracker, origin);
+          return this.variable.getLiteralValueAtPath(path16, recursionTracker, origin);
         }
         if (this.isUndefined) {
           return void 0;
         }
         const propertyKey = this.getDynamicPropertyKey();
-        if (propertyKey !== UnknownKey && path15.length < MAX_PATH_DEPTH) {
+        if (propertyKey !== UnknownKey && path16.length < MAX_PATH_DEPTH) {
           if (propertyKey !== this.propertyKey)
             this.expressionsToBeDeoptimized.push(origin);
-          return this.object.getLiteralValueAtPath([propertyKey, ...path15], recursionTracker, origin);
+          return this.object.getLiteralValueAtPath([propertyKey, ...path16], recursionTracker, origin);
         }
         return UnknownValue;
       }
-      getLiteralValueAtPathAsChainElement(path15, recursionTracker, origin) {
+      getLiteralValueAtPathAsChainElement(path16, recursionTracker, origin) {
         if (this.variable) {
-          return this.variable.getLiteralValueAtPath(path15, recursionTracker, origin);
+          return this.variable.getLiteralValueAtPath(path16, recursionTracker, origin);
         }
         if (this.isUndefined) {
           return void 0;
         }
-        return getChainElementLiteralValueAtPath(this, this.object, path15, recursionTracker, origin);
+        return getChainElementLiteralValueAtPath(this, this.object, path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
         if (this.variable) {
-          return this.variable.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+          return this.variable.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
         }
         if (this.isUndefined) {
           return [UNDEFINED_EXPRESSION, false];
         }
         const propertyKey = this.getDynamicPropertyKey();
-        if (propertyKey !== UnknownKey && path15.length < MAX_PATH_DEPTH) {
+        if (propertyKey !== UnknownKey && path16.length < MAX_PATH_DEPTH) {
           if (propertyKey !== this.propertyKey)
             this.expressionsToBeDeoptimized.push(origin);
-          return this.object.getReturnExpressionWhenCalledAtPath([propertyKey, ...path15], interaction, recursionTracker, origin);
+          return this.object.getReturnExpressionWhenCalledAtPath([propertyKey, ...path16], interaction, recursionTracker, origin);
         }
         return UNKNOWN_RETURN_EXPRESSION;
       }
@@ -46409,15 +46409,15 @@ var init_node_entry = __esm({
           this.applyAssignmentDeoptimization();
         return this.property.hasEffects(context) || this.object.hasEffects(context) || checkAccess && this.hasAccessEffect(context) || this.hasEffectsOnInteractionAtPath(EMPTY_PATH, this.assignmentInteraction, context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         if (this.variable) {
-          return this.variable.hasEffectsOnInteractionAtPath(path15, interaction, context);
+          return this.variable.hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
         if (this.isUndefined) {
           return true;
         }
-        if (path15.length < MAX_PATH_DEPTH) {
-          return this.object.hasEffectsOnInteractionAtPath([this.getDynamicPropertyKey(), ...path15], interaction, context);
+        if (path16.length < MAX_PATH_DEPTH) {
+          return this.object.hasEffectsOnInteractionAtPath([this.getDynamicPropertyKey(), ...path16], interaction, context);
         }
         return true;
       }
@@ -46453,15 +46453,15 @@ var init_node_entry = __esm({
           this.object.includePath([this.propertyKey], context);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included)
           this.includeNode(context);
         if (this.variable) {
-          this.variable?.includePath(path15, context);
+          this.variable?.includePath(path16, context);
         } else if (!this.isUndefined) {
           this.object.includePath([
             this.propertyKey,
-            ...path15.length < MAX_PATH_DEPTH ? path15 : [...path15.slice(0, MAX_PATH_DEPTH), UnknownKey]
+            ...path16.length < MAX_PATH_DEPTH ? path16 : [...path16.slice(0, MAX_PATH_DEPTH), UnknownKey]
           ], context);
         }
       }
@@ -46591,8 +46591,8 @@ var init_node_entry = __esm({
       hasEffects() {
         return false;
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return path15.length > 1 || type !== INTERACTION_ACCESSED;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return path16.length > 1 || type !== INTERACTION_ACCESSED;
       }
       include() {
         if (!this.included)
@@ -46669,14 +46669,14 @@ var init_node_entry = __esm({
       system: ["module", "URL"],
       umd: ["document", "require", "URL"]
     };
-    getResolveUrl = (path15, asObject, URL2 = "URL") => `new ${URL2}(${path15})${asObject ? "" : ".href"}`;
+    getResolveUrl = (path16, asObject, URL2 = "URL") => `new ${URL2}(${path16})${asObject ? "" : ".href"}`;
     getRelativeUrlFromDocument = (relativePath, asObject, umd2 = false) => getResolveUrl(`'${escapeId(relativePath)}', ${umd2 ? `typeof document === 'undefined' ? location.href : ` : ""}document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || document.baseURI`, asObject);
     getGenericImportMetaMechanism = (getUrl) => (property3, { chunkId }) => {
       const urlMechanism = getUrl(chunkId);
       return property3 === null ? `({ url: ${urlMechanism} })` : property3 === "url" ? urlMechanism : "undefined";
     };
-    getFileUrlFromFullPath = (path15, asObject) => `require('u' + 'rl').pathToFileURL(${path15})${asObject ? "" : ".href"}`;
-    getFileUrlFromRelativePath = (path15, asObject) => getFileUrlFromFullPath(`__dirname + '/${escapeId(path15)}'`, asObject);
+    getFileUrlFromFullPath = (path16, asObject) => `require('u' + 'rl').pathToFileURL(${path16})${asObject ? "" : ".href"}`;
+    getFileUrlFromRelativePath = (path16, asObject) => getFileUrlFromFullPath(`__dirname + '/${escapeId(path16)}'`, asObject);
     getUrlFromDocument = (chunkId, umd2 = false) => `${umd2 ? `typeof document === 'undefined' ? location.href : ` : ""}(${DOCUMENT_CURRENT_SCRIPT} && ${DOCUMENT_CURRENT_SCRIPT}.tagName.toUpperCase() === 'SCRIPT' && ${DOCUMENT_CURRENT_SCRIPT}.src || new URL('${escapeId(chunkId)}', document.baseURI).href)`;
     relativeUrlMechanisms = {
       amd: (relativePath, asObject) => {
@@ -46784,21 +46784,21 @@ var init_node_entry = __esm({
         this.references.push(identifier3);
         this.name = identifier3.name;
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        if (path15.length > 1 || path15.length === 1 && interaction.type === INTERACTION_CALLED) {
-          const key = path15[0];
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        if (path16.length > 1 || path16.length === 1 && interaction.type === INTERACTION_CALLED) {
+          const key = path16[0];
           if (typeof key === "string") {
-            this.module.getExportedVariablesByName().get(key)?.deoptimizeArgumentsOnInteractionAtPath(interaction, path15.slice(1), recursionTracker);
+            this.module.getExportedVariablesByName().get(key)?.deoptimizeArgumentsOnInteractionAtPath(interaction, path16.slice(1), recursionTracker);
           } else {
             deoptimizeInteraction(interaction);
           }
         }
       }
-      deoptimizePath(path15) {
-        if (path15.length > 1) {
-          const key = path15[0];
+      deoptimizePath(path16) {
+        if (path16.length > 1) {
+          const key = path16[0];
           if (typeof key === "string") {
-            this.module.getExportedVariablesByName().get(key)?.deoptimizePath(path15.slice(1));
+            this.module.getExportedVariablesByName().get(key)?.deoptimizePath(path16.slice(1));
           } else if (!this.areAllMembersDeoptimized) {
             this.areAllMembersDeoptimized = true;
             for (const variable of this.module.getExportedVariablesByName().values()) {
@@ -46807,34 +46807,34 @@ var init_node_entry = __esm({
           }
         }
       }
-      getLiteralValueAtPath(path15) {
-        if (path15[0] === SymbolToStringTag) {
+      getLiteralValueAtPath(path16) {
+        if (path16[0] === SymbolToStringTag) {
           return "Module";
         }
         return UnknownValue;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         const { type } = interaction;
-        if (path15.length === 0) {
+        if (path16.length === 0) {
           return true;
         }
-        if (path15.length === 1 && type !== INTERACTION_CALLED) {
+        if (path16.length === 1 && type !== INTERACTION_CALLED) {
           return type === INTERACTION_ASSIGNED;
         }
-        const key = path15[0];
+        const key = path16[0];
         if (typeof key !== "string") {
           return true;
         }
         const memberVariable = this.module.getExportedVariablesByName().get(key);
-        return !memberVariable || memberVariable.hasEffectsOnInteractionAtPath(path15.slice(1), interaction, context);
+        return !memberVariable || memberVariable.hasEffectsOnInteractionAtPath(path16.slice(1), interaction, context);
       }
-      includePath(path15, context) {
-        super.includePath(path15, context);
-        this.includeMemberPath(path15, context);
+      includePath(path16, context) {
+        super.includePath(path16, context);
+        this.includeMemberPath(path16, context);
       }
-      includeMemberPath(path15, context) {
-        if (path15.length > 0) {
-          const [name, ...remainingPath] = path15;
+      includeMemberPath(path16, context) {
+        if (path16.length > 0) {
+          const [name, ...remainingPath] = path16;
           if (typeof name === "string") {
             const variable = this.module.getExportedVariablesByName().get(name);
             if (variable) {
@@ -46909,8 +46909,8 @@ var init_node_entry = __esm({
     NamespaceVariable.prototype.isNamespace = true;
     getDynamicNamespaceVariable = (namespace2) => Object.create(namespace2, {
       includePath: {
-        value(path15, context) {
-          namespace2.includeMemberPath(path15, context);
+        value(path16, context) {
+          namespace2.includeMemberPath(path16, context);
         }
       }
     });
@@ -46945,9 +46945,9 @@ var init_node_entry = __esm({
       getName(getPropertyAccess) {
         return `${this.syntheticNamespace.getName(getPropertyAccess)}${getPropertyAccess(this.name)}`;
       }
-      includePath(path15, context) {
-        super.includePath(path15, context);
-        this.context.includeVariableInModule(this.syntheticNamespace, [this.name, ...path15], context);
+      includePath(path16, context) {
+        super.includePath(path16, context);
+        this.context.includeVariableInModule(this.syntheticNamespace, [this.name, ...path16], context);
       }
       setRenderNames(baseName, name) {
         super.setRenderNames(baseName, name);
@@ -47333,11 +47333,11 @@ var init_node_entry = __esm({
       hasEffects() {
         return false;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (this.annotationNoSideEffects && path15.length === 0 && interaction.type === INTERACTION_CALLED) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (this.annotationNoSideEffects && path16.length === 0 && interaction.type === INTERACTION_CALLED) {
           return false;
         }
-        if (super.hasEffectsOnInteractionAtPath(path15, interaction, context)) {
+        if (super.hasEffectsOnInteractionAtPath(path16, interaction, context)) {
           return true;
         }
         if (interaction.type === INTERACTION_CALLED) {
@@ -47406,10 +47406,10 @@ var init_node_entry = __esm({
           property3.deoptimizeAssignment(destructuredInitPath, init2);
         }
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0) {
+      deoptimizePath(path16) {
+        if (path16.length === 0) {
           for (const property3 of this.properties) {
-            property3.deoptimizePath(path15);
+            property3.deoptimizePath(path16);
           }
         }
       }
@@ -47480,8 +47480,8 @@ var init_node_entry = __esm({
           this.applyDeoptimizations();
         return isConstReassignment || right.hasEffects(context) || left.hasEffectsAsAssignmentTarget(context, operator !== "=") || this.left.hasEffectsWhenDestructuring?.(context, EMPTY_PATH, right);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return interaction.type === INTERACTION_ASSIGNED && this.left.included || this.right.hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return interaction.type === INTERACTION_ASSIGNED && this.left.included || this.right.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         const { deoptimized, isConstReassignment, left, right, operator } = this;
@@ -47570,13 +47570,13 @@ var init_node_entry = __esm({
       deoptimizeAssignment(destructuredInitPath, init2) {
         this.left.deoptimizeAssignment(destructuredInitPath, init2);
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0) {
-          this.left.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        if (path16.length === 0) {
+          this.left.deoptimizePath(path16);
         }
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return path15.length > 0 || this.left.hasEffectsOnInteractionAtPath(EMPTY_PATH, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return path16.length > 0 || this.left.hasEffectsOnInteractionAtPath(EMPTY_PATH, interaction, context);
       }
       hasEffectsWhenDestructuring(context, destructuredInitPath, init2) {
         return this.left.hasEffectsWhenDestructuring(context, destructuredInitPath, init2);
@@ -47616,8 +47616,8 @@ var init_node_entry = __esm({
       }
     };
     AwaitExpression2 = class extends NodeBase {
-      deoptimizePath(path15) {
-        this.argument.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.argument.deoptimizePath(path16);
       }
       hasEffects() {
         if (!this.deoptimized)
@@ -47644,12 +47644,12 @@ var init_node_entry = __esm({
           this.applyDeoptimizations();
         this.argument.includePath(THEN_PATH, context);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.deoptimized)
           this.applyDeoptimizations();
         if (!this.included)
           this.includeNode(context);
-        this.argument.includePath(path15, context);
+        this.argument.includePath(path16, context);
       }
     };
     THEN_PATH = ["then"];
@@ -47688,8 +47688,8 @@ var init_node_entry = __esm({
       deoptimizeCache() {
         this.renderedLiteralValue = UnknownValue;
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        if (path15.length > 0)
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        if (path16.length > 0)
           return UnknownValue;
         const leftValue = this.left.getLiteralValueAtPath(EMPTY_PATH, recursionTracker, origin);
         if (typeof leftValue === "symbol")
@@ -47724,8 +47724,8 @@ var init_node_entry = __esm({
         }
         return super.hasEffects(context);
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return type !== INTERACTION_ACCESSED || path15.length > 1;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return type !== INTERACTION_ACCESSED || path16.length > 1;
       }
       include(context, includeChildrenRecursively, options2) {
         if (!this.included)
@@ -47791,7 +47791,7 @@ var init_node_entry = __esm({
         this.deoptimizableDependentExpressions = [];
         this.expressionsToBeDeoptimized = /* @__PURE__ */ new Set();
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
         const { args: args2 } = interaction;
         const [returnExpression, isPure] = this.getReturnExpression(recursionTracker);
         if (isPure)
@@ -47804,11 +47804,11 @@ var init_node_entry = __esm({
             expression.deoptimizePath(UNKNOWN_PATH);
           }
         } else {
-          recursionTracker.withTrackedEntityAtPath(path15, returnExpression, () => {
+          recursionTracker.withTrackedEntityAtPath(path16, returnExpression, () => {
             for (const expression of deoptimizedExpressions) {
               this.expressionsToBeDeoptimized.add(expression);
             }
-            returnExpression.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+            returnExpression.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
           }, null);
         }
       }
@@ -47826,48 +47826,48 @@ var init_node_entry = __esm({
           }
         }
       }
-      deoptimizePath(path15) {
-        if (path15.length === 0 || this.scope.context.deoptimizationTracker.trackEntityAtPathAndGetIfTracked(path15, this)) {
+      deoptimizePath(path16) {
+        if (path16.length === 0 || this.scope.context.deoptimizationTracker.trackEntityAtPathAndGetIfTracked(path16, this)) {
           return;
         }
         const [returnExpression] = this.getReturnExpression();
         if (returnExpression !== UNKNOWN_EXPRESSION) {
-          returnExpression.deoptimizePath(path15);
+          returnExpression.deoptimizePath(path16);
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
         const [returnExpression] = this.getReturnExpression(recursionTracker);
         if (returnExpression === UNKNOWN_EXPRESSION) {
           return UnknownValue;
         }
-        return recursionTracker.withTrackedEntityAtPath(path15, returnExpression, () => {
+        return recursionTracker.withTrackedEntityAtPath(path16, returnExpression, () => {
           this.deoptimizableDependentExpressions.push(origin);
-          return returnExpression.getLiteralValueAtPath(path15, recursionTracker, origin);
+          return returnExpression.getLiteralValueAtPath(path16, recursionTracker, origin);
         }, UnknownValue);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
         const returnExpression = this.getReturnExpression(recursionTracker);
         if (returnExpression[0] === UNKNOWN_EXPRESSION) {
           return returnExpression;
         }
-        return recursionTracker.withTrackedEntityAtPath(path15, returnExpression, () => {
+        return recursionTracker.withTrackedEntityAtPath(path16, returnExpression, () => {
           this.deoptimizableDependentExpressions.push(origin);
-          const [expression, isPure] = returnExpression[0].getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+          const [expression, isPure] = returnExpression[0].getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
           return [expression, isPure || returnExpression[1]];
         }, UNKNOWN_RETURN_EXPRESSION);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         const { type } = interaction;
         if (type === INTERACTION_CALLED) {
           const { args: args2, withNew } = interaction;
-          if ((withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path15, args2, this)) {
+          if ((withNew ? context.instantiated : context.called).trackEntityAtPathAndGetIfTracked(path16, args2, this)) {
             return false;
           }
-        } else if ((type === INTERACTION_ASSIGNED ? context.assigned : context.accessed).trackEntityAtPathAndGetIfTracked(path15, this)) {
+        } else if ((type === INTERACTION_ASSIGNED ? context.assigned : context.accessed).trackEntityAtPathAndGetIfTracked(path16, this)) {
           return false;
         }
         const [returnExpression, isPure] = this.getReturnExpression();
-        return (type === INTERACTION_ASSIGNED || !isPure) && returnExpression.hasEffectsOnInteractionAtPath(path15, interaction, context);
+        return (type === INTERACTION_ASSIGNED || !isPure) && returnExpression.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
     };
     CallExpression2 = class extends CallExpressionBase {
@@ -47902,8 +47902,8 @@ var init_node_entry = __esm({
           withNew: false
         };
       }
-      getLiteralValueAtPathAsChainElement(path15, recursionTracker, origin) {
-        return getChainElementLiteralValueAtPath(this, this.callee, path15, recursionTracker, origin);
+      getLiteralValueAtPathAsChainElement(path16, recursionTracker, origin) {
+        return getChainElementLiteralValueAtPath(this, this.callee, path16, recursionTracker, origin);
       }
       hasEffects(context) {
         if (!this.deoptimized)
@@ -48007,16 +48007,16 @@ var init_node_entry = __esm({
       // deoptimizations are not relevant as we are not caching values
       deoptimizeCache() {
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        const literalValue = this.expression.getLiteralValueAtPathAsChainElement(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        const literalValue = this.expression.getLiteralValueAtPathAsChainElement(path16, recursionTracker, origin);
         return literalValue === IS_SKIPPED_CHAIN ? void 0 : literalValue;
       }
       hasEffects(context) {
         return this.expression.hasEffectsAsChainElement(context) === true;
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
-        this.expression.includePath(path15, context);
+        this.expression.includePath(path16, context);
       }
       removeAnnotations(code) {
         this.expression.removeAnnotations(code);
@@ -48072,20 +48072,20 @@ var init_node_entry = __esm({
         super();
         this.expressions = expressions;
       }
-      deoptimizePath(path15) {
+      deoptimizePath(path16) {
         for (const expression of this.expressions) {
-          expression.deoptimizePath(path15);
+          expression.deoptimizePath(path16);
         }
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
         return [
-          new _MultiExpression(this.expressions.map((expression) => expression.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin)[0])),
+          new _MultiExpression(this.expressions.map((expression) => expression.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin)[0])),
           false
         ];
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         for (const expression of this.expressions) {
-          if (expression.hasEffectsOnInteractionAtPath(path15, interaction, context))
+          if (expression.hasEffectsOnInteractionAtPath(path16, interaction, context))
             return true;
         }
         return false;
@@ -48117,9 +48117,9 @@ var init_node_entry = __esm({
       set hasDeoptimizedCache(value2) {
         this.flags = setFlag(this.flags, 33554432, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.consequent.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
-        this.alternate.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.consequent.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
+        this.alternate.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       deoptimizeCache() {
         if (this.hasDeoptimizedCache)
@@ -48139,26 +48139,26 @@ var init_node_entry = __esm({
           }
         }
       }
-      deoptimizePath(path15) {
+      deoptimizePath(path16) {
         const usedBranch = this.getUsedBranch();
         if (usedBranch) {
-          usedBranch.deoptimizePath(path15);
+          usedBranch.deoptimizePath(path16);
         } else {
-          this.consequent.deoptimizePath(path15);
-          this.alternate.deoptimizePath(path15);
+          this.consequent.deoptimizePath(path16);
+          this.alternate.deoptimizePath(path16);
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
         const usedBranch = this.getUsedBranch();
         if (!usedBranch) {
           if (this.hasDeoptimizedCache) {
             return UnknownValue;
           }
-          const consequentValue = this.consequent.getLiteralValueAtPath(path15, recursionTracker, origin);
+          const consequentValue = this.consequent.getLiteralValueAtPath(path16, recursionTracker, origin);
           const castedConsequentValue = tryCastLiteralValueToBoolean(consequentValue);
           if (castedConsequentValue === UnknownValue)
             return UnknownValue;
-          const alternateValue = this.alternate.getLiteralValueAtPath(path15, recursionTracker, origin);
+          const alternateValue = this.alternate.getLiteralValueAtPath(path16, recursionTracker, origin);
           const castedAlternateValue = tryCastLiteralValueToBoolean(alternateValue);
           if (castedConsequentValue !== castedAlternateValue)
             return UnknownValue;
@@ -48168,20 +48168,20 @@ var init_node_entry = __esm({
           return consequentValue;
         }
         this.expressionsToBeDeoptimized.push(origin);
-        return usedBranch.getLiteralValueAtPath(path15, recursionTracker, origin);
+        return usedBranch.getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
         const usedBranch = this.getUsedBranch();
         if (!usedBranch)
           return [
             new MultiExpression([
-              this.consequent.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin)[0],
-              this.alternate.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin)[0]
+              this.consequent.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin)[0],
+              this.alternate.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin)[0]
             ]),
             false
           ];
         this.expressionsToBeDeoptimized.push(origin);
-        return usedBranch.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+        return usedBranch.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
       }
       hasEffects(context) {
         if (this.test.hasEffects(context))
@@ -48192,12 +48192,12 @@ var init_node_entry = __esm({
         }
         return usedBranch.hasEffects(context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         const usedBranch = this.getUsedBranch();
         if (!usedBranch) {
-          return this.consequent.hasEffectsOnInteractionAtPath(path15, interaction, context) || this.alternate.hasEffectsOnInteractionAtPath(path15, interaction, context);
+          return this.consequent.hasEffectsOnInteractionAtPath(path16, interaction, context) || this.alternate.hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
-        return usedBranch.hasEffectsOnInteractionAtPath(path15, interaction, context);
+        return usedBranch.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         this.included = true;
@@ -48210,14 +48210,14 @@ var init_node_entry = __esm({
           usedBranch.include(context, includeChildrenRecursively);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
         const usedBranch = this.getUsedBranch();
         if (usedBranch === null || this.test.shouldBeIncluded(context)) {
-          this.consequent.includePath(path15, context);
-          this.alternate.includePath(path15, context);
+          this.consequent.includePath(path16, context);
+          this.alternate.includePath(path16, context);
         } else {
-          usedBranch.includePath(path15, context);
+          usedBranch.includePath(path16, context);
         }
       }
       includeCallArguments(interaction, context) {
@@ -48730,9 +48730,9 @@ var init_node_entry = __esm({
           withNew: false
         };
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
         deoptimizeInteraction(interaction);
-        if (interaction.type === INTERACTION_CALLED && path15.length === 0 && (isFunctionExpressionNode(interaction.args[1]) || isArrowFunctionExpressionNode(interaction.args[1]))) {
+        if (interaction.type === INTERACTION_CALLED && path16.length === 0 && (isFunctionExpressionNode(interaction.args[1]) || isArrowFunctionExpressionNode(interaction.args[1]))) {
           interaction.args[1].deoptimizeArgumentsOnInteractionAtPath(this.interaction, [], recursionTracker);
         }
       }
@@ -48818,8 +48818,8 @@ var init_node_entry = __esm({
         }
         this.localResolution = { resolution, tracked: false };
       }
-      deoptimizePath(path15) {
-        this.localResolution?.resolution?.namespace.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.localResolution?.resolution?.namespace.deoptimizePath(path16);
       }
       hasEffects() {
         return true;
@@ -48851,10 +48851,10 @@ var init_node_entry = __esm({
           }
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included)
           this.includeNode(context);
-        this.localResolution?.resolution?.namespace.includeMemberPath(path15, context);
+        this.localResolution?.resolution?.namespace.includeMemberPath(path16, context);
       }
       initialise() {
         super.initialise();
@@ -48995,7 +48995,7 @@ var init_node_entry = __esm({
             };
           }
           case "amd": {
-            const resolve14 = compact ? "c" : "resolve";
+            const resolve15 = compact ? "c" : "resolve";
             const reject = compact ? "e" : "reject";
             const helper = getInteropHelper(resolution, exportMode, interop);
             const [resolveLeft, resolveRight] = getDirectReturnFunction(["m"], {
@@ -49003,8 +49003,8 @@ var init_node_entry = __esm({
               lineBreakIndent: null,
               name: null
             });
-            const resolveNamespace = helper ? `${resolveLeft}${resolve14}(/*#__PURE__*/${helper}(m))${resolveRight}` : resolve14;
-            const [handlerLeft, handlerRight] = getDirectReturnFunction([resolve14, reject], {
+            const resolveNamespace = helper ? `${resolveLeft}${resolve15}(/*#__PURE__*/${helper}(m))${resolveRight}` : resolve15;
+            const [handlerLeft, handlerRight] = getDirectReturnFunction([resolve15, reject], {
               functionReturn: false,
               lineBreakIndent: null,
               name: null
@@ -49076,14 +49076,14 @@ var init_node_entry = __esm({
           this.scope.context.includeVariableInModule(this.variable, EMPTY_PATH, context);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included) {
           this.included = true;
           if (this.variable !== null) {
-            this.scope.context.includeVariableInModule(this.variable, path15, context);
+            this.scope.context.includeVariableInModule(this.variable, path16, context);
           }
-        } else if (path15.length > 0) {
-          this.variable?.includePath(path15, context);
+        } else if (path16.length > 0) {
+          this.variable?.includePath(path16, context);
         }
       }
       render(code, { snippets: { getPropertyAccess }, useOriginalName }) {
@@ -49473,10 +49473,10 @@ var init_node_entry = __esm({
           this.applyDeoptimizations();
         this.object.includePath([this.property.name], context);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included)
           this.includeNode(context);
-        this.object.includePath([this.property.name, ...path15], context);
+        this.object.includePath([this.property.name, ...path16], context);
       }
     };
     JSXNamespacedName = class extends NodeBase {
@@ -49608,9 +49608,9 @@ var init_node_entry = __esm({
       set hasDeoptimizedCache(value2) {
         this.flags = setFlag(this.flags, 33554432, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.left.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
-        this.right.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.left.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
+        this.right.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       deoptimizeCache() {
         if (this.hasDeoptimizedCache)
@@ -49631,24 +49631,24 @@ var init_node_entry = __esm({
         }
         context.requestTreeshakingPass();
       }
-      deoptimizePath(path15) {
+      deoptimizePath(path16) {
         const usedBranch = this.getUsedBranch();
         if (usedBranch) {
-          usedBranch.deoptimizePath(path15);
+          usedBranch.deoptimizePath(path16);
         } else {
-          this.left.deoptimizePath(path15);
-          this.right.deoptimizePath(path15);
+          this.left.deoptimizePath(path16);
+          this.right.deoptimizePath(path16);
         }
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
         if (origin === this)
           return UnknownValue;
         const usedBranch = this.getUsedBranch();
         if (usedBranch) {
           this.expressionsToBeDeoptimized.push(origin);
-          return usedBranch.getLiteralValueAtPath(path15, recursionTracker, origin);
-        } else if (!this.hasDeoptimizedCache && !path15.length) {
-          const rightValue = this.right.getLiteralValueAtPath(path15, recursionTracker, origin);
+          return usedBranch.getLiteralValueAtPath(path16, recursionTracker, origin);
+        } else if (!this.hasDeoptimizedCache && !path16.length) {
+          const rightValue = this.right.getLiteralValueAtPath(path16, recursionTracker, origin);
           const booleanOrUnknown = tryCastLiteralValueToBoolean(rightValue);
           if (typeof booleanOrUnknown !== "symbol") {
             if (!booleanOrUnknown && this.operator === "&&") {
@@ -49663,16 +49663,16 @@ var init_node_entry = __esm({
         }
         return UnknownValue;
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
         const usedBranch = this.getUsedBranch();
         if (usedBranch) {
           this.expressionsToBeDeoptimized.push(origin);
-          return usedBranch.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+          return usedBranch.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
         }
         return [
           new MultiExpression([
-            this.left.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin)[0],
-            this.right.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin)[0]
+            this.left.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin)[0],
+            this.right.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin)[0]
           ]),
           false
         ];
@@ -49686,12 +49686,12 @@ var init_node_entry = __esm({
         }
         return false;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         const usedBranch = this.getUsedBranch();
         if (usedBranch) {
-          return usedBranch.hasEffectsOnInteractionAtPath(path15, interaction, context);
+          return usedBranch.hasEffectsOnInteractionAtPath(path16, interaction, context);
         }
-        return this.left.hasEffectsOnInteractionAtPath(path15, interaction, context) || this.right.hasEffectsOnInteractionAtPath(path15, interaction, context);
+        return this.left.hasEffectsOnInteractionAtPath(path16, interaction, context) || this.right.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         this.included = true;
@@ -49703,14 +49703,14 @@ var init_node_entry = __esm({
           usedBranch.include(context, includeChildrenRecursively);
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
         const usedBranch = this.getUsedBranch();
         if (!usedBranch || usedBranch === this.right && this.left.shouldBeIncluded(context)) {
-          this.left.includePath(path15, context);
-          this.right.includePath(path15, context);
+          this.left.includePath(path16, context);
+          this.right.includePath(path16, context);
         } else {
-          usedBranch.includePath(path15, context);
+          usedBranch.includePath(path16, context);
         }
       }
       removeAnnotations(code) {
@@ -49772,8 +49772,8 @@ var init_node_entry = __esm({
         }
         return this.callee.hasEffects(context) || this.callee.hasEffectsOnInteractionAtPath(EMPTY_PATH, this.interaction, context);
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return path15.length > 0 || type !== INTERACTION_ACCESSED;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return path16.length > 0 || type !== INTERACTION_ACCESSED;
       }
       include(context, includeChildrenRecursively) {
         if (!this.included)
@@ -49818,23 +49818,23 @@ var init_node_entry = __esm({
         this.objectEntity = null;
         this.protoProp = null;
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
       deoptimizeCache() {
         this.getObjectEntity().deoptimizeAllProperties();
       }
-      deoptimizePath(path15) {
-        this.getObjectEntity().deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.getObjectEntity().deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.getObjectEntity().getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.getObjectEntity().getLiteralValueAtPath(path16, recursionTracker, origin);
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin);
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.getObjectEntity().getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return this.getObjectEntity().hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return this.getObjectEntity().hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         if (!this.included)
@@ -49846,10 +49846,10 @@ var init_node_entry = __esm({
         this.included = true;
         this.protoProp?.includePath(UNKNOWN_PATH, context);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included)
           this.includeNode(context);
-        this.getObjectEntity().includePath(path15, context);
+        this.getObjectEntity().includePath(path16, context);
       }
       render(code, options2, { renderedSurroundingElement } = BLANK) {
         if (renderedSurroundingElement === ExpressionStatement || renderedSurroundingElement === ArrowFunctionExpression) {
@@ -50031,13 +50031,13 @@ var init_node_entry = __esm({
         return this.value.hasEffectsWhenDestructuring?.(context, this.getPathInProperty(destructuredInitPath), init2);
       }
       includeDestructuredIfNecessary(context, destructuredInitPath, init2) {
-        const path15 = this.getPathInProperty(destructuredInitPath);
-        let included = this.value.includeDestructuredIfNecessary(context, path15, init2) || this.included;
+        const path16 = this.getPathInProperty(destructuredInitPath);
+        let included = this.value.includeDestructuredIfNecessary(context, path16, init2) || this.included;
         if (included ||= this.key.hasEffects(createHasEffectsContext())) {
           this.key.include(context, false);
           if (!this.value.included) {
             this.value.includeNode(context);
-            this.value.includeDestructuredIfNecessary(context, path15, init2);
+            this.value.includeDestructuredIfNecessary(context, path16, init2);
           }
         }
         if (!this.included && included) {
@@ -50050,9 +50050,9 @@ var init_node_entry = __esm({
         this.key.include(context, includeChildrenRecursively);
         this.value.include(context, includeChildrenRecursively);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
-        this.value.includePath(path15, context);
+        this.value.includePath(path16, context);
       }
       markDeclarationReached() {
         this.value.markDeclarationReached();
@@ -50084,23 +50084,23 @@ var init_node_entry = __esm({
       set computed(value2) {
         this.flags = setFlag(this.flags, 1024, value2);
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.value?.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.value?.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.value?.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.value?.deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.value ? this.value.getLiteralValueAtPath(path15, recursionTracker, origin) : UnknownValue;
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.value ? this.value.getLiteralValueAtPath(path16, recursionTracker, origin) : UnknownValue;
       }
-      getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) {
-        return this.value ? this.value.getReturnExpressionWhenCalledAtPath(path15, interaction, recursionTracker, origin) : UNKNOWN_RETURN_EXPRESSION;
+      getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) {
+        return this.value ? this.value.getReturnExpressionWhenCalledAtPath(path16, interaction, recursionTracker, origin) : UNKNOWN_RETURN_EXPRESSION;
       }
       hasEffects(context) {
         return this.key.hasEffects(context) || this.static && !!this.value?.hasEffects(context) || checkEffectForNodes(this.decorators, context);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return !this.value || this.value.hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return !this.value || this.value.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       includeNode(context) {
         this.included = true;
@@ -50143,14 +50143,14 @@ var init_node_entry = __esm({
     };
     ReturnStatement2.prototype.applyDeoptimizations = doNotDeoptimize;
     SequenceExpression = class extends NodeBase {
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.expressions[this.expressions.length - 1].deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.expressions[this.expressions.length - 1].deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.expressions[this.expressions.length - 1].deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.expressions[this.expressions.length - 1].deoptimizePath(path16);
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        return this.expressions[this.expressions.length - 1].getLiteralValueAtPath(path15, recursionTracker, origin);
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        return this.expressions[this.expressions.length - 1].getLiteralValueAtPath(path16, recursionTracker, origin);
       }
       hasEffects(context) {
         for (const expression of this.expressions) {
@@ -50159,8 +50159,8 @@ var init_node_entry = __esm({
         }
         return false;
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        return this.expressions[this.expressions.length - 1].hasEffectsOnInteractionAtPath(path15, interaction, context);
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        return this.expressions[this.expressions.length - 1].hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context, includeChildrenRecursively) {
         this.included = true;
@@ -50171,9 +50171,9 @@ var init_node_entry = __esm({
           }
         }
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         this.included = true;
-        this.expressions[this.expressions.length - 1].includePath(path15, context);
+        this.expressions[this.expressions.length - 1].includePath(path16, context);
       }
       removeAnnotations(code) {
         this.expressions[0].removeAnnotations(code);
@@ -50214,11 +50214,11 @@ var init_node_entry = __esm({
       bind() {
         this.variable = this.scope.findVariable("this");
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.variable.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.variable.deoptimizePath(path16);
       }
       include(context) {
         if (!this.included)
@@ -50446,24 +50446,24 @@ var init_node_entry = __esm({
     TemplateLiteral2 = class extends NodeBase {
       deoptimizeArgumentsOnInteractionAtPath() {
       }
-      getLiteralValueAtPath(path15) {
-        if (path15.length > 0 || this.quasis.length !== 1) {
+      getLiteralValueAtPath(path16) {
+        if (path16.length > 0 || this.quasis.length !== 1) {
           return UnknownValue;
         }
         return this.quasis[0].value.cooked;
       }
-      getReturnExpressionWhenCalledAtPath(path15) {
-        if (path15.length !== 1) {
+      getReturnExpressionWhenCalledAtPath(path16) {
+        if (path16.length !== 1) {
           return UNKNOWN_RETURN_EXPRESSION;
         }
-        return getMemberReturnExpressionWhenCalled(literalStringMembers, path15[0]);
+        return getMemberReturnExpressionWhenCalled(literalStringMembers, path16[0]);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
         if (interaction.type === INTERACTION_ACCESSED) {
-          return path15.length > 1;
+          return path16.length > 1;
         }
-        if (interaction.type === INTERACTION_CALLED && path15.length === 1) {
-          return hasMemberEffectWhenCalled(literalStringMembers, path15[0], interaction, context);
+        if (interaction.type === INTERACTION_CALLED && path16.length === 1) {
+          return hasMemberEffectWhenCalled(literalStringMembers, path16[0], interaction, context);
         }
         return true;
       }
@@ -50522,17 +50522,17 @@ var init_node_entry = __esm({
       bind() {
         this.variable = this.scope.findVariable("this");
       }
-      deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker) {
-        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path15, recursionTracker);
+      deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker) {
+        this.variable.deoptimizeArgumentsOnInteractionAtPath(interaction, path16, recursionTracker);
       }
-      deoptimizePath(path15) {
-        this.variable.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.variable.deoptimizePath(path16);
       }
-      hasEffectsOnInteractionAtPath(path15, interaction, context) {
-        if (path15.length === 0) {
+      hasEffectsOnInteractionAtPath(path16, interaction, context) {
+        if (path16.length === 0) {
           return interaction.type !== INTERACTION_ACCESSED;
         }
-        return this.variable.hasEffectsOnInteractionAtPath(path15, interaction, context);
+        return this.variable.hasEffectsOnInteractionAtPath(path16, interaction, context);
       }
       include(context) {
         if (!this.included)
@@ -50544,16 +50544,16 @@ var init_node_entry = __esm({
           this.applyDeoptimizations();
         this.scope.context.includeVariableInModule(this.variable, EMPTY_PATH, context);
       }
-      includePath(path15, context) {
+      includePath(path16, context) {
         if (!this.included) {
           this.included = true;
-          this.scope.context.includeVariableInModule(this.variable, path15, context);
-        } else if (path15.length > 0) {
-          this.variable.includePath(path15, context);
+          this.scope.context.includeVariableInModule(this.variable, path16, context);
+        } else if (path16.length > 0) {
+          this.variable.includePath(path16, context);
         }
         const functionScope = findFunctionScope(this.scope, this.variable);
         if (functionScope && functionScope.functionNode.parent instanceof Property2 && functionScope.functionNode.parent.parent instanceof ObjectExpression2) {
-          functionScope.functionNode.parent.parent.includePath(path15, context);
+          functionScope.functionNode.parent.parent.includePath(path16, context);
         }
       }
       initialise() {
@@ -50657,8 +50657,8 @@ var init_node_entry = __esm({
       deoptimizeCache() {
         this.renderedLiteralValue = UnknownValue;
       }
-      getLiteralValueAtPath(path15, recursionTracker, origin) {
-        if (path15.length > 0)
+      getLiteralValueAtPath(path16, recursionTracker, origin) {
+        if (path16.length > 0)
           return UnknownValue;
         const argumentValue = this.argument.getLiteralValueAtPath(EMPTY_PATH, recursionTracker, origin);
         if (typeof argumentValue === "symbol") {
@@ -50681,8 +50681,8 @@ var init_node_entry = __esm({
           return false;
         return this.argument.hasEffects(context) || this.operator === "delete" && this.argument.hasEffectsOnInteractionAtPath(EMPTY_PATH, NODE_INTERACTION_UNKNOWN_ASSIGNMENT, context);
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return type !== INTERACTION_ACCESSED || path15.length > (this.operator === "void" ? 0 : 1);
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return type !== INTERACTION_ACCESSED || path16.length > (this.operator === "void" ? 0 : 1);
       }
       applyDeoptimizations() {
         this.deoptimized = true;
@@ -50726,8 +50726,8 @@ var init_node_entry = __esm({
           this.applyDeoptimizations();
         return this.argument.hasEffectsAsAssignmentTarget(context, true);
       }
-      hasEffectsOnInteractionAtPath(path15, { type }) {
-        return path15.length > 1 || type !== INTERACTION_ACCESSED;
+      hasEffectsOnInteractionAtPath(path16, { type }) {
+        return path16.length > 1 || type !== INTERACTION_ACCESSED;
       }
       include(context, includeChildrenRecursively) {
         if (!this.included)
@@ -50920,8 +50920,8 @@ var init_node_entry = __esm({
         this.isAsyncUsingDeclaration = kind === "await using";
         this.id.declare(kind, EMPTY_PATH, this.init || UNDEFINED_EXPRESSION);
       }
-      deoptimizePath(path15) {
-        this.id.deoptimizePath(path15);
+      deoptimizePath(path16) {
+        this.id.deoptimizePath(path16);
       }
       hasEffects(context) {
         const initEffect = this.init?.hasEffects(context);
@@ -51866,8 +51866,8 @@ var init_node_entry = __esm({
         super(MISSING_EXPORT_SHIM_VARIABLE);
         this.module = module2;
       }
-      includePath(path15, context) {
-        super.includePath(path15, context);
+      includePath(path16, context) {
+        super.includePath(path16, context);
         this.module.needsExportShim = true;
       }
     };
@@ -52725,9 +52725,9 @@ var init_node_entry = __esm({
           }
         }
       }
-      includeVariable(variable, path15, context) {
+      includeVariable(variable, path16, context) {
         const { included, module: variableModule } = variable;
-        variable.includePath(path15, context);
+        variable.includePath(path16, context);
         if (included) {
           if (variableModule instanceof _Module && variableModule !== this) {
             getAndExtendSideEffectModules(variable, this);
@@ -52746,8 +52746,8 @@ var init_node_entry = __esm({
           }
         }
       }
-      includeVariableInModule(variable, path15, context) {
-        this.includeVariable(variable, path15, context);
+      includeVariableInModule(variable, path16, context) {
+        this.includeVariable(variable, path16, context);
         const variableModule = variable.module;
         if (variableModule && variableModule !== this) {
           this.includedImports.add(variable);
@@ -54104,17 +54104,17 @@ var init_node_entry = __esm({
         const handleDependency = (chunk, parent) => {
           if (parents.has(chunk)) {
             if (!visited.has(chunk)) {
-              const path15 = [chunk.getChunkName()];
+              const path16 = [chunk.getChunkName()];
               let isManualChunkConflict = chunk.isManualChunk;
               let nextChunk = parent;
               while (nextChunk !== chunk && nextChunk) {
-                path15.push(nextChunk.getChunkName());
+                path16.push(nextChunk.getChunkName());
                 isManualChunkConflict &&= nextChunk.isManualChunk;
                 nextChunk = parents.get(nextChunk);
               }
-              path15.push(path15[0]);
-              path15.reverse();
-              this.inputOptions.onLog(LOGLEVEL_WARN, logCircularChunk(path15, isManualChunkConflict));
+              path16.push(path16[0]);
+              path16.reverse();
+              this.inputOptions.onLog(LOGLEVEL_WARN, logCircularChunk(path16, isManualChunkConflict));
             }
             return;
           }
@@ -55194,8 +55194,8 @@ var init_node_entry = __esm({
         this.workerCount = 0;
       }
       run(task) {
-        return new Promise((resolve14, reject) => {
-          this.queue.push({ reject, resolve: resolve14, task });
+        return new Promise((resolve15, reject) => {
+          this.queue.push({ reject, resolve: resolve15, task });
           this.work();
         });
       }
@@ -55205,10 +55205,10 @@ var init_node_entry = __esm({
         this.workerCount++;
         let entry;
         while (entry = this.queue.shift()) {
-          const { reject, resolve: resolve14, task } = entry;
+          const { reject, resolve: resolve15, task } = entry;
           try {
             const result = await task();
-            resolve14(result);
+            resolve15(result);
           } catch (error3) {
             reject(error3);
           }
@@ -58811,27 +58811,27 @@ var require_util = __commonJS({
       };
     }
     var normalize5 = lruMemoize(function normalize6(aPath) {
-      var path15 = aPath;
+      var path16 = aPath;
       var url2 = urlParse(aPath);
       if (url2) {
         if (!url2.path) {
           return aPath;
         }
-        path15 = url2.path;
+        path16 = url2.path;
       }
-      var isAbsolute7 = exports.isAbsolute(path15);
+      var isAbsolute7 = exports.isAbsolute(path16);
       var parts = [];
       var start = 0;
       var i5 = 0;
       while (true) {
         start = i5;
-        i5 = path15.indexOf("/", start);
+        i5 = path16.indexOf("/", start);
         if (i5 === -1) {
-          parts.push(path15.slice(start));
+          parts.push(path16.slice(start));
           break;
         } else {
-          parts.push(path15.slice(start, i5));
-          while (i5 < path15.length && path15[i5] === "/") {
+          parts.push(path16.slice(start, i5));
+          while (i5 < path16.length && path16[i5] === "/") {
             i5++;
           }
         }
@@ -58852,15 +58852,15 @@ var require_util = __commonJS({
           }
         }
       }
-      path15 = parts.join("/");
-      if (path15 === "") {
-        path15 = isAbsolute7 ? "/" : ".";
+      path16 = parts.join("/");
+      if (path16 === "") {
+        path16 = isAbsolute7 ? "/" : ".";
       }
       if (url2) {
-        url2.path = path15;
+        url2.path = path16;
         return urlGenerate(url2);
       }
-      return path15;
+      return path16;
     });
     exports.normalize = normalize5;
     function join9(aRoot, aPath) {
@@ -60552,11 +60552,11 @@ var require_previous_map = __commonJS({
     var { existsSync: existsSync11, readFileSync: readFileSync6, realpathSync: realpathSync2 } = __require("fs");
     var { dirname: dirname7, isAbsolute: isAbsolute7, join: join9, relative: relative8, sep: sep4 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
-    function realPath(path15) {
+    function realPath(path16) {
       try {
-        return realpathSync2(path15);
+        return realpathSync2(path16);
       } catch {
-        return path15;
+        return path16;
       }
     }
     function fromBase64(str2) {
@@ -60619,19 +60619,19 @@ var require_previous_map = __commonJS({
           this.annotation = this.getAnnotationURL(css.substring(start, end));
         }
       }
-      loadFile(path15, cssFile, trusted) {
+      loadFile(path16, cssFile, trusted) {
         if (!trusted && !this.unsafeMap) {
-          if (!/\.map$/i.test(path15)) return void 0;
+          if (!/\.map$/i.test(path16)) return void 0;
           if (!cssFile) return void 0;
-          let rel = relative8(realPath(dirname7(cssFile)), realPath(path15));
+          let rel = relative8(realPath(dirname7(cssFile)), realPath(path16));
           if (rel === ".." || rel.startsWith(".." + sep4) || isAbsolute7(rel)) {
             return void 0;
           }
         }
-        this.root = dirname7(path15);
-        if (existsSync11(path15)) {
-          this.mapFile = path15;
-          return readFileSync6(path15, "utf-8").toString().trim();
+        this.root = dirname7(path16);
+        if (existsSync11(path16)) {
+          this.mapFile = path16;
+          return readFileSync6(path16, "utf-8").toString().trim();
         }
       }
       loadMap(file, prev) {
@@ -60695,7 +60695,7 @@ var require_input = __commonJS({
   "../../node_modules/.bun/postcss@8.5.26/node_modules/postcss/lib/input.js"(exports, module2) {
     "use strict";
     var { nanoid: nanoid2 } = require_non_secure();
-    var { isAbsolute: isAbsolute7, resolve: resolve14 } = __require("path");
+    var { isAbsolute: isAbsolute7, resolve: resolve15 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
     var { fileURLToPath: fileURLToPath4, pathToFileURL: pathToFileURL2 } = __require("url");
     var CssSyntaxError2 = require_css_syntax_error();
@@ -60703,7 +60703,7 @@ var require_input = __commonJS({
     var terminalHighlight = require_terminal_highlight();
     var lineToIndexCache = Symbol("lineToIndexCache");
     var sourceMapAvailable = Boolean(SourceMapConsumer && SourceMapGenerator);
-    var pathAvailable = Boolean(resolve14 && isAbsolute7);
+    var pathAvailable = Boolean(resolve15 && isAbsolute7);
     function getLineToIndex(input) {
       if (input[lineToIndexCache]) return input[lineToIndexCache];
       let lines = input.css.split("\n");
@@ -60737,7 +60737,7 @@ var require_input = __commonJS({
           if (!pathAvailable || /^\w+:\/\//.test(opts.from) || isAbsolute7(opts.from)) {
             this.file = opts.from;
           } else {
-            this.file = resolve14(opts.from);
+            this.file = resolve15(opts.from);
           }
         }
         if (pathAvailable && sourceMapAvailable) {
@@ -60858,7 +60858,7 @@ var require_input = __commonJS({
         if (/^\w+:\/\//.test(file)) {
           return file;
         }
-        return resolve14(this.map.consumer().sourceRoot || this.map.root || ".", file);
+        return resolve15(this.map.consumer().sourceRoot || this.map.root || ".", file);
       }
       origin(line, column, endLine, endColumn) {
         if (!this.map) return false;
@@ -61168,12 +61168,12 @@ var require_fromJSON = __commonJS({
 var require_map_generator = __commonJS({
   "../../node_modules/.bun/postcss@8.5.26/node_modules/postcss/lib/map-generator.js"(exports, module2) {
     "use strict";
-    var { dirname: dirname7, relative: relative8, resolve: resolve14, sep: sep4 } = __require("path");
+    var { dirname: dirname7, relative: relative8, resolve: resolve15, sep: sep4 } = __require("path");
     var { SourceMapConsumer, SourceMapGenerator } = require_source_map();
     var { pathToFileURL: pathToFileURL2 } = __require("url");
     var Input2 = require_input();
     var sourceMapAvailable = Boolean(SourceMapConsumer && SourceMapGenerator);
-    var pathAvailable = Boolean(dirname7 && resolve14 && relative8 && sep4);
+    var pathAvailable = Boolean(dirname7 && resolve15 && relative8 && sep4);
     var MapGenerator = class {
       constructor(stringify6, root4, opts, cssString) {
         this.stringify = stringify6;
@@ -61402,11 +61402,11 @@ var require_map_generator = __commonJS({
         if (cached) return cached;
         let from = this.opts.to ? dirname7(this.opts.to) : ".";
         if (typeof this.mapOpts.annotation === "string") {
-          from = dirname7(resolve14(from, this.mapOpts.annotation));
+          from = dirname7(resolve15(from, this.mapOpts.annotation));
         }
-        let path15 = relative8(from, file);
-        this.memoizedPaths.set(file, path15);
-        return path15;
+        let path16 = relative8(from, file);
+        this.memoizedPaths.set(file, path16);
+        return path16;
       }
       previous() {
         if (!this.previousMaps) {
@@ -61461,12 +61461,12 @@ var require_map_generator = __commonJS({
           return window.btoa(unescape(encodeURIComponent(str2)));
         }
       }
-      toFileUrl(path15) {
-        let cached = this.memoizedFileURLs.get(path15);
+      toFileUrl(path16) {
+        let cached = this.memoizedFileURLs.get(path16);
         if (cached) return cached;
         if (pathToFileURL2) {
-          let fileURL = pathToFileURL2(path15).toString();
-          this.memoizedFileURLs.set(path15, fileURL);
+          let fileURL = pathToFileURL2(path16).toString();
+          this.memoizedFileURLs.set(path16, fileURL);
           return fileURL;
         } else {
           throw new Error(
@@ -61474,14 +61474,14 @@ var require_map_generator = __commonJS({
           );
         }
       }
-      toUrl(path15) {
-        let cached = this.memoizedURLs.get(path15);
+      toUrl(path16) {
+        let cached = this.memoizedURLs.get(path16);
         if (cached) return cached;
         if (sep4 === "\\") {
-          path15 = path15.replace(/\\/g, "/");
+          path16 = path16.replace(/\\/g, "/");
         }
-        let url2 = encodeURI(path15).replace(/[#?]/g, encodeURIComponent);
-        this.memoizedURLs.set(path15, url2);
+        let url2 = encodeURI(path16).replace(/[#?]/g, encodeURIComponent);
+        this.memoizedURLs.set(path16, url2);
         return url2;
       }
     };
@@ -63049,11 +63049,11 @@ function unquote(str2) {
   return str2;
 }
 function saveJSON(cssFile, json) {
-  return new Promise((resolve14, reject) => {
+  return new Promise((resolve15, reject) => {
     const {
       writeFile
     } = (0, _fs$2.getFileSystem)();
-    writeFile(`${cssFile}.json`, JSON.stringify(json), (e5) => e5 ? reject(e5) : resolve14(json));
+    writeFile(`${cssFile}.json`, JSON.stringify(json), (e5) => e5 ? reject(e5) : resolve15(json));
   });
 }
 function arrayReduce(array, iteratee, accumulator, initAccum) {
@@ -64307,8 +64307,8 @@ var init_dep_DDtvSN7 = __esm({
     extractICSS$2 = (css, removeRules = true, mode2 = "auto") => {
       const icssImports = {};
       const icssExports = {};
-      function addImports(node3, path15) {
-        const unquoted = path15.replace(/'|"/g, "");
+      function addImports(node3, path16) {
+        const unquoted = path16.replace(/'|"/g, "");
         icssImports[unquoted] = Object.assign(
           icssImports[unquoted] || {},
           getDeclsObject(node3)
@@ -64351,8 +64351,8 @@ var init_dep_DDtvSN7 = __esm({
     };
     extractICSS_1 = extractICSS$2;
     createImports = (imports, postcss3, mode2 = "rule") => {
-      return Object.keys(imports).map((path15) => {
-        const aliases = imports[path15];
+      return Object.keys(imports).map((path16) => {
+        const aliases = imports[path16];
         const declarations = Object.keys(aliases).map(
           (key) => postcss3.decl({
             prop: key,
@@ -64362,11 +64362,11 @@ var init_dep_DDtvSN7 = __esm({
         );
         const hasDeclarations = declarations.length > 0;
         const rule2 = mode2 === "rule" ? postcss3.rule({
-          selector: `:import('${path15}')`,
+          selector: `:import('${path16}')`,
           raws: { after: hasDeclarations ? "\n" : "" }
         }) : postcss3.atRule({
           name: "icss-import",
-          params: `'${path15}'`,
+          params: `'${path16}'`,
           raws: { after: hasDeclarations ? "\n" : "" }
         });
         if (hasDeclarations) {
@@ -64826,7 +64826,7 @@ var init_dep_DDtvSN7 = __esm({
         }
         const tokens = this.tokensByFile[fileRelativePath];
         if (tokens) return tokens;
-        return new Promise((resolve14, reject) => {
+        return new Promise((resolve15, reject) => {
           this.fs.readFile(fileRelativePath, "utf-8", async (err2, source) => {
             if (err2) reject(err2);
             const {
@@ -64836,7 +64836,7 @@ var init_dep_DDtvSN7 = __esm({
             this.sources[fileRelativePath] = injectableSource;
             this.traces[trace] = fileRelativePath;
             this.tokensByFile[fileRelativePath] = exportTokens;
-            resolve14(exportTokens);
+            resolve15(exportTokens);
           });
         });
       }
@@ -64954,12 +64954,12 @@ var init_dep_DDtvSN7 = __esm({
                 );
               }
               let lastImportRule;
-              importsOrder.forEach((path15) => {
-                const importedSymbols = imports[path15];
-                let rule2 = existingImports[path15];
+              importsOrder.forEach((path16) => {
+                const importedSymbols = imports[path16];
+                let rule2 = existingImports[path16];
                 if (!rule2 && importedSymbols) {
                   rule2 = postcss3.rule({
-                    selector: `:import("${path15}")`,
+                    selector: `:import("${path16}")`,
                     raws: { after: "\n" }
                   });
                   if (lastImportRule) {
@@ -68208,7 +68208,7 @@ var init_dep_DDtvSN7 = __esm({
           if (options2 === void 0) {
             options2 = {};
           }
-          return new Promise(function(resolve14, reject) {
+          return new Promise(function(resolve15, reject) {
             try {
               var root4 = _this._root(rule2, options2);
               Promise.resolve(_this.func(root4)).then(function(transform4) {
@@ -68222,7 +68222,7 @@ var init_dep_DDtvSN7 = __esm({
                   root: root4,
                   string: string3
                 };
-              }).then(resolve14, reject);
+              }).then(resolve15, reject);
             } catch (e5) {
               reject(e5);
               return;
@@ -68876,8 +68876,8 @@ var init_dep_DDtvSN7 = __esm({
       };
     };
     plugin2.postcss = true;
-    plugin2.generateScopedName = function(name, path15) {
-      const sanitisedPath = path15.replace(/\.[^./\\]+$/, "").replace(/[\W_]+/g, "_").replace(/^_|_$/g, "");
+    plugin2.generateScopedName = function(name, path16) {
+      const sanitisedPath = path16.replace(/\.[^./\\]+$/, "").replace(/[\W_]+/g, "_").replace(/^_|_$/g, "");
       return `_${sanitisedPath}__${name}`.trim();
     };
     plugin2.generateExportEntry = function(name, scopedName) {
@@ -68910,10 +68910,10 @@ var init_dep_DDtvSN7 = __esm({
                     ,
                     /*match*/
                     aliases,
-                    path15
+                    path16
                   ] = matches2;
-                  if (definitions[path15]) {
-                    path15 = definitions[path15];
+                  if (definitions[path16]) {
+                    path16 = definitions[path16];
                   }
                   const imports = aliases.replace(/^\(\s*([\s\S]+)\s*\)$/, "$1").split(/\s*,\s*/).map((alias2) => {
                     const tokens = matchImport.exec(alias2);
@@ -68931,7 +68931,7 @@ var init_dep_DDtvSN7 = __esm({
                       throw new Error(`@import statement "${alias2}" is invalid!`);
                     }
                   });
-                  importAliases.push({ path: path15, imports });
+                  importAliases.push({ path: path16, imports });
                   atRule2.remove();
                   return;
                 }
@@ -68976,9 +68976,9 @@ var init_dep_DDtvSN7 = __esm({
                 exportRule.append(exportDeclarations);
                 root4.prepend(exportRule);
               }
-              importAliases.reverse().forEach(({ path: path15, imports }) => {
+              importAliases.reverse().forEach(({ path: path16, imports }) => {
                 const importRule = postcss3.rule({
-                  selector: `:import(${path15})`,
+                  selector: `:import(${path16})`,
                   raws: { after: "\n" }
                 });
                 imports.forEach(({ theirName, importedName }) => {
@@ -69085,22 +69085,22 @@ var require_filesystem = __commonJS({
     var LDD_PATH = "/usr/bin/ldd";
     var SELF_PATH = "/proc/self/exe";
     var MAX_LENGTH2 = 2048;
-    var readFileSync6 = (path15) => {
-      const fd = fs13.openSync(path15, "r");
+    var readFileSync6 = (path16) => {
+      const fd = fs13.openSync(path16, "r");
       const buffer = Buffer.alloc(MAX_LENGTH2);
       const bytesRead = fs13.readSync(fd, buffer, 0, MAX_LENGTH2, 0);
       fs13.close(fd, () => {
       });
       return buffer.subarray(0, bytesRead);
     };
-    var readFile = (path15) => new Promise((resolve14, reject) => {
-      fs13.open(path15, "r", (err2, fd) => {
+    var readFile = (path16) => new Promise((resolve15, reject) => {
+      fs13.open(path16, "r", (err2, fd) => {
         if (err2) {
           reject(err2);
         } else {
           const buffer = Buffer.alloc(MAX_LENGTH2);
           fs13.read(fd, buffer, 0, MAX_LENGTH2, 0, (_2, bytesRead) => {
-            resolve14(buffer.subarray(0, bytesRead));
+            resolve15(buffer.subarray(0, bytesRead));
             fs13.close(fd, () => {
             });
           });
@@ -69168,10 +69168,10 @@ var require_detect_libc = __commonJS({
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve14) => {
+        return new Promise((resolve15) => {
           childProcess2.exec(command, (err2, out) => {
             commandOut = err2 ? " " : out;
-            resolve14(commandOut);
+            resolve15(commandOut);
           });
         });
       }
@@ -69213,11 +69213,11 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var familyFromInterpreterPath = (path15) => {
-      if (path15) {
-        if (path15.includes("/ld-musl-")) {
+    var familyFromInterpreterPath = (path16) => {
+      if (path16) {
+        if (path16.includes("/ld-musl-")) {
           return MUSL;
-        } else if (path15.includes("/ld-linux-")) {
+        } else if (path16.includes("/ld-linux-")) {
           return GLIBC;
         }
       }
@@ -69264,8 +69264,8 @@ var require_detect_libc = __commonJS({
       cachedFamilyInterpreter = null;
       try {
         const selfContent = await readFile(SELF_PATH);
-        const path15 = interpreterPath(selfContent);
-        cachedFamilyInterpreter = familyFromInterpreterPath(path15);
+        const path16 = interpreterPath(selfContent);
+        cachedFamilyInterpreter = familyFromInterpreterPath(path16);
       } catch (e5) {
       }
       return cachedFamilyInterpreter;
@@ -69277,8 +69277,8 @@ var require_detect_libc = __commonJS({
       cachedFamilyInterpreter = null;
       try {
         const selfContent = readFileSync6(SELF_PATH);
-        const path15 = interpreterPath(selfContent);
-        cachedFamilyInterpreter = familyFromInterpreterPath(path15);
+        const path16 = interpreterPath(selfContent);
+        cachedFamilyInterpreter = familyFromInterpreterPath(path16);
       } catch (e5) {
       }
       return cachedFamilyInterpreter;
@@ -69987,24 +69987,24 @@ function slash$1(p5) {
 function cleanUrl2(url2) {
   return url2.replace(postfixRE2, "");
 }
-function splitFileAndPostfix(path15) {
-  const file = cleanUrl2(path15);
-  return { file, postfix: path15.slice(file.length) };
+function splitFileAndPostfix(path16) {
+  const file = cleanUrl2(path16);
+  return { file, postfix: path16.slice(file.length) };
 }
-function withTrailingSlash(path15) {
-  if (path15[path15.length - 1] !== "/") {
-    return `${path15}/`;
+function withTrailingSlash(path16) {
+  if (path16[path16.length - 1] !== "/") {
+    return `${path16}/`;
   }
-  return path15;
+  return path16;
 }
 function promiseWithResolvers2() {
-  let resolve14;
+  let resolve15;
   let reject;
   const promise2 = new Promise((_resolve, _reject) => {
-    resolve14 = _resolve;
+    resolve15 = _resolve;
     reject = _reject;
   });
-  return { promise: promise2, resolve: resolve14, reject };
+  return { promise: promise2, resolve: resolve15, reject };
 }
 function walk$2(ast, { enter, leave }) {
   const instance = new SyncWalker$1(enter, leave);
@@ -70377,8 +70377,8 @@ function getName(id3) {
   }
   return makeLegalIdentifier(basename$1(dirname$1(id3)));
 }
-function normalizePathSlashes(path15) {
-  return path15.replace(/\\/g, "/");
+function normalizePathSlashes(path16) {
+  return path16.replace(/\\/g, "/");
 }
 function capitalize2(name) {
   return name[0].toUpperCase() + name.slice(1);
@@ -70415,9 +70415,9 @@ function getPackageEntryPoint(dirPath) {
   }
   return entryPoint;
 }
-function isDirectory$1(path15) {
+function isDirectory$1(path16) {
   try {
-    if (statSync3(path15).isDirectory()) return true;
+    if (statSync3(path16).isDirectory()) return true;
   } catch (ignored) {
   }
   return false;
@@ -70428,12 +70428,12 @@ function getDynamicRequireModules(patterns, dynamicRequireRoot) {
   for (const pattern of !patterns || Array.isArray(patterns) ? patterns || [] : [patterns]) {
     const isNegated = pattern.startsWith("!");
     const modifyMap = (targetPath, resolvedPath) => isNegated ? dynamicRequireModules.delete(targetPath) : dynamicRequireModules.set(targetPath, resolvedPath);
-    for (const path15 of new Builder().withBasePath().withDirs().glob(isNegated ? pattern.substr(1) : pattern).crawl().sync().sort((a6, b2) => a6.localeCompare(b2, "en"))) {
-      const resolvedPath = resolve$3(path15);
+    for (const path16 of new Builder().withBasePath().withDirs().glob(isNegated ? pattern.substr(1) : pattern).crawl().sync().sort((a6, b2) => a6.localeCompare(b2, "en"))) {
+      const resolvedPath = resolve$3(path16);
       const requirePath = normalizePathSlashes(resolvedPath);
       if (isDirectory$1(resolvedPath)) {
         dirNames.add(resolvedPath);
-        const modulePath = resolve$3(join3(resolvedPath, getPackageEntryPoint(path15)));
+        const modulePath = resolve$3(join3(resolvedPath, getPackageEntryPoint(path16)));
         modifyMap(requirePath, modulePath);
         modifyMap(normalizePathSlashes(modulePath), modulePath);
       } else {
@@ -71964,16 +71964,16 @@ function parseAbsoluteUrl(input) {
 }
 function parseFileUrl(input) {
   const match = fileRegex.exec(input);
-  const path15 = match[2];
-  return makeUrl("file:", "", match[1] || "", "", isAbsolutePath(path15) ? path15 : "/" + path15, match[3] || "", match[4] || "");
+  const path16 = match[2];
+  return makeUrl("file:", "", match[1] || "", "", isAbsolutePath(path16) ? path16 : "/" + path16, match[3] || "", match[4] || "");
 }
-function makeUrl(scheme, user, host, port, path15, query, hash3) {
+function makeUrl(scheme, user, host, port, path16, query, hash3) {
   return {
     scheme,
     user,
     host,
     port,
-    path: path15,
+    path: path16,
     query,
     hash: hash3,
     type: 7
@@ -72003,11 +72003,11 @@ function parseUrl$3(input) {
   url2.type = input ? input.startsWith("?") ? 3 : input.startsWith("#") ? 2 : 4 : 1;
   return url2;
 }
-function stripPathFilename(path15) {
-  if (path15.endsWith("/.."))
-    return path15;
-  const index4 = path15.lastIndexOf("/");
-  return path15.slice(0, index4 + 1);
+function stripPathFilename(path16) {
+  if (path16.endsWith("/.."))
+    return path16;
+  const index4 = path16.lastIndexOf("/");
+  return path16.slice(0, index4 + 1);
 }
 function mergePaths(url2, base2) {
   normalizePath$4(base2, base2.type);
@@ -72045,14 +72045,14 @@ function normalizePath$4(url2, type) {
     pieces[pointer++] = piece;
     positive++;
   }
-  let path15 = "";
+  let path16 = "";
   for (let i5 = 1; i5 < pointer; i5++) {
-    path15 += "/" + pieces[i5];
+    path16 += "/" + pieces[i5];
   }
-  if (!path15 || addTrailingSlash && !path15.endsWith("/..")) {
-    path15 += "/";
+  if (!path16 || addTrailingSlash && !path16.endsWith("/..")) {
+    path16 += "/";
   }
-  url2.path = path15;
+  url2.path = path16;
 }
 function resolve$2(input, base2) {
   if (!input && !base2)
@@ -72093,13 +72093,13 @@ function resolve$2(input, base2) {
     case 3:
       return queryHash;
     case 4: {
-      const path15 = url2.path.slice(1);
-      if (!path15)
+      const path16 = url2.path.slice(1);
+      if (!path16)
         return queryHash || ".";
-      if (isRelative2(base2 || input) && !isRelative2(path15)) {
-        return "./" + path15 + queryHash;
+      if (isRelative2(base2 || input) && !isRelative2(path16)) {
+        return "./" + path16 + queryHash;
       }
-      return path15 + queryHash;
+      return path16 + queryHash;
     }
     case 5:
       return url2.path + queryHash;
@@ -72112,11 +72112,11 @@ function resolve$12(input, base2) {
     base2 += "/";
   return resolve$2(input, base2);
 }
-function stripFilename(path15) {
-  if (!path15)
+function stripFilename(path16) {
+  if (!path16)
     return "";
-  const index4 = path15.lastIndexOf("/");
-  return path15.slice(0, index4 + 1);
+  const index4 = path16.lastIndexOf("/");
+  return path16.slice(0, index4 + 1);
 }
 function maybeSort(mappings, owned) {
   const unsortedIndex = nextUnsortedSegmentLine(mappings, 0);
@@ -74321,12 +74321,12 @@ function throttle(fn3) {
   };
 }
 function makePromise() {
-  let resolve14, reject;
+  let resolve15, reject;
   const promise2 = new Promise((res, rej) => {
-    resolve14 = res;
+    resolve15 = res;
     reject = rej;
   });
-  return { promise: promise2, resolve: resolve14, reject };
+  return { promise: promise2, resolve: resolve15, reject };
 }
 async function resolveTSConfigJson(filename, cache) {
   if (path$b.extname(filename) !== ".json") {
@@ -74499,16 +74499,16 @@ async function find(filename, options2) {
   const {
     /** @type {Promise<string|null>} */
     promise: promise2,
-    resolve: resolve14,
+    resolve: resolve15,
     reject
   } = makePromise();
   if (options2?.root && !path$b.isAbsolute(options2.root)) {
     options2.root = path$b.resolve(options2.root);
   }
-  findUp(dir, { promise: promise2, resolve: resolve14, reject }, options2);
+  findUp(dir, { promise: promise2, resolve: resolve15, reject }, options2);
   return promise2;
 }
-function findUp(dir, { resolve: resolve14, reject, promise: promise2 }, options2) {
+function findUp(dir, { resolve: resolve15, reject, promise: promise2 }, options2) {
   const { cache, root: root4, configName } = options2 ?? {};
   if (cache) {
     if (cache.hasConfigPath(dir, configName)) {
@@ -74520,9 +74520,9 @@ function findUp(dir, { resolve: resolve14, reject, promise: promise2 }, options2
         return;
       }
       if (cached?.then) {
-        cached.then(resolve14).catch(reject);
+        cached.then(resolve15).catch(reject);
       } else {
-        resolve14(cached);
+        resolve15(cached);
       }
     } else {
       cache.setConfigPath(dir, promise2, configName);
@@ -74531,15 +74531,15 @@ function findUp(dir, { resolve: resolve14, reject, promise: promise2 }, options2
   const tsconfig = path$b.join(dir, options2?.configName ?? "tsconfig.json");
   fs__default.stat(tsconfig, (err2, stats) => {
     if (stats && (stats.isFile() || stats.isFIFO())) {
-      resolve14(tsconfig);
+      resolve15(tsconfig);
     } else if (err2?.code !== "ENOENT") {
       reject(err2);
     } else {
       let parent;
       if (root4 === dir || (parent = path$b.dirname(dir)) === dir) {
-        resolve14(null);
+        resolve15(null);
       } else {
-        findUp(parent, { promise: promise2, resolve: resolve14, reject }, options2);
+        findUp(parent, { promise: promise2, resolve: resolve15, reject }, options2);
       }
     }
   });
@@ -74654,7 +74654,7 @@ async function parse$e(filename, options2) {
     return getParsedDeep(filename, cache, options2);
   }
   const {
-    resolve: resolve14,
+    resolve: resolve15,
     reject,
     /** @type {Promise<import('./public.d.ts').TSConfckParseResult>}*/
     promise: promise2
@@ -74663,7 +74663,7 @@ async function parse$e(filename, options2) {
   try {
     let tsconfigFile = await resolveTSConfigJson(filename, cache) || await find(filename, options2);
     if (!tsconfigFile) {
-      resolve14(not_found_result);
+      resolve15(not_found_result);
       return promise2;
     }
     let result;
@@ -74674,7 +74674,7 @@ async function parse$e(filename, options2) {
       await Promise.all([parseExtends(result, cache), parseReferences(result, options2)]);
     }
     replaceTokens(result);
-    resolve14(resolveSolutionTSConfig(filename, result));
+    resolve15(resolveSolutionTSConfig(filename, result));
   } catch (e5) {
     reject(e5);
   }
@@ -75232,12 +75232,12 @@ function genWorkerCode(fn3, isModule, parentFunctions) {
       lock.waitUnlock();
       const resArgs = receive(syncPort).message;
       if (resArgs.isAsync) {
-        let resolve14, reject;
+        let resolve15, reject;
         const promise2 = new Promise((res, rej) => {
-          resolve14 = res;
+          resolve15 = res;
           reject = rej;
         });
-        resolvers.set(id3, { resolve: resolve14, reject });
+        resolvers.set(id3, { resolve: resolve15, reject });
         return promise2;
       }
       if ("error" in resArgs) {
@@ -75249,10 +75249,10 @@ function genWorkerCode(fn3, isModule, parentFunctions) {
     asyncPort.on("message", (args2) => {
       const id22 = args2.id;
       if (resolvers.has(id22)) {
-        const { resolve: resolve14, reject } = resolvers.get(id22);
+        const { resolve: resolve15, reject } = resolvers.get(id22);
         resolvers.delete(id22);
         if ("result" in args2) {
-          resolve14(args2.result);
+          resolve15(args2.result);
         } else {
           reject(args2.error);
         }
@@ -76269,12 +76269,12 @@ Error: ${e5.message}`
   }
   return yaml.parse(content);
 }
-function rc(ctx, path15, options2) {
+function rc(ctx, path16, options2) {
   ctx = createContext(ctx);
-  path15 = path15 ? resolve8(path15) : process.cwd();
-  return config$1.lilconfig("postcss", withLoaders(options2)).search(path15).then((result) => {
+  path16 = path16 ? resolve8(path16) : process.cwd();
+  return config$1.lilconfig("postcss", withLoaders(options2)).search(path16).then((result) => {
     if (!result) {
-      throw new Error(`No PostCSS Config found in: ${path15}`);
+      throw new Error(`No PostCSS Config found in: ${path16}`);
     }
     return processResult(ctx, result);
   });
@@ -76680,7 +76680,7 @@ function esbuildDepPlugin(environment, qualified, external) {
       packageCache: cjsPackageCache
     }
   );
-  const resolve14 = (id3, importer, kind, resolveDir) => {
+  const resolve15 = (id3, importer, kind, resolveDir) => {
     let _importer;
     {
       _importer = importer in qualified ? qualified[importer] : importer;
@@ -76734,7 +76734,7 @@ function esbuildDepPlugin(environment, qualified, external) {
               external: true
             };
           }
-          const resolved = await resolve14(id3, importer, kind);
+          const resolved = await resolve15(id3, importer, kind);
           if (resolved) {
             if (JS_TYPES_RE.test(resolved)) {
               return {
@@ -76790,7 +76790,7 @@ function esbuildDepPlugin(environment, qualified, external) {
               return entry;
             }
           }
-          const resolved = await resolve14(id3, importer, kind);
+          const resolved = await resolve15(id3, importer, kind);
           if (resolved) {
             return resolveResult(id3, resolved);
           }
@@ -77334,8 +77334,8 @@ async function transformGlobImport(code, id3, root4, resolveId3, restoreQueryExt
     files: matchedFiles
   };
 }
-function globSafePath(path15) {
-  return escapePath(normalizePath$3(path15));
+function globSafePath(path16) {
+  return escapePath(normalizePath$3(path16));
 }
 function lastNthChar(str2, n5) {
   return str2.charAt(str2.length - 1 - n5);
@@ -77610,7 +77610,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
       { scan: true }
     );
   }
-  const resolve14 = async (id3, importer) => {
+  const resolve15 = async (id3, importer) => {
     const key = id3 + (importer && path$b.dirname(importer));
     if (seen2.has(key)) {
       return seen2.get(key);
@@ -77643,7 +77643,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
       transpiledContents,
       id3,
       environment.config.root,
-      resolve14
+      resolve15
     );
     return result?.s.toString() || transpiledContents;
   };
@@ -77670,7 +77670,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
         return scripts[path22];
       });
       build4.onResolve({ filter: htmlTypesRE }, async ({ path: path22, importer }) => {
-        const resolved = await resolve14(path22, importer);
+        const resolved = await resolve15(path22, importer);
         if (!resolved) return;
         if (isInNodeModules$1(resolved) && isOptimizable(resolved, optimizeDepsOptions))
           return;
@@ -77780,7 +77780,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
           if (depImports[id3]) {
             return externalUnlessEntry({ path: id3 });
           }
-          const resolved = await resolve14(id3, importer);
+          const resolved = await resolve15(id3, importer);
           if (resolved) {
             if (shouldExternalizeDep(resolved, id3)) {
               return externalUnlessEntry({ path: id3 });
@@ -77824,7 +77824,7 @@ function esbuildScanPlugin(environment, depImports, missing, entries) {
           filter: /.*/
         },
         async ({ path: id3, importer }) => {
-          const resolved = await resolve14(id3, importer);
+          const resolved = await resolve15(id3, importer);
           if (resolved) {
             if (shouldExternalizeDep(resolved, id3) || !isScannable(resolved, optimizeDepsOptions.extensions)) {
               return externalUnlessEntry({ path: id3 });
@@ -77895,7 +77895,7 @@ function isScannable(id3, extensions2) {
 }
 function createOptimizeDepsIncludeResolver(environment) {
   const topLevelConfig = environment.getTopLevelConfig();
-  const resolve14 = createBackCompatIdResolver(topLevelConfig, {
+  const resolve15 = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     packageCache: /* @__PURE__ */ new Map()
@@ -77903,7 +77903,7 @@ function createOptimizeDepsIncludeResolver(environment) {
   return async (id3) => {
     const lastArrowIndex = id3.lastIndexOf(">");
     if (lastArrowIndex === -1) {
-      return await resolve14(environment, id3, void 0);
+      return await resolve15(environment, id3, void 0);
     }
     const nestedRoot = id3.substring(0, lastArrowIndex).trim();
     const nestedPath = id3.substring(lastArrowIndex + 1).trim();
@@ -77912,7 +77912,7 @@ function createOptimizeDepsIncludeResolver(environment) {
       topLevelConfig.root,
       topLevelConfig.resolve.preserveSymlinks
     );
-    return await resolve14(
+    return await resolve15(
       environment,
       nestedPath,
       path$b.resolve(basedir, "package.json")
@@ -78456,11 +78456,11 @@ async function addManuallyIncludedOptimizeDeps(environment, deps) {
         i5 += globIds.length - 1;
       }
     }
-    const resolve14 = createOptimizeDepsIncludeResolver(environment);
+    const resolve15 = createOptimizeDepsIncludeResolver(environment);
     for (const id3 of includes) {
       const normalizedId = normalizeId(id3);
       if (!deps[normalizedId]) {
-        const entry = await resolve14(id3);
+        const entry = await resolve15(id3);
         if (entry) {
           if (isOptimizable(entry, optimizeDeps2)) {
             deps[normalizedId] = entry;
@@ -78795,12 +78795,12 @@ function shouldExternalize(environment, id3, importer) {
 }
 function createIsConfiguredAsExternal(environment) {
   const { config: config2 } = environment;
-  const { root: root4, resolve: resolve14 } = config2;
-  const { external, noExternal } = resolve14;
+  const { root: root4, resolve: resolve15 } = config2;
+  const { external, noExternal } = resolve15;
   const noExternalFilter = typeof noExternal !== "boolean" && !(Array.isArray(noExternal) && noExternal.length === 0) && createFilter$12(void 0, noExternal, { resolve: false });
-  const targetConditions = resolve14.externalConditions;
+  const targetConditions = resolve15.externalConditions;
   const resolveOptions = {
-    ...resolve14,
+    ...resolve15,
     root: root4,
     isProduction: false,
     isBuild: true,
@@ -79773,13 +79773,13 @@ function configDotenv(options2) {
   }
   let lastError;
   const parsedAll = {};
-  for (const path15 of optionPaths) {
+  for (const path16 of optionPaths) {
     try {
-      const parsed = DotenvModule.parse(fs$6.readFileSync(path15, { encoding }));
+      const parsed = DotenvModule.parse(fs$6.readFileSync(path16, { encoding }));
       DotenvModule.populate(parsedAll, parsed, options2);
     } catch (e5) {
       if (debug2) {
-        _debug(`Failed to load ${path15} ${e5.message}`);
+        _debug(`Failed to load ${path16} ${e5.message}`);
       }
       lastError = e5;
     }
@@ -80871,32 +80871,32 @@ function padZeros(value2, tok, options2) {
     }
   }
 }
-function createFsWatchInstance(path15, options2, listener2, errHandler, emitRaw) {
+function createFsWatchInstance(path16, options2, listener2, errHandler, emitRaw) {
   const handleEvent = (rawEvent, evPath) => {
-    listener2(path15);
-    emitRaw(rawEvent, evPath, { watchedPath: path15 });
-    if (evPath && path15 !== evPath) {
+    listener2(path16);
+    emitRaw(rawEvent, evPath, { watchedPath: path16 });
+    if (evPath && path16 !== evPath) {
       fsWatchBroadcast(
-        sysPath$2.resolve(path15, evPath),
+        sysPath$2.resolve(path16, evPath),
         KEY_LISTENERS,
-        sysPath$2.join(path15, evPath)
+        sysPath$2.join(path16, evPath)
       );
     }
   };
   try {
-    return fs$4.watch(path15, options2, handleEvent);
+    return fs$4.watch(path16, options2, handleEvent);
   } catch (error3) {
     errHandler(error3);
   }
 }
-function setFSEventsListener(path15, realPath, listener2, rawEmitter) {
+function setFSEventsListener(path16, realPath, listener2, rawEmitter) {
   let watchPath = sysPath$1.extname(realPath) ? sysPath$1.dirname(realPath) : realPath;
   const parentPath = sysPath$1.dirname(watchPath);
   let cont = FSEventsWatchers.get(watchPath);
   if (couldConsolidate(parentPath)) {
     watchPath = parentPath;
   }
-  const resolvedPath = sysPath$1.resolve(path15);
+  const resolvedPath = sysPath$1.resolve(path16);
   const hasSymlink = resolvedPath !== realPath;
   const filteredListener = (fullPath, flags, info) => {
     if (hasSymlink) fullPath = fullPath.replace(realPath, resolvedPath);
@@ -81321,7 +81321,7 @@ async function readFileIfExists(value2) {
 }
 async function httpServerStart(httpServer, serverOptions) {
   let { port, strictPort, host, logger } = serverOptions;
-  return new Promise((resolve14, reject) => {
+  return new Promise((resolve15, reject) => {
     const onError3 = (e5) => {
       if (e5.code === "EADDRINUSE") {
         if (strictPort) {
@@ -81339,7 +81339,7 @@ async function httpServerStart(httpServer, serverOptions) {
     httpServer.on("error", onError3);
     httpServer.listen(port, host, () => {
       httpServer.removeListener("error", onError3);
-      resolve14(port);
+      resolve15(port);
     });
   });
 }
@@ -82146,7 +82146,7 @@ function requireWindows() {
   windows = isexe2;
   isexe2.sync = sync3;
   var fs13 = require$$0$4;
-  function checkPathExt(path15, options2) {
+  function checkPathExt(path16, options2) {
     var pathext = options2.pathExt !== void 0 ? options2.pathExt : process.env.PATHEXT;
     if (!pathext) {
       return true;
@@ -82157,25 +82157,25 @@ function requireWindows() {
     }
     for (var i5 = 0; i5 < pathext.length; i5++) {
       var p5 = pathext[i5].toLowerCase();
-      if (p5 && path15.substr(-p5.length).toLowerCase() === p5) {
+      if (p5 && path16.substr(-p5.length).toLowerCase() === p5) {
         return true;
       }
     }
     return false;
   }
-  function checkStat(stat3, path15, options2) {
+  function checkStat(stat3, path16, options2) {
     if (!stat3.isSymbolicLink() && !stat3.isFile()) {
       return false;
     }
-    return checkPathExt(path15, options2);
+    return checkPathExt(path16, options2);
   }
-  function isexe2(path15, options2, cb) {
-    fs13.stat(path15, function(er3, stat3) {
-      cb(er3, er3 ? false : checkStat(stat3, path15, options2));
+  function isexe2(path16, options2, cb) {
+    fs13.stat(path16, function(er3, stat3) {
+      cb(er3, er3 ? false : checkStat(stat3, path16, options2));
     });
   }
-  function sync3(path15, options2) {
-    return checkStat(fs13.statSync(path15), path15, options2);
+  function sync3(path16, options2) {
+    return checkStat(fs13.statSync(path16), path16, options2);
   }
   return windows;
 }
@@ -82185,13 +82185,13 @@ function requireMode() {
   mode = isexe2;
   isexe2.sync = sync3;
   var fs13 = require$$0$4;
-  function isexe2(path15, options2, cb) {
-    fs13.stat(path15, function(er3, stat3) {
+  function isexe2(path16, options2, cb) {
+    fs13.stat(path16, function(er3, stat3) {
       cb(er3, er3 ? false : checkStat(stat3, options2));
     });
   }
-  function sync3(path15, options2) {
-    return checkStat(fs13.statSync(path15), options2);
+  function sync3(path16, options2) {
+    return checkStat(fs13.statSync(path16), options2);
   }
   function checkStat(stat3, options2) {
     return stat3.isFile() && checkMode(stat3, options2);
@@ -82211,7 +82211,7 @@ function requireMode() {
   }
   return mode;
 }
-function isexe$1(path15, options2, cb) {
+function isexe$1(path16, options2, cb) {
   if (typeof options2 === "function") {
     cb = options2;
     options2 = {};
@@ -82220,17 +82220,17 @@ function isexe$1(path15, options2, cb) {
     if (typeof Promise !== "function") {
       throw new TypeError("callback not provided");
     }
-    return new Promise(function(resolve14, reject) {
-      isexe$1(path15, options2 || {}, function(er3, is) {
+    return new Promise(function(resolve15, reject) {
+      isexe$1(path16, options2 || {}, function(er3, is) {
         if (er3) {
           reject(er3);
         } else {
-          resolve14(is);
+          resolve15(is);
         }
       });
     });
   }
-  core(path15, options2 || {}, function(er3, is) {
+  core(path16, options2 || {}, function(er3, is) {
     if (er3) {
       if (er3.code === "EACCES" || options2 && options2.ignoreErrors) {
         er3 = null;
@@ -82240,9 +82240,9 @@ function isexe$1(path15, options2, cb) {
     cb(er3, is);
   });
 }
-function sync2(path15, options2) {
+function sync2(path16, options2) {
   try {
-    return core.sync(path15, options2 || {});
+    return core.sync(path16, options2 || {});
   } catch (er3) {
     if (options2 && options2.ignoreErrors || er3.code === "EACCES") {
       return false;
@@ -82471,12 +82471,12 @@ async function startBrowserProcess(browser, browserArgs, url2, logger) {
   }
 }
 function execAsync(command, options2) {
-  return new Promise((resolve14, reject) => {
+  return new Promise((resolve15, reject) => {
     exec(command, options2, (error3, stdout) => {
       if (error3) {
         reject(error3);
       } else {
-        resolve14(stdout.toString());
+        resolve15(stdout.toString());
       }
     });
   });
@@ -83648,7 +83648,7 @@ ${e5.stack || e5.message}`),
         if (hmrServerWsListener && wsServer) {
           wsServer.off("upgrade", hmrServerWsListener);
         }
-        return new Promise((resolve14, reject) => {
+        return new Promise((resolve15, reject) => {
           wss.clients.forEach((client) => {
             client.terminate();
           });
@@ -83661,11 +83661,11 @@ ${e5.stack || e5.message}`),
                   if (err22) {
                     reject(err22);
                   } else {
-                    resolve14();
+                    resolve15();
                   }
                 });
               } else {
-                resolve14();
+                resolve15();
               }
             }
           });
@@ -86522,12 +86522,12 @@ function notFoundMiddleware() {
   };
 }
 function hasWorkspacePackageJSON(root4) {
-  const path15 = join$1(root4, "package.json");
-  if (!isFileReadable(path15)) {
+  const path16 = join$1(root4, "package.json");
+  if (!isFileReadable(path16)) {
     return false;
   }
   try {
-    const content = JSON.parse(fs__default.readFileSync(path15, "utf-8")) || {};
+    const content = JSON.parse(fs__default.readFileSync(path16, "utf-8")) || {};
     return !!content.workspaces;
   } catch {
     return false;
@@ -86537,8 +86537,8 @@ function hasRootFile(root4) {
   return ROOT_FILES.some((file) => fs__default.existsSync(join$1(root4, file)));
 }
 function hasPackageJSON(root4) {
-  const path15 = join$1(root4, "package.json");
-  return fs__default.existsSync(path15);
+  const path16 = join$1(root4, "package.json");
+  return fs__default.existsSync(path16);
 }
 function searchForPackageRoot(current, root4 = current) {
   if (hasPackageJSON(current)) return current;
@@ -87016,18 +87016,18 @@ function createServerCloseFn(server) {
   server.once("listening", () => {
     hasListened = true;
   });
-  return () => new Promise((resolve14, reject) => {
+  return () => new Promise((resolve15, reject) => {
     openSockets.forEach((s5) => s5.destroy());
     if (hasListened) {
       server.close((err2) => {
         if (err2) {
           reject(err2);
         } else {
-          resolve14();
+          resolve15();
         }
       });
     } else {
-      resolve14();
+      resolve15();
     }
   });
 }
@@ -89563,9 +89563,9 @@ function parseDynamicImportPattern(strings) {
     rawPattern
   };
 }
-async function transformDynamicImport(importSource, importer, resolve14, root4) {
+async function transformDynamicImport(importSource, importer, resolve15, root4) {
   if (importSource[1] !== "." && importSource[1] !== "/") {
-    const resolvedFileName = await resolve14(importSource.slice(1, -1), importer);
+    const resolvedFileName = await resolve15(importSource.slice(1, -1), importer);
     if (!resolvedFileName) {
       return null;
     }
@@ -89597,7 +89597,7 @@ async function transformDynamicImport(importSource, importer, resolve14, root4) 
   };
 }
 function dynamicImportVarsPlugin(config2) {
-  const resolve14 = createBackCompatIdResolver(config2, {
+  const resolve15 = createBackCompatIdResolver(config2, {
     preferRelative: true,
     tryIndex: false,
     extensions: []
@@ -89660,7 +89660,7 @@ function dynamicImportVarsPlugin(config2) {
             result = await transformDynamicImport(
               source.slice(start, end),
               importer,
-              (id3, importer2) => resolve14(environment, id3, importer2),
+              (id3, importer2) => resolve15(environment, id3, importer2),
               config2.root
             );
           } catch (error3) {
@@ -89941,19 +89941,19 @@ function createPluginContainer(environments) {
 }
 function createBackCompatIdResolver(config2, options2) {
   const compatResolve = config2.createResolver(options2);
-  let resolve14;
+  let resolve15;
   return async (environment, id3, importer, aliasOnly) => {
     if (environment.name === "client" || environment.name === "ssr") {
       return compatResolve(id3, importer, aliasOnly, environment.name === "ssr");
     }
-    resolve14 ??= createIdResolver(config2, options2);
-    return resolve14(environment, id3, importer, aliasOnly);
+    resolve15 ??= createIdResolver(config2, options2);
+    return resolve15(environment, id3, importer, aliasOnly);
   };
 }
 function createIdResolver(config2, options2) {
   const scan = options2?.scan;
   const pluginContainerMap = /* @__PURE__ */ new Map();
-  async function resolve14(environment, id3, importer) {
+  async function resolve15(environment, id3, importer) {
     let pluginContainer = pluginContainerMap.get(environment);
     if (!pluginContainer) {
       pluginContainer = await createEnvironmentPluginContainer(
@@ -89994,7 +89994,7 @@ function createIdResolver(config2, options2) {
     return await pluginContainer.resolveId(id3, importer, { scan });
   }
   return async (environment, id3, importer, aliasOnly) => {
-    const resolveFn = aliasOnly ? resolveAlias : resolve14;
+    const resolveFn = aliasOnly ? resolveAlias : resolve15;
     const resolved = await resolveFn(environment, id3, importer);
     return resolved?.id;
   };
@@ -92371,13 +92371,13 @@ async function buildEnvironment(environment) {
       )}`
     )
   );
-  const resolve14 = (p5) => path$b.resolve(root4, p5);
-  const input = libOptions ? options2.rollupOptions.input || (typeof libOptions.entry === "string" ? resolve14(libOptions.entry) : Array.isArray(libOptions.entry) ? libOptions.entry.map(resolve14) : Object.fromEntries(
+  const resolve15 = (p5) => path$b.resolve(root4, p5);
+  const input = libOptions ? options2.rollupOptions.input || (typeof libOptions.entry === "string" ? resolve15(libOptions.entry) : Array.isArray(libOptions.entry) ? libOptions.entry.map(resolve15) : Object.fromEntries(
     Object.entries(libOptions.entry).map(([alias2, file]) => [
       alias2,
-      resolve14(file)
+      resolve15(file)
     ])
-  )) : typeof options2.ssr === "string" ? resolve14(options2.ssr) : options2.rollupOptions.input || resolve14("index.html");
+  )) : typeof options2.ssr === "string" ? resolve15(options2.ssr) : options2.rollupOptions.input || resolve15("index.html");
   if (ssr && typeof input === "string" && input.endsWith(".html")) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. Please specify a dedicated SSR entry.`
@@ -92391,7 +92391,7 @@ async function buildEnvironment(environment) {
       );
     }
   }
-  const outDir = resolve14(options2.outDir);
+  const outDir = resolve15(options2.outDir);
   const plugins2 = environment.plugins.map(
     (p5) => injectEnvironmentAndFilterToHooks(environment, p5)
   );
@@ -93239,7 +93239,7 @@ function createDepsOptimizer(environment) {
       if (noDiscovery) {
         runOptimizer();
       } else {
-        depsOptimizer.scanProcessing = new Promise((resolve14) => {
+        depsOptimizer.scanProcessing = new Promise((resolve15) => {
           (async () => {
             try {
               debug$1?.(colors$1.green(`scanning for dependencies...`));
@@ -93272,7 +93272,7 @@ function createDepsOptimizer(environment) {
             } catch (e5) {
               logger.error(e5.stack || e5.message);
             } finally {
-              resolve14();
+              resolve15();
               depsOptimizer.scanProcessing = void 0;
             }
           })();
@@ -94125,7 +94125,7 @@ function resolveEnvironmentOptions(options2, alias2, preserveSymlinks, forceOpti
       }
     }
   }
-  const resolve14 = resolveEnvironmentResolveOptions(
+  const resolve15 = resolveEnvironmentResolveOptions(
     options2.resolve,
     alias2,
     preserveSymlinks,
@@ -94135,12 +94135,12 @@ function resolveEnvironmentOptions(options2, alias2, preserveSymlinks, forceOpti
   );
   return {
     define: options2.define,
-    resolve: resolve14,
+    resolve: resolve15,
     keepProcessEnv: options2.keepProcessEnv ?? (isSsrTargetWebworkerEnvironment ? false : consumer === "server"),
     consumer,
     optimizeDeps: resolveDepOptimizationOptions(
       options2.optimizeDeps,
-      resolve14.preserveSymlinks,
+      resolve15.preserveSymlinks,
       forceOptimizeDeps,
       consumer
     ),
@@ -94194,21 +94194,21 @@ function checkBadCharactersInPath(name, path22, logger) {
     );
   }
 }
-function resolveEnvironmentResolveOptions(resolve14, alias2, preserveSymlinks, logger, consumer, isSsrTargetWebworkerEnvironment) {
+function resolveEnvironmentResolveOptions(resolve15, alias2, preserveSymlinks, logger, consumer, isSsrTargetWebworkerEnvironment) {
   const resolvedResolve = mergeWithDefaults(
     {
       ...configDefaults.resolve,
       mainFields: consumer === void 0 || consumer === "client" || isSsrTargetWebworkerEnvironment ? DEFAULT_CLIENT_MAIN_FIELDS : DEFAULT_SERVER_MAIN_FIELDS,
       conditions: consumer === void 0 || consumer === "client" || isSsrTargetWebworkerEnvironment ? DEFAULT_CLIENT_CONDITIONS : DEFAULT_SERVER_CONDITIONS.filter((c4) => c4 !== "browser"),
-      builtins: resolve14?.builtins ?? (consumer === "server" ? isSsrTargetWebworkerEnvironment && resolve14?.noExternal === true ? [] : nodeLikeBuiltins : [])
+      builtins: resolve15?.builtins ?? (consumer === "server" ? isSsrTargetWebworkerEnvironment && resolve15?.noExternal === true ? [] : nodeLikeBuiltins : [])
     },
-    resolve14 ?? {}
+    resolve15 ?? {}
   );
   resolvedResolve.preserveSymlinks = preserveSymlinks;
   resolvedResolve.alias = alias2;
   if (
     // @ts-expect-error removed field
-    resolve14?.browserField === false && resolvedResolve.mainFields.includes("browser")
+    resolve15?.browserField === false && resolvedResolve.mainFields.includes("browser")
   ) {
     logger.warn(
       colors$1.yellow(
@@ -94218,11 +94218,11 @@ function resolveEnvironmentResolveOptions(resolve14, alias2, preserveSymlinks, l
   }
   return resolvedResolve;
 }
-function resolveResolveOptions(resolve14, logger) {
+function resolveResolveOptions(resolve15, logger) {
   const alias2 = normalizeAlias(
-    mergeAlias(clientAlias, resolve14?.alias || configDefaults.resolve.alias)
+    mergeAlias(clientAlias, resolve15?.alias || configDefaults.resolve.alias)
   );
-  const preserveSymlinks = resolve14?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks;
+  const preserveSymlinks = resolve15?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks;
   if (alias2.some((a6) => a6.find === "/")) {
     logger.warn(
       colors$1.yellow(
@@ -94231,7 +94231,7 @@ function resolveResolveOptions(resolve14, logger) {
     );
   }
   return resolveEnvironmentResolveOptions(
-    resolve14,
+    resolve15,
     alias2,
     preserveSymlinks,
     logger,
@@ -94595,14 +94595,14 @@ async function resolveConfig(inlineConfig, command, defaultMode = "development",
      * optimizer & handling css @imports
      */
     createResolver(options2) {
-      const resolve14 = createIdResolver(this, options2);
+      const resolve15 = createIdResolver(this, options2);
       const clientEnvironment = new PartialEnvironment("client", this);
       let ssrEnvironment;
       return async (id3, importer, aliasOnly, ssr2) => {
         if (ssr2) {
           ssrEnvironment ??= new PartialEnvironment("ssr", this);
         }
-        return await resolve14(
+        return await resolve15(
           ssr2 ? ssrEnvironment : clientEnvironment,
           id3,
           importer,
@@ -96481,7 +96481,7 @@ var init_dep_Dm0c1Wj2 = __esm({
     };
     firstpassGlobal = /\b(?:require|module|exports|global)\b/;
     firstpassNoGlobal = /\b(?:require|module|exports)\b/;
-    getVirtualPathForDynamicRequirePath = (path15, commonDir) => `/${normalizePathSlashes(relative$1(commonDir, path15))}`;
+    getVirtualPathForDynamicRequirePath = (path16, commonDir) => `/${normalizePathSlashes(relative$1(commonDir, path16))}`;
     FAILED_REQUIRE_ERROR = `throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');`;
     COMMONJS_REQUIRE_EXPORT = "commonjsRequire";
     CREATE_COMMONJS_REQUIRE_EXPORT = "createCommonjsRequire";
@@ -97158,9 +97158,9 @@ export function getAugmentedNamespace(n) {
       setConfigPath(dir, configPath, configName = "tsconfig.json") {
         const key = `${dir}/${configName}`;
         this.#configPaths.set(key, configPath);
-        configPath.then((path15) => {
+        configPath.then((path16) => {
           if (this.#configPaths.get(key) === configPath) {
-            this.#configPaths.set(key, path15);
+            this.#configPaths.set(key, path16);
           }
         }).catch((e5) => {
           if (this.#configPaths.get(key) === configPath) {
@@ -97278,8 +97278,8 @@ export function getAugmentedNamespace(n) {
       }
       async run(...args2) {
         const worker = await this._getAvailableWorker();
-        return new Promise((resolve14, reject) => {
-          worker.currentResolve = resolve14;
+        return new Promise((resolve15, reject) => {
+          worker.currentResolve = resolve15;
           worker.currentReject = reject;
           worker.postMessage({ args: args2 });
         });
@@ -97365,20 +97365,20 @@ export function getAugmentedNamespace(n) {
           this._pool.push(worker);
           return worker;
         }
-        let resolve14;
+        let resolve15;
         let reject;
         const onWorkerAvailablePromise = new Promise((r4, rj) => {
-          resolve14 = r4;
+          resolve15 = r4;
           reject = rj;
         });
-        this._queue.push([resolve14, reject]);
+        this._queue.push([resolve15, reject]);
         return onWorkerAvailablePromise;
       }
       /** @internal */
       _assignDoneWorker(worker) {
         if (this._queue.length) {
-          const [resolve14] = this._queue.shift();
-          resolve14(worker);
+          const [resolve15] = this._queue.shift();
+          resolve15(worker);
           return;
         }
         this._idlePool.push(worker);
@@ -98597,8 +98597,8 @@ ${e5.message}`);
        * @param {string} [base]
        * @param {string} [message]
        */
-      (path15, base2, message) => {
-        return `Invalid package config ${path15}${base2 ? ` while importing ${base2}` : ""}${message ? `. ${message}` : ""}`;
+      (path16, base2, message) => {
+        return `Invalid package config ${path16}${base2 ? ` while importing ${base2}` : ""}${message ? `. ${message}` : ""}`;
       },
       Error
     );
@@ -98630,8 +98630,8 @@ ${e5.message}`);
        * @param {string} base
        * @param {boolean} [exactUrl]
        */
-      (path15, base2, exactUrl = false) => {
-        return `Cannot find ${exactUrl ? "module" : "package"} '${path15}' imported from ${base2}`;
+      (path16, base2, exactUrl = false) => {
+        return `Cannot find ${exactUrl ? "module" : "package"} '${path16}' imported from ${base2}`;
       },
       Error
     );
@@ -98682,8 +98682,8 @@ ${e5.message}`);
        * @param {string} extension
        * @param {string} path
        */
-      (extension2, path15) => {
-        return `Unknown file extension "${extension2}" for ${path15}`;
+      (extension2, path16) => {
+        return `Unknown file extension "${extension2}" for ${path16}`;
       },
       TypeError
     );
@@ -99838,14 +99838,14 @@ ${e5.message}`);
     };
     proto.use = function use(route, fn3) {
       var handle2 = fn3;
-      var path15 = route;
+      var path16 = route;
       if (typeof route !== "string") {
         handle2 = route;
-        path15 = "/";
+        path16 = "/";
       }
       if (typeof handle2.handle === "function") {
         var server = handle2;
-        server.route = path15;
+        server.route = path16;
         handle2 = function(req2, res, next) {
           server.handle(req2, res, next);
         };
@@ -99853,11 +99853,11 @@ ${e5.message}`);
       if (handle2 instanceof http$4.Server) {
         handle2 = handle2.listeners("request")[0];
       }
-      if (path15[path15.length - 1] === "/") {
-        path15 = path15.slice(0, -1);
+      if (path16[path16.length - 1] === "/") {
+        path16 = path16.slice(0, -1);
       }
-      debug$8("use %s %s", path15 || "/", handle2.name || "anonymous");
-      this.stack.push({ route: path15, handle: handle2 });
+      debug$8("use %s %s", path16 || "/", handle2.name || "anonymous");
+      this.stack.push({ route: path16, handle: handle2 });
       return this;
     };
     proto.handle = function handle(req2, res, out) {
@@ -99885,12 +99885,12 @@ ${e5.message}`);
           defer(done, err2);
           return;
         }
-        var path15 = parseUrl$1(req2).pathname || "/";
+        var path16 = parseUrl$1(req2).pathname || "/";
         var route = layer.route;
-        if (path15.toLowerCase().substr(0, route.length) !== route.toLowerCase()) {
+        if (path16.toLowerCase().substr(0, route.length) !== route.toLowerCase()) {
           return next(err2);
         }
-        var c4 = path15.length > route.length && path15[route.length];
+        var c4 = path16.length > route.length && path16[route.length];
         if (c4 && c4 !== "/" && c4 !== ".") {
           return next(err2);
         }
@@ -100198,8 +100198,8 @@ ${e5.message}`);
         return {
           root: ".",
           /* eslint-disable no-unused-vars */
-          fileFilter: (path15) => true,
-          directoryFilter: (path15) => true,
+          fileFilter: (path16) => true,
+          directoryFilter: (path16) => true,
           /* eslint-enable no-unused-vars */
           type: FILE_TYPE,
           lstat: false,
@@ -100219,7 +100219,7 @@ ${e5.message}`);
         this._directoryFilter = normalizeFilter$1(opts.directoryFilter);
         const statMethod = opts.lstat ? lstat$2 : stat$3;
         if (wantBigintFsStats) {
-          this._stat = (path15) => statMethod(path15, { bigint: true });
+          this._stat = (path16) => statMethod(path16, { bigint: true });
         } else {
           this._stat = statMethod;
         }
@@ -100240,9 +100240,9 @@ ${e5.message}`);
         this.reading = true;
         try {
           while (!this.destroyed && batch > 0) {
-            const { path: path15, depth, files = [] } = this.parent || {};
+            const { path: path16, depth, files = [] } = this.parent || {};
             if (files.length > 0) {
-              const slice = files.splice(0, batch).map((dirent) => this._formatEntry(dirent, path15));
+              const slice = files.splice(0, batch).map((dirent) => this._formatEntry(dirent, path16));
               for (const entry of await Promise.all(slice)) {
                 if (this.destroyed) return;
                 const entryType = await this._getEntryType(entry);
@@ -100277,20 +100277,20 @@ ${e5.message}`);
           this.reading = false;
         }
       }
-      async _exploreDir(path15, depth) {
+      async _exploreDir(path16, depth) {
         let files;
         try {
-          files = await readdir$1(path15, this._rdOptions);
+          files = await readdir$1(path16, this._rdOptions);
         } catch (error3) {
           this._onError(error3);
         }
-        return { files, depth, path: path15 };
+        return { files, depth, path: path16 };
       }
-      async _formatEntry(dirent, path15) {
+      async _formatEntry(dirent, path16) {
         let entry;
         try {
           const basename5 = this._isDirent ? dirent.name : dirent;
-          const fullPath = sysPath$3.resolve(sysPath$3.join(path15, basename5));
+          const fullPath = sysPath$3.resolve(sysPath$3.join(path16, basename5));
           entry = { path: sysPath$3.relative(this._root, fullPath), fullPath, basename: basename5 };
           entry[this._statsProp] = this._isDirent ? dirent : await this._stat(fullPath);
         } catch (err2) {
@@ -100360,9 +100360,9 @@ ${e5.message}`);
       return new ReaddirpStream(options2);
     };
     readdirpPromise = (root4, options2 = {}) => {
-      return new Promise((resolve14, reject) => {
+      return new Promise((resolve15, reject) => {
         const files = [];
-        readdirp$1(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve14(files)).on("error", (error3) => reject(error3));
+        readdirp$1(root4, options2).on("data", (entry) => files.push(entry)).on("end", () => resolve15(files)).on("error", (error3) => reject(error3));
       });
     };
     readdirp$1.promise = readdirpPromise;
@@ -100370,22 +100370,22 @@ ${e5.message}`);
     readdirp$1.default = readdirp$1;
     readdirp_12 = readdirp$1;
     anymatch$2 = { exports: {} };
-    normalizePath$2 = function(path15, stripTrailing) {
-      if (typeof path15 !== "string") {
+    normalizePath$2 = function(path16, stripTrailing) {
+      if (typeof path16 !== "string") {
         throw new TypeError("expected path to be a string");
       }
-      if (path15 === "\\" || path15 === "/") return "/";
-      var len = path15.length;
-      if (len <= 1) return path15;
+      if (path16 === "\\" || path16 === "/") return "/";
+      var len = path16.length;
+      if (len <= 1) return path16;
       var prefix = "";
-      if (len > 4 && path15[3] === "\\") {
-        var ch = path15[2];
-        if ((ch === "?" || ch === ".") && path15.slice(0, 2) === "\\\\") {
-          path15 = path15.slice(2);
+      if (len > 4 && path16[3] === "\\") {
+        var ch = path16[2];
+        if ((ch === "?" || ch === ".") && path16.slice(0, 2) === "\\\\") {
+          path16 = path16.slice(2);
           prefix = "//";
         }
       }
-      var segs = path15.split(/[/\\]+/);
+      var segs = path16.split(/[/\\]+/);
       if (stripTrailing !== false && segs[segs.length - 1] === "") {
         segs.pop();
       }
@@ -100417,17 +100417,17 @@ ${e5.message}`);
       if (!isList && typeof _path2 !== "string") {
         throw new TypeError("anymatch: second argument must be a string: got " + Object.prototype.toString.call(_path2));
       }
-      const path15 = normalizePath$1(_path2, false);
+      const path16 = normalizePath$1(_path2, false);
       for (let index4 = 0; index4 < negPatterns.length; index4++) {
         const nglob = negPatterns[index4];
-        if (nglob(path15)) {
+        if (nglob(path16)) {
           return returnIndex ? -1 : false;
         }
       }
-      const applied = isList && [path15].concat(args2.slice(1));
+      const applied = isList && [path16].concat(args2.slice(1));
       for (let index4 = 0; index4 < patterns.length; index4++) {
         const pattern = patterns[index4];
-        if (isList ? pattern(...applied) : pattern(path15)) {
+        if (isList ? pattern(...applied) : pattern(path16)) {
           return returnIndex ? index4 : true;
         }
       }
@@ -101844,13 +101844,13 @@ ${e5.message}`);
         listener2(val1, val2, val3);
       });
     };
-    setFsWatchListener = (path15, fullPath, options2, handlers) => {
+    setFsWatchListener = (path16, fullPath, options2, handlers) => {
       const { listener: listener2, errHandler, rawEmitter } = handlers;
       let cont = FsWatchInstances.get(fullPath);
       let watcher;
       if (!options2.persistent) {
         watcher = createFsWatchInstance(
-          path15,
+          path16,
           options2,
           listener2,
           errHandler,
@@ -101864,7 +101864,7 @@ ${e5.message}`);
         addAndConvert(cont, KEY_RAW, rawEmitter);
       } else {
         watcher = createFsWatchInstance(
-          path15,
+          path16,
           options2,
           fsWatchBroadcast.bind(null, fullPath, KEY_LISTENERS),
           errHandler,
@@ -101877,7 +101877,7 @@ ${e5.message}`);
           cont.watcherUnusable = true;
           if (isWindows$2 && error3.code === "EPERM") {
             try {
-              const fd = await open$1(path15, "r");
+              const fd = await open$1(path16, "r");
               await close(fd);
               broadcastErr(error3);
             } catch (err2) {
@@ -101908,7 +101908,7 @@ ${e5.message}`);
       };
     };
     FsWatchFileInstances = /* @__PURE__ */ new Map();
-    setFsWatchFileListener = (path15, fullPath, options2, handlers) => {
+    setFsWatchFileListener = (path16, fullPath, options2, handlers) => {
       const { listener: listener2, rawEmitter } = handlers;
       let cont = FsWatchFileInstances.get(fullPath);
       const copts = cont && cont.options;
@@ -101930,7 +101930,7 @@ ${e5.message}`);
             });
             const currmtime = curr.mtimeMs;
             if (curr.size !== prev.size || currmtime > prev.mtimeMs || currmtime === 0) {
-              foreach(cont.listeners, (listener3) => listener3(path15, curr));
+              foreach(cont.listeners, (listener3) => listener3(path16, curr));
             }
           })
         };
@@ -101961,24 +101961,24 @@ ${e5.message}`);
        * @param {Function} listener on fs change
        * @returns {Function} closer for the watcher instance
        */
-      _watchWithNodeFs(path15, listener2) {
+      _watchWithNodeFs(path16, listener2) {
         const opts = this.fsw.options;
-        const directory = sysPath$2.dirname(path15);
-        const basename5 = sysPath$2.basename(path15);
+        const directory = sysPath$2.dirname(path16);
+        const basename5 = sysPath$2.basename(path16);
         const parent = this.fsw._getWatchedDir(directory);
         parent.add(basename5);
-        const absolutePath = sysPath$2.resolve(path15);
+        const absolutePath = sysPath$2.resolve(path16);
         const options2 = { persistent: opts.persistent };
         if (!listener2) listener2 = EMPTY_FN$2;
         let closer;
         if (opts.usePolling) {
           options2.interval = opts.enableBinaryInterval && isBinaryPath2(basename5) ? opts.binaryInterval : opts.interval;
-          closer = setFsWatchFileListener(path15, absolutePath, options2, {
+          closer = setFsWatchFileListener(path16, absolutePath, options2, {
             listener: listener2,
             rawEmitter: this.fsw._emitRaw
           });
         } else {
-          closer = setFsWatchListener(path15, absolutePath, options2, {
+          closer = setFsWatchListener(path16, absolutePath, options2, {
             listener: listener2,
             errHandler: this._boundHandleError,
             rawEmitter: this.fsw._emitRaw
@@ -102002,7 +102002,7 @@ ${e5.message}`);
         const parent = this.fsw._getWatchedDir(dirname7);
         let prevStats = stats;
         if (parent.has(basename5)) return;
-        const listener2 = async (path15, newStats) => {
+        const listener2 = async (path16, newStats) => {
           if (!this.fsw._throttle(THROTTLE_MODE_WATCH, file, 5)) return;
           if (!newStats || newStats.mtimeMs === 0) {
             try {
@@ -102014,9 +102014,9 @@ ${e5.message}`);
                 this.fsw._emit(EV_CHANGE$2, file, newStats2);
               }
               if (isLinux && prevStats.ino !== newStats2.ino) {
-                this.fsw._closeFile(path15);
+                this.fsw._closeFile(path16);
                 prevStats = newStats2;
-                this.fsw._addPathCloser(path15, this._watchWithNodeFs(file, listener2));
+                this.fsw._addPathCloser(path16, this._watchWithNodeFs(file, listener2));
               } else {
                 prevStats = newStats2;
               }
@@ -102047,7 +102047,7 @@ ${e5.message}`);
        * @param {String} item basename of this item
        * @returns {Promise<Boolean>} true if no more processing is needed for this entry.
        */
-      async _handleSymlink(entry, directory, path15, item) {
+      async _handleSymlink(entry, directory, path16, item) {
         if (this.fsw.closed) {
           return;
         }
@@ -102057,7 +102057,7 @@ ${e5.message}`);
           this.fsw._incrReadyCount();
           let linkPath;
           try {
-            linkPath = await fsrealpath(path15);
+            linkPath = await fsrealpath(path16);
           } catch (e5) {
             this.fsw._emitReady();
             return true;
@@ -102066,12 +102066,12 @@ ${e5.message}`);
           if (dir.has(item)) {
             if (this.fsw._symlinkPaths.get(full) !== linkPath) {
               this.fsw._symlinkPaths.set(full, linkPath);
-              this.fsw._emit(EV_CHANGE$2, path15, entry.stats);
+              this.fsw._emit(EV_CHANGE$2, path16, entry.stats);
             }
           } else {
             dir.add(item);
             this.fsw._symlinkPaths.set(full, linkPath);
-            this.fsw._emit(EV_ADD$2, path15, entry.stats);
+            this.fsw._emit(EV_ADD$2, path16, entry.stats);
           }
           this.fsw._emitReady();
           return true;
@@ -102099,9 +102099,9 @@ ${e5.message}`);
             return;
           }
           const item = entry.path;
-          let path15 = sysPath$2.join(directory, item);
+          let path16 = sysPath$2.join(directory, item);
           current.add(item);
-          if (entry.stats.isSymbolicLink() && await this._handleSymlink(entry, directory, path15, item)) {
+          if (entry.stats.isSymbolicLink() && await this._handleSymlink(entry, directory, path16, item)) {
             return;
           }
           if (this.fsw.closed) {
@@ -102110,18 +102110,18 @@ ${e5.message}`);
           }
           if (item === target || !target && !previous.has(item)) {
             this.fsw._incrReadyCount();
-            path15 = sysPath$2.join(dir, sysPath$2.relative(dir, path15));
-            this._addToNodeFs(path15, initialAdd, wh, depth + 1);
+            path16 = sysPath$2.join(dir, sysPath$2.relative(dir, path16));
+            this._addToNodeFs(path16, initialAdd, wh, depth + 1);
           }
         }).on(EV_ERROR$2, this._boundHandleError);
         return new Promise(
-          (resolve14) => stream3.once(STR_END$2, () => {
+          (resolve15) => stream3.once(STR_END$2, () => {
             if (this.fsw.closed) {
               stream3 = void 0;
               return;
             }
             const wasThrottled = throttler ? throttler.clear() : false;
-            resolve14();
+            resolve15();
             previous.getChildren().filter((item) => {
               return item !== directory && !current.has(item) && // in case of intersecting globs;
               // a path may have been filtered out of this readdir, but
@@ -102181,13 +102181,13 @@ ${e5.message}`);
        * @param {String=} target Child path actually targeted for watch
        * @returns {Promise}
        */
-      async _addToNodeFs(path15, initialAdd, priorWh, depth, target) {
+      async _addToNodeFs(path16, initialAdd, priorWh, depth, target) {
         const ready = this.fsw._emitReady;
-        if (this.fsw._isIgnored(path15) || this.fsw.closed) {
+        if (this.fsw._isIgnored(path16) || this.fsw.closed) {
           ready();
           return false;
         }
-        const wh = this.fsw._getWatchHelpers(path15, depth);
+        const wh = this.fsw._getWatchHelpers(path16, depth);
         if (!wh.hasGlob && priorWh) {
           wh.hasGlob = priorWh.hasGlob;
           wh.globFilter = priorWh.globFilter;
@@ -102201,11 +102201,11 @@ ${e5.message}`);
             ready();
             return false;
           }
-          const follow = this.fsw.options.followSymlinks && !path15.includes(STAR) && !path15.includes(BRACE_START$1);
+          const follow = this.fsw.options.followSymlinks && !path16.includes(STAR) && !path16.includes(BRACE_START$1);
           let closer;
           if (stats.isDirectory()) {
-            const absPath = sysPath$2.resolve(path15);
-            const targetPath = follow ? await fsrealpath(path15) : path15;
+            const absPath = sysPath$2.resolve(path16);
+            const targetPath = follow ? await fsrealpath(path16) : path16;
             if (this.fsw.closed) return;
             closer = await this._handleDir(wh.watchPath, stats, initialAdd, depth, target, wh, targetPath);
             if (this.fsw.closed) return;
@@ -102213,26 +102213,26 @@ ${e5.message}`);
               this.fsw._symlinkPaths.set(absPath, targetPath);
             }
           } else if (stats.isSymbolicLink()) {
-            const targetPath = follow ? await fsrealpath(path15) : path15;
+            const targetPath = follow ? await fsrealpath(path16) : path16;
             if (this.fsw.closed) return;
             const parent = sysPath$2.dirname(wh.watchPath);
             this.fsw._getWatchedDir(parent).add(wh.watchPath);
             this.fsw._emit(EV_ADD$2, wh.watchPath, stats);
-            closer = await this._handleDir(parent, stats, initialAdd, depth, path15, wh, targetPath);
+            closer = await this._handleDir(parent, stats, initialAdd, depth, path16, wh, targetPath);
             if (this.fsw.closed) return;
             if (targetPath !== void 0) {
-              this.fsw._symlinkPaths.set(sysPath$2.resolve(path15), targetPath);
+              this.fsw._symlinkPaths.set(sysPath$2.resolve(path16), targetPath);
             }
           } else {
             closer = this._handleFile(wh.watchPath, stats, initialAdd);
           }
           ready();
-          this.fsw._addPathCloser(path15, closer);
+          this.fsw._addPathCloser(path16, closer);
           return false;
         } catch (error3) {
           if (this.fsw._handleError(error3)) {
             ready();
-            return path15;
+            return path16;
           }
         }
       }
@@ -102301,14 +102301,14 @@ ${e5.message}`);
       131840,
       262912
     ]);
-    createFSEventsInstance = (path15, callback2) => {
-      const stop = fsevents.watch(path15, callback2);
+    createFSEventsInstance = (path16, callback2) => {
+      const stop = fsevents.watch(path16, callback2);
       return { stop };
     };
-    couldConsolidate = (path15) => {
+    couldConsolidate = (path16) => {
       let count = 0;
       for (const watchPath of FSEventsWatchers.keys()) {
-        if (watchPath.indexOf(path15) === 0) {
+        if (watchPath.indexOf(path16) === 0) {
           count++;
           if (count >= consolidateThreshhold) {
             return true;
@@ -102318,9 +102318,9 @@ ${e5.message}`);
       return false;
     };
     canUse = () => fsevents && FSEventsWatchers.size < 128;
-    calcDepth = (path15, root4) => {
+    calcDepth = (path16, root4) => {
       let i5 = 0;
-      while (!path15.indexOf(root4) && (path15 = sysPath$1.dirname(path15)) !== root4) i5++;
+      while (!path16.indexOf(root4) && (path16 = sysPath$1.dirname(path16)) !== root4) i5++;
       return i5;
     };
     sameTypes = (info, stats) => info.type === FSEVENT_TYPE_DIRECTORY && stats.isDirectory() || info.type === FSEVENT_TYPE_SYMLINK && stats.isSymbolicLink() || info.type === FSEVENT_TYPE_FILE && stats.isFile();
@@ -102331,41 +102331,41 @@ ${e5.message}`);
       constructor(fsw) {
         this.fsw = fsw;
       }
-      checkIgnored(path15, stats) {
+      checkIgnored(path16, stats) {
         const ipaths = this.fsw._ignoredPaths;
-        if (this.fsw._isIgnored(path15, stats)) {
-          ipaths.add(path15);
+        if (this.fsw._isIgnored(path16, stats)) {
+          ipaths.add(path16);
           if (stats && stats.isDirectory()) {
-            ipaths.add(path15 + ROOT_GLOBSTAR);
+            ipaths.add(path16 + ROOT_GLOBSTAR);
           }
           return true;
         }
-        ipaths.delete(path15);
-        ipaths.delete(path15 + ROOT_GLOBSTAR);
+        ipaths.delete(path16);
+        ipaths.delete(path16 + ROOT_GLOBSTAR);
       }
-      addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
+      addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
         const event = watchedDir.has(item) ? EV_CHANGE$1 : EV_ADD$1;
-        this.handleEvent(event, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+        this.handleEvent(event, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
       }
-      async checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
+      async checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
         try {
-          const stats = await stat$1(path15);
+          const stats = await stat$1(path16);
           if (this.fsw.closed) return;
           if (sameTypes(info, stats)) {
-            this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+            this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           } else {
-            this.handleEvent(EV_UNLINK$1, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+            this.handleEvent(EV_UNLINK$1, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           }
         } catch (error3) {
           if (error3.code === "EACCES") {
-            this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+            this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           } else {
-            this.handleEvent(EV_UNLINK$1, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+            this.handleEvent(EV_UNLINK$1, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
           }
         }
       }
-      handleEvent(event, path15, fullPath, realPath, parent, watchedDir, item, info, opts) {
-        if (this.fsw.closed || this.checkIgnored(path15)) return;
+      handleEvent(event, path16, fullPath, realPath, parent, watchedDir, item, info, opts) {
+        if (this.fsw.closed || this.checkIgnored(path16)) return;
         if (event === EV_UNLINK$1) {
           const isDirectory2 = info.type === FSEVENT_TYPE_DIRECTORY;
           if (isDirectory2 || watchedDir.has(item)) {
@@ -102373,16 +102373,16 @@ ${e5.message}`);
           }
         } else {
           if (event === EV_ADD$1) {
-            if (info.type === FSEVENT_TYPE_DIRECTORY) this.fsw._getWatchedDir(path15);
+            if (info.type === FSEVENT_TYPE_DIRECTORY) this.fsw._getWatchedDir(path16);
             if (info.type === FSEVENT_TYPE_SYMLINK && opts.followSymlinks) {
               const curDepth = opts.depth === void 0 ? void 0 : calcDepth(fullPath, realPath) + 1;
-              return this._addToFsEvents(path15, false, true, curDepth);
+              return this._addToFsEvents(path16, false, true, curDepth);
             }
             this.fsw._getWatchedDir(parent).add(item);
           }
           const eventName = info.type === FSEVENT_TYPE_DIRECTORY ? event + DIR_SUFFIX : event;
-          this.fsw._emit(eventName, path15);
-          if (eventName === EV_ADD_DIR$1) this._addToFsEvents(path15, false, true);
+          this.fsw._emit(eventName, path16);
+          if (eventName === EV_ADD_DIR$1) this._addToFsEvents(path16, false, true);
         }
       }
       /**
@@ -102399,41 +102399,41 @@ ${e5.message}`);
         const watchCallback = async (fullPath, flags, info) => {
           if (this.fsw.closed || this.fsw._isIgnored(fullPath)) return;
           if (opts.depth !== void 0 && calcDepth(fullPath, realPath) > opts.depth) return;
-          const path15 = transform4(sysPath$1.join(
+          const path16 = transform4(sysPath$1.join(
             watchPath,
             sysPath$1.relative(watchPath, fullPath)
           ));
-          if (globFilter && !globFilter(path15)) return;
-          const parent = sysPath$1.dirname(path15);
-          const item = sysPath$1.basename(path15);
+          if (globFilter && !globFilter(path16)) return;
+          const parent = sysPath$1.dirname(path16);
+          const item = sysPath$1.basename(path16);
           const watchedDir = this.fsw._getWatchedDir(
-            info.type === FSEVENT_TYPE_DIRECTORY ? path15 : parent
+            info.type === FSEVENT_TYPE_DIRECTORY ? path16 : parent
           );
           if (wrongEventFlags.has(flags) || info.event === FSEVENT_UNKNOWN) {
             if (typeof opts.ignored === FUNCTION_TYPE$1) {
               let stats;
               try {
-                stats = await stat$1(path15);
+                stats = await stat$1(path16);
               } catch (error3) {
               }
               if (this.fsw.closed) return;
-              if (this.checkIgnored(path15, stats)) return;
+              if (this.checkIgnored(path16, stats)) return;
               if (sameTypes(info, stats)) {
-                this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+                this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
               } else {
-                this.handleEvent(EV_UNLINK$1, path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+                this.handleEvent(EV_UNLINK$1, path16, fullPath, realPath, parent, watchedDir, item, info, opts);
               }
             } else {
-              this.checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+              this.checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
             }
           } else {
             switch (info.event) {
               case FSEVENT_CREATED:
               case FSEVENT_MODIFIED:
-                return this.addOrChange(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+                return this.addOrChange(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
               case FSEVENT_DELETED:
               case FSEVENT_MOVED:
-                return this.checkExists(path15, fullPath, realPath, parent, watchedDir, item, info, opts);
+                return this.checkExists(path16, fullPath, realPath, parent, watchedDir, item, info, opts);
             }
           }
         };
@@ -102465,12 +102465,12 @@ ${e5.message}`);
             return this.fsw._emitReady();
           }
           this.fsw._incrReadyCount();
-          this._addToFsEvents(linkTarget || linkPath, (path15) => {
+          this._addToFsEvents(linkTarget || linkPath, (path16) => {
             let aliasedPath = linkPath;
             if (linkTarget && linkTarget !== DOT_SLASH) {
-              aliasedPath = path15.replace(linkTarget, linkPath);
-            } else if (path15 !== DOT_SLASH) {
-              aliasedPath = sysPath$1.join(linkPath, path15);
+              aliasedPath = path16.replace(linkTarget, linkPath);
+            } else if (path16 !== DOT_SLASH) {
+              aliasedPath = sysPath$1.join(linkPath, path16);
             }
             return transform4(aliasedPath);
           }, false, curDepth);
@@ -102497,7 +102497,7 @@ ${e5.message}`);
           this.fsw._emit(isDir ? EV_ADD_DIR$1 : EV_ADD$1, pp, stats);
         }
       }
-      initWatch(realPath, path15, wh, processPath) {
+      initWatch(realPath, path16, wh, processPath) {
         if (this.fsw.closed) return;
         const closer = this._watchWithFsEvents(
           wh.watchPath,
@@ -102505,7 +102505,7 @@ ${e5.message}`);
           processPath,
           wh.globFilter
         );
-        this.fsw._addPathCloser(path15, closer);
+        this.fsw._addPathCloser(path16, closer);
       }
       /**
        * Handle added path with fsevents
@@ -102515,13 +102515,13 @@ ${e5.message}`);
        * @param {Number=} priorDepth Level of subdirectories already traversed.
        * @returns {Promise<void>}
        */
-      async _addToFsEvents(path15, transform4, forceAdd, priorDepth) {
+      async _addToFsEvents(path16, transform4, forceAdd, priorDepth) {
         if (this.fsw.closed) {
           return;
         }
         const opts = this.fsw.options;
         const processPath = typeof transform4 === FUNCTION_TYPE$1 ? transform4 : IDENTITY_FN;
-        const wh = this.fsw._getWatchHelpers(path15);
+        const wh = this.fsw._getWatchHelpers(path16);
         try {
           const stats = await statMethods[wh.statMethod](wh.watchPath);
           if (this.fsw.closed) return;
@@ -102529,7 +102529,7 @@ ${e5.message}`);
             throw null;
           }
           if (stats.isDirectory()) {
-            if (!wh.globFilter) this.emitAdd(processPath(path15), stats, processPath, opts, forceAdd);
+            if (!wh.globFilter) this.emitAdd(processPath(path16), stats, processPath, opts, forceAdd);
             if (priorDepth && priorDepth > opts.depth) return;
             this.fsw._readdirp(wh.watchPath, {
               fileFilter: (entry) => wh.filterPath(entry),
@@ -102563,14 +102563,14 @@ ${e5.message}`);
         }
         if (opts.persistent && forceAdd !== true) {
           if (typeof transform4 === FUNCTION_TYPE$1) {
-            this.initWatch(void 0, path15, wh, processPath);
+            this.initWatch(void 0, path16, wh, processPath);
           } else {
             let realPath;
             try {
               realPath = await realpath2(wh.watchPath);
             } catch (e5) {
             }
-            this.initWatch(realPath, path15, wh, processPath);
+            this.initWatch(realPath, path16, wh, processPath);
           }
         }
       }
@@ -102658,19 +102658,19 @@ ${e5.message}`);
       }
       return str2;
     };
-    normalizePathToUnix = (path15) => toUnix(sysPath.normalize(toUnix(path15)));
-    normalizeIgnored = (cwd2 = EMPTY_STR) => (path15) => {
-      if (typeof path15 !== STRING_TYPE) return path15;
-      return normalizePathToUnix(sysPath.isAbsolute(path15) ? path15 : sysPath.join(cwd2, path15));
+    normalizePathToUnix = (path16) => toUnix(sysPath.normalize(toUnix(path16)));
+    normalizeIgnored = (cwd2 = EMPTY_STR) => (path16) => {
+      if (typeof path16 !== STRING_TYPE) return path16;
+      return normalizePathToUnix(sysPath.isAbsolute(path16) ? path16 : sysPath.join(cwd2, path16));
     };
-    getAbsolutePath = (path15, cwd2) => {
-      if (sysPath.isAbsolute(path15)) {
-        return path15;
+    getAbsolutePath = (path16, cwd2) => {
+      if (sysPath.isAbsolute(path16)) {
+        return path16;
       }
-      if (path15.startsWith(BANG)) {
-        return BANG + sysPath.join(cwd2, path15.slice(1));
+      if (path16.startsWith(BANG)) {
+        return BANG + sysPath.join(cwd2, path16.slice(1));
       }
-      return sysPath.join(cwd2, path15);
+      return sysPath.join(cwd2, path16);
     };
     undef = (opts, key) => opts[key] === void 0;
     DirEntry = class {
@@ -102726,16 +102726,16 @@ ${e5.message}`);
     STAT_METHOD_F = "stat";
     STAT_METHOD_L = "lstat";
     WatchHelper = class {
-      constructor(path15, watchPath, follow, fsw) {
+      constructor(path16, watchPath, follow, fsw) {
         this.fsw = fsw;
-        this.path = path15 = path15.replace(REPLACER_RE, EMPTY_STR);
+        this.path = path16 = path16.replace(REPLACER_RE, EMPTY_STR);
         this.watchPath = watchPath;
         this.fullWatchPath = sysPath.resolve(watchPath);
-        this.hasGlob = watchPath !== path15;
-        if (path15 === EMPTY_STR) this.hasGlob = false;
+        this.hasGlob = watchPath !== path16;
+        if (path16 === EMPTY_STR) this.hasGlob = false;
         this.globSymlink = this.hasGlob && follow ? void 0 : false;
-        this.globFilter = this.hasGlob ? anymatch2(path15, void 0, ANYMATCH_OPTS) : false;
-        this.dirParts = this.getDirParts(path15);
+        this.globFilter = this.hasGlob ? anymatch2(path16, void 0, ANYMATCH_OPTS) : false;
+        this.dirParts = this.getDirParts(path16);
         this.dirParts.forEach((parts) => {
           if (parts.length > 1) parts.pop();
         });
@@ -102761,15 +102761,15 @@ ${e5.message}`);
         const { stats } = entry;
         if (stats && stats.isSymbolicLink()) return this.filterDir(entry);
         const resolvedPath = this.entryPath(entry);
-        const matchesGlob = this.hasGlob && typeof this.globFilter === FUNCTION_TYPE ? this.globFilter(resolvedPath) : true;
-        return matchesGlob && this.fsw._isntIgnored(resolvedPath, stats) && this.fsw._hasReadPermissions(stats);
+        const matchesGlob2 = this.hasGlob && typeof this.globFilter === FUNCTION_TYPE ? this.globFilter(resolvedPath) : true;
+        return matchesGlob2 && this.fsw._isntIgnored(resolvedPath, stats) && this.fsw._hasReadPermissions(stats);
       }
-      getDirParts(path15) {
+      getDirParts(path16) {
         if (!this.hasGlob) return [];
         const parts = [];
-        const expandedPath = path15.includes(BRACE_START) ? braces.expand(path15) : [path15];
-        expandedPath.forEach((path16) => {
-          parts.push(sysPath.relative(this.watchPath, path16).split(SLASH_OR_BACK_SLASH_RE));
+        const expandedPath = path16.includes(BRACE_START) ? braces.expand(path16) : [path16];
+        expandedPath.forEach((path17) => {
+          parts.push(sysPath.relative(this.watchPath, path17).split(SLASH_OR_BACK_SLASH_RE));
         });
         return parts;
       }
@@ -102875,34 +102875,34 @@ ${e5.message}`);
         this.closed = false;
         let paths = unifyPaths(paths_);
         if (cwd2) {
-          paths = paths.map((path15) => {
-            const absPath = getAbsolutePath(path15, cwd2);
-            if (disableGlobbing || !isGlob3(path15)) {
+          paths = paths.map((path16) => {
+            const absPath = getAbsolutePath(path16, cwd2);
+            if (disableGlobbing || !isGlob3(path16)) {
               return absPath;
             }
             return normalizePath6(absPath);
           });
         }
-        paths = paths.filter((path15) => {
-          if (path15.startsWith(BANG)) {
-            this._ignoredPaths.add(path15.slice(1));
+        paths = paths.filter((path16) => {
+          if (path16.startsWith(BANG)) {
+            this._ignoredPaths.add(path16.slice(1));
             return false;
           }
-          this._ignoredPaths.delete(path15);
-          this._ignoredPaths.delete(path15 + SLASH_GLOBSTAR);
+          this._ignoredPaths.delete(path16);
+          this._ignoredPaths.delete(path16 + SLASH_GLOBSTAR);
           this._userIgnored = void 0;
           return true;
         });
         if (this.options.useFsEvents && this._fsEventsHandler) {
           if (!this._readyCount) this._readyCount = paths.length;
           if (this.options.persistent) this._readyCount += paths.length;
-          paths.forEach((path15) => this._fsEventsHandler._addToFsEvents(path15));
+          paths.forEach((path16) => this._fsEventsHandler._addToFsEvents(path16));
         } else {
           if (!this._readyCount) this._readyCount = 0;
           this._readyCount += paths.length;
           Promise.all(
-            paths.map(async (path15) => {
-              const res = await this._nodeFsHandler._addToNodeFs(path15, !_internal, 0, 0, _origAdd);
+            paths.map(async (path16) => {
+              const res = await this._nodeFsHandler._addToNodeFs(path16, !_internal, 0, 0, _origAdd);
               if (res) this._emitReady();
               return res;
             })
@@ -102924,15 +102924,15 @@ ${e5.message}`);
         if (this.closed) return this;
         const paths = unifyPaths(paths_);
         const { cwd: cwd2 } = this.options;
-        paths.forEach((path15) => {
-          if (!sysPath.isAbsolute(path15) && !this._closers.has(path15)) {
-            if (cwd2) path15 = sysPath.join(cwd2, path15);
-            path15 = sysPath.resolve(path15);
+        paths.forEach((path16) => {
+          if (!sysPath.isAbsolute(path16) && !this._closers.has(path16)) {
+            if (cwd2) path16 = sysPath.join(cwd2, path16);
+            path16 = sysPath.resolve(path16);
           }
-          this._closePath(path15);
-          this._ignoredPaths.add(path15);
-          if (this._watched.has(path15)) {
-            this._ignoredPaths.add(path15 + SLASH_GLOBSTAR);
+          this._closePath(path16);
+          this._ignoredPaths.add(path16);
+          if (this._watched.has(path16)) {
+            this._ignoredPaths.add(path16 + SLASH_GLOBSTAR);
           }
           this._userIgnored = void 0;
         });
@@ -102990,36 +102990,36 @@ ${e5.message}`);
        * @param {*=} val3
        * @returns the error if defined, otherwise the value of the FSWatcher instance's `closed` flag
        */
-      async _emit(event, path15, val1, val2, val3) {
+      async _emit(event, path16, val1, val2, val3) {
         if (this.closed) return;
         const opts = this.options;
-        if (isWindows$1) path15 = sysPath.normalize(path15);
-        if (opts.cwd) path15 = sysPath.relative(opts.cwd, path15);
-        const args2 = [event, path15];
+        if (isWindows$1) path16 = sysPath.normalize(path16);
+        if (opts.cwd) path16 = sysPath.relative(opts.cwd, path16);
+        const args2 = [event, path16];
         if (val3 !== void 0) args2.push(val1, val2, val3);
         else if (val2 !== void 0) args2.push(val1, val2);
         else if (val1 !== void 0) args2.push(val1);
         const awf = opts.awaitWriteFinish;
         let pw;
-        if (awf && (pw = this._pendingWrites.get(path15))) {
+        if (awf && (pw = this._pendingWrites.get(path16))) {
           pw.lastChange = /* @__PURE__ */ new Date();
           return this;
         }
         if (opts.atomic) {
           if (event === EV_UNLINK) {
-            this._pendingUnlinks.set(path15, args2);
+            this._pendingUnlinks.set(path16, args2);
             setTimeout(() => {
-              this._pendingUnlinks.forEach((entry, path16) => {
+              this._pendingUnlinks.forEach((entry, path17) => {
                 this.emit(...entry);
                 this.emit(EV_ALL, ...entry);
-                this._pendingUnlinks.delete(path16);
+                this._pendingUnlinks.delete(path17);
               });
             }, typeof opts.atomic === "number" ? opts.atomic : 100);
             return this;
           }
-          if (event === EV_ADD && this._pendingUnlinks.has(path15)) {
+          if (event === EV_ADD && this._pendingUnlinks.has(path16)) {
             event = args2[0] = EV_CHANGE;
-            this._pendingUnlinks.delete(path15);
+            this._pendingUnlinks.delete(path16);
           }
         }
         if (awf && (event === EV_ADD || event === EV_CHANGE) && this._readyEmitted) {
@@ -103037,15 +103037,15 @@ ${e5.message}`);
               this.emitWithAll(event, args2);
             }
           };
-          this._awaitWriteFinish(path15, awf.stabilityThreshold, event, awfEmit);
+          this._awaitWriteFinish(path16, awf.stabilityThreshold, event, awfEmit);
           return this;
         }
         if (event === EV_CHANGE) {
-          const isThrottled = !this._throttle(EV_CHANGE, path15, 50);
+          const isThrottled = !this._throttle(EV_CHANGE, path16, 50);
           if (isThrottled) return this;
         }
         if (opts.alwaysStat && val1 === void 0 && (event === EV_ADD || event === EV_ADD_DIR || event === EV_CHANGE)) {
-          const fullPath = opts.cwd ? sysPath.join(opts.cwd, path15) : path15;
+          const fullPath = opts.cwd ? sysPath.join(opts.cwd, path16) : path16;
           let stats;
           try {
             stats = await stat2(fullPath);
@@ -103076,28 +103076,28 @@ ${e5.message}`);
        * @param {Number} timeout duration of time to suppress duplicate actions
        * @returns {Object|false} tracking object or false if action should be suppressed
        */
-      _throttle(actionType, path15, timeout2) {
+      _throttle(actionType, path16, timeout2) {
         if (!this._throttled.has(actionType)) {
           this._throttled.set(actionType, /* @__PURE__ */ new Map());
         }
         const action = this._throttled.get(actionType);
-        const actionPath = action.get(path15);
+        const actionPath = action.get(path16);
         if (actionPath) {
           actionPath.count++;
           return false;
         }
         let timeoutObject;
         const clear = () => {
-          const item = action.get(path15);
+          const item = action.get(path16);
           const count = item ? item.count : 0;
-          action.delete(path15);
+          action.delete(path16);
           clearTimeout(timeoutObject);
           if (item) clearTimeout(item.timeoutObject);
           return count;
         };
         timeoutObject = setTimeout(clear, timeout2);
         const thr = { timeoutObject, clear, count: 0 };
-        action.set(path15, thr);
+        action.set(path16, thr);
         return thr;
       }
       _incrReadyCount() {
@@ -103111,27 +103111,27 @@ ${e5.message}`);
        * @param {EventName} event
        * @param {Function} awfEmit Callback to be called when ready for event to be emitted.
        */
-      _awaitWriteFinish(path15, threshold, event, awfEmit) {
+      _awaitWriteFinish(path16, threshold, event, awfEmit) {
         let timeoutHandler;
-        let fullPath = path15;
-        if (this.options.cwd && !sysPath.isAbsolute(path15)) {
-          fullPath = sysPath.join(this.options.cwd, path15);
+        let fullPath = path16;
+        if (this.options.cwd && !sysPath.isAbsolute(path16)) {
+          fullPath = sysPath.join(this.options.cwd, path16);
         }
         const now = /* @__PURE__ */ new Date();
         const awaitWriteFinish = (prevStat) => {
           fs$2.stat(fullPath, (err2, curStat) => {
-            if (err2 || !this._pendingWrites.has(path15)) {
+            if (err2 || !this._pendingWrites.has(path16)) {
               if (err2 && err2.code !== "ENOENT") awfEmit(err2);
               return;
             }
             const now2 = Number(/* @__PURE__ */ new Date());
             if (prevStat && curStat.size !== prevStat.size) {
-              this._pendingWrites.get(path15).lastChange = now2;
+              this._pendingWrites.get(path16).lastChange = now2;
             }
-            const pw = this._pendingWrites.get(path15);
+            const pw = this._pendingWrites.get(path16);
             const df = now2 - pw.lastChange;
             if (df >= threshold) {
-              this._pendingWrites.delete(path15);
+              this._pendingWrites.delete(path16);
               awfEmit(void 0, curStat);
             } else {
               timeoutHandler = setTimeout(
@@ -103142,11 +103142,11 @@ ${e5.message}`);
             }
           });
         };
-        if (!this._pendingWrites.has(path15)) {
-          this._pendingWrites.set(path15, {
+        if (!this._pendingWrites.has(path16)) {
+          this._pendingWrites.set(path16, {
             lastChange: now,
             cancelWait: () => {
-              this._pendingWrites.delete(path15);
+              this._pendingWrites.delete(path16);
               clearTimeout(timeoutHandler);
               return event;
             }
@@ -103166,20 +103166,20 @@ ${e5.message}`);
        * @param {fs.Stats=} stats result of fs.stat
        * @returns {Boolean}
        */
-      _isIgnored(path15, stats) {
-        if (this.options.atomic && DOT_RE.test(path15)) return true;
+      _isIgnored(path16, stats) {
+        if (this.options.atomic && DOT_RE.test(path16)) return true;
         if (!this._userIgnored) {
           const { cwd: cwd2 } = this.options;
           const ign = this.options.ignored;
           const ignored = ign && ign.map(normalizeIgnored(cwd2));
-          const paths = arrify(ignored).filter((path16) => typeof path16 === STRING_TYPE && !isGlob3(path16)).map((path16) => path16 + SLASH_GLOBSTAR);
+          const paths = arrify(ignored).filter((path17) => typeof path17 === STRING_TYPE && !isGlob3(path17)).map((path17) => path17 + SLASH_GLOBSTAR);
           const list2 = this._getGlobIgnored().map(normalizeIgnored(cwd2)).concat(ignored, paths);
           this._userIgnored = anymatch2(list2, void 0, ANYMATCH_OPTS);
         }
-        return this._userIgnored([path15, stats]);
+        return this._userIgnored([path16, stats]);
       }
-      _isntIgnored(path15, stat3) {
-        return !this._isIgnored(path15, stat3);
+      _isntIgnored(path16, stat3) {
+        return !this._isIgnored(path16, stat3);
       }
       /**
        * Provides a set of common helpers and properties relating to symlink and glob handling.
@@ -103187,10 +103187,10 @@ ${e5.message}`);
        * @param {Number=} depth at any depth > 0, this isn't a glob
        * @returns {WatchHelper} object containing helpers for this path
        */
-      _getWatchHelpers(path15, depth) {
-        const watchPath = depth || this.options.disableGlobbing || !isGlob3(path15) ? path15 : globParent3(path15);
+      _getWatchHelpers(path16, depth) {
+        const watchPath = depth || this.options.disableGlobbing || !isGlob3(path16) ? path16 : globParent3(path16);
         const follow = this.options.followSymlinks;
-        return new WatchHelper(path15, watchPath, follow, this);
+        return new WatchHelper(path16, watchPath, follow, this);
       }
       // Directory helpers
       // -----------------
@@ -103229,66 +103229,66 @@ ${e5.message}`);
        * @returns {void}
       */
       _remove(directory, item, isDirectory2) {
-        const path15 = sysPath.join(directory, item);
-        const fullPath = sysPath.resolve(path15);
-        isDirectory2 = isDirectory2 != null ? isDirectory2 : this._watched.has(path15) || this._watched.has(fullPath);
-        if (!this._throttle("remove", path15, 100)) return;
+        const path16 = sysPath.join(directory, item);
+        const fullPath = sysPath.resolve(path16);
+        isDirectory2 = isDirectory2 != null ? isDirectory2 : this._watched.has(path16) || this._watched.has(fullPath);
+        if (!this._throttle("remove", path16, 100)) return;
         if (!isDirectory2 && !this.options.useFsEvents && this._watched.size === 1) {
           this.add(directory, item, true);
         }
-        const wp = this._getWatchedDir(path15);
+        const wp = this._getWatchedDir(path16);
         const nestedDirectoryChildren = wp.getChildren();
-        nestedDirectoryChildren.forEach((nested) => this._remove(path15, nested));
+        nestedDirectoryChildren.forEach((nested) => this._remove(path16, nested));
         const parent = this._getWatchedDir(directory);
         const wasTracked = parent.has(item);
         parent.remove(item);
         if (this._symlinkPaths.has(fullPath)) {
           this._symlinkPaths.delete(fullPath);
         }
-        let relPath = path15;
-        if (this.options.cwd) relPath = sysPath.relative(this.options.cwd, path15);
+        let relPath = path16;
+        if (this.options.cwd) relPath = sysPath.relative(this.options.cwd, path16);
         if (this.options.awaitWriteFinish && this._pendingWrites.has(relPath)) {
           const event = this._pendingWrites.get(relPath).cancelWait();
           if (event === EV_ADD) return;
         }
-        this._watched.delete(path15);
+        this._watched.delete(path16);
         this._watched.delete(fullPath);
         const eventName = isDirectory2 ? EV_UNLINK_DIR : EV_UNLINK;
-        if (wasTracked && !this._isIgnored(path15)) this._emit(eventName, path15);
+        if (wasTracked && !this._isIgnored(path16)) this._emit(eventName, path16);
         if (!this.options.useFsEvents) {
-          this._closePath(path15);
+          this._closePath(path16);
         }
       }
       /**
        * Closes all watchers for a path
        * @param {Path} path
        */
-      _closePath(path15) {
-        this._closeFile(path15);
-        const dir = sysPath.dirname(path15);
-        this._getWatchedDir(dir).remove(sysPath.basename(path15));
+      _closePath(path16) {
+        this._closeFile(path16);
+        const dir = sysPath.dirname(path16);
+        this._getWatchedDir(dir).remove(sysPath.basename(path16));
       }
       /**
        * Closes only file-specific watchers
        * @param {Path} path
        */
-      _closeFile(path15) {
-        const closers = this._closers.get(path15);
+      _closeFile(path16) {
+        const closers = this._closers.get(path16);
         if (!closers) return;
         closers.forEach((closer) => closer());
-        this._closers.delete(path15);
+        this._closers.delete(path16);
       }
       /**
        *
        * @param {Path} path
        * @param {Function} closer
        */
-      _addPathCloser(path15, closer) {
+      _addPathCloser(path16, closer) {
         if (!closer) return;
-        let list2 = this._closers.get(path15);
+        let list2 = this._closers.get(path16);
         if (!list2) {
           list2 = [];
-          this._closers.set(path15, list2);
+          this._closers.set(path16, list2);
         }
         list2.push(closer);
       }
@@ -104085,14 +104085,14 @@ ${e5.message}`);
       }
       const subprocess = childProcess$2.spawn(command, cliArguments, childProcessOptions);
       if (options2.wait) {
-        return new Promise((resolve14, reject) => {
+        return new Promise((resolve15, reject) => {
           subprocess.once("error", reject);
           subprocess.once("close", (exitCode) => {
             if (!options2.allowNonzeroExitCode && exitCode > 0) {
               reject(new Error(`Exited with code ${exitCode}`));
               return;
             }
-            resolve14(subprocess);
+            resolve15(subprocess);
           });
         });
       }
@@ -104177,27 +104177,27 @@ ${e5.message}`);
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found3 = [];
-      const step = (i5) => new Promise((resolve14, reject) => {
+      const step = (i5) => new Promise((resolve15, reject) => {
         if (i5 === pathEnv.length)
-          return opt.all && found3.length ? resolve14(found3) : reject(getNotFoundError(cmd));
+          return opt.all && found3.length ? resolve15(found3) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i5];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path$22.join(pathPart, cmd);
         const p5 = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve14(subStep(p5, i5, 0));
+        resolve15(subStep(p5, i5, 0));
       });
-      const subStep = (p5, i5, ii) => new Promise((resolve14, reject) => {
+      const subStep = (p5, i5, ii) => new Promise((resolve15, reject) => {
         if (ii === pathExt.length)
-          return resolve14(step(i5 + 1));
+          return resolve15(step(i5 + 1));
         const ext = pathExt[ii];
         isexe(p5 + ext, { pathExt: pathExtExe }, (er3, is) => {
           if (!er3 && is) {
             if (opt.all)
               found3.push(p5 + ext);
             else
-              return resolve14(p5 + ext);
+              return resolve15(p5 + ext);
           }
-          return resolve14(subStep(p5, i5, ii + 1));
+          return resolve15(subStep(p5, i5, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -104260,8 +104260,8 @@ ${e5.message}`);
       if (!match) {
         return null;
       }
-      const [path15, argument] = match[0].replace(/#! ?/, "").split(" ");
-      const binary = path15.split("/").pop();
+      const [path16, argument] = match[0].replace(/#! ?/, "").split(" ");
+      const binary = path16.split("/").pop();
       if (binary === "env") {
         return argument;
       }
@@ -109304,8 +109304,8 @@ ${e5.message}`);
     dynamicImportHelperId = "\0vite/dynamic-import-helper.js";
     relativePathRE = /^\.{1,2}\//;
     hasDynamicImportRE = /\bimport\s*[(/]/;
-    dynamicImportHelper = (glob2, path15, segs) => {
-      const v = glob2[path15];
+    dynamicImportHelper = (glob2, path16, segs) => {
+      const v = glob2[path16];
       if (v) {
         return typeof v === "function" ? v() : Promise.resolve(v);
       }
@@ -109314,7 +109314,7 @@ ${e5.message}`);
           reject.bind(
             null,
             new Error(
-              "Unknown variable dynamic import: " + path15 + (path15.split("/").length !== segs ? ". Note that variables only represent file names one level deep." : "")
+              "Unknown variable dynamic import: " + path16 + (path16.split("/").length !== segs ? ". Note that variables only represent file names one level deep." : "")
             )
           )
         );
@@ -110219,12 +110219,12 @@ ${err22.stack || err22.message}
               sourceMapRoot: path22.dirname(options2.filename)
             } : {}
           };
-          return new Promise((resolve14, reject) => {
+          return new Promise((resolve15, reject) => {
             sass.render(finalOptions, (err2, res) => {
               if (err2) {
                 reject(err2);
               } else {
-                resolve14({
+                resolve15({
                   css: res.css.toString(),
                   map: res.map?.toString(),
                   stats: res.stats
@@ -111398,9 +111398,9 @@ ${err22.stack || err22.message}
         });
         this.hot.on(
           "vite:invalidate",
-          async ({ path: path15, message, firstInvalidatedBy }) => {
+          async ({ path: path16, message, firstInvalidatedBy }) => {
             invalidateModule(this, {
-              path: path15,
+              path: path16,
               message,
               firstInvalidatedBy
             });
@@ -111866,6 +111866,9 @@ var init_node2 = __esm({
     };
   }
 });
+
+// src/runner.ts
+import * as path15 from "node:path";
 
 // src/commands/create.ts
 import * as fs from "node:fs";
@@ -112368,10 +112371,10 @@ async function runDevCommand(options2 = {}) {
     }
   });
   const listenHost = options2.host ? typeof options2.host === "string" ? options2.host : "0.0.0.0" : "127.0.0.1";
-  return new Promise((resolve14) => {
+  return new Promise((resolve15) => {
     server.listen(port, listenHost, () => {
       console.log(banner);
-      resolve14({
+      resolve15({
         success: true,
         message: banner,
         exitCode: 0,
@@ -112379,7 +112382,7 @@ async function runDevCommand(options2 = {}) {
       });
     });
     server.on("error", (err2) => {
-      resolve14({
+      resolve15({
         success: false,
         message: `[Samrey Dev Error] ${err2.message}`,
         exitCode: 1
@@ -112399,7 +112402,7 @@ import * as fs6 from "node:fs";
 import * as path8 from "node:path";
 import { createRequire as createRequire4 } from "node:module";
 function execProcess(command, args2, options2) {
-  return new Promise((resolve14) => {
+  return new Promise((resolve15) => {
     let stdout = "";
     let stderr2 = "";
     const env3 = { ...process.env, ...options2.env };
@@ -112426,10 +112429,10 @@ function execProcess(command, args2, options2) {
     });
     child.on("error", (err2) => {
       stderr2 += err2.message;
-      resolve14({ exitCode: 1, stdout, stderr: stderr2 });
+      resolve15({ exitCode: 1, stdout, stderr: stderr2 });
     });
     child.on("close", (code) => {
-      resolve14({ exitCode: code ?? 0, stdout, stderr: stderr2 });
+      resolve15({ exitCode: code ?? 0, stdout, stderr: stderr2 });
     });
   });
 }
@@ -112747,26 +112750,68 @@ function auditSource(source, filename = "Component.tsx") {
 
 // src/commands/audit.ts
 var AUDIT_FILE_REGEX = /\.(ts|tsx|js|jsx|samrey|html)$/;
-var IGNORE_DIRS2 = /* @__PURE__ */ new Set(["node_modules", "dist", ".git", "coverage", ".cache"]);
-function findAuditFiles(dir, baseDir = dir) {
+var DEFAULT_IGNORE_DIRS = /* @__PURE__ */ new Set([
+  "node_modules",
+  "dist",
+  "bin",
+  ".git",
+  "coverage",
+  ".cache",
+  "test",
+  "tests",
+  "fixtures"
+]);
+function isTestOrMinFile(filename) {
+  if (filename.endsWith(".min.js")) return true;
+  if (/\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename)) return true;
+  return false;
+}
+function matchesGlob(relPath, globPattern) {
+  const normalized = relPath.replace(/\\/g, "/");
+  const pattern = globPattern.replace(/\\/g, "/");
+  const escaped2 = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, ".*").replace(/(?<!\.)\*/g, "[^/]*");
+  return new RegExp(`(^|/)${escaped2}($|/)`).test(normalized) || new RegExp(`^${escaped2}$`).test(normalized);
+}
+function findAuditFiles(dir, baseDir = dir, userIgnores = []) {
   if (!fs10.existsSync(dir)) return [];
   const entries = fs10.readdirSync(dir, { withFileTypes: true });
   const results = [];
   for (const entry of entries) {
-    if (IGNORE_DIRS2.has(entry.name)) continue;
+    if (DEFAULT_IGNORE_DIRS.has(entry.name)) continue;
     const fullPath = path12.join(dir, entry.name);
+    const relFromBase = path12.relative(baseDir, fullPath).replace(/\\/g, "/");
+    if (userIgnores.some((ig) => matchesGlob(relFromBase, ig))) continue;
     if (entry.isDirectory()) {
-      results.push(...findAuditFiles(fullPath, baseDir));
+      results.push(...findAuditFiles(fullPath, baseDir, userIgnores));
     } else if (entry.isFile() && AUDIT_FILE_REGEX.test(entry.name)) {
-      results.push(path12.relative(baseDir, fullPath).replace(/\\/g, "/"));
+      if (isTestOrMinFile(entry.name)) continue;
+      results.push(relFromBase);
     }
   }
   return results;
 }
 async function runAuditCommand(options2 = {}) {
   const projectRoot = options2.cwd || process.cwd();
+  const userIgnores = options2.ignore || [];
   const explicitFiles = options2.files && options2.files.length > 0 ? options2.files : null;
-  const discoveredFiles = explicitFiles || findAuditFiles(projectRoot);
+  const discoveredFiles = explicitFiles ? explicitFiles.filter((f3) => !userIgnores.some((ig) => matchesGlob(f3, ig))) : findAuditFiles(projectRoot, projectRoot, userIgnores);
+  if (discoveredFiles.length === 0) {
+    const warningMsg = "  \u26A0 Warning: 0 files scanned for audit.";
+    const strictFail = Boolean(options2.strict);
+    return {
+      success: !strictFail,
+      message: [
+        warningMsg,
+        strictFail ? "  \u2716 Audit failed: --strict requires at least one file to be scanned." : "  \u2713 Audit completed with 0 files scanned."
+      ].join("\n"),
+      exitCode: strictFail ? 1 : 0,
+      data: {
+        filesScanned: 0,
+        violationsCount: 0,
+        messages: [warningMsg]
+      }
+    };
+  }
   let totalViolations = 0;
   const allMessages = [];
   for (const relFile of discoveredFiles) {
@@ -113207,7 +113252,23 @@ async function runCLI(args2, cliOptions = {}) {
       const strict = args2.includes("--strict");
       const warnOnly = args2.includes("--warn-only");
       const fix = args2.includes("--fix");
-      return runAuditCommand({ cwd: cwd2, strict, warnOnly, fix });
+      const ignore = [];
+      for (let i5 = 1; i5 < args2.length; i5++) {
+        if (args2[i5] === "--ignore" && args2[i5 + 1]) {
+          ignore.push(args2[i5 + 1]);
+          i5++;
+        }
+      }
+      let auditCwd = cwd2;
+      for (let i5 = 1; i5 < args2.length; i5++) {
+        if (args2[i5].startsWith("-")) {
+          if (args2[i5] === "--ignore") i5++;
+        } else {
+          auditCwd = path15.resolve(cwd2, args2[i5]);
+          break;
+        }
+      }
+      return runAuditCommand({ cwd: auditCwd, strict, warnOnly, fix, ignore });
     }
     case "analyze": {
       const json = args2.includes("--json");

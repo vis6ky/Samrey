@@ -3,6 +3,7 @@
  * @samrey/cli - CLI Command Line Dispatcher & Runner
  */
 
+import * as path from 'node:path';
 import { runCreateCommand } from './commands/create.js';
 import { runDevCommand } from './commands/dev.js';
 import { runBuildCommand } from './commands/build.js';
@@ -144,7 +145,26 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
       const strict = args.includes('--strict');
       const warnOnly = args.includes('--warn-only');
       const fix = args.includes('--fix');
-      return runAuditCommand({ cwd, strict, warnOnly, fix });
+
+      const ignore: string[] = [];
+      for (let i = 1; i < args.length; i++) {
+        if (args[i] === '--ignore' && args[i + 1]) {
+          ignore.push(args[i + 1]!);
+          i++;
+        }
+      }
+
+      let auditCwd = cwd;
+      for (let i = 1; i < args.length; i++) {
+        if (args[i].startsWith('-')) {
+          if (args[i] === '--ignore') i++;
+        } else {
+          auditCwd = path.resolve(cwd, args[i]);
+          break;
+        }
+      }
+
+      return runAuditCommand({ cwd: auditCwd, strict, warnOnly, fix, ignore });
     }
 
     case 'analyze': {

@@ -21,10 +21,55 @@ export const SamreyDevToolsBridge = DevToolsBridge;
 export const ReactiveGraphInspector = GraphInspector;
 export const PerfInspector = PerformanceInspector;
 
-export function initDevTools(options?: { targetOrigin?: string }) {
-  if (process.env.NODE_ENV === 'production') {
+declare global {
+  interface ImportMeta {
+    env?: {
+      DEV?: boolean;
+      [key: string]: unknown;
+    };
+  }
+}
+
+let devToolsActive = false;
+
+export function computeIsDev(
+  metaEnv?: { DEV?: boolean } | undefined,
+  proc?: { env?: { NODE_ENV?: string } } | null
+): boolean {
+  if (metaEnv !== undefined) {
+    if (metaEnv && typeof metaEnv.DEV === 'boolean') {
+      return metaEnv.DEV;
+    }
+  } else {
+    try {
+      if (typeof import.meta !== 'undefined' && import.meta.env && typeof import.meta.env.DEV === 'boolean') {
+        return import.meta.env.DEV;
+      }
+    } catch {
+      // environment lacking import.meta
+    }
+  }
+
+  const effectiveProcess = proc !== undefined ? proc : (typeof process !== 'undefined' ? process : undefined);
+  if (effectiveProcess && effectiveProcess.env) {
+    return effectiveProcess.env.NODE_ENV !== 'production';
+  }
+
+  return false;
+}
+
+export function isDevToolsActive(): boolean {
+  return devToolsActive;
+}
+
+export function initDevTools(options?: { targetOrigin?: string; isDev?: boolean }) {
+  const active = options?.isDev !== undefined ? options.isDev : computeIsDev();
+  if (!active) {
+    devToolsActive = false;
     return samreyDevToolsBridge;
   }
+
+  devToolsActive = true;
   if (typeof window !== 'undefined') {
     (window as any).__SAMREY_DEVTOOLS_BRIDGE__ = samreyDevToolsBridge;
     if (window.location && window.location.origin && window.location.origin !== 'null') {

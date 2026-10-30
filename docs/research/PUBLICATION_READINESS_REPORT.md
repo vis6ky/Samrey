@@ -144,7 +144,7 @@ No technical claims require modification. Only personal author attribution place
 - `[Institutional Affiliation Placeholder]`
 - `[ORCID Placeholder (0000-0000-0000-0000)]`
 - `[Author Email Placeholder]`
-- `[Software Repository URL]` (defaults to `https://github.com/samrey-dev/samrey`)
+- `[Software Repository URL]` (defaults to `https://github.com/vis6ky/Samrey`)
 
 ---
 

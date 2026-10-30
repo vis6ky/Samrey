@@ -190,7 +190,7 @@ export class TemplateParser {
   private recordDiagnostic(
     msg: string,
     pos = this.getPosition(),
-    code: SamreyErrorCode = 'AETH-102',
+    code: SamreyErrorCode = 'SAMREY-102',
     explanation?: string,
     suggestion?: string
   ): void {
@@ -230,7 +230,7 @@ export class TemplateParser {
       const next = this.peekCode(1);
       if (next === 123 || next === 60) {
         const pos = this.getPosition();
-        this.recordDiagnostic(`Invalid tag syntax "${String.fromCharCode(ch)}${String.fromCharCode(next)}"`, pos, 'AETH-104');
+        this.recordDiagnostic(`Invalid tag syntax "${String.fromCharCode(ch)}${String.fromCharCode(next)}"`, pos, 'SAMREY-104');
         this.advance(1);
         return null;
       }
@@ -348,7 +348,7 @@ export class TemplateParser {
           this.recordDiagnostic(
             `Mismatched closing tag </${foundTag}>, expected </${tagName}>`,
             closePos,
-            'AETH-104',
+            'SAMREY-104',
             `Encountered closing tag </${foundTag}> but currently inside open element <${tagName}>.`,
             `Close <${tagName}> with </${tagName}> or ensure tags are not interleaved.`
           );
@@ -366,7 +366,7 @@ export class TemplateParser {
         this.recordDiagnostic(
           `Unclosed <${tagName}> tag, expected </${tagName}>`,
           startPos,
-          'AETH-101',
+          'SAMREY-101',
           `The element <${tagName}> was never closed before the end of the template.`,
           `Add closing tag </${tagName}> or make it self-closing with <${tagName} />.`
         );
@@ -431,7 +431,7 @@ export class TemplateParser {
       this.recordDiagnostic(
         '<Show> component is missing required "when" prop',
         startPos,
-        'AETH-103',
+        'SAMREY-103',
         '<Show> requires a "when" conditional expression to evaluate whether to render its children.',
         'Add when={...} to <Show>, e.g. <Show when={isLoggedIn()}>'
       );
@@ -450,7 +450,7 @@ export class TemplateParser {
         this.recordDiagnostic(
           'Unclosed <Show> component tag',
           startPos,
-          'AETH-101',
+          'SAMREY-101',
           '<Show> component was opened but not closed before the end of the template.',
           'Add </Show> to close the component.'
         );
@@ -499,7 +499,7 @@ export class TemplateParser {
       this.recordDiagnostic(
         '<For> component is missing required "each" prop',
         startPos,
-        'AETH-103',
+        'SAMREY-103',
         '<For> requires an "each" array or reactive accessor to iterate over.',
         'Add each={...} to <For>, e.g. <For each={users()} key="id">'
       );
@@ -518,7 +518,7 @@ export class TemplateParser {
         this.recordDiagnostic(
           'Unclosed <For> component tag',
           startPos,
-          'AETH-101',
+          'SAMREY-101',
           '<For> component was opened but not closed before the end of the template.',
           'Add </For> to close the component.'
         );
@@ -588,7 +588,7 @@ export class TemplateParser {
           this.recordDiagnostic(
             `Unterminated attribute string literal for "${name}"`,
             startPos,
-            'AETH-105',
+            'SAMREY-105',
             `Attribute "${name}" has an opening quote but no matching closing quote.`,
             'Add a matching closing quote to terminate the attribute value.'
           );
@@ -688,7 +688,7 @@ export class TemplateParser {
     this.recordDiagnostic(
       'Unterminated interpolation expression, missing "}"',
       undefined,
-      'AETH-102',
+      'SAMREY-102',
       'An expression opened with "{" was not closed before the end of the template.',
       'Add a closing "}" to terminate the expression.'
     );
