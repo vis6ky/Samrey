@@ -398,7 +398,7 @@ export function sanitizeHtmlString(html: string): string {
     .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*>.*?<\/\1>/gis, '')
     .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*\/?>/gis, '')
     .replace(/[\s/]+(on[a-z0-9_-]+|formaction|xlink:href|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '')
-    .replace(/(href|src|action)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, quoted, innerQuoted, unquoted) => {
+    .replace(/(href|src|action)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, _quoted, innerQuoted, unquoted) => {
       const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
       const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
       if (/^(javascript|vbscript):/i.test(decoded)) {

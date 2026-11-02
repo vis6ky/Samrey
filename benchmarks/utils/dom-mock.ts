@@ -62,8 +62,14 @@ export class BenchmarkNode {
 
   appendChild(child: BenchmarkNode): BenchmarkNode {
     if (child.nodeType === 11) {
-      while (child.childNodes.length > 0) {
-        this.appendChild(child.childNodes[0]);
+      const children = child.childNodes;
+      child.childNodes = [];
+      for (let i = 0; i < children.length; i++) {
+        const c = children[i];
+        c.parentNode = null;
+        c.previousSibling = null;
+        c.nextSibling = null;
+        this.appendChild(c);
       }
       return child;
     }
@@ -85,8 +91,14 @@ export class BenchmarkNode {
 
   insertBefore(newChild: BenchmarkNode, refChild: BenchmarkNode | null): BenchmarkNode {
     if (newChild.nodeType === 11) {
-      while (newChild.childNodes.length > 0) {
-        this.insertBefore(newChild.childNodes[0], refChild);
+      const children = newChild.childNodes;
+      newChild.childNodes = [];
+      for (let i = 0; i < children.length; i++) {
+        const c = children[i];
+        c.parentNode = null;
+        c.previousSibling = null;
+        c.nextSibling = null;
+        this.insertBefore(c, refChild);
       }
       return newChild;
     }

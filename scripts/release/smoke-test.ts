@@ -111,7 +111,7 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/samrey-public-consume
   diagnostics.push('Executing clean-room runtime test...');
   let cleanRoomSuccess = false;
   try {
-    const out = execSync('npx tsx index.mjs', { cwd: consumerBaseDir, encoding: 'utf8' });
+    const out = execSync('node index.mjs', { cwd: consumerBaseDir, encoding: 'utf8' });
     cleanRoomSuccess = out.includes('CLEAN_ROOM_CONSUMER_PASSED');
     diagnostics.push('Clean-room consumer runtime test: PASSED');
   } catch (err: any) {

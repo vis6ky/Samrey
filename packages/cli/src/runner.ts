@@ -109,7 +109,11 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         };
       }
 
-      return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun, targetDir: cwd });
+      const targetDirIdx = args.indexOf('--targetDir');
+      const targetDirVal = targetDirIdx !== -1 && args[targetDirIdx + 1] ? args[targetDirIdx + 1] : undefined;
+      const targetDir = targetDirVal ? path.resolve(cwd, targetDirVal) : path.resolve(cwd, name);
+
+      return runCreateCommand({ name, template: templateVal as 'ssr' | 'spa' | 'minimal' | 'ssg', dryRun, targetDir });
     }
 
     case 'dev': {

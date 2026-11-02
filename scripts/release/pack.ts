@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
 import { validateDependencyTopology } from './validate-dependencies.js';
+import { buildAllPackages } from '../build-packages.js';
 
 export interface PackedTarball {
   packageName: string;
@@ -21,6 +22,9 @@ export function packAllPackages(
   outDir = path.join(process.cwd(), 'dist', 'tarballs'),
   options?: { keepCliBin?: boolean }
 ): PackedTarball[] {
+  // Build dist/ for all packages before packing
+  buildAllPackages();
+
   if (fs.existsSync(outDir)) {
     fs.rmSync(outDir, { recursive: true, force: true });
   }
