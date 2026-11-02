@@ -280,13 +280,30 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
         }
       }
     } else if (currentEntries.length > 0) {
-      let next = marker.nextSibling;
-      for (const entry of currentEntries) {
-        for (const node of entry.nodes) {
-          if (node.parentNode !== parent) {
-            parent.insertBefore(node, next);
-          } else {
-            next = node.nextSibling;
+      const frag = typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function'
+        ? document.createDocumentFragment()
+        : null;
+
+      if (frag) {
+        for (const entry of currentEntries) {
+          for (const node of entry.nodes) {
+            if (node.parentNode !== parent) {
+              frag.appendChild(node);
+            }
+          }
+        }
+        if (frag.childNodes.length > 0) {
+          parent.insertBefore(frag, marker.nextSibling);
+        }
+      } else {
+        let next = marker.nextSibling;
+        for (const entry of currentEntries) {
+          for (const node of entry.nodes) {
+            if (node.parentNode !== parent) {
+              parent.insertBefore(node, next);
+            } else {
+              next = node.nextSibling;
+            }
           }
         }
       }
@@ -427,39 +444,68 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       }
     }
 
-    // LIS-Optimized Reconcile DOM positions
+    // Reconcile DOM positions
     const parent = marker.parentNode;
     if (parent) {
-      const oldKeyToIdx = new Map<unknown, number>();
-      for (let i = 0; i < currentEntries.length; i++) {
-        oldKeyToIdx.set(currentEntries[i].key, i);
-      }
+      if (currentEntries.length === 0) {
+        // Initial mount optimization: skip key map and LIS work, build rows into DocumentFragment and append once
+        const frag = typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function'
+          ? document.createDocumentFragment()
+          : null;
 
-      const sources = new Array(newEntries.length).fill(-1);
-      for (let i = 0; i < newEntries.length; i++) {
-        const oldIdx = oldKeyToIdx.get(newEntries[i].key);
-        if (oldIdx !== undefined) {
-          sources[i] = oldIdx;
-        }
-      }
-
-      const lis = sources.length > 0 ? getSequence(sources) : [];
-      let lisIdx = lis.length - 1;
-
-      let nextSibling: Node | null = marker.nextSibling;
-      for (let i = newEntries.length - 1; i >= 0; i--) {
-        const entry = newEntries[i];
-        const shouldMove = lisIdx < 0 || lis[lisIdx] !== i;
-        if (sources[i] === -1 || shouldMove) {
-          for (let n = entry.nodes.length - 1; n >= 0; n--) {
-            const node = entry.nodes[n];
-            parent.insertBefore(node, nextSibling);
+        if (frag) {
+          for (let i = 0; i < newEntries.length; i++) {
+            const entry = newEntries[i];
+            for (let n = 0; n < entry.nodes.length; n++) {
+              frag.appendChild(entry.nodes[n]);
+            }
           }
+          parent.insertBefore(frag, marker.nextSibling);
         } else {
-          lisIdx--;
+          let nextSibling: Node | null = marker.nextSibling;
+          for (let i = newEntries.length - 1; i >= 0; i--) {
+            const entry = newEntries[i];
+            for (let n = entry.nodes.length - 1; n >= 0; n--) {
+              parent.insertBefore(entry.nodes[n], nextSibling);
+            }
+            if (entry.nodes.length > 0) {
+              nextSibling = entry.nodes[0];
+            }
+          }
         }
-        if (entry.nodes.length > 0) {
-          nextSibling = entry.nodes[0];
+      } else {
+        // Subsequent reconciliation: LIS-Optimized Reconcile DOM positions
+        const oldKeyToIdx = new Map<unknown, number>();
+        for (let i = 0; i < currentEntries.length; i++) {
+          oldKeyToIdx.set(currentEntries[i].key, i);
+        }
+
+        const sources = new Array(newEntries.length).fill(-1);
+        for (let i = 0; i < newEntries.length; i++) {
+          const oldIdx = oldKeyToIdx.get(newEntries[i].key);
+          if (oldIdx !== undefined) {
+            sources[i] = oldIdx;
+          }
+        }
+
+        const lis = sources.length > 0 ? getSequence(sources) : [];
+        let lisIdx = lis.length - 1;
+
+        let nextSibling: Node | null = marker.nextSibling;
+        for (let i = newEntries.length - 1; i >= 0; i--) {
+          const entry = newEntries[i];
+          const shouldMove = lisIdx < 0 || lis[lisIdx] !== i;
+          if (sources[i] === -1 || shouldMove) {
+            for (let n = entry.nodes.length - 1; n >= 0; n--) {
+              const node = entry.nodes[n];
+              parent.insertBefore(node, nextSibling);
+            }
+          } else {
+            lisIdx--;
+          }
+          if (entry.nodes.length > 0) {
+            nextSibling = entry.nodes[0];
+          }
         }
       }
     }

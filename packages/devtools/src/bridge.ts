@@ -35,6 +35,7 @@ export interface DevToolsEvent<T = unknown> {
 }
 
 export class DevToolsBridge {
+  private active = false;
   private listeners: ((event: DevToolsEvent) => void)[] = [];
   private eventLog: DevToolsEvent[] = [];
   private maxLogLength = 200;
@@ -46,6 +47,14 @@ export class DevToolsBridge {
       this.targetOrigin = window.location.origin;
       this.allowedOrigins.add(window.location.origin);
     }
+  }
+
+  setActive(active: boolean): void {
+    this.active = active;
+  }
+
+  isActive(): boolean {
+    return this.active;
   }
 
   /**
@@ -81,6 +90,8 @@ export class DevToolsBridge {
   }
 
   emit(type: DevToolsEventType, rawPayload: unknown): void {
+    if (!this.active) return;
+
     // Strictly sanitize payload to prevent leaking passwords, tokens, auth headers
     const payload = sanitizePayload(rawPayload);
 

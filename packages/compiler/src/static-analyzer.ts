@@ -10,20 +10,6 @@ export interface ConstantFoldResult {
   value: string | null;
 }
 
-/**
- * Fast check if an expression is a compile-time static constant literal.
- * Supports:
- * - String literals: "hello", 'hello', `hello` (without ${})
- * - Numeric literals: 42, 3.14, -1, 0xFF
- * - Boolean literals: true, false
- * - Null / Undefined: null, undefined
- */
-export function evaluateConstantExpression(expr: string): ConstantFoldResult {
-  const trimmed = expr.trim();
-  if (!trimmed) {
-    return { isConstant: false, value: null };
-  }
-
 function decodeStringEscapes(str: string): string {
   return str.replace(/\\([bfnrtv'"\\0]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})/g, (match, esc) => {
     switch (esc[0]) {
@@ -43,6 +29,31 @@ function decodeStringEscapes(str: string): string {
     }
   });
 }
+
+/**
+ * Fast check if an expression is a compile-time static constant literal.
+ * Supports:
+ * - String literals: "hello", 'hello', `hello` (without ${})
+ * - Numeric literals: 42, 3.14, -1, 0xFF
+ * - Boolean literals: true, false
+ * - Null / Undefined: null, undefined
+ */
+export function evaluateConstantExpression(expr: string): ConstantFoldResult {
+  const trimmed = expr.trim();
+  if (!trimmed) {
+    return { isConstant: false, value: null };
+  }
+
+  const first = trimmed.charCodeAt(0);
+  // Fast path: if not a quote, digit, sign, or start of true/false/null/undefined, it cannot be a literal
+  if (
+    first !== 34 && first !== 39 && first !== 96 && // ", ', `
+    (first < 48 || first > 57) && // 0-9
+    first !== 43 && first !== 45 && // +, -
+    first !== 116 && first !== 102 && first !== 110 && first !== 117 // t, f, n, u
+  ) {
+    return { isConstant: false, value: null };
+  }
 
   // 1. String literals: "...", '...', `...` (without interpolation)
   if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {

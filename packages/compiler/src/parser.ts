@@ -83,6 +83,7 @@ export class TemplateParser {
   private filename?: string;
   private diagnostics: string[] = [];
   private errors: SamreyCompilerError[] = [];
+  private unsupportedTags: Array<{ tag: string; loc: SourceLocation }> = [];
 
   constructor(source: string, options?: ParseOptions) {
     this.source = source;
@@ -109,7 +110,7 @@ export class TemplateParser {
     };
 
     // Detect unsupported control flow and component tags on the parsed AST
-    const unsupported = findUnsupportedTemplateTags(root);
+    const unsupported = this.unsupportedTags.length > 0 ? this.unsupportedTags : [];
     if (unsupported.length > 0) {
       const first = unsupported[0];
       const totalCount = unsupported.length;
@@ -279,7 +280,11 @@ export class TemplateParser {
       this.recordDiagnostic('Invalid or missing tag name after "<"', startPos);
       return null;
     }
-    const isComponent = tagName.charCodeAt(0) >= 65 && tagName.charCodeAt(0) <= 90;
+    const firstCode = tagName.charCodeAt(0);
+    const isComponent = firstCode >= 65 && firstCode <= 90;
+    if (isComponent || tagName === 'Show' || tagName === 'For') {
+      this.unsupportedTags.push({ tag: tagName, loc: { start: startPos, end: this.getPosition() } });
+    }
 
     // Parse attributes
     const attributes: ASTAttributeNode[] = [];
@@ -773,14 +778,10 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   let templateCounter = 0;
 
   const isSingleRoot = ast.children.length === 1 && ast.children[0].type === 'Element';
+  const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
 
-  function processNodes(nodes: ASTNode[], currentPath: number[], isRootLevel = false): {
-    html: string;
-    slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[];
-  } {
+  function processNodes(nodes: ASTNode[], currentPath: number[], isRootLevel = false): string {
     const htmlParts: string[] = [];
-    const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
-
     let childIndex = 0;
 
     for (let i = 0; i < nodes.length; i++) {
@@ -871,9 +872,8 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           htmlParts.push(tagOpen);
         } else {
           tagOpen += '>';
-          const childrenResult = processNodes(node.children, nodePath, false);
-          slots.push(...childrenResult.slots);
-          htmlParts.push(`${tagOpen}${childrenResult.html}</${node.tag}>`);
+          const childrenHtml = processNodes(node.children, nodePath, false);
+          htmlParts.push(`${tagOpen}${childrenHtml}</${node.tag}>`);
         }
 
         const lowerTag = node.tag.toLowerCase();
@@ -927,7 +927,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
       }
     }
 
-    return { html: htmlParts.join(''), slots };
+    return htmlParts.join('');
   }
 
   function getNodeExpr(path: number[]): string {
@@ -939,7 +939,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
     return expr;
   }
 
-  const { html, slots } = processNodes(ast.children, [], true);
+  const html = processNodes(ast.children, [], true);
 
   templateCounter++;
   const templateUnit: AIRTemplateUnit = {

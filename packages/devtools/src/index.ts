@@ -64,12 +64,11 @@ export function isDevToolsActive(): boolean {
 
 export function initDevTools(options?: { targetOrigin?: string; isDev?: boolean }) {
   const active = options?.isDev !== undefined ? options.isDev : computeIsDev();
+  devToolsActive = active;
+  samreyDevToolsBridge.setActive(active);
   if (!active) {
-    devToolsActive = false;
     return samreyDevToolsBridge;
   }
-
-  devToolsActive = true;
   if (typeof window !== 'undefined') {
     (window as any).__SAMREY_DEVTOOLS_BRIDGE__ = samreyDevToolsBridge;
     if (window.location && window.location.origin && window.location.origin !== 'null') {

@@ -5,7 +5,7 @@ import { bindAttr, bindText } from '@samrey/runtime';
 import { signal } from '@samrey/reactivity';
 import { createRouter } from '@samrey/router';
 import { serializeStateForHydration, deserializeHydrationState, stripSecrets } from '@samrey/ssr';
-import { samreyDevToolsBridge } from '@samrey/devtools';
+import { samreyDevToolsBridge, initDevTools } from '@samrey/devtools';
 import { runCreateCommand } from '@samrey/cli/src/commands/create.js';
 import { runGenerateCommand } from '@samrey/cli/src/commands/generate.js';
 import { createForm } from '@samrey/forms';
@@ -203,6 +203,7 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
 
   describe('Vulnerability 6: DevTools Origin & Secret Redaction', () => {
     it('redacts sensitive keys before emitting DevTools events', () => {
+      initDevTools({ isDev: true });
       let capturedEvent: any = null;
       const unsubscribe = samreyDevToolsBridge.subscribe((ev) => {
         if (ev.type === 'form:submit') {
@@ -217,6 +218,7 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
       });
 
       unsubscribe();
+      initDevTools({ isDev: false });
 
       assert.ok(capturedEvent !== null);
       assert.equal(capturedEvent.payload.username, 'alice');
