@@ -61,6 +61,12 @@ export class BenchmarkNode {
   }
 
   appendChild(child: BenchmarkNode): BenchmarkNode {
+    if (child.nodeType === 11) {
+      while (child.childNodes.length > 0) {
+        this.appendChild(child.childNodes[0]);
+      }
+      return child;
+    }
     if (child.parentNode) {
       child.parentNode.removeChild(child);
     }
@@ -78,6 +84,12 @@ export class BenchmarkNode {
   }
 
   insertBefore(newChild: BenchmarkNode, refChild: BenchmarkNode | null): BenchmarkNode {
+    if (newChild.nodeType === 11) {
+      while (newChild.childNodes.length > 0) {
+        this.insertBefore(newChild.childNodes[0], refChild);
+      }
+      return newChild;
+    }
     if (newChild.parentNode) {
       newChild.parentNode.removeChild(newChild);
     }

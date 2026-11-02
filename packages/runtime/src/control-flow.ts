@@ -271,6 +271,24 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   let fallbackOwner: Owner | null = null;
   let fallbackNodes: Node[] = [];
   const warnedKeys = isDev ? new Set<unknown>() : undefined;
+  let duplicateKeyTokens: Map<unknown, Map<number, unknown>> | undefined;
+
+  function getDuplicateKey(key: unknown, occurrence: number): unknown {
+    if (!duplicateKeyTokens) {
+      duplicateKeyTokens = new Map();
+    }
+    let occMap = duplicateKeyTokens.get(key);
+    if (!occMap) {
+      occMap = new Map();
+      duplicateKeyTokens.set(key, occMap);
+    }
+    let token = occMap.get(occurrence);
+    if (!token) {
+      token = { key, occurrence };
+      occMap.set(occurrence, token);
+    }
+    return token;
+  }
 
   const marker = createControlFlowMarker('samrey:for', (parent) => {
     if (fallbackNodes.length > 0) {
@@ -366,6 +384,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       if (warnedKeys) {
         warnedKeys.clear();
       }
+      if (duplicateKeyTokens) {
+        duplicateKeyTokens.clear();
+      }
       cache.clear();
       currentEntries = [];
       renderFallback();
@@ -378,24 +399,31 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     const newCache = new Map<unknown, KeyedEntry<T>>();
     const newEntries: KeyedEntry<T>[] = [];
     const seenKeys = new Set<unknown>();
+    let duplicateCounts: Map<unknown, number> | undefined;
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const key = props.key ? props.key(item, i) : item;
+      const rawKey = props.key ? props.key(item, i) : item;
+      let rowKey: unknown = rawKey;
 
-      if (seenKeys.has(key)) {
-        reportDuplicateKey(key);
+      if (seenKeys.has(rawKey)) {
+        reportDuplicateKey(rawKey);
+        if (!duplicateCounts) duplicateCounts = new Map();
+        const occ = (duplicateCounts.get(rawKey) || 0) + 1;
+        duplicateCounts.set(rawKey, occ);
+        rowKey = getDuplicateKey(rawKey, occ);
+      } else {
+        seenKeys.add(rawKey);
       }
-      seenKeys.add(key);
 
-      let entry = cache.get(key);
+      let entry = cache.get(rowKey);
       if (entry) {
         if (entry.indexSignal) {
           entry.indexSignal.value = i;
         }
-        if (isDev && props.key && entry.item !== item && !warnedKeys!.has(key) && !isStore(item)) {
-          warnedKeys!.add(key);
-          reportStaleItemWarning(key);
+        if (isDev && props.key && entry.item !== item && !warnedKeys!.has(rowKey) && !isStore(item)) {
+          warnedKeys!.add(rowKey);
+          reportStaleItemWarning(rowKey);
         }
         entry.item = item;
       } else {
@@ -419,7 +447,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 
         const nodes = normalizeNodes(rendered);
         entry = {
-          key,
+          key: rowKey,
           item,
           nodes,
           owner,
@@ -427,7 +455,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
         };
       }
 
-      newCache.set(key, entry);
+      newCache.set(rowKey, entry);
       newEntries.push(entry);
     }
 
@@ -495,7 +523,19 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
         const lis = sources.length > 0 ? getSequence(sources) : [];
         let lisIdx = lis.length - 1;
 
-        let nextSibling: Node | null = marker.nextSibling;
+        let lastRemainingNode: Node | null = null;
+        for (let i = currentEntries.length - 1; i >= 0; i--) {
+          if (newCache.has(currentEntries[i].key)) {
+            const nodes = currentEntries[i].nodes;
+            if (nodes.length > 0) {
+              lastRemainingNode = nodes[nodes.length - 1];
+              break;
+            }
+          }
+        }
+        let nextSibling: Node | null = lastRemainingNode
+          ? lastRemainingNode.nextSibling
+          : marker.nextSibling;
         for (let i = newEntries.length - 1; i >= 0; i--) {
           const entry = newEntries[i];
           const shouldMove = lisIdx < 0 || lis[lisIdx] !== i;
@@ -530,6 +570,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
           node.parentNode.removeChild(node);
         }
       }
+    }
+    if (duplicateKeyTokens) {
+      duplicateKeyTokens.clear();
     }
     cache.clear();
     currentEntries = [];
