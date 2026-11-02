@@ -17,7 +17,10 @@ export interface PackedTarball {
   sha256: string;
 }
 
-export function packAllPackages(outDir = path.join(process.cwd(), 'dist', 'tarballs')): PackedTarball[] {
+export function packAllPackages(
+  outDir = path.join(process.cwd(), 'dist', 'tarballs'),
+  options?: { keepCliBin?: boolean }
+): PackedTarball[] {
   if (fs.existsSync(outDir)) {
     fs.rmSync(outDir, { recursive: true, force: true });
   }
@@ -55,6 +58,13 @@ export function packAllPackages(outDir = path.join(process.cwd(), 'dist', 'tarba
       sizeBytes: stats.size,
       sha256: hash
     });
+  }
+
+  if (!options?.keepCliBin) {
+    const cliBin = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.js');
+    if (fs.existsSync(cliBin)) {
+      fs.rmSync(cliBin, { force: true });
+    }
   }
 
   return packed;

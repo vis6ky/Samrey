@@ -14,8 +14,8 @@ import { validateLicense } from './validate-license.js';
 import { inspectPublishedFiles } from './validate-files.js';
 import { runSmokeTest } from './smoke-test.js';
 
-export async function generateAllReleaseReports(): Promise<boolean> {
-  const releaseDir = path.join(process.cwd(), 'docs', 'release');
+export async function generateAllReleaseReports(options?: { targetDir?: string }): Promise<boolean> {
+  const releaseDir = options?.targetDir || path.join(process.cwd(), 'docs', 'release');
   if (!fs.existsSync(releaseDir)) {
     fs.mkdirSync(releaseDir, { recursive: true });
   }

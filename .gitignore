@@ -7,5 +7,5 @@ coverage/
 .env*
 !.env.example
 .aistudio/artifacts/**
-packages/cli/bin/aether.js
-packages/cli/bin/gati.js
+packages/cli/bin/*.js
+packages/cli/bin/samrey.js

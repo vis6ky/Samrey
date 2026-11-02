@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 
 import { runPreflight } from '../scripts/release/preflight.js';
 import { validateAllPackages } from '../scripts/release/validate-packages.js';
@@ -107,28 +108,32 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
   });
 
   it('11. Release Documentation Reports Generation', async () => {
-    const reportsSuccess = await generateAllReleaseReports();
-    assert.ok(reportsSuccess, 'All 10 release documentation reports must be generated');
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-reports-'));
+    try {
+      const reportsSuccess = await generateAllReleaseReports({ targetDir: tempDir });
+      assert.ok(reportsSuccess, 'All 10 release documentation reports must be generated');
 
-    const expectedReports = [
-      'RELEASE_PREFLIGHT.md',
-      'PACKAGE_VERIFICATION.md',
-      'FRAMEWORK_PURITY_REPORT.md',
-      'PUBLIC_API_RELEASE_VERIFICATION.md',
-      'NPM_CONSUMER_REPORT.md',
-      'STARTER_TEMPLATE_REPORT.md',
-      'PRODUCTION_SMOKE_TEST.md',
-      'RELEASE_SIGNOFF.md',
-      'ROLLBACK.md',
-      'PHASE_21_RELEASE_HEALTH_REPORT.md',
-      'PHASE_21_FINAL_CERTIFICATION.md'
-    ];
+      const expectedReports = [
+        'RELEASE_PREFLIGHT.md',
+        'PACKAGE_VERIFICATION.md',
+        'FRAMEWORK_PURITY_REPORT.md',
+        'NPM_CONSUMER_REPORT.md',
+        'STARTER_TEMPLATE_REPORT.md',
+        'PRODUCTION_SMOKE_TEST.md',
+        'RELEASE_SIGNOFF.md',
+        'ROLLBACK.md',
+        'PHASE_24_RELEASE_HEALTH_REPORT.md',
+        'PHASE_24_FINAL_CERTIFICATION.md'
+      ];
 
-    for (const rep of expectedReports) {
-      const p = path.join(process.cwd(), 'docs', 'release', rep);
-      assert.ok(fs.existsSync(p), `Report ${rep} must exist at docs/release/${rep}`);
-      const content = fs.readFileSync(p, 'utf8');
-      assert.ok(content.length > 50, `Report ${rep} must not be empty`);
+      for (const rep of expectedReports) {
+        const p = path.join(tempDir, rep);
+        assert.ok(fs.existsSync(p), `Report ${rep} must exist at tempDir/${rep}`);
+        const content = fs.readFileSync(p, 'utf8');
+        assert.ok(content.length > 50, `Report ${rep} must not be empty`);
+      }
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
 });

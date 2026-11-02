@@ -352,10 +352,12 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     const items = rawItems ? Array.from(rawItems as Iterable<T>) : [];
 
     if (items.length === 0) {
-      // Empty list
-      for (const entry of cache.values()) {
+      // Empty list: dispose and remove rows in reverse order (last row first, and each row's nodes last to first)
+      for (let i = currentEntries.length - 1; i >= 0; i--) {
+        const entry = currentEntries[i];
         entry.owner.dispose();
-        for (const node of entry.nodes) {
+        for (let n = entry.nodes.length - 1; n >= 0; n--) {
+          const node = entry.nodes[n];
           if (node.parentNode) {
             node.parentNode.removeChild(node);
           }
@@ -429,14 +431,16 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       newEntries.push(entry);
     }
 
-    // Clean up removed items
-    for (const [key, oldEntry] of cache.entries()) {
-      if (!newCache.has(key)) {
+    // Clean up removed items in reverse order
+    for (let i = currentEntries.length - 1; i >= 0; i--) {
+      const oldEntry = currentEntries[i];
+      if (!newCache.has(oldEntry.key)) {
         if (warnedKeys) {
-          warnedKeys.delete(key);
+          warnedKeys.delete(oldEntry.key);
         }
         oldEntry.owner.dispose();
-        for (const node of oldEntry.nodes) {
+        for (let n = oldEntry.nodes.length - 1; n >= 0; n--) {
+          const node = oldEntry.nodes[n];
           if (node.parentNode) {
             node.parentNode.removeChild(node);
           }
@@ -516,9 +520,12 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 
   onCleanup(() => {
     removeFallback();
-    for (const entry of cache.values()) {
+    // Dispose and remove rows in reverse order (last row first, and each row's nodes last to first)
+    for (let i = currentEntries.length - 1; i >= 0; i--) {
+      const entry = currentEntries[i];
       entry.owner.dispose();
-      for (const node of entry.nodes) {
+      for (let n = entry.nodes.length - 1; n >= 0; n--) {
+        const node = entry.nodes[n];
         if (node.parentNode) {
           node.parentNode.removeChild(node);
         }

@@ -43,8 +43,10 @@ export function createOwner(parent = currentOwner): Owner {
       }
 
       if (this.parent) {
-        const idx = this.parent.children.indexOf(this);
-        if (idx !== -1) this.parent.children.splice(idx, 1);
+        const ch = this.parent.children;
+        const len = ch.length;
+        const idx = len > 0 && ch[len - 1] === this ? len - 1 : ch.indexOf(this);
+        if (idx !== -1) ch.splice(idx, 1);
         this.parent = null;
       }
     }
