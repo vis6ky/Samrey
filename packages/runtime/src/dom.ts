@@ -52,45 +52,58 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[K] {
   if (typeof document === 'undefined') {
     const attributes: Record<string, string> = {};
+    const eventListeners: Record<string, Function[]> = {};
+
     if (attrs) {
       for (const [k, v] of Object.entries(attrs)) {
-        if (v !== undefined && v !== null && typeof v !== 'function') {
-          const lk = k.toLowerCase();
-          if (DANGEROUS_ATTR_NAMES.has(lk) || lk.startsWith('on')) continue;
-          let safeV = String(v);
-          if (URI_ATTRS.has(lk)) safeV = sanitizeUri(safeV);
-          else if (lk === 'style') safeV = sanitizeCssStyle(safeV);
-          attributes[k] = safeV;
-        }
-      }
-    }
-    const childNodes: any[] = [];
-    for (const c of children) {
-      if (c === null || c === undefined || c === false || c === true) continue;
-      const resolved = typeof c === 'function' ? (c as () => unknown)() : c;
-      if (resolved === null || resolved === undefined || resolved === false || resolved === true) continue;
-      if (Array.isArray(resolved)) {
-        for (const item of resolved) {
-          if (item !== null && item !== undefined && item !== false && item !== true) {
-            childNodes.push(typeof item === 'object' && item !== null && 'nodeType' in item ? item : { nodeType: 3, nodeName: '#text', textContent: String(item) });
+        if (v === undefined || v === null) continue;
+        const lk = k.toLowerCase();
+        if (DANGEROUS_ATTR_NAMES.has(lk)) continue;
+        if (lk.startsWith('on')) {
+          if (typeof v === 'function') {
+            const evt = lk.slice(2);
+            eventListeners[evt] = eventListeners[evt] || [];
+            eventListeners[evt].push(v);
           }
+          continue;
         }
-      } else if (typeof resolved === 'object' && resolved !== null && 'nodeType' in resolved) {
-        childNodes.push(resolved);
-      } else {
-        childNodes.push({ nodeType: 3, nodeName: '#text', textContent: String(resolved) });
+        const resolvedV = typeof v === 'function' ? (v as () => unknown)() : v;
+        if (resolvedV === undefined || resolvedV === null || resolvedV === false) continue;
+        if (resolvedV === true) {
+          attributes[k] = '';
+          continue;
+        }
+        let safeV = String(resolvedV);
+        if (URI_ATTRS.has(lk)) safeV = sanitizeUri(safeV);
+        else if (lk === 'style') safeV = sanitizeCssStyle(safeV);
+        attributes[k] = safeV;
       }
     }
 
-    const eventListeners: Record<string, Function[]> = {};
-    if (attrs) {
-      for (const [k, v] of Object.entries(attrs)) {
-        if (typeof v === 'function' && k.startsWith('on')) {
-          const evt = k.slice(2).toLowerCase();
-          eventListeners[evt] = eventListeners[evt] || [];
-          eventListeners[evt].push(v);
-        }
+    const childNodes: any[] = [];
+    function appendHeadlessChild(child: unknown): void {
+      if (child === null || child === undefined || child === false || child === true) {
+        return;
       }
+      if (Array.isArray(child)) {
+        for (const item of child) {
+          appendHeadlessChild(item);
+        }
+        return;
+      }
+      if (typeof child === 'function') {
+        appendHeadlessChild((child as () => unknown)());
+        return;
+      }
+      if (typeof child === 'object' && child !== null && 'nodeType' in child) {
+        childNodes.push(child);
+        return;
+      }
+      childNodes.push({ nodeType: 3, nodeName: '#text', textContent: String(child) });
+    }
+
+    for (const c of children) {
+      appendHeadlessChild(c);
     }
 
     const mockElem: any = {
@@ -238,18 +251,24 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         }
         return true;
       },
+      get innerHTML() {
+        return childNodes.map((ch: any) => {
+          if (ch.outerHTML !== undefined) return ch.outerHTML;
+          if (ch.innerHTML !== undefined) {
+            const chTag = (ch.tagName || ch.nodeName || 'span').toLowerCase();
+            return `<${chTag}>${ch.innerHTML}</${chTag}>`;
+          }
+          if (ch.textContent !== undefined) return escapeHtmlText(ch.textContent);
+          return '';
+        }).join('');
+      },
       get outerHTML() {
         const tag = String(tagName).toLowerCase();
         let attrStr = '';
         for (const [k, v] of Object.entries(attributes)) {
           attrStr += ` ${k}="${escapeHtmlAttribute(v)}"`;
         }
-        const childrenHtml = childNodes.map((ch: any) => {
-          if (ch.outerHTML !== undefined) return ch.outerHTML;
-          if (ch.textContent !== undefined) return escapeHtmlText(ch.textContent);
-          return '';
-        }).join('');
-        return `<${tag}${attrStr}>${childrenHtml}</${tag}>`;
+        return `<${tag}${attrStr}>${this.innerHTML}</${tag}>`;
       },
       get textContent() {
         return childNodes.map((ch: any) => ch.textContent ?? '').join('');

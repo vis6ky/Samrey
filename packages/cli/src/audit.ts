@@ -29,11 +29,23 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
     }
   }
 
-  // Scan for inline script tags
-  const scriptRegex = /<script\b/gi;
+  // Scan for script tags: only flag inline scripts (no src) or CSP-violating scripts
+  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>|<script\b([^>]*)\/?>/gi;
   while ((match = scriptRegex.exec(source)) !== null) {
+    const attrs = match[1] ?? match[3] ?? '';
+    const body = match[2] ?? '';
     const line = getLineNumber(source, match.index);
-    messages.push(`${filename}:${line}: Explicit <script> tag found in template. Violates CSP.`);
+
+    const srcMatch = /\bsrc\s*=\s*(?:["']([^"']*)["']|([^\s>]+))/i.exec(attrs);
+    const srcVal = srcMatch ? (srcMatch[1] ?? srcMatch[2] ?? '').trim() : null;
+
+    if (!srcVal) {
+      messages.push(`${filename}:${line}: Inline <script> tag without src attribute violates CSP.`);
+    } else if (srcVal.toLowerCase().startsWith('javascript:')) {
+      messages.push(`${filename}:${line}: Insecure "javascript:" URI in <script src> violates CSP.`);
+    } else if (body.trim().length > 0) {
+      messages.push(`${filename}:${line}: <script> tag with src attribute must not contain inline code. Violates CSP.`);
+    }
   }
 
   // Scan for javascript: URIs in attributes

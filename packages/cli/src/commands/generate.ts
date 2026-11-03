@@ -32,40 +32,48 @@ export function scaffoldArtifact(type: GenerateArtifactType, name: string): { fi
   const camelName = toCamelCase(name);
 
   if (type === 'component') {
-    const code = `import { signal } from '@samrey/reactivity';
+    const code = `import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 export interface ${pascalName}Props {
   title?: string;
 }
 
-export function ${pascalName}(props: ${pascalName}Props) {
+export function ${pascalName}(props: ${pascalName}Props = {}) {
   const active = signal(false);
   const toggle = () => { active.value = !active.value; };
 
-  return (
-    <div class="${camelName}-wrapper">
-      <h3>{props.title || '${pascalName}'}</h3>
-      <button type="button" onClick={toggle}>
-        Toggle {active.value ? 'Off' : 'On'}
-      </button>
-    </div>
+  return el(
+    'div',
+    { class: '${camelName}-wrapper' },
+    el('h3', null, props.title || '${pascalName}'),
+    el(
+      'button',
+      { type: 'button', onClick: toggle },
+      () => (active.value ? 'Active' : 'Inactive')
+    )
   );
 }
 `;
 
     const testCode = `import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import * as assert from 'node:assert/strict';
 import { ${pascalName} } from './${pascalName}.js';
 
-describe('<${pascalName} /> Component', () => {
-  it('instantiates component cleanly', () => {
-    assert.equal(typeof ${pascalName}, 'function');
+describe('${pascalName} Component', () => {
+  it('instantiates and renders component node', () => {
+    const node = ${pascalName}({ title: 'Test Widget' });
+    assert.ok(node, 'Component must return a valid node');
+    const html = (node as any).outerHTML || '';
+    assert.ok(html.includes('${camelName}-wrapper'), 'Must include wrapper class');
+    assert.ok(html.includes('Test Widget'), 'Must render title prop');
+    assert.ok(html.includes('Inactive'), 'Must render initial button label');
   });
 });
 `;
 
     return {
-      filename: `${pascalName}.tsx`,
+      filename: `${pascalName}.ts`,
       testFilename: `${pascalName}.test.ts`,
       code,
       testCode
@@ -73,29 +81,35 @@ describe('<${pascalName} /> Component', () => {
   }
 
   if (type === 'route') {
-    const code = `export function ${pascalName}View() {
-  return (
-    <section class="view ${camelName}-view">
-      <h2>${pascalName} Page</h2>
-      <p>Content for ${pascalName} route.</p>
-    </section>
+    const code = `import { el } from '@samrey/runtime';
+
+export function ${pascalName}View() {
+  return el(
+    'section',
+    { class: 'view ${camelName}-view' },
+    el('h2', null, '${pascalName} Page'),
+    el('p', null, 'Content for ${pascalName} route.')
   );
 }
 `;
 
     const testCode = `import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import * as assert from 'node:assert/strict';
 import { ${pascalName}View } from './${pascalName}View.js';
 
 describe('${pascalName}View Route', () => {
-  it('renders route view function', () => {
-    assert.equal(typeof ${pascalName}View, 'function');
+  it('renders route view element', () => {
+    const node = ${pascalName}View();
+    assert.ok(node, 'Route view must return a valid node');
+    const html = (node as any).outerHTML || '';
+    assert.ok(html.includes('${camelName}-view'), 'Must include view class');
+    assert.ok(html.includes('${pascalName} Page'), 'Must render page heading');
   });
 });
 `;
 
     return {
-      filename: `${pascalName}View.tsx`,
+      filename: `${pascalName}View.ts`,
       testFilename: `${pascalName}View.test.ts`,
       code,
       testCode

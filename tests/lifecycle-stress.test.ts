@@ -136,8 +136,8 @@ describe('Samrey Phase 17 - Starter Template & CLI Validation Suite', () => {
       assert.ok(files['package.json'], `Template ${t} must have package.json`);
       assert.ok(files['tsconfig.json'], `Template ${t} must have tsconfig.json`);
       assert.ok(files['vite.config.ts'], `Template ${t} must have vite.config.ts`);
-      assert.ok(files['src/App.tsx'], `Template ${t} must have src/App.tsx`);
-      assert.ok(files['src/entry-client.tsx'], `Template ${t} must have src/entry-client.tsx`);
+      assert.ok(files['src/App.ts'] || files['src/App.tsx'], `Template ${t} must have src/App.ts`);
+      assert.ok(files['src/entry-client.ts'] || files['src/entry-client.tsx'], `Template ${t} must have src/entry-client.ts`);
 
       const pkg = JSON.parse(files['package.json']);
       assert.equal(pkg.name, `test-app-${t}`);

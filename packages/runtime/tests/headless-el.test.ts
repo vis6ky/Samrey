@@ -1,0 +1,71 @@
+/**
+ * @license Apache-2.0
+ * @samrey/runtime - Headless el() and SSR Escaping Tests
+ */
+
+import { describe, it } from 'node:test';
+import * as assert from 'node:assert/strict';
+import { el, rawHtml } from '../src/dom.js';
+
+describe('Headless el() and SSR HTML serialization', () => {
+  it('escapes text content containing < > & " in outerHTML', () => {
+    const node = el('div', null, 'Hello <script>alert("xss")</script> & "quotes"');
+    const html = (node as any).outerHTML;
+    assert.ok(!html.includes('<script>'), 'Must escape < in text content');
+    assert.ok(html.includes('&lt;script&gt;alert("xss")&lt;/script&gt; &amp; "quotes"'));
+  });
+
+  it('escapes attribute values containing < > & " in outerHTML', () => {
+    const node = el('a', { title: 'Quote " & <test>' }, 'Link');
+    const html = (node as any).outerHTML;
+    assert.ok(html.includes('title="Quote &quot; &amp; &lt;test&gt;"'));
+  });
+
+  it('renders function children as evaluated value, never source code', () => {
+    const getter = () => 'dynamic <value>';
+    const node = el('span', null, getter);
+    const html = (node as any).outerHTML;
+    assert.ok(!html.includes('() =>'), 'Must never render function source code');
+    assert.ok(!html.includes('dynamic <value>'), 'Must escape evaluated value');
+    assert.ok(html.includes('dynamic &lt;value&gt;'), 'Must include escaped evaluated value');
+  });
+
+  it('handles nested arrays, functions in arrays, null, false, and true cleanly', () => {
+    const node = el(
+      'ul',
+      null,
+      [
+        null,
+        false,
+        true,
+        undefined,
+        el('li', null, 'first'),
+        [
+          el('li', null, () => 'second'),
+          [el('li', null, 'third')]
+        ]
+      ]
+    );
+    const html = (node as any).outerHTML;
+    assert.ok(html.includes('<li>first</li>'));
+    assert.ok(html.includes('<li>second</li>'));
+    assert.ok(html.includes('<li>third</li>'));
+    assert.ok(!html.includes('null'));
+    assert.ok(!html.includes('false'));
+    assert.ok(!html.includes('true'));
+    assert.ok(!html.includes('undefined'));
+    assert.ok(!html.includes('() =>'));
+  });
+
+  it('evaluates and escapes function attributes in headless mode', () => {
+    const node = el('div', { 'data-label': () => 'Value with "quotes" & <tags>' });
+    const html = (node as any).outerHTML;
+    assert.ok(html.includes('data-label="Value with &quot;quotes&quot; &amp; &lt;tags&gt;"'));
+  });
+
+  it('renders rawHtml safely in headless el()', () => {
+    const node = el('div', null, rawHtml('<b>Safe Bold</b>'));
+    const html = (node as any).outerHTML;
+    assert.ok(html.includes('Safe Bold'));
+  });
+});

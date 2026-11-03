@@ -37,18 +37,43 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.ok(report.messages.some((m) => m.includes('script')));
   });
 
+  it('allows valid module/external script with src and flags inline or dangerous scripts', () => {
+    // 1. Valid starter script tag with src -> 0 violations
+    const validHtml = '<!DOCTYPE html><html><head><script type="module" src="/src/entry-client.ts"></script></head><body></body></html>';
+    const validReport = auditSource(validHtml, 'index.html');
+    assert.equal(validReport.violationsCount, 0, 'Must not flag script tag with valid src');
+
+    // 2. Inline script tag without src -> 1 violation
+    const inlineScript = '<script>console.log("inline")</script>';
+    const inlineReport = auditSource(inlineScript, 'index.html');
+    assert.equal(inlineReport.violationsCount, 1, 'Must flag inline script tag');
+    assert.ok(inlineReport.messages[0].includes('Inline <script>'));
+
+    // 3. Script tag with javascript: URI in src -> flagged as violation
+    const jsUriScript = '<script src="javascript:alert(1)"></script>';
+    const jsUriReport = auditSource(jsUriScript, 'index.html');
+    assert.ok(jsUriReport.violationsCount >= 1, 'Must flag javascript: URI in src');
+    assert.ok(jsUriReport.messages.some((m) => m.includes('javascript:')));
+
+    // 4. Script tag with src and inline body -> 1 violation
+    const bodyScript = '<script src="/bundle.js">alert(1)</script>';
+    const bodyReport = auditSource(bodyScript, 'index.html');
+    assert.equal(bodyReport.violationsCount, 1, 'Must flag script tag with src and inline content');
+    assert.ok(bodyReport.messages[0].includes('must not contain inline code'));
+  });
+
   it('generates a complete production starter project template with SSR, routing, and reactivity', () => {
     const files = generateStarterProject('my-samrey-app', { template: 'ssr' });
 
     assert.ok('package.json' in files);
     assert.ok('tsconfig.json' in files);
     assert.ok('vite.config.ts' in files);
-    assert.ok('src/App.tsx' in files);
-    assert.ok('src/components/Header.tsx' in files);
-    assert.ok('src/components/Counter.tsx' in files);
-    assert.ok('src/views/HomeView.tsx' in files);
-    assert.ok('src/entry-client.tsx' in files);
-    assert.ok('src/entry-server.tsx' in files);
+    assert.ok('src/App.ts' in files || 'src/App.tsx' in files);
+    assert.ok('src/components/Header.ts' in files || 'src/components/Header.tsx' in files);
+    assert.ok('src/components/Counter.ts' in files || 'src/components/Counter.tsx' in files);
+    assert.ok('src/views/HomeView.ts' in files || 'src/views/HomeView.tsx' in files);
+    assert.ok('src/entry-client.ts' in files || 'src/entry-client.tsx' in files);
+    assert.ok('src/entry-server.ts' in files || 'src/entry-server.tsx' in files);
     assert.ok('tests/app.test.ts' in files);
 
     const pkg = JSON.parse(files['package.json']!);
@@ -124,12 +149,12 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
 
   it('scaffolds components, routes, stores, and resources with "samrey generate"', async () => {
     const compScaffold = scaffoldArtifact('component', 'UserProfile');
-    assert.equal(compScaffold.filename, 'UserProfile.tsx');
+    assert.equal(compScaffold.filename, 'UserProfile.ts');
     assert.equal(compScaffold.testFilename, 'UserProfile.test.ts');
     assert.ok(compScaffold.code.includes('export function UserProfile('));
 
     const routeScaffold = scaffoldArtifact('route', 'Settings');
-    assert.equal(routeScaffold.filename, 'SettingsView.tsx');
+    assert.equal(routeScaffold.filename, 'SettingsView.ts');
 
     const storeScaffold = scaffoldArtifact('store', 'Cart');
     assert.equal(storeScaffold.filename, 'CartStore.ts');
@@ -137,6 +162,6 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
 
     const genResult = await runCLI(['generate', 'component', 'Button', '--dry-run']);
     assert.equal(genResult.exitCode, 0);
-    assert.ok(genResult.message.includes('Button.tsx'));
+    assert.ok(genResult.message.includes('Button.ts'));
   });
 });

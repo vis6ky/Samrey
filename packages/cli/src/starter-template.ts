@@ -47,6 +47,8 @@ export function generateStarterProject(
       },
       devDependencies: {
         '@samrey/cli': '^1.0.0',
+        '@types/node': '^20.0.0',
+        tsx: '^4.19.0',
         typescript: '^5.0.0',
         vite: '^5.0.0'
       }
@@ -62,7 +64,6 @@ export function generateStarterProject(
         module: 'NodeNext',
         moduleResolution: 'NodeNext',
         lib: ['ES2022', 'DOM', 'DOM.Iterable'],
-        jsx: 'preserve',
         strict: true,
         skipLibCheck: true,
         esModuleInterop: true
@@ -93,27 +94,30 @@ export default defineConfig({
   </head>
   <body>
     <div id="app"><!--ssr-outlet--></div>
-    <script type="module" src="/src/entry-client.tsx"></script>
+    <script type="module" src="/src/entry-client.ts"></script>
   </body>
 </html>
 `;
 
   // Minimal Template App
   if (templateType === 'minimal') {
-    const minimalApp = `import { signal } from '@samrey/reactivity';
+    const minimalApp = `import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 export function App() {
   const count = signal(0);
-  return (
-    <main style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
-      <h1>${projectName}</h1>
-      <p>Minimal Samrey Application</p>
-      <div style="margin-top: 1rem;">
-        <button type="button" onClick={() => count.value--}>-</button>
-        <span style="margin: 0 1rem; font-weight: bold;">{count.value}</span>
-        <button type="button" onClick={() => count.value++}>+</button>
-      </div>
-    </main>
+  return el(
+    'main',
+    { style: 'font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;' },
+    el('h1', null, '${projectName}'),
+    el('p', null, 'Minimal Samrey Application'),
+    el(
+      'div',
+      { style: 'margin-top: 1rem;' },
+      el('button', { type: 'button', onClick: () => count.value-- }, '-'),
+      el('span', { style: 'margin: 0 1rem; font-weight: bold;' }, () => count.value),
+      el('button', { type: 'button', onClick: () => count.value++ }, '+')
+    )
   );
 }
 `;
@@ -123,20 +127,20 @@ import { App } from './App.js';
 
 const root = document.getElementById('app');
 if (root) {
-  mount(() => <App />, root);
+  mount(() => App(), root);
 }
 `;
 
     const minimalTest = `import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { signal } from '@samrey/reactivity';
+import * as assert from 'node:assert/strict';
+import { App } from '../src/App.js';
 
 describe('${projectName} Minimal Tests', () => {
-  it('updates signal state', () => {
-    const count = signal(0);
-    assert.equal(count.value, 0);
-    count.value = 42;
-    assert.equal(count.value, 42);
+  it('renders application node and verifies structure', () => {
+    const node = App();
+    assert.ok(node, 'App must return a node');
+    const html = (node as any).outerHTML || (node as any).textContent || '';
+    assert.ok(html.includes('${projectName}'), 'Must render project name');
   });
 });
 `;
@@ -148,108 +152,125 @@ describe('${projectName} Minimal Tests', () => {
       'index.html': indexHtml,
       'README.md': `# ${projectName}\n\nMinimal Samrey Application.\n`,
       '.gitignore': `node_modules/\ndist/\n.DS_Store\ncoverage/\n*.log\n`,
-      'src/App.tsx': minimalApp,
-      'src/entry-client.tsx': minimalEntry,
+      'src/App.ts': minimalApp,
+      'src/entry-client.ts': minimalEntry,
       'tests/app.test.ts': minimalTest
     };
   }
 
   // SSG / SPA / SSR Templates
-  const appTsx = `import { signal } from '@samrey/reactivity';
-import { Router, Route, Link } from '@samrey/router';
+  const appTs = `import { el } from '@samrey/runtime';
+import { Router } from '@samrey/router';
 import { Header } from './components/Header.js';
 import { HomeView } from './views/HomeView.js';
 import { AboutView } from './views/AboutView.js';
 
 export function App() {
-  return (
-    <div class="app-container">
-      <Header title="${projectName}" />
-      <main>
-        <Router>
-          <Route path="/" component={HomeView} />
-          <Route path="/about" component={AboutView} />
-        </Router>
-      </main>
-    </div>
+  return el(
+    'div',
+    { class: 'app-container' },
+    Header({ title: '${projectName}' }),
+    el(
+      'main',
+      null,
+      Router({
+        routes: [
+          { path: '/', component: HomeView },
+          { path: '/about', component: AboutView }
+        ]
+      })
+    )
   );
 }
 `;
 
-  const headerTsx = `import { Link } from '@samrey/router';
+  const headerTs = `import { el } from '@samrey/runtime';
+import { Link } from '@samrey/router';
 
 export function Header(props: { title: string }) {
-  return (
-    <header class="navbar">
-      <div class="brand">
-        <h1>{props.title}</h1>
-      </div>
-      <nav>
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
-      </nav>
-    </header>
+  return el(
+    'header',
+    { class: 'navbar' },
+    el('div', { class: 'brand' }, el('h1', null, props.title)),
+    el(
+      'nav',
+      null,
+      Link({ href: '/', children: 'Home' }),
+      ' ',
+      Link({ href: '/about', children: 'About' })
+    )
   );
 }
 `;
 
-  const counterTsx = `import { signal } from '@samrey/reactivity';
+  const counterTs = `import { el } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
 
 export function Counter() {
   const count = signal(0);
   const increment = () => { count.value++; };
   const decrement = () => { count.value--; };
 
-  return (
-    <div class="counter-card">
-      <h3>Reactive Counter</h3>
-      <p class="count-display">Current Count: <strong>{count.value}</strong></p>
-      <div class="actions">
-        <button type="button" onClick={decrement}>-</button>
-        <button type="button" onClick={increment}>+</button>
-      </div>
-    </div>
+  return el(
+    'div',
+    { class: 'counter-card' },
+    el('h3', null, 'Reactive Counter'),
+    el(
+      'p',
+      { class: 'count-display' },
+      'Current Count: ',
+      el('strong', null, () => count.value)
+    ),
+    el(
+      'div',
+      { class: 'actions' },
+      el('button', { type: 'button', onClick: decrement }, '-'),
+      el('button', { type: 'button', onClick: increment }, '+')
+    )
   );
 }
 `;
 
-  const homeViewTsx = `import { Counter } from '../components/Counter.js';
+  const homeViewTs = `import { el } from '@samrey/runtime';
+import { Counter } from '../components/Counter.js';
 
 export function HomeView() {
-  return (
-    <section class="page home-page">
-      <h2>Welcome to your Samrey Application</h2>
-      <p>Fine-grained reactive performance with zero virtual DOM overhead.</p>
-      <Counter />
-    </section>
+  return el(
+    'section',
+    { class: 'page home-page' },
+    el('h2', null, 'Welcome to your Samrey Application'),
+    el('p', null, 'Fine-grained reactive performance with zero virtual DOM overhead.'),
+    Counter()
   );
 }
 `;
 
-  const aboutViewTsx = `export function AboutView() {
-  return (
-    <section class="page about-page">
-      <h2>About Samrey Framework</h2>
-      <p>Built for unmatched developer ergonomics, security sandboxing, and ultra-fast SSR.</p>
-    </section>
+  const aboutViewTs = `import { el } from '@samrey/runtime';
+
+export function AboutView() {
+  return el(
+    'section',
+    { class: 'page about-page' },
+    el('h2', null, 'About Samrey Framework'),
+    el('p', null, 'Built for unmatched developer ergonomics, security sandboxing, and ultra-fast SSR.')
   );
 }
 `;
 
-  const entryClientTsx = `import { mount } from '@samrey/runtime';
+  const entryClientTs = `import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');
 if (root) {
-  mount(() => <App />, root);
+  mount(() => App(), root);
 }
 `;
 
-  const entryServerTsx = `import { renderToString } from '@samrey/ssr';
+  const entryServerTs = `import { renderToString } from '@samrey/ssr';
 import { App } from './App.js';
 
-export function render(url: string) {
-  return renderToString(() => <App />);
+export function render(_url?: string) {
+  return renderToString(() => App());
 }
 `;
 
@@ -269,12 +290,12 @@ async function buildSSG() {
   </head>
   <body>
     <div id="app">\${bodyHtml}</div>
-    <script type="module" src="/src/entry-client.tsx"></script>
+    <script type="module" src="/src/entry-client.ts"></script>
   </body>
 </html>\`,
-    renderRoute: async (route) => {
+    renderRoute: async (_route) => {
       const { renderToString } = await import('@samrey/ssr');
-      return renderToString(() => <App />);
+      return renderToString(() => App());
     }
   });
   console.log('SSG Build Complete!');
@@ -283,16 +304,33 @@ async function buildSSG() {
 buildSSG().catch(console.error);
 `;
 
-  const testTsx = `import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { signal } from '@samrey/reactivity';
+  const testTs = `import { describe, it } from 'node:test';
+import * as assert from 'node:assert/strict';
+import { App } from '../src/App.js';
+import { Counter } from '../src/components/Counter.js';
+import { Header } from '../src/components/Header.js';
 
 describe('${projectName} Component Suite', () => {
-  it('increments reactive counter signal', () => {
-    const count = signal(0);
-    assert.equal(count.value, 0);
-    count.value++;
-    assert.equal(count.value, 1);
+  it('renders application and verifies reactive structure', () => {
+    const node = App();
+    assert.ok(node, 'App must return a valid DOM/mock node');
+    const html = (node as any).outerHTML || (node as any).textContent || '';
+    assert.ok(html.includes('${projectName}') || html.includes('app-container'), 'Must render application structure');
+  });
+
+  it('renders Header component with title prop', () => {
+    const header = Header({ title: 'My Custom App' });
+    assert.ok(header, 'Header must return a node');
+    const html = (header as any).outerHTML || '';
+    assert.ok(html.includes('My Custom App'), 'Header must contain title prop');
+  });
+
+  it('renders Counter component with initial count', () => {
+    const counter = Counter();
+    assert.ok(counter, 'Counter must return a node');
+    const html = (counter as any).outerHTML || '';
+    assert.ok(html.includes('Current Count:'), 'Counter must contain count display');
+    assert.ok(html.includes('0'), 'Counter must show initial count 0');
   });
 });
 `;
@@ -338,21 +376,21 @@ coverage/
     'index.html': indexHtml,
     'README.md': readmeMd,
     '.gitignore': gitignore,
-    'src/App.tsx': appTsx,
-    'src/components/Header.tsx': headerTsx,
-    'src/components/Counter.tsx': counterTsx,
-    'src/views/HomeView.tsx': homeViewTsx,
-    'src/views/AboutView.tsx': aboutViewTsx,
-    'src/entry-client.tsx': entryClientTsx,
-    'tests/app.test.ts': testTsx
+    'src/App.ts': appTs,
+    'src/components/Header.ts': headerTs,
+    'src/components/Counter.ts': counterTs,
+    'src/views/HomeView.ts': homeViewTs,
+    'src/views/AboutView.ts': aboutViewTs,
+    'src/entry-client.ts': entryClientTs,
+    'tests/app.test.ts': testTs
   };
 
   if (templateType === 'ssr') {
-    result['src/entry-server.tsx'] = entryServerTsx;
+    result['src/entry-server.ts'] = entryServerTs;
   }
   if (templateType === 'ssg') {
     result['ssg-build.ts'] = ssgBuildTs;
-    result['src/entry-server.tsx'] = entryServerTsx;
+    result['src/entry-server.ts'] = entryServerTs;
   }
 
   return result;

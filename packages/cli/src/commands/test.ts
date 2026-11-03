@@ -81,7 +81,13 @@ export async function runTestCommand(options: TestCommandOptions = {}): Promise<
   const hasTs = discoveredFiles.some((f) => f.endsWith('.ts') || f.endsWith('.tsx'));
   const nodeArgs: string[] = [];
   if (hasTs) {
-    nodeArgs.push('--import', 'tsx');
+    let tsxSpecifier = 'tsx';
+    try {
+      tsxSpecifier = import.meta.resolve('tsx');
+    } catch {
+      tsxSpecifier = 'tsx';
+    }
+    nodeArgs.push('--import', tsxSpecifier);
   }
   nodeArgs.push('--test', ...discoveredFiles);
 

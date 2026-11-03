@@ -35,7 +35,7 @@ describe('Phase 24 — CLI Tooling Final Gate', () => {
       const files = generateStarterProject(`test-${tmpl}-app`, { template: tmpl });
       assert.ok(files['package.json'], `Template ${tmpl} missing package.json`);
       assert.ok(files['README.md'], `Template ${tmpl} missing README.md`);
-      assert.ok(files['src/App.tsx'] || files['src/entry-client.tsx'], `Template ${tmpl} missing App component`);
+      assert.ok(files['src/App.ts'] || files['src/entry-client.ts'] || files['src/App.tsx'] || files['src/entry-client.tsx'], `Template ${tmpl} missing App component`);
 
       const manifest = JSON.parse(files['package.json']);
       assert.strictEqual(manifest.version, '1.0.0');
