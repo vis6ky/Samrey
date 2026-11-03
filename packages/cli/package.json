@@ -1,0 +1,59 @@
+{
+  "name": "@samrey/cli",
+  "version": "1.0.0",
+  "description": "Command-line tool, Vite plugin integration, and static security/a11y auditor for Samrey applications.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vis6ky/Samrey.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/vis6ky/Samrey#readme",
+  "bugs": {
+    "url": "https://github.com/vis6ky/Samrey/issues"
+  },
+  "keywords": [
+    "samrey",
+    "cli",
+    "vite-plugin",
+    "bundler",
+    "auditor"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/cli.test.ts",
+    "build": "esbuild src/bin.ts --bundle --alias:@samrey/compiler=../compiler/src/index.ts --alias:@samrey/security=../security/src/index.ts --alias:@samrey/reactivity=../reactivity/src/index.ts --alias:@samrey/runtime=../runtime/src/index.ts --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=bin/samrey.js",
+    "prepack": "npm run build"
+  },
+  "bin": {
+    "samrey": "./bin/samrey.js"
+  },
+  "dependencies": {
+    "@samrey/compiler": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,426 @@
+/**
+ * @license Apache-2.0
+ * @samrey/security - URI & HTML Sanitizers
+ */
+
+const SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
+const DANGEROUS_URI_PATTERNS = /^(javascript|vbscript|data|blob):/i;
+
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
+      try { return String.fromCharCode(parseInt(hex, 16)); } catch { return ''; }
+    })
+    .replace(/&#([0-9]+);?/gi, (_, dec) => {
+      try { return String.fromCharCode(parseInt(dec, 10)); } catch { return ''; }
+    })
+    .replace(/&colon;?/gi, ':');
+}
+
+/**
+ * Validates and sanitizes a URL or URI string.
+ * Blocks dangerous schemes (javascript:, vbscript:, data:text/html, blob:).
+ * Decodes URL encodings in scheme to prevent obfuscated javascript: executions.
+ * Only allows safe protocols (http:, https:, mailto:, tel:) and relative paths.
+ */
+export function sanitizeUri(rawUri: string | null | undefined): string {
+  if (!rawUri) return '';
+  const trimmed = String(rawUri).trim();
+
+  // Strip control characters, null bytes, and non-printable chars
+  let cleanSchemeCheck = decodeHtmlEntities(trimmed).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+
+  // Try decoding potential percent-encoded scheme bypasses (e.g. %6a%61%76%61%73%63%72%69%70%74:)
+  try {
+    const decoded = decodeURIComponent(cleanSchemeCheck);
+    if (decoded !== cleanSchemeCheck) {
+      cleanSchemeCheck = decodeHtmlEntities(decoded).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+    }
+  } catch {
+    // Malformed encoding in scheme check
+  }
+
+  if (DANGEROUS_URI_PATTERNS.test(cleanSchemeCheck)) {
+    return 'about:blank';
+  }
+
+  if (SAFE_URI_SCHEMES.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Treat unrecognized absolute schemes as unsafe
+  if (/^[a-z0-9+.-]+:/i.test(trimmed) || /^[a-z0-9+.-]+:/i.test(cleanSchemeCheck)) {
+    return 'about:blank';
+  }
+
+  return trimmed;
+}
+
+/**
+ * Validates that a redirect URI is strictly internal / same-origin safe.
+ * Rejects protocol-relative URLs (e.g. //evil.com, /\\evil.com) and external absolute URLs.
+ */
+export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback = '/'): string {
+  if (!rawUri) return fallback;
+  const trimmed = String(rawUri).trim();
+
+  // Strip control characters, tabs, and non-printable characters
+  const stripped = trimmed.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+
+  // Reject javascript: / data: / vbscript:
+  const safe = sanitizeUri(stripped);
+  if (safe === 'about:blank') return fallback;
+
+  // Reject protocol-relative URLs (e.g. //attacker.com or /\attacker.com or /\t/evil.com)
+  if (
+    stripped.startsWith('//') ||
+    stripped.startsWith('/\\') ||
+    stripped.startsWith('\\\\') ||
+    stripped.startsWith('\\/') ||
+    /^\/[\\/]/i.test(stripped)
+  ) {
+    return fallback;
+  }
+
+  // Allow safe relative paths
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+
+  return fallback;
+}
+
+/**
+ * Sanitizes inline CSS or style strings against script execution vectors
+ * (such as expression(), url(javascript:), behavior:, and @import).
+ */
+export function sanitizeCssStyle(css: unknown): string {
+  if (css === null || css === undefined) return '';
+  const str = String(css);
+
+  return str
+    .replace(/expression\s*\(.*?\)/gis, '')
+    .replace(/url\s*\(\s*["']?\s*javascript:[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/url\s*\(\s*["']?\s*vbscript:[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/url\s*\(\s*["']?\s*data:text\/html[^"')]*["']?\s*\)/gis, 'url("")')
+    .replace(/behavior\s*:[^;}]*/gis, '')
+    .replace(/-moz-binding\s*:[^;}]*/gis, '')
+    .replace(/@import\b[^;}]*;?/gis, '');
+}
+
+/**
+ * Recursively removes prototype pollution properties (__proto__, constructor, prototype) from an object.
+ */
+export function scrubPrototypePollution<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => scrubPrototypePollution(item)) as unknown as T;
+  }
+
+  const clean = Object.create(null) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    clean[key] = scrubPrototypePollution(value);
+  }
+
+  return clean as T;
+}
+
+/**
+ * Escapes characters for safe inclusion inside HTML attributes.
+ */
+export function escapeHtmlAttribute(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * Escapes characters for safe inclusion inside HTML text nodes.
+ */
+export function escapeHtmlText(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * Safe JSON parser that automatically scrubs prototype pollution keys.
+ */
+export function safeJsonParse<T = any>(jsonString: string): T {
+  const parsed = JSON.parse(jsonString);
+  return scrubPrototypePollution(parsed);
+}
+
+const SENSITIVE_KEY_PATTERNS = [
+  /(^|[._-])(password|passwd|pwd)([._-]|$)/,
+  /(^|[._-])secret([._-]|$)/,
+  /(^|[._-])api[._-]?key([._-]|$)/,
+  /(^|[._-])access[._-]?key([._-]|$)/,
+  /(^|[._-])private[._-]?key([._-]|$)/,
+  /(^|[._-])auth([._-]|$|token|secret|key|header)/,
+  /(^|[._-])(authorization|authentication)([._-]|$)/,
+  /(^|[._-])bearer([._-]|$)/,
+  /(^|[._-])token([._-]|$)/,
+  /(^|[._-])jwt([._-]|$)/,
+  /(^|[._-])credentials?([._-]|$)/,
+  /(^|[._-])cookies?([._-]|$)/,
+  /(^|[._-])session(id)?([._-]|$)/,
+  /(^|[._-])ssn([._-]|$)/,
+  /(^|[._-])database[._-]?url([._-]|$)/,
+  /(^|[._-])connection[._-]?string([._-]|$)/,
+  /(^|[._-])salt([._-]|$)/,
+  /(^|[._-])(pass(word)?|secret|salt)hash([._-]|$)/,
+  /(^|[._-])hash([._-]|$)/,
+  /^env\./,
+  /^process\.env/,
+  /^_secret/,
+  /(^|[._-])client[._-]?secret([._-]|$)/,
+  /(^|[._-])service[._-]?role([._-]|$)/
+];
+
+const KEY_SENSITIVITY_CACHE = new Map<string, boolean>();
+
+export function isSensitiveKey(key: string, additionalKeys?: (string | RegExp)[]): boolean {
+  if (typeof key !== 'string') return false;
+
+  if (!additionalKeys) {
+    const cached = KEY_SENSITIVITY_CACHE.get(key);
+    if (cached !== undefined) return cached;
+  }
+
+  const norm = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+
+  // Explicit non-sensitive exceptions: author, authorId, tokenCount, authority
+  let sensitive = false;
+  if (
+    !/(^|[._-])author([._-]|$)/.test(norm) &&
+    !/(^|[._-])authority([._-]|$)/.test(norm) &&
+    !/(^|[._-])token[._-]count(s)?([._-]|$)/.test(norm)
+  ) {
+    sensitive = SENSITIVE_KEY_PATTERNS.some((p) => p.test(norm));
+  }
+
+  if (!sensitive && additionalKeys) {
+    sensitive = additionalKeys.some((p) => (typeof p === 'string' ? p.toLowerCase() === key.toLowerCase() : p.test(key)));
+  }
+
+  if (!additionalKeys && KEY_SENSITIVITY_CACHE.size < 2000) {
+    KEY_SENSITIVITY_CACHE.set(key, sensitive);
+  }
+
+  return sensitive;
+}
+
+export interface SecretGuardOptions {
+  strict?: boolean;
+  additionalKeys?: (string | RegExp)[];
+  onSecretFound?: (path: string, key: string) => void;
+}
+
+export function stripSecrets<T>(
+  data: T,
+  options: SecretGuardOptions = {}
+): T {
+  const ancestors = new WeakSet<object>();
+  const memo = new WeakMap<object, any>();
+
+  function sanitize(val: unknown, currentPath = ''): unknown {
+    if (val === null || val === undefined) return val;
+
+    const valType = typeof val;
+    if (valType === 'function' || valType === 'symbol' || valType === 'bigint') {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (${valType}) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (${valType}) detected at "${errPath}". In standard JSON serialization it will serialize as undefined/empty or fail. Convert to JSON-serializable value.`
+        );
+      }
+      return undefined;
+    }
+
+    if (valType !== 'object') return val;
+
+    // Detect circular reference in current ancestor stack
+    if (ancestors.has(val as object)) {
+      return undefined;
+    }
+
+    // Reuse previously sanitized object in DAG (shared references)
+    if (memo.has(val as object)) {
+      return memo.get(val as object);
+    }
+
+    // Preserve Date, RegExp
+    if (val instanceof Date) {
+      return new Date(val.getTime());
+    }
+    if (val instanceof RegExp) {
+      return new RegExp(val.source, val.flags);
+    }
+
+    if (val instanceof Map) {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (Map) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (Map) detected at "${errPath}". Convert to plain object or array (e.g. Array.from(map.entries())) before serializing.`
+        );
+      }
+      ancestors.add(val as object);
+      const cleanMap = new Map();
+      memo.set(val as object, cleanMap);
+      for (const [k, v] of val.entries()) {
+        if (typeof k === 'string' && isSensitiveKey(k, options.additionalKeys)) {
+          if (options.strict) {
+            throw new Error(`[Samrey Security Violation] Attempted to serialize secret field "${currentPath}.${String(k)}".`);
+          }
+          if (options.onSecretFound) options.onSecretFound(`${currentPath}.${String(k)}`, k);
+          continue;
+        }
+        cleanMap.set(k, sanitize(v, `${currentPath}.${String(k)}`));
+      }
+      ancestors.delete(val as object);
+      return cleanMap;
+    }
+
+    if (val instanceof Set) {
+      const errPath = currentPath || 'root';
+      if (options.strict) {
+        throw new TypeError(
+          `[Samrey Serialization Error] Non-JSON-serializable type (Set) detected at "${errPath}". SSR state must be plain JSON-serializable.`
+        );
+      }
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[Samrey Serialization Warning] Non-JSON-serializable type (Set) detected at "${errPath}". Convert to array (e.g. Array.from(set)) before serializing.`
+        );
+      }
+      ancestors.add(val as object);
+      const cleanSet = new Set();
+      memo.set(val as object, cleanSet);
+      for (const item of val.values()) {
+        cleanSet.add(sanitize(item, currentPath));
+      }
+      ancestors.delete(val as object);
+      return cleanSet;
+    }
+
+    ancestors.add(val as object);
+
+    if (Array.isArray(val)) {
+      const cleanArr: unknown[] = [];
+      memo.set(val as object, cleanArr);
+      for (let idx = 0; idx < val.length; idx++) {
+        cleanArr.push(sanitize(val[idx], `${currentPath}[${idx}]`));
+      }
+      ancestors.delete(val as object);
+      return cleanArr;
+    }
+
+    const cleanObj: Record<string, unknown> = {};
+    memo.set(val as object, cleanObj);
+    const entries = Object.entries(val as Record<string, unknown>);
+
+    for (const [key, value] of entries) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
+      const fullPath = currentPath ? `${currentPath}.${key}` : key;
+
+      if (isSensitiveKey(key, options.additionalKeys)) {
+        if (options.strict) {
+          throw new Error(
+            `[Samrey Security Violation] Attempted to serialize secret field "${fullPath}". Serialization aborted to prevent credential leakage.`
+          );
+        }
+        if (options.onSecretFound) {
+          options.onSecretFound(fullPath, key);
+        }
+        continue;
+      }
+
+      cleanObj[key] = sanitize(value, fullPath);
+    }
+
+    ancestors.delete(val as object);
+    return cleanObj;
+  }
+
+  return sanitize(data) as T;
+}
+
+export const stripSensitiveState = stripSecrets;
+
+/**
+ * Escapes strings intended for embedded script blocks or JSON SSR state.
+ * Prevents HTML parser breakout attacks like </script> or <!--.
+ */
+export function escapeForScriptPayload(jsonString: string): string {
+  return jsonString
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+export const escapeJsonStringForScript = escapeForScriptPayload;
+
+const SAFE_IMAGE_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=]+$/i;
+
+/**
+ * Strips dangerous HTML tags and attributes for rich text boundaries.
+ */
+export function sanitizeHtmlString(html: string): string {
+  if (!html) return '';
+
+  return html
+    .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*>.*?<\/\1>/gis, '')
+    .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*\/?>/gis, '')
+    .replace(/[\s/]+(on[a-z0-9_-]+|formaction|xlink:href|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '')
+    .replace(/(href|src|action)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, _quoted, innerQuoted, unquoted) => {
+      const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
+      const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
+      if (/^(javascript|vbscript):/i.test(decoded)) {
+        return `${attr}="about:blank"`;
+      }
+      if (/^data:/i.test(decoded)) {
+        if (!SAFE_IMAGE_DATA_URI.test(decoded)) {
+          return `${attr}="about:blank"`;
+        }
+      }
+      return match;
+    });
+}
+
+export const sanitizeHtml = sanitizeHtmlString;
+export const sanitizeUrl = sanitizeUri;
+export function isSafeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const sanitized = sanitizeUri(url);
+  return sanitized !== 'about:blank';
+}
+export const sanitizeAttribute = escapeHtmlAttribute;
+export function safeJsonStringify(data: unknown): string {
+  return escapeForScriptPayload(JSON.stringify(stripSecrets(data)));
+}

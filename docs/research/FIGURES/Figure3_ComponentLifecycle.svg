@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #64748b; }
+      .box { rx: 12px; stroke-width: 1.5px; }
+      .box-blue { fill: #eff6ff; stroke: #3b82f6; }
+      .box-indigo { fill: #eef2ff; stroke: #6366f1; }
+      .box-emerald { fill: #ecfdf5; stroke: #10b981; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-rose { fill: #fff1f2; stroke: #f43f5e; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-purple { fill: #faf5ff; stroke: #a855f7; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+      .box-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #475569; }
+      .arrow { stroke: #64748b; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #3b82f6; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-blue); }
+      .arrow-emerald { stroke: #10b981; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-emerald); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <text x="24" y="36" class="title">Figure 3: Component Execution and Direct DOM Update Lifecycle</text>
+  <text x="24" y="56" class="subtitle">Samrey Framework v1.0.0 Architectural Specification</text>
+  
+  <rect x="40" y="90" width="250" height="120" class="box box-blue" />
+  <text x="55" y="115" class="box-title">Step 1: Single Component Execution</text>
+  <text x="55" y="135" class="box-text">• Component function runs ONCE at mount</text>
+  <text x="55" y="152" class="box-text">• Instantiates Signals &amp; Computeds</text>
+  <text x="55" y="170" class="box-text">• Attaches to parent Owner scope</text>
+  <text x="55" y="188" class="box-text">• Never re-executes on state changes</text>
+
+  <rect x="330" y="90" width="250" height="120" class="box box-emerald" />
+  <text x="345" y="115" class="box-title">Step 2: Template Cloning</text>
+  <text x="345" y="135" class="box-text">• Clones static HTML template once</text>
+  <text x="345" y="152" class="box-text">• Uses template.content.cloneNode(true)</text>
+  <text x="345" y="170" class="box-text">• Resolves dynamic paths (firstChild)</text>
+  <text x="345" y="188" class="box-text">• Zero Virtual DOM tree allocation</text>
+
+  <rect x="620" y="90" width="240" height="120" class="box box-purple" />
+  <text x="635" y="115" class="box-title">Step 3: Signal Binding</text>
+  <text x="635" y="135" class="box-text">• Binds text/attribute to getter closures</text>
+  <text x="635" y="152" class="box-text">• bindText(node, () => count.value)</text>
+  <text x="635" y="170" class="box-text">• Registers effect with active Owner</text>
+  <text x="635" y="188" class="box-text">• Attaches native event listeners</text>
+
+  <path d="M 290 150 L 320 150" class="arrow" />
+  <path d="M 580 150 L 610 150" class="arrow" />
+
+  <rect x="40" y="240" width="820" height="160" class="box box-amber" />
+  <text x="55" y="270" class="box-title">Subsequent State Mutation (e.g., count.value++)</text>
+  <text x="55" y="295" class="box-text">1. User clicks button -> Event handler modifies count.value.</text>
+  <text x="55" y="315" class="box-text">2. Topological reactive engine flags active text binding effect as dirty.</text>
+  <text x="55" y="335" class="box-text">3. Effect runs in microtask queue -> Executes node.textContent = count.value.</text>
+  <text x="55" y="355" class="box-text">4. Invariant: Component body is NOT re-invoked; VDOM tree diffing is completely bypassed.</text>
+  <text x="55" y="375" class="box-text">5. On component removal: Owner.dispose() tears down all signal subscriptions in O(1) time.</text>
+
+</svg>

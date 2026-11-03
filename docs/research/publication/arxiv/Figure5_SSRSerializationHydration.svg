@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #64748b; }
+      .box { rx: 12px; stroke-width: 1.5px; }
+      .box-blue { fill: #eff6ff; stroke: #3b82f6; }
+      .box-indigo { fill: #eef2ff; stroke: #6366f1; }
+      .box-emerald { fill: #ecfdf5; stroke: #10b981; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-rose { fill: #fff1f2; stroke: #f43f5e; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-purple { fill: #faf5ff; stroke: #a855f7; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+      .box-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #475569; }
+      .arrow { stroke: #64748b; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #3b82f6; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-blue); }
+      .arrow-emerald { stroke: #10b981; stroke-width: 2px; fill: none; marker-end: url(#arrowhead-emerald); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <text x="24" y="36" class="title">Figure 5: SSR Streaming & Resumable Micro-Hydration</text>
+  <text x="24" y="56" class="subtitle">Samrey Framework v1.0.0 Architectural Specification</text>
+  
+  <rect x="40" y="90" width="250" height="130" class="box box-blue" />
+  <text x="55" y="115" class="box-title">1. Server Streaming</text>
+  <text x="55" y="135" class="box-text">• Executes route loaders in parallel</text>
+  <text x="55" y="152" class="box-text">• Streams shell HTML immediately</text>
+  <text x="55" y="170" class="box-text">• Out-of-order chunks via &lt;template&gt;</text>
+  <text x="55" y="188" class="box-text">• Zero blocking server render</text>
+
+  <rect x="325" y="90" width="250" height="130" class="box box-amber" />
+  <text x="340" y="115" class="box-title">2. Safe State Serialization</text>
+  <text x="340" y="135" class="box-text">• JSON serialized with Unicode escapes</text>
+  <text x="340" y="152" class="box-text">• &lt; -> \u003c, &gt; -> \u003e (Anti-XSS)</text>
+  <text x="340" y="170" class="box-text">• Line terminators escaped (\u2028)</text>
+  <text x="340" y="188" class="box-text">• Prototype pollution keys rejected</text>
+
+  <rect x="610" y="90" width="250" height="130" class="box box-emerald" />
+  <text x="625" y="115" class="box-title">3. Resumable Hydration</text>
+  <text x="625" y="135" class="box-text">• Root event delegator catches clicks</text>
+  <text x="625" y="152" class="box-text">• Resumes reactive subscriptions</text>
+  <text x="625" y="170" class="box-text">• Zero component body re-render</text>
+  <text x="625" y="188" class="box-text">• Replays queued early user clicks</text>
+
+  <path d="M 290 155 L 320 155" class="arrow" />
+  <path d="M 575 155 L 605 155" class="arrow" />
+
+  <rect x="40" y="250" width="820" height="100" class="box box-slate" />
+  <text x="55" y="275" class="box-title">Comparison vs Traditional Hydration:</text>
+  <text x="55" y="300" class="box-text">Traditional VDOM (React/Vue): Client re-runs the entire component tree to generate virtual nodes before attaching listeners.</text>
+  <text x="55" y="325" class="box-text">Samrey Resumable: HTML is hydrated in place; component setup is skipped; signals link directly to existing DOM nodes.</text>
+
+</svg>

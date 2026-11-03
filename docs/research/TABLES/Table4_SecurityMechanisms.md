@@ -1,0 +1,12 @@
+# Table 4: Context-Aware Defensive Security Invariants
+
+| Injection Vector | Vulnerability Class | Compiler-Time Enforcement Strategy | Runtime Defense Primitive | Standard Benchmark / Test |
+| :--- | :--- | :--- | :--- | :--- |
+| **HTML Text Interpolation** | Cross-Site Scripting (XSS) via `<div>{userInput}</div>` | Compiles strictly to DOM `node.textContent = value` | Direct text node assignment; HTML parser completely bypassed. | `packages/security/tests/security.test.ts` (test case #1) |
+| **Attribute Values** | Attribute injection & quote breakouts | Compiles to `node.setAttribute(key, value)` with quote escaping | Direct property and attribute mapping without string concatenation. | `packages/security/tests/security.test.ts` (test case #2) |
+| **Hyperlinks & Iframes** | Pseudo-protocol execution (`javascript:`, `data:text/html`) | Compiles dynamic href/src via `sanitizeUri(value)` wrapper | Strict protocol allowlist (`http:`, `https:`, `mailto:`, `tel:`, relative paths). Non-conforming URLs neutralized to `about:blank`. | `packages/security/tests/adversarial-penetration.test.ts` |
+| **Inline CSS Styles** | CSS injection & expression breakouts | Disallows raw dynamic strings; mandates structured CSS objects | Validates style properties against CSSOM identifiers; blocks `url()` & `expression()`. | `packages/security/tests/security.test.ts` (test case #4) |
+| **Arbitrary Markup Injection** | Unsanitized `innerHTML` execution | Prohibits dynamic `innerHTML` in templates; requires `<SafeHtml>` | Mandates W3C Trusted Types policy token (`window.trustedTypes.createPolicy('samrey#html')`). | `packages/security/tests/fuzzing.test.ts` |
+| **SSR State Serialization** | Script-tag breakout (`</script><script>`) | State serializer encodes HTML delimiters via Unicode replacements | `<` -> `\u003c`, `>` -> `\u003e`, `&` -> `\u0026`, line separators `\u2028`/`\u2029` escaped. | `packages/ssr/tests/security.test.ts` |
+| **Prototype Pollution** | `__proto__`, `constructor`, `prototype` poisoning | Deserializer and reactive subscriber registries use `Object.create(null)` | Recursive prototype scrubbing (`scrubPrototypePollution`) on all deserialized states. | `packages/security/tests/fuzzing.test.ts` |
+| **Dynamic Execution** | Arbitrary code execution via `eval()` or `new Function()` | Compiler and runtime contain strictly 0 dynamic eval calls | Strict CSP compliance (`script-src 'self'`). Zero eval in production code. | Full-codebase grep audit (0 instances in `packages/*/src/**`). |

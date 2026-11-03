@@ -1,0 +1,118 @@
+/**
+ * @license Apache-2.0
+ * @samrey/compiler - Compile-Time Static Analysis & Constant Folding
+ */
+
+import { ASTNode, ASTAttributeNode, ASTElementNode } from './ast.js';
+
+export interface ConstantFoldResult {
+  isConstant: boolean;
+  value: string | null;
+}
+
+function decodeStringEscapes(str: string): string {
+  return str.replace(/\\([bfnrtv'"\\0]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})/g, (match, esc) => {
+    switch (esc[0]) {
+      case 'b': return '\b';
+      case 'f': return '\f';
+      case 'n': return '\n';
+      case 'r': return '\r';
+      case 't': return '\t';
+      case 'v': return '\v';
+      case "'": return "'";
+      case '"': return '"';
+      case '\\': return '\\';
+      case '0': return '\0';
+      case 'x': return String.fromCharCode(parseInt(esc.slice(1), 16));
+      case 'u': return String.fromCharCode(parseInt(esc.slice(1), 16));
+      default: return match;
+    }
+  });
+}
+
+/**
+ * Fast check if an expression is a compile-time static constant literal.
+ * Supports:
+ * - String literals: "hello", 'hello', `hello` (without ${})
+ * - Numeric literals: 42, 3.14, -1, 0xFF
+ * - Boolean literals: true, false
+ * - Null / Undefined: null, undefined
+ */
+export function evaluateConstantExpression(expr: string): ConstantFoldResult {
+  const trimmed = expr.trim();
+  if (!trimmed) {
+    return { isConstant: false, value: null };
+  }
+
+  const first = trimmed.charCodeAt(0);
+  // Fast path: if not a quote, digit, sign, or start of true/false/null/undefined, it cannot be a literal
+  if (
+    first !== 34 && first !== 39 && first !== 96 && // ", ', `
+    (first < 48 || first > 57) && // 0-9
+    first !== 43 && first !== 45 && // +, -
+    first !== 116 && first !== 102 && first !== 110 && first !== 117 // t, f, n, u
+  ) {
+    return { isConstant: false, value: null };
+  }
+
+  // 1. String literals: "...", '...', `...` (without interpolation)
+  if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
+    try {
+      return { isConstant: true, value: JSON.parse(trimmed) };
+    } catch {
+      return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
+    }
+  }
+
+  if (/^'(?:[^'\\]|\\.)*'$/.test(trimmed)) {
+    return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
+  }
+
+  if (/^`(?:\\[\s\S]|[^`\\])*`$/.test(trimmed)) {
+    if (!trimmed.includes('${')) {
+      return { isConstant: true, value: decodeStringEscapes(trimmed.slice(1, -1)) };
+    }
+  }
+
+  // 2. Boolean & Null & Undefined literals
+  if (trimmed === 'null' || trimmed === 'undefined' || trimmed === 'false' || trimmed === 'true') {
+    return { isConstant: true, value: trimmed };
+  }
+
+  // 3. Number literals: integer, float, hex, negative
+  if (/^[+-]?(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)$/.test(trimmed)) {
+    return { isConstant: true, value: trimmed };
+  }
+
+  return { isConstant: false, value: null };
+}
+
+/**
+ * Checks if an entire AST node (and all descendants) is 100% static.
+ */
+export function isStaticSubtree(node: ASTNode): boolean {
+  if (node.type === 'Text') {
+    return true;
+  }
+
+  if (node.type === 'Interpolation') {
+    return evaluateConstantExpression(node.expression).isConstant;
+  }
+
+  if (node.type === 'Element') {
+    for (const attr of node.attributes) {
+      if (attr.isEvent) return false;
+      if (attr.isDynamic && attr.expression) {
+        const fold = evaluateConstantExpression(attr.expression);
+        if (!fold.isConstant) return false;
+      }
+    }
+    for (const child of node.children) {
+      if (!isStaticSubtree(child)) return false;
+    }
+    return true;
+  }
+
+  // Components, Show, For are dynamic by definition
+  return false;
+}

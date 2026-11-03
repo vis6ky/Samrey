@@ -1,0 +1,70 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@samrey/security": [
+        "./packages/security/src/index.ts"
+      ],
+      "@samrey/reactivity": [
+        "./packages/reactivity/src/index.ts"
+      ],
+      "@samrey/runtime": [
+        "./packages/runtime/src/index.ts"
+      ],
+      "@samrey/compiler": [
+        "./packages/compiler/src/index.ts"
+      ],
+      "@samrey/compiler/*": [
+        "./packages/compiler/*"
+      ],
+      "@samrey/router": [
+        "./packages/router/src/index.ts"
+      ],
+      "@samrey/router/*": [
+        "./packages/router/*"
+      ],
+      "@samrey/http": [
+        "./packages/http/src/index.ts"
+      ],
+      "@samrey/forms": [
+        "./packages/forms/src/index.ts"
+      ],
+      "@samrey/ssr": [
+        "./packages/ssr/src/index.ts"
+      ],
+      "@samrey/testing": [
+        "./packages/testing/src/index.ts"
+      ],
+      "@samrey/cli": [
+        "./packages/cli/src/index.ts"
+      ],
+      "@samrey/cli/*": [
+        "./packages/cli/*"
+      ],
+      "@samrey/devtools": [
+        "./packages/devtools/src/index.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist", "app/applet/examples"]
+}

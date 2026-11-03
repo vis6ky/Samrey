@@ -1,0 +1,55 @@
+{
+  "name": "@samrey/router",
+  "version": "1.0.0",
+  "description": "Fine-grained reactive client & server router with parameterized matching and loader pipelines.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vis6ky/Samrey.git",
+    "directory": "packages/router"
+  },
+  "homepage": "https://github.com/vis6ky/Samrey#readme",
+  "bugs": {
+    "url": "https://github.com/vis6ky/Samrey/issues"
+  },
+  "keywords": [
+    "samrey",
+    "router",
+    "routing",
+    "loaders",
+    "navigation"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@samrey/reactivity": "^1.0.0",
+    "@samrey/runtime": "^1.0.0",
+    "@samrey/security": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
