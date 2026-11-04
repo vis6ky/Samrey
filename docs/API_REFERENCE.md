@@ -50,11 +50,23 @@ Binds dynamic attribute values with runtime security validations.
 ### `bindEvent(element: Element, eventName: string, handler: EventListener): void`
 Attaches an event listener bound to the active Owner lifecycle.
 
-### `Show(props: ShowProps): Node`
+### `Show<T>(props: ShowProps<T>): Node`
 Declarative conditional rendering component.
+- **Boolean Gate (Fast Path)**: When `children` takes no parameter (`children.length === 0` or a static Node/array), `Show` operates as a pure boolean gate: changes between truthy values do not re-render.
+- **Keyed by Value**: When `children` declares a parameter (`(item: NonNullable<T>) => Node`), **Show is keyed by the value when children use it**, re-rendering whenever the truthy value changes (`Object.is` identity comparison).
+- **Fallback**: Mounts `fallback?: () => Node` when `when` evaluates to falsy.
 
-### `For<T>(props: ForProps<T>): Node`
-Keyed list differential reconciliation component.
+### `Switch(props: SwitchProps): Node`
+Declarative multi-branch control flow primitive.
+- Evaluates child `Match` definitions in order and mounts the first branch whose `when` condition evaluates to truthy.
+- **Active Match Keying**: Re-renders when the active match changes (comparing the matched `Match` object, then its value), independent of `Show`'s boolean gate.
+- Mounts `fallback?: () => Node` when no cases match.
+
+### `Match<T>(props: MatchProps<T>): MatchProps<T>`
+Declares a conditional branch definition within a `Switch` component.
+
+### `For<T, K = unknown>(props: ForProps<T, K>): Node`
+Keyed list differential reconciliation component. Reconciles dynamic collections with DOM node reuse via LIS optimization. Prunes duplicate-key tracking tokens after each reconcile.
 
 ---
 

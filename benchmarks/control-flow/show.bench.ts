@@ -1,4 +1,4 @@
-import { Show, createComponent } from '../../packages/runtime/src/index.js';
+import { Show, Switch, Match, createComponent } from '../../packages/runtime/src/index.js';
 import { signal, createRoot, onCleanup } from '../../packages/reactivity/src/index.js';
 import { benchmark, BenchmarkResult } from '../utils/harness.js';
 import { setupBenchmarkDOM, BenchmarkNode } from '../utils/dom-mock.js';
@@ -144,6 +144,55 @@ export function runShowBenchmarks(): BenchmarkResult[] {
 
       for (let i = 0; i < 50; i++) {
         condition.value = i % 2 === 1;
+      }
+      dispose();
+    });
+  }, { category, iterations: 20 }));
+
+  // 6. Switch: Multi-Branch Transitions (50 transitions across 3 cases and fallback)
+  results.push(benchmark('Switch: Multi-Branch Transitions (50 cycles)', () => {
+    createRoot((dispose) => {
+      const container = new BenchmarkNode(1, 'DIV');
+      const state = signal<string>('a');
+
+      const switchNode = Switch({
+        fallback: () => {
+          const el = new BenchmarkNode(1, 'SPAN');
+          el.textContent = 'Fallback';
+          return el as unknown as Node;
+        },
+        children: [
+          Match({
+            when: () => state.value === 'a',
+            children: () => {
+              const el = new BenchmarkNode(1, 'DIV');
+              el.textContent = 'Case A';
+              return el as unknown as Node;
+            }
+          }),
+          Match({
+            when: () => state.value === 'b',
+            children: () => {
+              const el = new BenchmarkNode(1, 'DIV');
+              el.textContent = 'Case B';
+              return el as unknown as Node;
+            }
+          }),
+          Match({
+            when: () => state.value === 'c',
+            children: () => {
+              const el = new BenchmarkNode(1, 'DIV');
+              el.textContent = 'Case C';
+              return el as unknown as Node;
+            }
+          })
+        ]
+      });
+      container.appendChild(switchNode as unknown as BenchmarkNode);
+
+      const sequence = ['b', 'c', 'none', 'a', 'b'];
+      for (let i = 0; i < 50; i++) {
+        state.value = sequence[i % sequence.length];
       }
       dispose();
     });

@@ -94,12 +94,19 @@ function normalizeNodes(val: unknown): Node[] {
  * <Show> Reactive Conditional Rendering Primitive
  *
  * Conditionally mounts and unmounts DOM subtrees and nested owners based on a reactive condition.
+ * When `children` takes no parameter (children.length === 0 or is a static Node/array), Show operates
+ * as an unkeyed boolean truthiness gate and does NOT re-render on value identity changes.
+ * When `children` declares a parameter (children.length > 0), Show is keyed by the value when children
+ * use it, re-rendering whenever the truthy value changes by Object.is comparison.
  */
 export function Show<T>(props: ShowProps<T>): Node {
   const outerOwner = getOwner();
   let currentOwner: Owner | null = null;
   let currentNodes: Node[] = [];
+  let prevCondition: unknown = undefined;
   let prevTruthy: boolean | null = null;
+
+  const isKeyed = typeof props.children === 'function' && props.children.length > 0;
 
   const marker = createControlFlowMarker('samrey:show', (parent) => {
     if (currentNodes.length > 0) {
@@ -136,10 +143,25 @@ export function Show<T>(props: ShowProps<T>): Node {
     const condition = typeof whenProp === 'function' ? (whenProp as () => unknown)() : (whenProp && typeof whenProp === 'object' && 'value' in whenProp) ? (whenProp as { value: unknown }).value : whenProp;
     const isTruthy = Boolean(condition);
 
-    if (isTruthy === prevTruthy) {
-      return;
+    if (prevTruthy !== null) {
+      if (isKeyed) {
+        if (isTruthy === prevTruthy) {
+          if (!isTruthy) {
+            return;
+          }
+          if (Object.is(condition, prevCondition)) {
+            return;
+          }
+        }
+      } else {
+        if (isTruthy === prevTruthy) {
+          return;
+        }
+      }
     }
+
     prevTruthy = isTruthy;
+    prevCondition = condition;
 
     // Clean up previous branch
     if (currentOwner) {
@@ -663,7 +685,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 }
 
 export interface MatchProps<T = unknown> {
-  when: () => T;
+  when: (() => T) | Signal<T> | T;
   children: ((item: NonNullable<T>) => Node | Node[] | null | undefined) | Node | Node[];
 }
 
@@ -676,24 +698,162 @@ export function Match<T>(props: MatchProps<T>): MatchProps<T> {
   return props;
 }
 
+/**
+ * <Switch> and <Match> Reactive Multi-Branch Control Flow Primitives
+ *
+ * Selects the first matching <Match> branch whose `when` condition evaluates to truthy.
+ * Switch re-renders when the active match changes (comparing the matched Match object, then its value),
+ * falling back to `props.fallback` when no Match conditions evaluate to truthy.
+ */
 export function Switch(props: SwitchProps): Node {
-  const cases = Array.isArray(props.children) ? props.children : [props.children];
-  const matchCases = cases.filter((c): c is MatchProps<unknown> => !!c && typeof c === 'object' && 'when' in (c as any));
+  const outerOwner = getOwner();
+  let currentOwner: Owner | null = null;
+  let currentNodes: Node[] = [];
+  let prevMatch: MatchProps<unknown> | null = null;
+  let prevVal: unknown = undefined;
+  let prevMatched: boolean | null = null;
 
-  return Show({
-    when: () => {
-      for (const match of matchCases) {
-        const val = match.when();
-        if (val) return { match, val };
+  const marker = createControlFlowMarker('samrey:switch', (parent) => {
+    if (currentNodes.length > 0) {
+      const next = marker.nextSibling;
+      for (const node of currentNodes) {
+        if (node.parentNode !== parent) {
+          parent.insertBefore(node, next);
+        }
       }
-      return null;
-    },
-    fallback: props.fallback,
-    children: (active: { match: MatchProps<unknown>; val: unknown }) => {
-      const child = active.match.children;
-      return typeof child === 'function' ? (child as (item: unknown) => Node)(active.val) : child;
     }
   });
+
+  function removeNodes(): void {
+    for (const node of currentNodes) {
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    }
+    currentNodes = [];
+  }
+
+  function insertNodes(nodes: Node[]): void {
+    const parent = marker.parentNode;
+    if (parent) {
+      const nextSibling = marker.nextSibling;
+      for (const node of nodes) {
+        parent.insertBefore(node, nextSibling);
+      }
+    }
+  }
+
+  const rawChildren = typeof props.children === 'function' ? (props.children as () => unknown)() : props.children;
+  const cases = Array.isArray(rawChildren) ? rawChildren : [rawChildren];
+  const matchCases = cases.filter((c): c is MatchProps<unknown> => !!c && typeof c === 'object' && 'when' in (c as any));
+
+  effect(() => {
+    let matchedCase: MatchProps<unknown> | null = null;
+    let matchedVal: unknown = undefined;
+
+    for (const match of matchCases) {
+      const whenProp = match.when;
+      const val = typeof whenProp === 'function'
+        ? (whenProp as () => unknown)()
+        : (whenProp && typeof whenProp === 'object' && 'value' in whenProp)
+          ? (whenProp as { value: unknown }).value
+          : whenProp;
+      if (val) {
+        matchedCase = match;
+        matchedVal = val;
+        break;
+      }
+    }
+
+    const hasMatch = matchedCase !== null;
+
+    if (prevMatched !== null) {
+      if (hasMatch) {
+        if (prevMatched && prevMatch === matchedCase && Object.is(prevVal, matchedVal)) {
+          return;
+        }
+      } else {
+        if (!prevMatched) {
+          return;
+        }
+      }
+    }
+
+    prevMatched = hasMatch;
+    prevMatch = matchedCase;
+    prevVal = matchedVal;
+
+    if (currentOwner) {
+      currentOwner.dispose();
+      currentOwner = null;
+    }
+    removeNodes();
+
+    if (hasMatch && matchedCase) {
+      currentOwner = createOwner(outerOwner);
+      const child = matchedCase.children;
+      let rendered: unknown = null;
+
+      untrack(() => {
+        runWithOwner(currentOwner, () => {
+          if (typeof child === 'function') {
+            rendered = (child as (item: unknown) => unknown)(matchedVal);
+          } else {
+            rendered = child;
+          }
+        });
+      });
+
+      const nodes = normalizeNodes(rendered);
+      currentNodes = nodes;
+      insertNodes(nodes);
+    } else if (props.fallback) {
+      currentOwner = createOwner(outerOwner);
+      let fallbackRendered: unknown = null;
+
+      untrack(() => {
+        runWithOwner(currentOwner, () => {
+          if (props.fallback) {
+            fallbackRendered = props.fallback();
+          }
+        });
+      });
+
+      const nodes = normalizeNodes(fallbackRendered);
+      currentNodes = nodes;
+      insertNodes(nodes);
+    }
+  });
+
+  onCleanup(() => {
+    if (currentOwner) {
+      currentOwner.dispose();
+      currentOwner = null;
+    }
+    removeNodes();
+  });
+
+  if (typeof document === 'undefined') {
+    Object.defineProperty(marker, 'outerHTML', {
+      get() {
+        return currentNodes
+          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
+          .join('');
+      },
+      configurable: true
+    });
+  }
+
+  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(marker);
+    for (const node of currentNodes) {
+      fragment.appendChild(node);
+    }
+    return fragment;
+  }
+
+  return marker;
 }
 
 export interface ErrorBoundaryProps {

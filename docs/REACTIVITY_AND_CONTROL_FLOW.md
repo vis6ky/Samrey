@@ -69,16 +69,52 @@ Instead of JavaScript ternary operators or `.map()` in Virtual DOM templates, Sa
 
 ### `Show` (Conditional Rendering)
 
+`Show` provides fine-grained conditional DOM mounting:
+- **Boolean Gate (Fast Path)**: When `children` takes no parameter (`children: () => ...`), `Show` evaluates only the truthiness of `when`. Repeated truthy values do not trigger re-renders.
+- **Keyed by Value**: When `children` declares a parameter (`children: (item) => ...`), **Show is keyed by the value when children use it**, re-rendering whenever the truthy value identity changes (`Object.is`).
+
 ```typescript
 import { Show } from '@samrey/runtime';
 import { signal } from '@samrey/reactivity';
 
-const isLoggedIn = signal(false);
+const user = signal<{ name: string } | null>({ name: 'Ann' });
 
+// Keyed by value: children receives the active truthy value and re-renders on identity changes
 const node = Show({
-  when: () => isLoggedIn.value,
-  children: () => document.createTextNode('Welcome back, Admin!'),
+  when: () => user.value,
+  children: (u) => document.createTextNode(`Hello, ${u.name}!`),
   fallback: () => document.createTextNode('Please sign in.')
+});
+```
+
+### `<Switch>` and `<Match>` (Multi-Branch Rendering)
+
+`<Switch>` selects the first branch whose `<Match>` condition evaluates to truthy:
+- **Active Match Tracking**: Re-renders whenever the active match changes (comparing the matched `Match` object, then its value), ensuring transitions between consecutive truthy matches re-render properly.
+- **Fallback**: Displays `fallback` when no cases match.
+
+```typescript
+import { Switch, Match } from '@samrey/runtime';
+import { signal } from '@samrey/reactivity';
+
+const status = signal<'loading' | 'success' | 'error'>('loading');
+
+const switchNode = Switch({
+  fallback: () => document.createTextNode('Idle'),
+  children: [
+    Match({
+      when: () => status.value === 'loading',
+      children: () => document.createTextNode('Loading...')
+    }),
+    Match({
+      when: () => status.value === 'success',
+      children: () => document.createTextNode('Operation successful!')
+    }),
+    Match({
+      when: () => status.value === 'error',
+      children: () => document.createTextNode('An error occurred.')
+    })
+  ]
 });
 ```
 
