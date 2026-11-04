@@ -26,6 +26,7 @@ export interface RegressionReportItem {
   minAllowedOps: number;
   passed: boolean;
   isFasterThanBase: boolean;
+  isNoiseExempt: boolean;
   floorWarning?: boolean;
   rationale: string;
 }
@@ -120,10 +121,14 @@ export function evaluateBenchmarkRow(params: {
     : 0;
   const isFasterThanBase = currentAvgMs <= baselineAvgMs;
 
-  // Sub-millisecond benchmarks (< 1.0ms) have high fractional jitter in CI; absolute variance < 0.35ms is VM scheduler noise
-  const isSubMillisecondNoise =
-    (baselineAvgMs < 1.0 && Math.abs(currentAvgMs - baselineAvgMs) < 0.35) ||
-    (baselineAvgMs < 0.1 && Math.abs(currentAvgMs - baselineAvgMs) < 0.05);
+  // Narrow, proportional noise exemption:
+  // Only applies when absolute difference is below 0.02 ms AND relative change is below 3x declared maxRegressionPercent.
+  const absDeltaMs = Number(Math.abs(currentAvgMs - baselineAvgMs).toFixed(4));
+  const isNoiseExempt =
+    !isFasterThanBase &&
+    deltaPercent > threshold.maxRegressionPercent &&
+    absDeltaMs < 0.02 &&
+    deltaPercent < 3 * threshold.maxRegressionPercent;
 
   let floorWarning = false;
   let passed = false;
@@ -132,7 +137,7 @@ export function evaluateBenchmarkRow(params: {
     // "A row that is faster than its base never fails."
     passed = true;
   } else {
-    const passedDelta = isSubMillisecondNoise || deltaPercent <= threshold.maxRegressionPercent;
+    const passedDelta = deltaPercent <= threshold.maxRegressionPercent || isNoiseExempt;
     let passedOps = true;
 
     if (threshold.minOpsPerSec && currentOps < threshold.minOpsPerSec) {
@@ -160,6 +165,7 @@ export function evaluateBenchmarkRow(params: {
     minAllowedOps: threshold.minOpsPerSec || 0,
     passed,
     isFasterThanBase,
+    isNoiseExempt,
     floorWarning,
     rationale: threshold.rationale
   };
@@ -388,7 +394,8 @@ async function runRegressionGateCompare(
     for (const item of report) {
       let statusIcon = item.passed ? '✅ PASS' : '❌ FAIL';
       if (item.isFasterThanBase) statusIcon = '🚀 PASS';
-      if (item.floorWarning) statusIcon = '⚠️ WARN';
+      else if (item.isNoiseExempt) statusIcon = '🛡️ PASS (noise-exempt)';
+      else if (item.floorWarning) statusIcon = '⚠️ WARN';
 
       const deltaStr = `${item.deltaPercent > 0 ? '+' : ''}${item.deltaPercent}%`;
       console.log(`| ${statusIcon} | ${item.category} | ${item.name} | ${item.baselineAvgMs}ms | ${item.currentAvgMs}ms | ${deltaStr} | +${item.maxAllowedPercent}% | ${item.currentOps.toLocaleString()} | ${item.minAllowedOps.toLocaleString()} |`);
@@ -484,7 +491,8 @@ async function runRegressionGateBaseline(
   for (const item of report) {
     let statusIcon = item.passed ? '✅ PASS' : '❌ FAIL';
     if (item.isFasterThanBase) statusIcon = '🚀 PASS';
-    if (item.floorWarning) statusIcon = '⚠️ WARN';
+    else if (item.isNoiseExempt) statusIcon = '🛡️ PASS (noise-exempt)';
+    else if (item.floorWarning) statusIcon = '⚠️ WARN';
     console.log(`| ${statusIcon} | ${item.category} | ${item.name} | ${item.baselineAvgMs}ms | ${item.currentAvgMs}ms | ${item.deltaPercent > 0 ? '+' : ''}${item.deltaPercent}% | +${item.maxAllowedPercent}% | ${item.currentOps.toLocaleString()} | ${item.minAllowedOps.toLocaleString()} |`);
   }
 
