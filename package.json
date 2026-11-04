@@ -15,6 +15,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "check:file-size": "tsx scripts/check-file-sizes.ts",
     "bench": "tsx benchmarks/runner.ts",
     "benchmark": "tsx benchmarks/runner.ts",
     "benchmark:compiler": "tsx benchmarks/runner.ts compiler",

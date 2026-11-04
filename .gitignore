@@ -7,5 +7,12 @@ coverage/
 .env*
 !.env.example
 .aistudio/artifacts/**
+.antigravity/
+.aistudio/
+.gemini/
+.cursor/
+.windsurf/
+.claudecodes/
+.copilot/
 packages/cli/bin/*.js
 packages/cli/bin/samrey.js

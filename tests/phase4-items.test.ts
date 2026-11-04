@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 describe('Phase 4 - Hygiene & Infrastructure (4.2 - 4.5)', () => {
   const rootDir = process.cwd();
@@ -76,5 +77,43 @@ describe('Phase 4 - Hygiene & Infrastructure (4.2 - 4.5)', () => {
         assert.ok(repoStr.includes('vis6ky/Samrey'), `Package ${dir} repository must point to vis6ky/Samrey, found ${repoStr}`);
       }
     }
+  });
+
+  test('1. Repo Hygiene: AI-tool state folders ignored, 90 MB transcript removed, no tracked files over 5 MB', () => {
+    // 1. .gitignore checks
+    const gitignorePath = path.join(rootDir, '.gitignore');
+    assert.ok(fs.existsSync(gitignorePath), '.gitignore must exist');
+    const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    assert.ok(gitignoreContent.includes('.antigravity/'), '.gitignore must ignore .antigravity/');
+    assert.ok(gitignoreContent.includes('.cursor/') || gitignoreContent.includes('.gemini/'), '.gitignore must ignore AI-tool state folders');
+
+    // 2. Large transcript file removed from working tree
+    const transcriptPath = path.join(rootDir, '.antigravity/f1afa3fd-60e6-407f-9561-045d08f94af1.pbtxt');
+    assert.ok(!fs.existsSync(transcriptPath), '.antigravity/f1afa3fd-60e6-407f-9561-045d08f94af1.pbtxt must be removed from working tree');
+
+    // 3. Check tracked files are under 5 MB
+    const trackedFiles = execSync('git ls-files', { cwd: rootDir, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    const oversizedFiles: { file: string; size: number }[] = [];
+    for (const relFile of trackedFiles) {
+      const fullPath = path.join(rootDir, relFile);
+      if (fs.existsSync(fullPath)) {
+        const stat = fs.statSync(fullPath);
+        if (stat.size > MAX_FILE_SIZE) {
+          oversizedFiles.push({ file: relFile, size: stat.size });
+        }
+      }
+    }
+    assert.strictEqual(
+      oversizedFiles.length,
+      0,
+      `Tracked files must not exceed 5 MB: ${oversizedFiles.map(f => `${f.file} (${(f.size / (1024 * 1024)).toFixed(2)} MB)`).join(', ')}`
+    );
+
+    // 4. CI check script exists and is configured in ci.yml
+    const checkScriptPath = path.join(rootDir, 'scripts/check-file-sizes.ts');
+    assert.ok(fs.existsSync(checkScriptPath), 'scripts/check-file-sizes.ts must exist');
+    const ciContent = fs.readFileSync(path.join(rootDir, '.github/workflows/ci.yml'), 'utf8');
+    assert.ok(ciContent.includes('check-file-sizes') || ciContent.includes('check:file-size'), 'CI workflow must include file size check');
   });
 });
