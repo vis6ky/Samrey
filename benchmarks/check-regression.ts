@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { pathToFileURL } from 'node:url';
-import { execSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync, spawn, ChildProcess } from 'node:child_process';
 import { BenchmarkResult, formatResultTable } from './utils/harness.js';
 import { REGRESSION_THRESHOLDS, BenchmarkThreshold, getBaselineData } from './regression-thresholds.js';
 import { runCompilerBenchmarks } from './compiler/compiler.bench.js';
@@ -222,47 +222,67 @@ async function executeBenchmarksInDir(targetDir: string, targetCategory?: string
   return results;
 }
 
-function runBenchmarkWorkerProcess(targetDir: string, targetCategory?: string): BenchmarkResult[] {
-  const tempOutputFile = path.join(os.tmpdir(), `samrey-bench-out-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
-  const scriptPath = path.resolve(import.meta.dirname, 'check-regression.ts');
-  const args = [
-    '--import', 'tsx',
-    scriptPath,
-    '--worker',
-    '--dir', targetDir,
-    '--output', tempOutputFile
-  ];
-  if (targetCategory) {
-    args.push(targetCategory);
-  }
+let activeWorkerChild: ChildProcess | null = null;
 
-  const child = spawnSync(process.execPath, args, {
-    cwd: targetDir,
-    encoding: 'utf-8',
-    stdio: ['ignore', 'pipe', 'pipe']
+function runBenchmarkWorkerProcess(targetDir: string, targetCategory?: string): Promise<BenchmarkResult[]> {
+  return new Promise((resolve, reject) => {
+    const tempOutputFile = path.join(os.tmpdir(), `samrey-bench-out-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+    const scriptPath = path.resolve(import.meta.dirname, 'check-regression.ts');
+    const args = [
+      '--import', 'tsx',
+      scriptPath,
+      '--worker',
+      '--dir', targetDir,
+      '--output', tempOutputFile
+    ];
+    if (targetCategory) {
+      args.push(targetCategory);
+    }
+
+    const child = spawn(process.execPath, args, {
+      cwd: targetDir,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    activeWorkerChild = child;
+
+    let stderr = '';
+    let stdout = '';
+    child.stdout?.on('data', (d) => { stdout += d.toString(); });
+    child.stderr?.on('data', (d) => { stderr += d.toString(); });
+
+    child.on('error', (err) => {
+      activeWorkerChild = null;
+      if (fs.existsSync(tempOutputFile)) {
+        try { fs.unlinkSync(tempOutputFile); } catch {}
+      }
+      reject(err);
+    });
+
+    child.on('close', (status) => {
+      activeWorkerChild = null;
+      if (status !== 0) {
+        if (fs.existsSync(tempOutputFile)) {
+          try { fs.unlinkSync(tempOutputFile); } catch {}
+        }
+        return reject(new Error(`Benchmark worker failed in ${targetDir} with exit code ${status}:\n${stderr || stdout}`));
+      }
+
+      if (!fs.existsSync(tempOutputFile)) {
+        return reject(new Error(`Benchmark worker did not produce output file: ${tempOutputFile}`));
+      }
+
+      try {
+        const content = fs.readFileSync(tempOutputFile, 'utf-8');
+        fs.unlinkSync(tempOutputFile);
+        resolve(JSON.parse(content));
+      } catch (e) {
+        if (fs.existsSync(tempOutputFile)) {
+          try { fs.unlinkSync(tempOutputFile); } catch {}
+        }
+        reject(e);
+      }
+    });
   });
-
-  if (child.status !== 0) {
-    if (fs.existsSync(tempOutputFile)) {
-      try { fs.unlinkSync(tempOutputFile); } catch {}
-    }
-    throw new Error(`Benchmark worker failed in ${targetDir} with exit code ${child.status}:\n${child.stderr || child.stdout}`);
-  }
-
-  if (!fs.existsSync(tempOutputFile)) {
-    throw new Error(`Benchmark worker did not produce output file: ${tempOutputFile}`);
-  }
-
-  try {
-    const content = fs.readFileSync(tempOutputFile, 'utf-8');
-    fs.unlinkSync(tempOutputFile);
-    return JSON.parse(content);
-  } catch (e) {
-    if (fs.existsSync(tempOutputFile)) {
-      try { fs.unlinkSync(tempOutputFile); } catch {}
-    }
-    throw e;
-  }
 }
 
 export async function runRegressionGate(
@@ -290,18 +310,71 @@ async function runRegressionGateCompare(
   const compareRef = options.compareRef!;
   let resolvedRef: string;
   try {
-    resolvedRef = execSync(`git rev-parse --verify "${compareRef}^{commit}"`, { encoding: 'utf-8' }).trim();
-  } catch (e) {
-    console.warn(`⚠️ Git ref '${compareRef}' could not be resolved to a commit; falling back to baseline results.json.`);
-    return runRegressionGateBaseline(options.targetCategory);
+    resolvedRef = execFileSync('git', ['rev-parse', '--verify', `${compareRef}^{commit}`], {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
+  } catch (e: any) {
+    const errorMsg = `❌ Error: Git ref '${compareRef}' could not be resolved to a valid commit.\n` +
+      `In comparative benchmark mode (--compare <ref>), a valid git commit or ref must be provided.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   const runs = Math.max(5, options.runs ?? 5);
-  const tempWorktree = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-bench-wt-'));
+  const rawWorktree = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-bench-wt-'));
+  const tempWorktree = fs.realpathSync(rawWorktree);
+
+  const cleanupWorktree = () => {
+    try {
+      execFileSync('git', ['worktree', 'remove', '--force', tempWorktree], { stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (e: any) {
+      console.error('Worktree remove error:', e?.message, e?.stderr?.toString());
+    }
+    try {
+      if (fs.existsSync(tempWorktree)) {
+        fs.rmSync(tempWorktree, { recursive: true, force: true });
+      }
+    } catch {}
+    try {
+      execFileSync('git', ['worktree', 'prune'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (e: any) {
+      console.error('Worktree prune error:', e?.message, e?.stderr?.toString());
+    }
+  };
+
+  let cleanedUp = false;
+  const doCleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    cleanupWorktree();
+  };
+
+  const onSignal = (sig: string) => {
+    console.log(`\n🧹 Received ${sig}. Cleaning up temporary git worktree...`);
+    if (activeWorkerChild) {
+      try { activeWorkerChild.kill('SIGKILL'); } catch {}
+    }
+    doCleanup();
+    process.exit(130);
+  };
+
+  const onExit = () => {
+    if (activeWorkerChild) {
+      try { activeWorkerChild.kill('SIGKILL'); } catch {}
+    }
+    doCleanup();
+  };
+
+  process.once('SIGINT', onSignal);
+  process.once('SIGTERM', onSignal);
+  process.on('exit', onExit);
 
   try {
-    console.log(`📦 Setting up git worktree for base ref '${compareRef}' (${resolvedRef.slice(0, 8)})...`);
-    execSync(`git worktree add --detach "${tempWorktree}" "${resolvedRef}"`, { stdio: 'pipe' });
+    console.log(`📦 Setting up git worktree at "${tempWorktree}" for base ref '${compareRef}' (${resolvedRef.slice(0, 8)})...`);
+    execFileSync('git', ['worktree', 'add', '--detach', tempWorktree, resolvedRef], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
 
     const hostNodeModules = path.join(process.cwd(), 'node_modules');
     const wtNodeModules = path.join(tempWorktree, 'node_modules');
@@ -318,11 +391,11 @@ async function runRegressionGateCompare(
 
     for (let r = 0; r < runs; r++) {
       console.log(`▶ [Run ${r + 1}/${runs}] Executing base ref (${compareRef})...`);
-      const baseResult = runBenchmarkWorkerProcess(tempWorktree, options.targetCategory);
+      const baseResult = await runBenchmarkWorkerProcess(tempWorktree, options.targetCategory);
       baseRuns.push(baseResult);
 
       console.log(`▶ [Run ${r + 1}/${runs}] Executing current working tree...`);
-      const currentResult = runBenchmarkWorkerProcess(process.cwd(), options.targetCategory);
+      const currentResult = await runBenchmarkWorkerProcess(process.cwd(), options.targetCategory);
       currentRuns.push(currentResult);
     }
 
@@ -414,18 +487,11 @@ async function runRegressionGateCompare(
     // Return the latest current results
     return { passed: allPassed, report, results: currentRuns[currentRuns.length - 1] || [] };
   } finally {
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
+    process.off('exit', onExit);
     console.log('🧹 Cleaning up temporary git worktree...');
-    try {
-      execSync(`git worktree remove --force "${tempWorktree}"`, { stdio: 'pipe' });
-    } catch {}
-    try {
-      if (fs.existsSync(tempWorktree)) {
-        fs.rmSync(tempWorktree, { recursive: true, force: true });
-      }
-    } catch {}
-    try {
-      execSync('git worktree prune', { stdio: 'pipe' });
-    } catch {}
+    doCleanup();
   }
 }
 
