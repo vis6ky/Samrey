@@ -4,16 +4,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { execSync } from 'node:child_process';
-import { packAllPackages } from '../scripts/release/pack.js';
+import { getSharedTarballs } from '../scripts/release/pack.js';
 
 describe('Issue 13: Packaging & Plain Node.js Consumer Import Acceptance', () => {
   it('installs packed tarballs into an external consumer and plain Node can import every package', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-consumer-test-'));
-    const tarballDir = path.join(tempDir, 'tarballs');
 
     try {
-      // 1. Pack all packages
-      const packed = packAllPackages(tarballDir);
+      // 1. Reuse shared packed tarball fixture
+      const packed = getSharedTarballs();
       assert.equal(packed.length, 11, 'Must produce 11 tarballs');
 
       // 2. Initialize consumer project

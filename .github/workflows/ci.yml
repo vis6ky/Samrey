@@ -43,6 +43,9 @@ jobs:
       - name: Run Test Suites
         run: npm run test
 
+      - name: Run Slow Test Suites
+        run: npm run test:slow
+
       - name: Build All Packages & Artifacts
         run: npm run build
 

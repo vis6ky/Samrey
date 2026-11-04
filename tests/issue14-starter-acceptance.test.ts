@@ -9,17 +9,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { execSync } from 'node:child_process';
-import { packAllPackages } from '../scripts/release/pack.js';
+import { getSharedTarballs } from '../scripts/release/pack.js';
 import { generateStarterProject } from '../packages/cli/src/starter-template.js';
 
 describe('Item 4: Starter Template Acceptance & Plain TS Integration', { timeout: 300000 }, () => {
-  const CLI_BIN = path.resolve('packages/cli/bin/samrey.js');
   const tempBase = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-starter-acceptance-'));
-  const tarballDir = path.join(tempBase, 'tarballs');
 
   it('verifies all 4 starter templates (spa, ssr, minimal, ssg) with packed tarballs in clean room', async () => {
-    // 1. Pack fresh tarballs for all 11 packages
-    const tarballs = packAllPackages(tarballDir, { keepCliBin: true });
+    // 1. Reuse shared packed tarball fixture
+    const tarballs = getSharedTarballs();
     assert.strictEqual(tarballs.length, 11, 'Must produce 11 tarballs');
 
     const templates = ['spa', 'ssr', 'minimal', 'ssg'] as const;

@@ -6,6 +6,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+import * as os from 'node:os';
 import { execSync } from 'node:child_process';
 import { validateDependencyTopology } from './validate-dependencies.js';
 import { buildAllPackages } from '../build-packages.js';
@@ -16,6 +17,50 @@ export interface PackedTarball {
   destinationPath: string;
   sizeBytes: number;
   sha256: string;
+}
+
+const SHARED_TARBALL_DIR = path.join(os.tmpdir(), 'samrey-shared-tarballs-fixture');
+let sharedCache: PackedTarball[] | null = null;
+
+export function getSharedTarballs(force = false): PackedTarball[] {
+  if (sharedCache && !force) {
+    const allExist = sharedCache.every(t => fs.existsSync(t.destinationPath));
+    if (allExist) return sharedCache;
+  }
+
+  if (!force && fs.existsSync(SHARED_TARBALL_DIR)) {
+    const files = fs.readdirSync(SHARED_TARBALL_DIR).filter(f => f.endsWith('.tgz'));
+    if (files.length === 11) {
+      const { topologicalOrder } = validateDependencyTopology();
+      const results: PackedTarball[] = [];
+      let valid = true;
+      for (const fullPkgName of topologicalOrder) {
+        const pkg = fullPkgName.replace('@samrey/', '');
+        const match = files.find(f => f.startsWith(`samrey-${pkg}-`));
+        if (match) {
+          const dest = path.join(SHARED_TARBALL_DIR, match);
+          const stats = fs.statSync(dest);
+          results.push({
+            packageName: fullPkgName,
+            filename: match,
+            destinationPath: dest,
+            sizeBytes: stats.size,
+            sha256: ''
+          });
+        } else {
+          valid = false;
+          break;
+        }
+      }
+      if (valid && results.length === 11) {
+        sharedCache = results;
+        return sharedCache;
+      }
+    }
+  }
+
+  sharedCache = packAllPackages(SHARED_TARBALL_DIR, { keepCliBin: true });
+  return sharedCache;
 }
 
 export function packAllPackages(
