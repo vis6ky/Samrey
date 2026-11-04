@@ -1,6 +1,6 @@
 # Samrey Framework — Release & Publishing Guide
 
-**Target Version:** 1.0.0-rc.1  
+**Target Version:** 2.0.0  
 **License:** Apache-2.0  
 **Registry:** `https://registry.npmjs.org/`  
 **Architectural Invariant:** "Samrey Must Use Samrey"  
@@ -56,7 +56,7 @@ npm run release:report
 
 ## 3. Release Channels & Safety Rules
 
-- **Release Candidates (`rc`):** Default channel for `1.0.0-rc.1`. Packages are published with `--tag rc` and do not alter the `latest` dist-tag.
+- **Release Candidates (`rc`):** Channel for pre-releases. Packages are published with `--tag rc` and do not alter the `latest` dist-tag.
   ```bash
   npm run release:rc
   ```

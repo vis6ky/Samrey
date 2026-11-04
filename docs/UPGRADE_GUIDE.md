@@ -1,63 +1,138 @@
-# Samrey Framework — Migration & Upgrade Guide
+# Samrey Framework — Migration & Upgrade Guide (1.x to 2.x)
 
-**Current Version:** 1.0.0-rc.1  
+**Current Version:** 2.0.0  
 **License:** Apache-2.0  
 
 ---
 
-## 1. Upgrading from Pre-Release Alpha/Beta to `1.0.0-rc.1`
+## 1. Upgrading from 1.x to 2.0.0
 
-In `1.0.0-rc.1`, all package exports and APIs have been standardized according to `docs/PUBLIC_API.md`:
+Samrey 2.0.0 introduces architectural hardening, memory leak prevention, security enhancements, and strict type safety improvements. This guide outlines the breaking changes between the 1.x baseline and 2.0.0, along with required migration steps.
 
 ### Package Version Alignment
-Update your `package.json` dependencies to `^1.0.0-rc.1`:
+
+Update your `package.json` dependencies to `^2.0.0`:
 
 ```json
 {
   "dependencies": {
-    "@samrey/reactivity": "^1.0.0-rc.1",
-    "@samrey/runtime": "^1.0.0-rc.1",
-    "@samrey/security": "^1.0.0-rc.1",
-    "@samrey/router": "^1.0.0-rc.1",
-    "@samrey/forms": "^1.0.0-rc.1",
-    "@samrey/http": "^1.0.0-rc.1",
-    "@samrey/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/runtime": "^2.0.0",
+    "@samrey/security": "^2.0.0",
+    "@samrey/router": "^2.0.0",
+    "@samrey/forms": "^2.0.0",
+    "@samrey/http": "^2.0.0",
+    "@samrey/ssr": "^2.0.0"
   },
   "devDependencies": {
-    "@samrey/cli": "^1.0.0-rc.1",
-    "@samrey/compiler": "^1.0.0-rc.1",
-    "@samrey/testing": "^1.0.0-rc.1",
-    "@samrey/devtools": "^1.0.0-rc.1"
+    "@samrey/cli": "^2.0.0",
+    "@samrey/compiler": "^2.0.0",
+    "@samrey/testing": "^2.0.0",
+    "@samrey/devtools": "^2.0.0"
   }
 }
 ```
 
+Then run your package manager install command:
+
+```bash
+npm install
+```
+
 ---
 
-## 2. API Standardization Notes
+## 2. Breaking Changes & Migration Steps
 
-1. **Signals & Computed Access:**
-   - In Samrey, signal and computed values are accessed via `.value`:
-     ```ts
-     const count = signal(0);
-     console.log(count.value); // 0
-     count.value = 1;
-     ```
-2. **Standard Schema Forms:**
-   - `@samrey/forms` integrates with Standard Schema (~v1) validators (Zod, Valibot, ArkType).
-   - Form fields expose reactive `.value` signals:
-     ```ts
-     const form = createForm({
-       initialValues: { name: 'Samrey' }
-     });
-     console.log(form.fields.name.value.value); // 'Samrey'
-     ```
-3. **Control Flow Components:**
-   - Use direct-DOM control flow components (`Show`, `For`, `Switch`, `Match`, `ErrorBoundary`):
-     ```ts
-     Show({
-       when: () => isLoggedIn.value,
-       fallback: () => el('p', {}, 'Please log in'),
-       children: () => el('h1', {}, 'Welcome back!')
-     })
-     ```
+### 1. Package Entry Points Restricted to `./dist`
+
+- **Breaking Change**: Deep imports into package internal sources (such as `@samrey/reactivity/src/*`) are no longer permitted. Package `exports` maps strictly point to compiled artifacts in `./dist`.
+- **Migration**: Update all imports to use package root entry points:
+  ```ts
+  // Before (1.x - unsupported deep import)
+  import { signal } from '@samrey/reactivity/src/signal';
+
+  // After (2.0.0)
+  import { signal } from '@samrey/reactivity';
+  ```
+
+### 2. Explicit DevTools Bridge Initialization
+
+- **Breaking Change**: `@samrey/devtools` no longer auto-installs upon module import. In 2.0.0, devtools emission remains a zero-overhead no-op until explicitly initialized.
+- **Migration**: In development environments, call `initDevTools()` during application bootstrapping:
+  ```ts
+  import { initDevTools } from '@samrey/devtools';
+
+  if (process.env.NODE_ENV !== 'production') {
+    initDevTools();
+  }
+  ```
+
+### 3. Link Primitive Returns Real `HTMLAnchorElement`
+
+- **Breaking Change**: In 1.x, `<Link>` returned a generic object. In 2.0.0, `createLink()` returns a true native `HTMLAnchorElement` (`<a>`). Furthermore, external URLs (`http:`, `https:`, `mailto:`, `tel:`) are not intercepted, preserving native browser navigation.
+- **Migration**: If your code asserted on plain object representations or manually attached anchor properties, treat the returned element directly as a standard DOM node.
+
+### 4. Template Compiler Rejects Control Flow Tags (`SAMREY-108`)
+
+- **Breaking Change**: The template compiler strictly rejects XML/JSX-style control flow tags (`<Show>`, `<For>`, `<Switch>`, `<Match>`, `<Dynamic>`, `<Portal>`) and custom capitalized component tags, emitting compile diagnostic `SAMREY-108`.
+- **Migration**: Compose control flow directly in TypeScript using the runtime functions `Show()`, `For()`, and `Switch()`:
+  ```ts
+  import { el, Show, For } from '@samrey/runtime';
+
+  // Compose with runtime primitives:
+  Show({
+    when: () => user.value,
+    children: (u) => el('p', null, `Hello ${u.name}`),
+    fallback: () => el('p', null, 'Please sign in')
+  });
+  ```
+
+### 5. CLI Commands Execute Real Tasks & Report Truthful Exit Codes
+
+- **Breaking Change**: `samrey build`, `samrey test`, `samrey analyze`, `samrey audit`, and `samrey preview` now execute real underlying pipeline steps and return truthful non-zero exit codes upon failure.
+- **Migration**:
+  - `samrey audit` exits `1` if linting or accessibility violations are detected. In CI scripts where warnings should not block execution, pass `--warn-only`.
+  - Ensure build and test scripts check exit codes correctly in CI/CD pipelines.
+
+### 6. Reactivity Error Boundaries & Non-Throwing Signal Writes
+
+- **Breaking Change**: Errors thrown within downstream reactive effects are captured and routed to the nearest `onError` boundary or logged. Writing to a signal via `signal.set()` or `signal.value = ...` will not throw synchronously when an effect fails.
+- **Migration**: Use `onError` boundaries to handle asynchronous errors and effect failures instead of wrapping signal assignments in `try/catch`.
+
+### 7. Sanitization Hardening & Dangerous Scheme Blocking
+
+- **Breaking Change**: `sanitizeUri()` and `sanitizeHtmlString()` now strictly block `data:`, `vbscript:`, and obfuscated schemes, falling back to safe defaults (`about:blank` for URIs). Static HTML attributes constructed via `el()` are strictly sanitized.
+- **Migration**: Review custom dynamic URL generators and ensure media/data URIs use explicit approved channels if needed.
+
+### 8. TypeScript-Native Starters (Zero JSX)
+
+- **Breaking Change**: Starter scaffolds (`minimal`, `spa`, `ssr`, `ssg`) generated by `samrey create` and components generated via `samrey generate` are pure TypeScript (`.ts`) using `el()`, `template()`, `Show()`, and `For()`.
+- **Migration**: Remove unnecessary JSX transformer plugins (e.g. Babel or JSX TSConfig options) from new and migrated projects.
+
+### 9. Deterministic Scaffolding Isolation (`samrey create`)
+
+- **Breaking Change**: `samrey create <name>` generates files into a dedicated subdirectory (`./<name>`) by default and will refuse to overwrite existing files.
+- **Migration**: If scaffolding into the current directory, specify `--targetDir .` explicitly and ensure target directories are empty or non-conflicting.
+
+### 10. Bidirectional Form Field Binding
+
+- **Breaking Change**: `bindField()` now reacts to programmatic state updates (`field.setValue()` and `form.reset()`), keeping DOM inputs synchronized in real time. It also automatically cleans up event listeners when the container is disposed.
+- **Migration**: Remove manual `input.value = field.value.value` sync handlers.
+
+### 11. Router Guards & Popstate Teardown
+
+- **Breaking Change**: Route definitions support `guard?: (ctx) => boolean` for navigation filtering. `RouterInstance` now provides an explicit `destroy()` method with automatic `onCleanup` unmount hooks.
+- **Migration**: Clean up custom `window.addEventListener('popstate')` listeners and use router lifecycle methods.
+
+---
+
+## 3. Summary of API Standardization
+
+| Primitive | 1.x Pattern | 2.0.0 Pattern |
+| :--- | :--- | :--- |
+| Signal read/write | `.value` / `.set()` | `.value` / `.set()` (non-throwing on effect errors) |
+| DevTools | Auto-installed | Explicit `initDevTools()` call required |
+| Control Flow | Direct DOM or Compiler tags | Pure runtime functions (`Show`, `For`, `Switch`) |
+| Form Binding | One-way event binding | Bidirectional reactive synchronization |
+| Link Element | Generic object wrapper | Native `HTMLAnchorElement` (`<a>`) |
+| Scaffolding | Direct template copy | Isolated subdirectories with conflict prevention |

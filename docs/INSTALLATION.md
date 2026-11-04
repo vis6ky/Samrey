@@ -1,6 +1,6 @@
 # Samrey Framework — Installation & Quickstart
 
-**Target Version:** 1.0.0-rc.1  
+**Target Version:** 2.0.0  
 **License:** Apache-2.0  
 
 ---

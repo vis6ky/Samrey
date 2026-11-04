@@ -1,5 +1,7 @@
 # Samrey Framework — Release Candidate 1.0.0 Audit
 
+> **Historical Record**: This document is a historical release candidate audit report for the v1.0.0-rc.1 milestone and is retained for architectural provenance.
+
 **Date:** August 20, 2026  
 **Target Version:** `1.0.0-rc.1`  
 **Decision:** **READY FOR RELEASE CANDIDATE**

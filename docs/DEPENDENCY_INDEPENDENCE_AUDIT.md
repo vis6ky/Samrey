@@ -1,5 +1,7 @@
 # Samrey Framework: Dependency Independence Audit Report
 
+> **Historical Record**: This document is a historical audit report for the v1.0.0-rc.1 milestone and is retained for architectural provenance.
+
 **Date:** August 20, 2026  
 **Version:** `1.0.0-rc.1`  
 **Auditor:** Automated Framework Architecture Auditor  

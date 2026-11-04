@@ -1,6 +1,6 @@
 # Samrey Project Manager (Phase 18 Real-World Consumer)
 
-> **Samrey Framework v1.0.0-rc.1** — Reference enterprise application demonstrating 100% native Samrey architecture.
+> **Samrey Framework v2.0.0** — Reference enterprise application demonstrating 100% native Samrey architecture.
 
 This production-grade consumer application showcases:
 - **State Management**: `@samrey/reactivity` (`createStore`, `produce`, `signal`, `computed`, `batch`)

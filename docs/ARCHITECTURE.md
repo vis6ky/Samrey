@@ -1,7 +1,7 @@
 # Architectural Specification: Samrey Frontend Framework
 
 **Document**: `docs/ARCHITECTURE.md`  
-**Version**: 1.0.0-Draft  
+**Version**: 2.0.0  
 **Author**: Lead Framework Architect  
 **Classification**: Core Engineering Blueprint  
 

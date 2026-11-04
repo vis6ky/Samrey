@@ -1,6 +1,6 @@
 # Samrey Framework — Public API Authoritative Reference
 
-> **Samrey v1.0.0 Formal API Contract & Package Specification**
+> **Samrey v2.0.0 Formal API Contract & Package Specification**
 
 This document serves as the authoritative Public API contract for all 11 packages comprising the Samrey Framework.
 

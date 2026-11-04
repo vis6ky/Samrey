@@ -1,5 +1,7 @@
 # Samrey Framework — Release Verification Checklist
 
+> **Historical Record**: This document is a historical release verification checklist from the v1.0.0-rc.1 release cycle.
+
 **Target Version: 1.0.0-rc.1**  
 *Maintainer Release Sign-Off Guide*
 

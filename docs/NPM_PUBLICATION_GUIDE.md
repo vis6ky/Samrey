@@ -1,6 +1,6 @@
 # Samrey Framework — NPM Publication Guide & Release Protocol
 
-**Target Release Version:** `1.0.0-rc.1` (and `1.0.0`)  
+**Target Release Version:** `2.x`  
 **Package Scope:** `@samrey/*` (11 packages)  
 **Registry:** `https://registry.npmjs.org/`  
 **License:** Apache-2.0  
@@ -122,8 +122,8 @@ In the event of an emergency release issue:
 
 ```bash
 # Deprecate specific version with warning
-npm deprecate @samrey/runtime@1.0.0-rc.1 "Please upgrade to 1.0.0-rc.2"
+npm deprecate @samrey/runtime@1.0.0 "Please upgrade to 2.0.0"
 
 # Promote release candidate to latest
-npm dist-tag add @samrey/cli@1.0.0 latest
+npm dist-tag add @samrey/cli@2.0.0 latest
 ```

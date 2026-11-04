@@ -1,5 +1,7 @@
 # Samrey Framework — Final Release Candidate Independent Hostile Audit
 
+> **Historical Record**: This document is a historical hostile audit report for the v1.0.0-rc.1 milestone and is retained for architectural provenance.
+
 **Date:** August 20, 2026  
 **Target Version:** `v1.0.0-rc.1`  
 **Auditor:** Independent Release Candidate Audit Engine  

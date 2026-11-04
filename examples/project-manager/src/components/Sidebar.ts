@@ -106,7 +106,7 @@ export function Sidebar(props: {
         el(
           'div',
           { class: 'space-y-1' },
-          el('div', { class: 'font-mono text-slate-400' }, 'Samrey v1.0.0-rc.1'),
+          el('div', { class: 'font-mono text-slate-400' }, 'Samrey v2.0.0'),
           el('div', { class: 'text-slate-500' }, '100% Pure Samrey Primitives')
         ),
       fallback: () => el('div', { class: 'text-center font-mono text-xs text-slate-600' }, 'Æ')

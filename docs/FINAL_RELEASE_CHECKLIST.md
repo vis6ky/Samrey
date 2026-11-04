@@ -1,5 +1,7 @@
 # Samrey Framework v1.0.0-rc.1 — Final Release Checklist
 
+> **Historical Record**: This document is a historical final release checklist for the v1.0.0-rc.1 milestone.
+
 | Gate # | Release Verification Item | Status | Execution Evidence |
 |---|---|---|---|
 | **Gate 1** | Clean-Room Consumer in `/tmp/samrey-release-consumer` | **PASS** | Installed 11 packed `.tgz` tarballs with isolated `npm install --no-package-lock`. |

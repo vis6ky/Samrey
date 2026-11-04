@@ -1,6 +1,6 @@
 # Samrey Framework — Security Policy & Disclosure
 
-**Version:** 1.0.0-rc.1  
+**Version:** 2.0.0  
 **License:** Apache-2.0  
 
 ---
@@ -9,7 +9,8 @@
 
 | Version | Supported |
 | :--- | :--- |
-| `1.0.x-rc.*` | ✅ Yes |
+| `2.x` | ✅ Yes |
+| `1.x` | ❌ No |
 | `< 1.0.0` | ❌ No |
 
 ---

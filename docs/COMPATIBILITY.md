@@ -1,6 +1,6 @@
 # Samrey Framework — Compatibility Matrix
 
-**Version: 1.0.0-rc.1**  
+**Version: 2.0.0**  
 *Last Updated: August 20, 2026*
 
 This document outlines environment, runtime, browser, and library compatibility for Samrey applications.

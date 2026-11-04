@@ -1,5 +1,7 @@
 # Samrey Framework — Post-Release Validation & Monitoring Protocol
 
+> **Historical Record**: This document is a historical post-release validation and monitoring protocol from the v1.0.0-rc.1 release cycle.
+
 **Version:** 1.0.0-rc.1  
 **Scope:** Post-Publish Smoke Tests, Registry Verification & Triage Playbook  
 **License:** Apache-2.0  
