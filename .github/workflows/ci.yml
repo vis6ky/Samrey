@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -51,4 +53,9 @@ jobs:
 
       - name: Performance Regression Gate
         if: matrix.node-version == '22.x'
-        run: npm run benchmark:gate
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.base.sha }}" ]; then
+            npm run benchmark:gate -- --compare ${{ github.event.pull_request.base.sha }}
+          else
+            npm run benchmark:gate -- --compare HEAD~1
+          fi
