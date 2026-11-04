@@ -45,7 +45,15 @@ export function createComponent<P>(comp: Component<P>, props: P): Node | Node[] 
   return runWithOwner(owner, () => comp(props));
 }
 
+const mountedRoots = new WeakMap<object, () => void>();
+
 export function mount(componentFn: () => Node | Node[], container: HTMLElement): () => void {
+  // Dispose existing mounted root on the same container if present
+  const prevUnmount = mountedRoots.get(container);
+  if (prevUnmount) {
+    prevUnmount();
+  }
+
   let disposeRoot: (() => void) | null = null;
 
   createRoot((dispose) => {
@@ -58,10 +66,19 @@ export function mount(componentFn: () => Node | Node[], container: HTMLElement):
     }
   });
 
-  return () => {
-    if (disposeRoot) disposeRoot();
+  const unmount = () => {
+    if (mountedRoots.get(container) === unmount) {
+      mountedRoots.delete(container);
+    }
+    if (disposeRoot) {
+      disposeRoot();
+      disposeRoot = null;
+    }
     container.replaceChildren();
   };
+
+  mountedRoots.set(container, unmount);
+  return unmount;
 }
 
 export { onCleanup, onError } from '@samrey/reactivity';
