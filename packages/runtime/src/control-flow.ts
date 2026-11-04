@@ -340,6 +340,12 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     }
   });
 
+  Object.defineProperty(marker, '_duplicateKeyTokensCount', {
+    get: () => (duplicateKeyTokens ? duplicateKeyTokens.size : 0),
+    configurable: true,
+    enumerable: false
+  });
+
   function removeFallback(): void {
     if (fallbackOwner) {
       fallbackOwner.dispose();
@@ -566,6 +572,37 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       }
     }
 
+    // Drop tokens for duplicate keys no longer present after each reconcile (or bound its size)
+    if (duplicateKeyTokens) {
+      if (!duplicateCounts || duplicateCounts.size === 0) {
+        duplicateKeyTokens.clear();
+      } else {
+        for (const [key, occMap] of duplicateKeyTokens.entries()) {
+          const maxOcc = duplicateCounts.get(key);
+          if (maxOcc === undefined) {
+            duplicateKeyTokens.delete(key);
+          } else {
+            for (const occ of occMap.keys()) {
+              if (occ > maxOcc) {
+                occMap.delete(occ);
+              }
+            }
+          }
+        }
+      }
+
+      // Bound size to prevent runaway memory if list has huge duplicate churn
+      const MAX_DUPLICATE_KEY_TOKENS = 10000;
+      if (duplicateKeyTokens.size > MAX_DUPLICATE_KEY_TOKENS) {
+        const excess = duplicateKeyTokens.size - MAX_DUPLICATE_KEY_TOKENS;
+        let dropped = 0;
+        for (const key of duplicateKeyTokens.keys()) {
+          duplicateKeyTokens.delete(key);
+          if (++dropped >= excess) break;
+        }
+      }
+    }
+
     cache = newCache;
     currentEntries = newEntries;
   });
@@ -607,6 +644,11 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   if (!marker.parentNode && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
     const fragment = document.createDocumentFragment();
     fragment.appendChild(marker);
+    Object.defineProperty(fragment, '_duplicateKeyTokensCount', {
+      get: () => (duplicateKeyTokens ? duplicateKeyTokens.size : 0),
+      configurable: true,
+      enumerable: false
+    });
     if (fallbackNodes.length > 0) {
       for (const node of fallbackNodes) fragment.appendChild(node);
     } else {
