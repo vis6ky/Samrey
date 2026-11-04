@@ -1,6 +1,6 @@
 {
   "name": "@samrey/example-ssg",
-  "version": "1.0.0-rc.1",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,9 +8,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@samrey/reactivity": "^1.0.0-rc.1",
-    "@samrey/runtime": "^1.0.0-rc.1",
-    "@samrey/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/runtime": "^2.0.0",
+    "@samrey/ssr": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

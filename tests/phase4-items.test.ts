@@ -56,9 +56,9 @@ describe('Phase 4 - Hygiene & Infrastructure (4.2 - 4.5)', () => {
   });
 
   test('4.5 Metadata & Legal/CFF Consistency: version strings, repository URLs, and CITATION.cff', () => {
-    // 1. Version strings consistency: SECURITY.md must reference 1.0.0
+    // 1. Version strings consistency: SECURITY.md must reference 2.x
     const secContent = fs.readFileSync(path.join(rootDir, 'SECURITY.md'), 'utf8');
-    assert.ok(secContent.includes('1.0.0') && !secContent.includes('1.0.0-rc.1'), 'SECURITY.md should reference 1.0.0 (not 1.0.0-rc.1)');
+    assert.ok(secContent.includes('2.x') && !secContent.includes('1.0.0-rc.1'), 'SECURITY.md should reference 2.x (not 1.0.0-rc.1)');
 
     // 2. CITATION.cff must not contain placeholders, all-zero ORCID, and must point to vis6ky/Samrey
     const cffContent = fs.readFileSync(path.join(rootDir, 'CITATION.cff'), 'utf8');

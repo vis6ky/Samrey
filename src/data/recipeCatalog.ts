@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/doc - Samrey Framework v1.0.0 Implementation Recipe Catalog
+ * @samrey/doc - Samrey Framework v2.0.0 Implementation Recipe Catalog
  *
  * Structured recipes for solving common development tasks using official @samrey/* APIs.
  * Follows the strict problem-solution recipe schema:

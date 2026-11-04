@@ -116,6 +116,6 @@ describe('Phase 24 — Public API Freeze Gate', () => {
     assert.ok('runCLI' in cli);
     assert.ok('generateStarterProject' in cli);
     assert.ok('samreyVitePlugin' in cli);
-    assert.strictEqual(cli.CLI_VERSION, '1.0.0');
+    assert.strictEqual(cli.CLI_VERSION, '2.0.0');
   });
 });

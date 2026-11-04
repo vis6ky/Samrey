@@ -3,7 +3,7 @@
  * @samrey/doc - Samrey Developer Assistant Blind Challenge Benchmark
  *
  * Frozen suite of 20 realistic developer challenges covering the full scope of
- * modern web development in Samrey v1.0.0.
+ * modern web development in Samrey v2.0.0.
  *
  * Each challenge is designed to be executed independently in a fresh, isolated
  * context to verify that the assistant provides accurate, compilable, idiomatic,

@@ -63,7 +63,7 @@ export interface BenchmarkReport {
 }
 
 /**
- * Public exports of official @samrey/* packages in v1.0.0
+ * Public exports of official @samrey/* packages in v2.0.0
  */
 export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
   '@samrey/reactivity': [

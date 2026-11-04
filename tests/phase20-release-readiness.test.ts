@@ -80,14 +80,14 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
   });
 
   describe('2. Package Manifest & Dependency Graph Validation', () => {
-    it('verifies all 11 package manifests have version 1.0.0-rc.1, Apache-2.0, repository metadata, and correct exports', () => {
+    it('verifies all 11 package manifests have version 2.0.0, Apache-2.0, repository metadata, and correct exports', () => {
       for (const pkg of PACKAGES) {
         const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
         assert.ok(fs.existsSync(manifestPath), `Manifest missing for @samrey/${pkg}`);
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
         assert.equal(manifest.name, `@samrey/${pkg}`);
-        assert.equal(manifest.version, '1.0.0');
+        assert.equal(manifest.version, '2.0.0');
         assert.equal(manifest.license, 'Apache-2.0');
         assert.ok(manifest.repository, `Missing repository in @samrey/${pkg}`);
         assert.ok(manifest.description, `Missing description in @samrey/${pkg}`);
@@ -220,7 +220,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       assert.equal(typeof generateStarterProject, 'function');
       assert.equal(typeof samreyVitePlugin, 'function');
       assert.equal(typeof runSamreyAudit, 'function');
-      assert.equal(CLI_VERSION, '1.0.0');
+      assert.equal(CLI_VERSION, '2.0.0');
     });
   });
 
@@ -261,7 +261,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       // Create isolated consumer package.json
       const consumerManifest = {
         name: 'samrey-phase20-clean-consumer',
-        version: '1.0.0',
+        version: '2.0.0',
         private: true,
         type: 'module',
         dependencies: {} as Record<string, string>,
@@ -269,7 +269,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       };
 
       for (const tarball of tarballs) {
-        const pkgName = tarball.replace(/^samrey-/, '@samrey/').replace(/-1\.0\.0.*\.tgz$/, '');
+        const pkgName = tarball.replace(/^samrey-/, '@samrey/').replace(/-[0-9].*\.tgz$/, '');
         consumerManifest.dependencies[pkgName] = `file:${path.join(tarballDir, tarball)}`;
         consumerManifest.overrides[pkgName] = `file:${path.join(tarballDir, tarball)}`;
       }

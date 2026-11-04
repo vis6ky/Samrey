@@ -1,6 +1,6 @@
 {
   "name": "samrey-project-manager",
-  "version": "1.0.0-rc.1",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,17 +10,17 @@
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@samrey/reactivity": "^1.0.0-rc.1",
-    "@samrey/runtime": "^1.0.0-rc.1",
-    "@samrey/router": "^1.0.0-rc.1",
-    "@samrey/forms": "^1.0.0-rc.1",
-    "@samrey/http": "^1.0.0-rc.1",
-    "@samrey/security": "^1.0.0-rc.1",
-    "@samrey/ssr": "^1.0.0-rc.1"
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/runtime": "^2.0.0",
+    "@samrey/router": "^2.0.0",
+    "@samrey/forms": "^2.0.0",
+    "@samrey/http": "^2.0.0",
+    "@samrey/security": "^2.0.0",
+    "@samrey/ssr": "^2.0.0"
   },
   "devDependencies": {
-    "@samrey/cli": "^1.0.0-rc.1",
-    "@samrey/testing": "^1.0.0-rc.1",
+    "@samrey/cli": "^2.0.0",
+    "@samrey/testing": "^2.0.0",
     "typescript": "^5.8.0"
   }
 }

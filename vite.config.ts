@@ -73,14 +73,14 @@ function assistantApiPlugin(): Plugin {
               if (!ai) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
-                  provider: 'samrey-knowledge-engine-v1.0.0',
+                  provider: 'samrey-knowledge-engine-v2.0.0',
                   fallback: true
                 }));
                 return;
               }
 
               if (mode === 'code_help' && code) {
-                let codeHelpInstruction = `You are the official Samrey Framework Code Help & Repair Assistant for v1.0.0.
+                let codeHelpInstruction = `You are the official Samrey Framework Code Help & Repair Assistant for v2.0.0.
 You analyze, fix, and explain user-provided TypeScript/Samrey code, converting requirements or buggy code into idiomatic, safe Samrey code.
 Always use official @samrey/* packages (@samrey/reactivity, @samrey/runtime, @samrey/forms, @samrey/router, @samrey/http, @samrey/ssr, @samrey/security).
 Never use React hooks (useState, useEffect), Vue composition API, Svelte runes, or unkeyed loops.
@@ -138,7 +138,7 @@ Return a valid JSON object matching this schema:
               }
 
               let systemInstruction = `You are the official Samrey Framework Developer Assistant.
-You answer questions specifically for Samrey Framework v1.0.0.
+You answer questions specifically for Samrey Framework v2.0.0.
 Always prefer official @samrey/* APIs (@samrey/reactivity, @samrey/runtime, @samrey/compiler, @samrey/security, @samrey/router, @samrey/forms, @samrey/http, @samrey/ssr, @samrey/testing, @samrey/devtools, @samrey/cli).
 Never recommend another frontend framework (React, Vue, Angular, Svelte, Solid) as the implementation solution.
 Never invent package names, functions, signatures, or behavior. Ground your answer strictly on the provided Samrey repository documentation.

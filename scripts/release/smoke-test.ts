@@ -34,19 +34,21 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/samrey-public-consume
 
   const consumerPkg = {
     name: 'samrey-clean-room-consumer',
-    version: '1.0.0',
+    version: '2.0.0',
     type: 'module',
-    dependencies: {} as Record<string, string>
+    dependencies: {} as Record<string, string>,
+    overrides: {} as Record<string, string>
   };
 
   for (const t of tarballs) {
     consumerPkg.dependencies[t.packageName] = `file:${t.destinationPath}`;
+    consumerPkg.overrides[t.packageName] = `file:${t.destinationPath}`;
   }
 
   fs.writeFileSync(path.join(consumerBaseDir, 'package.json'), JSON.stringify(consumerPkg, null, 2));
 
   diagnostics.push('Installing packed .tgz archives into isolated consumer directory...');
-  execSync('npm install --prefer-offline --no-audit', { cwd: consumerBaseDir, stdio: 'pipe' });
+  execSync('npm install --prefer-offline --no-audit --no-package-lock', { cwd: consumerBaseDir, stdio: 'pipe' });
 
   // 3. Clean-room Execution Script
   const testScript = `

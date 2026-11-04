@@ -8,7 +8,8 @@ The Samrey project takes the security and integrity of applications built on top
 
 | Version | Supported | Security Fix Status |
 | :--- | :--- | :--- |
-| `1.0.0` | Yes | Active Support (Stable Release) |
+| `2.x` | Yes | Active Support (Stable Release) |
+| `1.x` | No | Unsupported (Superseded by 2.x) |
 | `< 1.0.0` | No | Unsupported Pre-releases |
 
 ---

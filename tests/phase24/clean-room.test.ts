@@ -25,15 +25,17 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
     assert.strictEqual(tarballs.length, 11, 'Must pack 11 tarballs');
 
     const consumerManifest = {
-      name: 'samrey-v1-consumer',
-      version: '1.0.0',
+      name: 'samrey-v2-consumer',
+      version: '2.0.0',
       private: true,
       type: 'module',
-      dependencies: {} as Record<string, string>
+      dependencies: {} as Record<string, string>,
+      overrides: {} as Record<string, string>
     };
 
     for (const t of tarballs) {
       consumerManifest.dependencies[t.packageName] = `file:${t.destinationPath}`;
+      consumerManifest.overrides[t.packageName] = `file:${t.destinationPath}`;
     }
 
     fs.writeFileSync(

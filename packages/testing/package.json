@@ -1,6 +1,6 @@
 {
   "name": "@samrey/testing",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Deterministic unit and integration testing utilities, DOM harnesses, and reactivity flush helpers for Samrey.",
   "license": "Apache-2.0",
   "repository": {
@@ -44,8 +44,8 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@samrey/reactivity": "^1.0.0",
-    "@samrey/runtime": "^1.0.0"
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/runtime": "^2.0.0"
   },
   "publishConfig": {
     "access": "public"

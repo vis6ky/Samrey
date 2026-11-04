@@ -21,7 +21,7 @@ export function AboutView(props: AboutViewProps): HTMLElement {
     null,
     el('div', { class: 'flex items-center space-x-2 text-emerald-600 text-xs font-mono mb-1' },
       el('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
-      el('span', null, 'Samrey Framework v1.0.0 GA Certified')
+      el('span', null, 'Samrey Framework v2.0.0 GA Certified')
     ),
     el('h1', { class: 'text-2xl font-extrabold text-slate-900 tracking-tight' }, 'About Samrey Task Studio'),
     el(
@@ -110,7 +110,7 @@ export function AboutView(props: AboutViewProps): HTMLElement {
             { class: 'min-w-0 flex-1' },
             el('div', { class: 'flex items-center space-x-2' },
               el('span', { class: 'font-mono font-bold text-slate-900 text-xs' }, pkg.name),
-              Badge({ variant: 'neutral', value: '1.0.0' })
+              Badge({ variant: 'neutral', value: '2.0.0' })
             ),
             el('p', { class: 'mt-0.5 text-slate-500 text-[11px]' }, pkg.desc)
           ),

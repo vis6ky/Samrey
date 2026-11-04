@@ -28,7 +28,7 @@ const PACKAGES = [
   'cli'
 ];
 
-export function validateVersionConsistency(expectedVersion = '1.0.0'): VersionValidationResult {
+export function validateVersionConsistency(expectedVersion = '2.0.0'): VersionValidationResult {
   const rootManifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
   const rootVersion = rootManifest.version;
   const packageVersions: Record<string, string> = {};
@@ -88,7 +88,7 @@ if (process.argv[1]?.endsWith('validate-version.ts') || process.argv[1]?.endsWit
     result.mismatches.forEach(m => console.log(`      - ${m}`));
   }
 
-  console.log(`\nVersion Consistency Audit: ${result.allMatch ? 'PASSED (11/11 Packages + Root Pinned to 1.0.0)' : 'FAILED'}`);
+  console.log(`\nVersion Consistency Audit: ${result.allMatch ? 'PASSED (11/11 Packages + Root Pinned to ' + result.expectedVersion + ')' : 'FAILED'}`);
   if (!result.allMatch) {
     process.exit(1);
   }

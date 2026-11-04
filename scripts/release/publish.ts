@@ -133,7 +133,7 @@ if (process.argv[1]?.endsWith('publish.ts') || process.argv[1]?.endsWith('publis
 
   if (result.isDryRun) {
     console.log(`[SIMULATION] Packaging and publication check passed for ${result.publishedPackages.length} packages with dist-tag "${result.tag}":`);
-    result.publishedPackages.forEach((p, idx) => console.log(`  ${idx + 1}. ${p}@1.0.0 [tag: ${result.tag}]`));
+    result.publishedPackages.forEach((p, idx) => console.log(`  ${idx + 1}. ${p}@2.0.0 [tag: ${result.tag}]`));
     console.log('\nDry-Run Status: READY FOR PUBLICATION');
   } else if (!result.success) {
     console.log(`\n✕ ${result.blockedReason}`);

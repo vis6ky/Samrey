@@ -38,14 +38,14 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
   ];
 
   describe('1 & 2 & 3. Clean-Room Consumer & NPM Package Quality Gate', () => {
-    it('verifies all 11 package manifests have valid v1.0.0-rc.1 metadata and Apache-2.0 licenses', () => {
+    it('verifies all 11 package manifests have valid v2.0.0 metadata and Apache-2.0 licenses', () => {
       for (const pkg of PACKAGES) {
         const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
         assert.ok(fs.existsSync(manifestPath), `Manifest missing for @samrey/${pkg}`);
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
         assert.equal(manifest.name, `@samrey/${pkg}`);
-        assert.equal(manifest.version, '1.0.0');
+        assert.equal(manifest.version, '2.0.0');
         assert.equal(manifest.license, 'Apache-2.0');
         assert.ok(manifest.description && manifest.description.length > 5, `Missing description in @samrey/${pkg}`);
         assert.ok(manifest.exports, `Missing exports in @samrey/${pkg}`);
@@ -79,7 +79,7 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
       // Create consumer package.json
       const consumerManifest = {
         name: 'samrey-release-consumer',
-        version: '1.0.0',
+        version: '2.0.0',
         private: true,
         type: 'module',
         dependencies: {} as Record<string, string>,
@@ -87,7 +87,7 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
       };
 
       for (const tarball of tarballFiles) {
-        const pkgName = tarball.replace(/^samrey-/, '@samrey/').replace(/-1\.0\.0.*\.tgz$/, '');
+        const pkgName = tarball.replace(/^samrey-/, '@samrey/').replace(/-[0-9].*\.tgz$/, '');
         consumerManifest.dependencies[pkgName] = path.join(tarballDir, tarball);
         consumerManifest.overrides[pkgName] = path.join(tarballDir, tarball);
       }
@@ -179,12 +179,12 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
   });
 
   describe('5 & 6. Version Consistency & Zero Foreign Framework Gate', () => {
-    it('verifies exact version 1.0.0 across monorepo and CLI', async () => {
+    it('verifies exact version 2.0.0 across monorepo and CLI', async () => {
       const cliMod = await import('../packages/cli/src/index.js');
-      assert.equal(cliMod.CLI_VERSION, '1.0.0');
+      assert.equal(cliMod.CLI_VERSION, '2.0.0');
 
       const rootManifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-      assert.equal(rootManifest.version, '1.0.0');
+      assert.equal(rootManifest.version, '2.0.0');
     });
 
     it('verifies zero foreign frontend frameworks in source code and package dependencies', () => {

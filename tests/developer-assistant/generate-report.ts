@@ -14,7 +14,7 @@ export async function generateBenchmarkReportMarkdown(): Promise<string> {
 
   let md = `# Samrey Developer Assistant — Blind Challenge Benchmark Report
 
-> **Certification Standard**: Samrey Native Framework v1.0.0 Quality & Blind Competency Assurance
+> **Certification Standard**: Samrey Native Framework v2.0.0 Quality & Blind Competency Assurance
 > **Execution Mode**: Independent Blind Prompts (Zero previous conversation history, zero context contamination)
 > **Date**: ${new Date().toISOString().split('T')[0]}
 > **Status**: **PASSED & CERTIFIED**

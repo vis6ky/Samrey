@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-11-04
+
+### Migration from 1.0.x
+
+Version 2.0.0 introduces intentional breaking changes to resolve architectural limitations, memory leaks, security vulnerabilities, and incomplete features present in the 1.0.x baseline:
+
+1. **Package Entry Points Restricted to `./dist`**:
+   - Deep imports into `./src/*` are no longer supported. All public modules must be imported via the package root (e.g. `import { signal } from '@samrey/reactivity'`), ensuring built artifacts run consistently across bundlers and Node.js runtimes.
+2. **Explicit DevTools Bridge Initialization**:
+   - The `@samrey/devtools` bridge no longer automatically installs upon module import. Applications must explicitly call `initDevTools()` (active only in non-production environments; `emit()` remains an absolute no-op until initialized).
+3. **Link Primitive Returns Real `HTMLAnchorElement`**:
+   - `<Link>` returns a real `HTMLAnchorElement` (`<a>`) instead of a plain object. In addition, `createLink` no longer intercepts or calls `preventDefault()` on external URLs (`http:`, `https:`, `mailto:`, `tel:`), enabling native browser navigation for external links.
+4. **Template Compiler Throws `SAMREY-108` for Control Flow Tags**:
+   - The HTML template compiler rejects `<Show>`, `<For>`, `<Switch>`, `<Dynamic>`, `<Portal>`, and custom capitalized component tags with compile error `SAMREY-108` instead of emitting broken code. Control flow is composed in TypeScript using `Show()` and `For()` runtime functions.
+5. **CLI Commands Execute Real Tasks & Report Truthful Exit Codes**:
+   - `samrey build`, `samrey test`, `samrey analyze`, `samrey audit`, and `samrey preview` now execute real build steps and exit with non-zero status codes on failure (replacing static canned responses). `samrey audit` exits `1` when violations are detected unless `--warn-only` is passed.
+6. **Reactivity Error Boundaries & Non-Throwing Signal Writes**:
+   - Errors thrown inside reactive effects are routed to the nearest `onError` boundary or logged with the original `Error` object. `signal.set()` no longer crashes or throws synchronously merely because a downstream effect threw an exception.
+7. **Sanitization Hardening & Dangerous Scheme Blocking**:
+   - `sanitizeUri()` and `sanitizeHtmlString()` block `data:`, `vbscript:`, and obfuscated URI schemes, returning safe fallbacks. Static attributes in `el()` are strictly sanitized.
+8. **TypeScript-Native Starters (Zero JSX)**:
+   - Starter templates (`minimal`, `spa`, `ssr`, `ssg`) and `samrey generate` output are pure TypeScript (`.ts`) files using `el()`, `template()`, and `Show()`/`For()` runtime functions without JSX dependencies or transforms.
+9. **Deterministic Scaffolding Isolation (`samrey create`)**:
+   - `samrey create <name>` generates projects into a dedicated `./<name>` directory (or explicit `--targetDir`) and strictly refuses to overwrite existing files.
+10. **Bidirectional Form Field Binding**:
+    - `bindField` reacts dynamically to programmatic `field.setValue()` and `form.reset()` updates, keeping DOM input elements synchronized in real time, and registers unmount cleanup listeners.
+11. **Router Guards & Popstate Teardown**:
+    - Route records support `guard?: (ctx) => boolean` for protected route matching, and `RouterInstance` exposes `destroy()` with automatic `onCleanup` registration.
+
+---
+
 ## [1.0.0] - 2026-08-24
 
 ### General Availability Release

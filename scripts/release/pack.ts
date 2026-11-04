@@ -20,10 +20,13 @@ export interface PackedTarball {
 
 export function packAllPackages(
   outDir = path.join(process.cwd(), 'dist', 'tarballs'),
-  options?: { keepCliBin?: boolean }
+  options?: { keepCliBin?: boolean; forceBuild?: boolean }
 ): PackedTarball[] {
-  // Build dist/ for all packages before packing
-  buildAllPackages();
+  // Build dist/ for all packages only if not already built or forced
+  const isBuilt = fs.existsSync(path.join(process.cwd(), 'packages', 'reactivity', 'dist', 'index.js'));
+  if (!isBuilt || options?.forceBuild) {
+    buildAllPackages();
+  }
 
   if (fs.existsSync(outDir)) {
     fs.rmSync(outDir, { recursive: true, force: true });
