@@ -14,8 +14,7 @@ coverage/
 .windsurf/
 .claudecodes/
 .copilot/
-packages/cli/bin/*.js
-packages/cli/bin/samrey.js
+packages/cli/bin/samrey.bundle.js
 bun.lock*
 yarn.lock
 pnpm-lock.yaml

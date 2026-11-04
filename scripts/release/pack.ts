@@ -108,9 +108,9 @@ export function packAllPackages(
   }
 
   if (!options?.keepCliBin) {
-    const cliBin = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.js');
-    if (fs.existsSync(cliBin)) {
-      fs.rmSync(cliBin, { force: true });
+    const cliBundle = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');
+    if (fs.existsSync(cliBundle)) {
+      fs.rmSync(cliBundle, { force: true });
     }
   }
 

@@ -62,6 +62,25 @@ Node.js (>= 18.0.0), npm (>= 8.0.0), or pnpm / yarn / bun.
 
 Scaffolds projects with strict Content Security Policy headers, sanitized entry points, and zero-eval compilation pipelines.
 
+## Binary Bundle & Build Note
+
+The CLI executable binary bundle (`bin/samrey.bundle.js`) is generated at build/pack time and is omitted from git history. The repository contains a lightweight launcher at `bin/samrey.js` that checks for the compiled bundle.
+
+To compile or rebuild the bundle:
+```bash
+# Inside packages/cli:
+npm run build
+
+# Or from monorepo root:
+npm run build:packages
+```
+
+If `packages/cli/bin/samrey.js` is invoked before the bundle is compiled, it prints:
+```text
+Run `npm run build` in packages/cli
+```
+and exits cleanly with code 1 instead of emitting a Node module resolution stack trace.
+
 ## Related Packages
 
 - `@samrey/compiler` — Underlying compiler engine used by the Vite plugin.
