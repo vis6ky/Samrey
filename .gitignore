@@ -16,3 +16,6 @@ coverage/
 .copilot/
 packages/cli/bin/*.js
 packages/cli/bin/samrey.js
+bun.lock*
+yarn.lock
+pnpm-lock.yaml

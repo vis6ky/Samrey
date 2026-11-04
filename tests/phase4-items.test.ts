@@ -7,18 +7,16 @@ import { execSync } from 'node:child_process';
 describe('Phase 4 - Hygiene & Infrastructure (4.2 - 4.5)', () => {
   const rootDir = process.cwd();
 
-  test('4.2 CI Workflow: uses Bun for install with frozen lockfile and supports Node 18.x, 20.x, 22.x', () => {
+  test('4.2 CI Workflow: uses npm ci with package-lock.json and supports Node 18.x, 20.x, 22.x', () => {
     const ciPath = path.join(rootDir, '.github/workflows/ci.yml');
     assert.ok(fs.existsSync(ciPath), 'CI workflow file must exist');
 
     const ciContent = fs.readFileSync(ciPath, 'utf8');
 
-    // Must not use npm ci which fails when only bun.lock is present
-    assert.ok(!ciContent.includes('npm ci'), 'CI should not run `npm ci` without a package-lock.json');
-
-    // Must use Bun setup and frozen lockfile install
-    assert.ok(ciContent.includes('setup-bun'), 'CI should set up Bun');
-    assert.ok(ciContent.includes('bun install --frozen-lockfile'), 'CI should install dependencies using bun install --frozen-lockfile');
+    // Must use npm ci matching repository package manager
+    assert.ok(ciContent.includes('npm ci'), 'CI should run `npm ci` with package-lock.json');
+    assert.ok(!ciContent.includes('setup-bun'), 'CI should not set up Bun');
+    assert.ok(!ciContent.includes('bun install'), 'CI should not install dependencies using bun');
 
     // Matrix must contain 18.x, 20.x, 22.x matching README compatibility table
     assert.ok(ciContent.includes('18.x'), 'CI node-version matrix must include 18.x');

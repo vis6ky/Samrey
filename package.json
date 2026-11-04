@@ -16,6 +16,7 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "check:file-size": "tsx scripts/check-file-sizes.ts",
+    "check:lockfile": "tsx scripts/check-lockfile.ts",
     "bench": "tsx benchmarks/runner.ts",
     "benchmark": "tsx benchmarks/runner.ts",
     "benchmark:compiler": "tsx benchmarks/runner.ts compiler",
