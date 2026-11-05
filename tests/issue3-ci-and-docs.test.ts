@@ -64,3 +64,4 @@ describe('Item 3: CI Cost, Scheduled Sanity Workflow & Benchmark Documentation',
     assert.match(readmeContent, /npm run benchmark:gate -- --compare/i, 'Must document command to re-run');
   });
 });
+

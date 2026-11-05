@@ -31,3 +31,4 @@ jobs:
 
       - name: Run 20 Self-Comparison Sanity Gate
         run: npm run benchmark:sanity -- 20
+
