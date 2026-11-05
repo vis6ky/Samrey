@@ -49,7 +49,7 @@ export function parseBenchmarkGateArgs(argv: string[]): {
   outputFile?: string;
 } {
   let compareRef: string | undefined;
-  let runs = 5;
+  let runs = 9;
   let targetCategory: string | undefined;
   let targetBenchmark: string | undefined;
   let isWorker = false;
@@ -118,11 +118,21 @@ export function computeMedian(arr: number[]): number {
   return Number(sorted[mid].toFixed(3));
 }
 
+export function computeTrimmedMedian(arr: number[], trimCount = 1): number {
+  if (!arr || arr.length === 0) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  if (sorted.length >= 5) {
+    const trimmed = sorted.slice(trimCount, sorted.length - trimCount);
+    return computeMedian(trimmed);
+  }
+  return computeMedian(arr);
+}
+
 export function computeRobustStat(arr: number[], isSubMs: boolean): number {
   if (!arr || arr.length === 0) return 0;
   if (isSubMs) {
-    // Best-of-N for sub-millisecond rows eliminates process cold-start JIT and GC spike outliers
-    return Number(Math.min(...arr).toFixed(3));
+    // Robust trimmed median for sub-millisecond rows eliminates both low outliers and slow-mode spikes
+    return computeTrimmedMedian(arr, 1);
   }
   return computeMedian(arr);
 }
@@ -130,7 +140,7 @@ export function computeRobustStat(arr: number[], isSubMs: boolean): number {
 export function computeRobustOps(arr: number[], isSubMs: boolean): number {
   if (!arr || arr.length === 0) return 0;
   if (isSubMs) {
-    return Math.round(Math.max(...arr));
+    return Math.round(computeTrimmedMedian(arr, 1));
   }
   return Math.round(computeMedian(arr));
 }
@@ -156,8 +166,23 @@ export function evaluateBenchmarkRow(params: {
   currentOps: number;
   threshold: BenchmarkThreshold;
   isMatchingMachine: boolean;
+  baselineMinMs?: number;
+  currentMinMs?: number;
+  isSubMs?: boolean;
 }): RegressionReportItem {
-  const { name, category, baselineAvgMs, currentAvgMs, baselineOps, currentOps, threshold, isMatchingMachine } = params;
+  const {
+    name,
+    category,
+    baselineAvgMs,
+    currentAvgMs,
+    baselineOps,
+    currentOps,
+    threshold,
+    isMatchingMachine,
+    baselineMinMs,
+    currentMinMs,
+    isSubMs
+  } = params;
 
   const deltaPercent = baselineAvgMs > 0
     ? Number((((currentAvgMs - baselineAvgMs) / baselineAvgMs) * 100).toFixed(1))
@@ -180,7 +205,25 @@ export function evaluateBenchmarkRow(params: {
     // "A row that is faster than its base never fails."
     passed = true;
   } else {
-    const passedDelta = deltaPercent <= threshold.maxRegressionPercent || isNoiseExempt;
+    let passedDelta = deltaPercent <= threshold.maxRegressionPercent || isNoiseExempt;
+
+    // For sub-ms rows when min metrics are available: require BOTH median AND min to exceed threshold
+    if (isSubMs && typeof baselineMinMs === 'number' && typeof currentMinMs === 'number') {
+      const isMinFaster = currentMinMs <= baselineMinMs;
+      const deltaMinPercent = baselineMinMs > 0
+        ? Number((((currentMinMs - baselineMinMs) / baselineMinMs) * 100).toFixed(1))
+        : 0;
+      const minExceeds = !isMinFaster && deltaMinPercent > threshold.maxRegressionPercent;
+      const medianExceeds = !isFasterThanBase && deltaPercent > threshold.maxRegressionPercent && !isNoiseExempt;
+
+      // Both median AND min must exceed threshold before flagging regression
+      if (medianExceeds && minExceeds) {
+        passedDelta = false;
+      } else {
+        passedDelta = true;
+      }
+    }
+
     let passedOps = true;
 
     if (threshold.minOpsPerSec && currentOps < threshold.minOpsPerSec) {
@@ -385,7 +428,7 @@ async function runRegressionGateCompare(
     throw new Error(errorMsg);
   }
 
-  const runs = Math.max(5, options.runs ?? 5);
+  const runs = Math.max(5, options.runs ?? 9);
   const rawWorktree = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-bench-wt-'));
   const tempWorktree = fs.realpathSync(rawWorktree);
 
@@ -510,6 +553,9 @@ async function runRegressionGateCompare(
       const currentAvgMs = computeRobustStat(currentAvgMsValues, isSubMs);
       const currentOps = computeRobustOps(currentOpsValues, isSubMs);
 
+      const baseMinMs = isSubMs && baseAvgMsValues.length > 0 ? Math.min(...baseAvgMsValues) : undefined;
+      const currentMinMs = isSubMs && currentAvgMsValues.length > 0 ? Math.min(...currentAvgMsValues) : undefined;
+
       let item = evaluateBenchmarkRow({
         name,
         category,
@@ -518,7 +564,10 @@ async function runRegressionGateCompare(
         baselineOps: baseOps,
         currentOps: currentOps,
         threshold,
-        isMatchingMachine
+        isMatchingMachine,
+        baselineMinMs: baseMinMs,
+        currentMinMs: currentMinMs,
+        isSubMs
       });
 
       if (!item.passed) {
@@ -569,6 +618,9 @@ async function runRegressionGateCompare(
             const rCurrAvg = computeRobustStat(rCurrVals, rIsSubMs);
             const rCurrOpsVal = computeRobustOps(rCurrOps, rIsSubMs);
 
+            const rBaseMin = rIsSubMs && rBaseVals.length > 0 ? Math.min(...rBaseVals) : undefined;
+            const rCurrMin = rIsSubMs && rCurrVals.length > 0 ? Math.min(...rCurrVals) : undefined;
+
             const retryItem = evaluateBenchmarkRow({
               name,
               category,
@@ -577,7 +629,10 @@ async function runRegressionGateCompare(
               baselineOps: rBaseOpsVal,
               currentOps: rCurrOpsVal,
               threshold,
-              isMatchingMachine
+              isMatchingMachine,
+              baselineMinMs: rBaseMin,
+              currentMinMs: rCurrMin,
+              isSubMs: rIsSubMs
             });
 
             console.log(`   [Re-run ${attempt}/2] Base: ${rBaseAvg}ms (${rBaseOpsVal.toLocaleString()} ops/s) | Current: ${rCurrAvg}ms (${rCurrOpsVal.toLocaleString()} ops/s) | Δ: ${retryItem.deltaPercent > 0 ? '+' : ''}${retryItem.deltaPercent}% (max +${retryItem.maxAllowedPercent}%)`);

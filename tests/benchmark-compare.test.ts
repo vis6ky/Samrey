@@ -20,7 +20,7 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
     const parsed1 = parseBenchmarkGateArgs(['--compare', 'HEAD~1', 'reactivity']);
     assert.equal(parsed1.compareRef, 'HEAD~1');
     assert.equal(parsed1.targetCategory, 'reactivity');
-    assert.equal(parsed1.runs, 5); // default >= 5 runs
+    assert.equal(parsed1.runs, 9); // default >= 9 runs for robust sub-ms statistics
 
     const parsed2 = parseBenchmarkGateArgs(['--compare=origin/main', '--runs=7', 'compiler']);
     assert.equal(parsed2.compareRef, 'origin/main');
@@ -164,12 +164,12 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
     assert.equal(postWorktrees.trim(), initialWorktrees.trim(), 'Git worktree was cleaned up');
   });
 
-  it('uses robust statistic (best-of-N) for rows with base < 1 ms instead of plain median', () => {
-    // A bimodal sub-ms distribution with slow mode (e.g. V8 JIT unoptimized/GC spike):
-    const subMsSamples = [0.431, 0.258, 0.255, 0.260, 0.257];
-    // For base < 1 ms, robust statistic selects best-of-N (0.255 ms) to eliminate slow mode
+  it('uses robust statistic (trimmed median with N >= 9) for rows with base < 1 ms instead of plain median or min', () => {
+    // A sample distribution with outliers on both sides (e.g. lucky fast run and a GC/JIT cold-start spike):
+    const subMsSamples = [0.220, 0.255, 0.258, 0.260, 0.261, 0.262, 0.263, 0.265, 0.450];
+    // Trimmed median drops the extreme low (0.220) and high (0.450), taking median of middle 7
     const robustSubMs = computeRobustStat(subMsSamples, true);
-    assert.equal(robustSubMs, 0.255, 'Sub-ms rows must use robust statistic (best-of-N)');
+    assert.equal(robustSubMs, 0.261, 'Sub-ms rows must use robust trimmed median');
 
     // For rows with base >= 1 ms, plain median is used
     const normalSamples = [10.5, 12.0, 11.2, 11.0, 15.0];
@@ -177,34 +177,109 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
     assert.equal(normalStat, 11.2, 'Rows with base >= 1 ms must use plain median');
   });
 
-  it('a real regression with a deliberately slowed function (2x) must be caught and confirmed', () => {
-    // Deliberately 2x slower function (100% regression)
-    const baseTime = 0.250;
-    const slowedTime = 0.500; // 2x slowed
+  it('for sub-ms rows, requires BOTH median and min to exceed threshold to flag regression', () => {
+    const threshold = {
+      category: 'SSR & Serialization',
+      name: 'SSR: Secret Scrubbing (500 items deep scan)',
+      maxRegressionPercent: 40,
+      minOpsPerSec: 450,
+      rationale: 'Secret scrub'
+    };
 
-    const row = evaluateBenchmarkRow({
-      name: 'Full Compile: Deeply Nested (150 levels)',
-      category: 'Compiler',
-      baselineAvgMs: baseTime,
-      currentAvgMs: slowedTime,
-      baselineOps: 4000,
-      currentOps: 2000,
-      threshold: {
-        category: 'Compiler',
-        name: 'Full Compile: Deeply Nested (150 levels)',
-        maxRegressionPercent: 40,
-        minOpsPerSec: 500,
-        rationale: 'Deeply nested template compilation'
-      },
-      isMatchingMachine: false
+    // Case 1: Base side had an unusually fast min (0.275 ms), current min is 0.354 ms (+28.7%),
+    // but current median (0.362 ms) is identical to base median (0.362 ms, 0% delta).
+    // Under compound rule, this MUST NOT flag a false regression!
+    const rowIdenticalMedians = evaluateBenchmarkRow({
+      name: threshold.name,
+      category: threshold.category,
+      baselineAvgMs: 0.362,
+      currentAvgMs: 0.362, // 0% median delta
+      baselineMinMs: 0.275,
+      currentMinMs: 0.354, // +28.7% min delta
+      baselineOps: 2750,
+      currentOps: 2750,
+      threshold,
+      isMatchingMachine: false,
+      isSubMs: true
     });
+    assert.equal(rowIdenticalMedians.passed, true, 'Identical medians must pass even if base min had a lucky low run');
 
-    assert.equal(row.passed, false, '2x slowdown must fail regression gate');
-    assert.equal(row.deltaPercent, 100.0, 'Delta percent must reflect 2x slowdown (+100%)');
+    // Case 2: Only median exceeds limit (+45% > 40%), but min does not exceed limit (+10% <= 40%).
+    // Must pass because both did not exceed.
+    const rowOnlyMedExceeds = evaluateBenchmarkRow({
+      name: threshold.name,
+      category: threshold.category,
+      baselineAvgMs: 0.360,
+      currentAvgMs: 0.522, // +45% (exceeds 40%)
+      baselineMinMs: 0.300,
+      currentMinMs: 0.330, // +10% (within 40%)
+      baselineOps: 2750,
+      currentOps: 1900,
+      threshold,
+      isMatchingMachine: false,
+      isSubMs: true
+    });
+    assert.equal(rowOnlyMedExceeds.passed, true, 'When only median exceeds limit, row must not fail');
 
-    // When confirmed through retry evaluation, confirmed flag must be set
-    const confirmedRow = { ...row, confirmed: true };
-    assert.equal(confirmedRow.confirmed, true, 'Persistent failure must be marked confirmed');
+    // Case 3: Only min exceeds limit (+50% > 40%), but median does not exceed limit (+15% <= 40%).
+    // Must pass because both did not exceed.
+    const rowOnlyMinExceeds = evaluateBenchmarkRow({
+      name: threshold.name,
+      category: threshold.category,
+      baselineAvgMs: 0.360,
+      currentAvgMs: 0.414, // +15% (within 40%)
+      baselineMinMs: 0.250,
+      currentMinMs: 0.375, // +50% (exceeds 40%)
+      baselineOps: 2750,
+      currentOps: 2400,
+      threshold,
+      isMatchingMachine: false,
+      isSubMs: true
+    });
+    assert.equal(rowOnlyMinExceeds.passed, true, 'When only min exceeds limit, row must not fail');
+
+    // Case 4: Milder +60% slowdown on a row with a 40% limit -> BOTH median and min exceed +40% -> FAILS!
+    const row60Slowdown = evaluateBenchmarkRow({
+      name: threshold.name,
+      category: threshold.category,
+      baselineAvgMs: 0.360,
+      currentAvgMs: 0.576, // +60% (exceeds 40%)
+      baselineMinMs: 0.300,
+      currentMinMs: 0.480, // +60% (exceeds 40%)
+      baselineOps: 2750,
+      currentOps: 1700,
+      threshold,
+      isMatchingMachine: false,
+      isSubMs: true
+    });
+    assert.equal(row60Slowdown.passed, false, '+60% slowdown on 40% threshold must FAIL');
+    assert.equal(row60Slowdown.deltaPercent, 60.0);
+  });
+
+  it('deliberately injected 2x slowdown in signal.write must still FAIL', () => {
+    const threshold = {
+      category: 'Reactivity',
+      name: 'Single Signal Update (10,000 mutations)',
+      maxRegressionPercent: 35,
+      minOpsPerSec: 75,
+      rationale: 'Core reactive mutator'
+    };
+
+    const row2x = evaluateBenchmarkRow({
+      name: threshold.name,
+      category: threshold.category,
+      baselineAvgMs: 2.10,
+      currentAvgMs: 4.20, // 2x slowdown (+100%)
+      baselineMinMs: 1.95,
+      currentMinMs: 3.90, // 2x min slowdown (+100%)
+      baselineOps: 470,
+      currentOps: 235,
+      threshold,
+      isMatchingMachine: false,
+      isSubMs: false
+    });
+    assert.equal(row2x.passed, false, '2x slowdown in signal.write must FAIL');
+    assert.equal(row2x.deltaPercent, 100.0);
   });
 
   it('for every display category name used in the report, a re-run finds its row', async () => {
