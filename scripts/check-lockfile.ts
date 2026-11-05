@@ -78,12 +78,22 @@ export function checkLockfile(rootDir = process.cwd()): LockfileCheckResult {
       if (!fs.existsSync(manifestPath)) continue;
 
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const pkgName = manifest.name || `@samrey/${pkg}`;
       const lockKey = `packages/${pkg}`;
       const entry = lockfile.packages?.[lockKey];
 
       if (!entry) {
-        errors.push(`Lockfile missing workspace entry packages["${lockKey}"] for @samrey/${pkg}`);
+        errors.push(`Lockfile missing workspace entry packages["${lockKey}"] for ${pkgName}`);
         continue;
+      }
+
+      // Check workspace link entry in node_modules
+      const linkKey = `node_modules/${pkgName}`;
+      const linkEntry = lockfile.packages?.[linkKey];
+      if (!linkEntry) {
+        errors.push(`Lockfile missing workspace link entry packages["${linkKey}"] for ${pkgName}`);
+      } else if (!linkEntry.link || linkEntry.resolved !== lockKey) {
+        errors.push(`Lockfile workspace link entry packages["${linkKey}"] must link to "${lockKey}"`);
       }
 
       if (entry.version !== manifest.version) {

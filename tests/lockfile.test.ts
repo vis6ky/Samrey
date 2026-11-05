@@ -2,7 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { execSync } from 'node:child_process';
+import { checkLockfile } from '../scripts/check-lockfile.js';
 
 const rootDir = process.cwd();
 
@@ -84,4 +86,67 @@ describe('Item 3: Lockfile Consistency & Single Package Manager Gate', () => {
       'check:lockfile should confirm lockfile is in sync'
     );
   });
+
+  it('4. Lockfile missing workspace link entry (node_modules/@samrey/<name>) fails checkLockfile', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-lockfile-test-'));
+    try {
+      // Create minimal package.json with workspaces
+      fs.writeFileSync(
+        path.join(tempDir, 'package.json'),
+        JSON.stringify(
+          {
+            name: '@samrey/monorepo',
+            version: '2.0.0',
+            workspaces: ['packages/*']
+          },
+          null,
+          2
+        )
+      );
+
+      // Create a workspace package
+      const pkgDir = path.join(tempDir, 'packages', 'ai');
+      fs.mkdirSync(pkgDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(pkgDir, 'package.json'),
+        JSON.stringify(
+          {
+            name: '@samrey/ai',
+            version: '2.0.0'
+          },
+          null,
+          2
+        )
+      );
+
+      // Create package-lock.json with packages/ai entry but MISSING node_modules/@samrey/ai link entry
+      fs.writeFileSync(
+        path.join(tempDir, 'package-lock.json'),
+        JSON.stringify(
+          {
+            name: '@samrey/monorepo',
+            version: '2.0.0',
+            lockfileVersion: 3,
+            packages: {
+              '': { name: '@samrey/monorepo', version: '2.0.0' },
+              'packages/ai': { version: '2.0.0' }
+              // missing: "node_modules/@samrey/ai": { "resolved": "packages/ai", "link": true }
+            }
+          },
+          null,
+          2
+        )
+      );
+
+      const result = checkLockfile(tempDir);
+      assert.equal(result.inSync, false, 'checkLockfile must fail when workspace link entry is missing');
+      assert.ok(
+        result.errors.some((e) => e.includes('node_modules/@samrey/ai') || e.includes('link entry')),
+        `Errors must report missing workspace link entry, got: ${JSON.stringify(result.errors)}`
+      );
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });
+
