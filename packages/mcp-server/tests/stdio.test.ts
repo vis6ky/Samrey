@@ -14,9 +14,12 @@ import * as readline from 'node:readline';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import * as fs from 'node:fs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const BIN_PATH = path.resolve(__dirname, '..', 'bin', 'samrey-mcp.js');
+const DIST_PATH = path.resolve(__dirname, '..', 'dist', 'server.js');
 
 interface JsonRpcResponse {
   jsonrpc: string;
@@ -33,13 +36,33 @@ class LiveMcpClient {
   private child: ChildProcess;
   private rl: readline.Interface;
   private nextId = 1;
-  private pendingRequests = new Map<number | string, (res: JsonRpcResponse) => void>();
+  private pendingRequests = new Map<number | string, { resolve: (res: JsonRpcResponse) => void; reject: (err: any) => void }>();
   private unhandledLines: string[] = [];
+  public stderrOutput = '';
 
   constructor(binPath: string) {
-    this.child = spawn(process.execPath, [binPath], {
+    const spawnArgs: string[] = [];
+    if (!fs.existsSync(DIST_PATH)) {
+      spawnArgs.push('--import', 'tsx');
+    }
+    spawnArgs.push(binPath);
+
+    this.child = spawn(process.execPath, spawnArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, NODE_ENV: 'test' }
+    });
+
+    this.child.stderr?.on('data', (chunk) => {
+      this.stderrOutput += chunk.toString();
+    });
+
+    this.child.on('exit', (code) => {
+      if (code !== 0 && code !== null) {
+        for (const [id, handlers] of this.pendingRequests.entries()) {
+          handlers.reject(new Error(`MCP server child process exited prematurely with code ${code}. Stderr: ${this.stderrOutput}`));
+        }
+        this.pendingRequests.clear();
+      }
     });
 
     this.rl = readline.createInterface({
@@ -53,9 +76,9 @@ class LiveMcpClient {
       try {
         const parsed: JsonRpcResponse = JSON.parse(trimmed);
         if (parsed.id !== undefined && parsed.id !== null && this.pendingRequests.has(parsed.id)) {
-          const handler = this.pendingRequests.get(parsed.id)!;
+          const handlers = this.pendingRequests.get(parsed.id)!;
           this.pendingRequests.delete(parsed.id);
-          handler(parsed);
+          handlers.resolve(parsed);
         } else {
           this.unhandledLines.push(trimmed);
         }
@@ -83,12 +106,18 @@ class LiveMcpClient {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pendingRequests.delete(id);
-        reject(new Error(`Timeout waiting for response to request id ${id} (method: ${method})`));
+        reject(new Error(`Timeout waiting for response to request id ${id} (method: ${method}). Stderr: ${this.stderrOutput}`));
       }, 5000);
 
-      this.pendingRequests.set(id, (res) => {
-        clearTimeout(timer);
-        resolve(res);
+      this.pendingRequests.set(id, {
+        resolve: (res) => {
+          clearTimeout(timer);
+          resolve(res);
+        },
+        reject: (err) => {
+          clearTimeout(timer);
+          reject(err);
+        }
       });
 
       const payload = JSON.stringify({
