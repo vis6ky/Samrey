@@ -107,4 +107,26 @@ describe('Review Item 4: Documentation Version Alignment & 1.x -> 2.x Upgrade Gu
       assert.ok(isClearlyLabeled, `${relPath} must be clearly labeled as an audit or historical report`);
     }
   });
+
+  it('5. docs/release/FINAL_RELEASE_CHECKLIST.md catches obsolete "^1.0.0: PASS" and requires 2.0.0 update or historical record label', () => {
+    const checklistPath = path.join(rootDir, 'docs', 'release', 'FINAL_RELEASE_CHECKLIST.md');
+    const content = fs.readFileSync(checklistPath, 'utf8');
+
+    const isHistorical = content.includes('Historical Record') || content.includes('Historical Archive');
+    const isUpdatedTo2 = content.includes('2.0.0') && content.includes('^2.0.0');
+
+    // Must be updated for 2.0.0 or marked as a historical record
+    assert.ok(
+      isHistorical || isUpdatedTo2,
+      'docs/release/FINAL_RELEASE_CHECKLIST.md must be updated for 2.0.0 or clearly marked as a historical record'
+    );
+
+    // If not marked as a historical record, it must not claim dependency references are pinned to ^1.0.0
+    if (!isHistorical) {
+      assert.ok(
+        !content.includes('pinned to `^1.0.0`: **PASS**') && !content.includes('pinned to ^1.0.0: PASS'),
+        'docs/release/FINAL_RELEASE_CHECKLIST.md still claims dependency references are "pinned to ^1.0.0: PASS"'
+      );
+    }
+  });
 });

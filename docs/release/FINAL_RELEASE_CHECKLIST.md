@@ -1,16 +1,18 @@
 # Samrey Framework v1.0.0 — Final Release Checklist
 
-**Target Version:** 1.0.0 (General Availability)  
+> **Historical Record**: This document is a historical record of the final release checklist for the Samrey Framework v1.0.0 General Availability release (2026-08-24). For the v2.0.0 release checklist and certification, see `docs/release/PHASE_21_FINAL_CERTIFICATION.md` and `docs/release/PHASE_24_FINAL_CERTIFICATION.md` where all inter-package dependencies are pinned to `^2.0.0`.
+
+**Target Version:** 1.0.0 (General Availability - Historical Record)  
 **Audit Date:** 2026-08-24  
-**Release Tag:** `latest`  
+**Release Tag:** `latest` (v1.0.0)  
 
 ---
 
-### Version
+### Version (v1.0.0 Archive)
 - Root monorepo version pinned to `1.0.0`: **PASS**
 - All 11 package manifests pinned to `1.0.0`: **PASS**
 - CLI tool reporting `v1.0.0`: **PASS**
-- Inter-package dependency version references pinned to `^1.0.0`: **PASS**
+- Inter-package dependency version references pinned to `^1.0.0` (historical v1.0.0): **PASS**
 
 ### Packages
 - `@samrey/reactivity` manifest and exports verified: **PASS**
