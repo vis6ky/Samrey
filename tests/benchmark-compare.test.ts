@@ -26,6 +26,14 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
     assert.equal(parsed2.targetCategory, 'compiler');
   });
 
+  it('throws an error if --compare has missing, empty, or whitespace value', () => {
+    assert.throws(() => parseBenchmarkGateArgs(['--compare']), /requires a non-empty git ref/);
+    assert.throws(() => parseBenchmarkGateArgs(['--compare', '']), /requires a non-empty git ref/);
+    assert.throws(() => parseBenchmarkGateArgs(['--compare', '   ']), /requires a non-empty git ref/);
+    assert.throws(() => parseBenchmarkGateArgs(['--compare=']), /requires a non-empty git ref/);
+    assert.throws(() => parseBenchmarkGateArgs(['--compare=   ']), /requires a non-empty git ref/);
+  });
+
   it('computes correct median for odd and even number of runs', () => {
     assert.equal(computeMedian([5, 1, 3, 2, 4]), 3);
     assert.equal(computeMedian([10, 20, 30, 40]), 25);

@@ -58,9 +58,23 @@ export function parseBenchmarkGateArgs(argv: string[]): {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--compare') {
-      compareRef = argv[++i];
+      const nextArg = argv[++i];
+      if (nextArg === undefined || typeof nextArg !== 'string' || nextArg.trim().length === 0) {
+        throw new Error(
+          `❌ Error: --compare requires a non-empty git ref. Received missing, empty, or whitespace value.\n` +
+          `Usage: npm run benchmark:gate -- --compare <ref>`
+        );
+      }
+      compareRef = nextArg.trim();
     } else if (arg.startsWith('--compare=')) {
-      compareRef = arg.slice('--compare='.length);
+      const val = arg.slice('--compare='.length);
+      if (!val || val.trim().length === 0) {
+        throw new Error(
+          `❌ Error: --compare requires a non-empty git ref. Received missing, empty, or whitespace value.\n` +
+          `Usage: npm run benchmark:gate -- --compare=<ref>`
+        );
+      }
+      compareRef = val.trim();
     } else if (arg === '--runs') {
       const parsedRuns = parseInt(argv[++i], 10);
       if (!isNaN(parsedRuns) && parsedRuns > 0) runs = parsedRuns;
@@ -339,7 +353,13 @@ export async function runRegressionGate(
   console.log('🔍 Samrey Framework - Performance Regression Gate');
   console.log('=====================================================\n');
 
-  if (options.compareRef) {
+  if (options.compareRef !== undefined) {
+    if (typeof options.compareRef !== 'string' || options.compareRef.trim().length === 0) {
+      const errorMsg = `❌ Error: --compare requires a non-empty git ref. Received missing, empty, or whitespace value.\n` +
+        `In comparative benchmark mode (--compare <ref>), a valid git commit or ref must be provided.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
     return runRegressionGateCompare(options);
   }
 
@@ -683,7 +703,13 @@ async function runRegressionGateBaseline(
 
 // Worker / CLI dispatch
 if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes('check-regression')) {
-  const parsed = parseBenchmarkGateArgs(process.argv.slice(2));
+  let parsed: ReturnType<typeof parseBenchmarkGateArgs>;
+  try {
+    parsed = parseBenchmarkGateArgs(process.argv.slice(2));
+  } catch (err: any) {
+    console.error(err?.message || err);
+    process.exit(1);
+  }
 
   if (parsed.isWorker) {
     const dir = parsed.workerDir || process.cwd();

@@ -78,6 +78,42 @@ describe('Item 3: --compare Hardening & Worktree Lifecycle', () => {
     assert.doesNotMatch(combinedOutput, /falling back to baseline results\.json/i);
   });
 
+  it('--compare with missing, empty, or whitespace value must exit 1 with clear message and never fall back', () => {
+    const testCases: { name: string; args: string[] }[] = [
+      { name: '--compare (missing value)', args: ['--compare'] },
+      { name: '--compare "" (empty string)', args: ['--compare', ''] },
+      { name: '--compare "   " (whitespace)', args: ['--compare', '   '] },
+      { name: '--compare= (empty value)', args: ['--compare='] },
+      { name: '--compare=   (whitespace)', args: ['--compare=   '] }
+    ];
+
+    for (const { name, args } of testCases) {
+      const result = spawnSync(process.execPath, ['--import', 'tsx', scriptPath, ...args], {
+        cwd: process.cwd(),
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+
+      const combinedOutput = (result.stdout || '') + (result.stderr || '');
+
+      assert.equal(
+        result.status,
+        1,
+        `Case "${name}" must exit with code 1, but exited with ${result.status}.\nOutput:\n${combinedOutput}`
+      );
+      assert.match(
+        combinedOutput,
+        /requires a non-empty git ref|requires a valid git ref/i,
+        `Case "${name}" must provide clear error message, got:\n${combinedOutput}`
+      );
+      assert.doesNotMatch(
+        combinedOutput,
+        /Performance Regression Gate Evaluation|Baseline \(avg\)/i,
+        `Case "${name}" must NEVER fall back to baseline mode silently!`
+      );
+    }
+  });
+
   it('cleans up temporary git worktree when aborted with SIGINT / SIGTERM', async () => {
     // Launch check-regression with 50 runs so child is actively in execution loop when signal arrives
     const child = spawn(
