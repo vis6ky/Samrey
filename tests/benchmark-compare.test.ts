@@ -346,4 +346,30 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
       }
     );
   });
+
+  it('executes --compare with a single --benchmark targeting only that row', async () => {
+    const singleBenchName = 'Show: Single Transition (false -> true)';
+    const gateResult = await runRegressionGate({
+      compareRef: 'HEAD',
+      runs: 5,
+      targetBenchmark: singleBenchName
+    });
+
+    assert.equal(gateResult.passed, true);
+    assert.equal(gateResult.report.length, 1, 'Only the targeted benchmark must be in report');
+    assert.equal(gateResult.report[0].name, singleBenchName);
+  });
+
+  it('fails fast if --benchmark specifies an unknown benchmark', async () => {
+    await assert.rejects(
+      async () => {
+        await runRegressionGate({
+          compareRef: 'HEAD',
+          runs: 5,
+          targetBenchmark: 'Nonexistent Benchmark XYZ'
+        });
+      },
+      /not found in regression thresholds/i
+    );
+  });
 });

@@ -14,7 +14,7 @@ export function parseSanityFailures(runIndex: number, output: string): FailingBe
 
   for (const line of lines) {
     // Match table row: | ❌ FAIL ... | <category> | <name> | ... | <delta> |
-    const tableMatch = line.match(/\|\s*❌\s*FAIL[^\s|]*\s*\|\s*([^|]+)\|\s*([^|]+)\|[^|]+\|[^|]+\|\s*([^|]+)\|/);
+    const tableMatch = line.match(/\|\s*❌\s*FAIL[^|]*\|\s*([^|]+)\|\s*([^|]+)\|[^|]+\|[^|]+\|\s*([^|]+)\|/);
     if (tableMatch) {
       const category = tableMatch[1].trim();
       const name = tableMatch[2].trim();

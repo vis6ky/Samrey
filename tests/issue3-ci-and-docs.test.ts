@@ -43,8 +43,18 @@ describe('Item 3: CI Cost, Scheduled Sanity Workflow & Benchmark Documentation',
     assert.equal(res1.passed, true, 'At most 1 of 20 failures must pass sanity criterion');
     assert.equal(res1.failingRows.length, 1);
 
+    // Confirmed failure row format: | ❌ FAIL (confirmed) | ...
+    const mockOutputConfirmed = `
+| ❌ FAIL (confirmed) | Control Flow - Show | Show: Repeated Toggling (100 cycles) | 0.070ms | 0.120ms | +71.4% | +40% | 8,300 | 400 |
+`;
+    const failuresConfirmed = parseSanityFailures(2, mockOutputConfirmed);
+    assert.equal(failuresConfirmed.length, 1, 'Must parse confirmed failures');
+    assert.equal(failuresConfirmed[0].name, 'Show: Repeated Toggling (100 cycles)');
+    assert.equal(failuresConfirmed[0].category, 'Control Flow - Show');
+    assert.equal(failuresConfirmed[0].delta, '+71.4%');
+
     // 2 failures -> fails
-    const res2 = evaluateSanityCriterion(20, 2, failures1);
+    const res2 = evaluateSanityCriterion(20, 2, [...failures1, ...failuresConfirmed]);
     assert.equal(res2.passed, false, 'More than 1 failure must fail sanity criterion');
   });
 

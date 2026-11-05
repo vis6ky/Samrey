@@ -34,6 +34,7 @@ export interface RegressionReportItem {
 
 export interface GateOptions {
   targetCategory?: string;
+  targetBenchmark?: string;
   compareRef?: string;
   runs?: number;
   workerRunner?: (targetDir: string, targetCategory?: string, targetBenchmark?: string) => Promise<BenchmarkResult[]>;
@@ -263,11 +264,19 @@ async function executeBenchmarksInDir(
   targetBenchmark?: string
 ): Promise<BenchmarkResult[]> {
   const results: BenchmarkResult[] = [];
+  let effectiveCategory = targetCategory;
+  if (!effectiveCategory && targetBenchmark) {
+    const matched = REGRESSION_THRESHOLDS.find((t) => t.name === targetBenchmark);
+    if (matched) {
+      effectiveCategory = matched.category;
+    }
+  }
+
   const shouldRun = (cat: string) =>
-    !targetCategory ||
-    targetCategory.toLowerCase() === 'all' ||
-    cat.toLowerCase().includes(targetCategory.toLowerCase()) ||
-    targetCategory.toLowerCase().includes(cat.toLowerCase());
+    !effectiveCategory ||
+    effectiveCategory.toLowerCase() === 'all' ||
+    cat.toLowerCase().includes(effectiveCategory.toLowerCase()) ||
+    effectiveCategory.toLowerCase().includes(cat.toLowerCase());
 
   async function loadBench(subpath: string) {
     const tsPath = path.join(targetDir, 'benchmarks', `${subpath}.ts`);
@@ -408,12 +417,19 @@ export async function runRegressionGate(
     return runRegressionGateCompare(options);
   }
 
-  return runRegressionGateBaseline(options.targetCategory);
+  return runRegressionGateBaseline(options.targetCategory, options.targetBenchmark);
 }
 
 async function runRegressionGateCompare(
   options: GateOptions
 ): Promise<{ passed: boolean; report: RegressionReportItem[]; results: BenchmarkResult[] }> {
+  if (options.targetBenchmark) {
+    const exists = REGRESSION_THRESHOLDS.some((t) => t.name === options.targetBenchmark);
+    if (!exists) {
+      throw new Error(`Benchmark "${options.targetBenchmark}" not found in regression thresholds.`);
+    }
+  }
+
   const compareRef = options.compareRef!;
   let resolvedRef: string;
   try {
@@ -499,11 +515,11 @@ async function runRegressionGateCompare(
 
     for (let r = 0; r < runs; r++) {
       console.log(`▶ [Run ${r + 1}/${runs}] Executing base ref (${compareRef})...`);
-      const baseResult = await workerRunner(tempWorktree, options.targetCategory);
+      const baseResult = await workerRunner(tempWorktree, options.targetCategory, options.targetBenchmark);
       baseRuns.push(baseResult);
 
       console.log(`▶ [Run ${r + 1}/${runs}] Executing current working tree...`);
-      const currentResult = await workerRunner(process.cwd(), options.targetCategory);
+      const currentResult = await workerRunner(process.cwd(), options.targetCategory, options.targetBenchmark);
       currentRuns.push(currentResult);
     }
 
@@ -517,10 +533,18 @@ async function runRegressionGateCompare(
     // Aggregate medians
     const allKeys = new Set<string>();
     for (const run of currentRuns) {
-      for (const item of run) allKeys.add(`${item.category}::${item.name}`);
+      for (const item of run) {
+        if (!options.targetBenchmark || item.name === options.targetBenchmark) {
+          allKeys.add(`${item.category}::${item.name}`);
+        }
+      }
     }
     for (const run of baseRuns) {
-      for (const item of run) allKeys.add(`${item.category}::${item.name}`);
+      for (const item of run) {
+        if (!options.targetBenchmark || item.name === options.targetBenchmark) {
+          allKeys.add(`${item.category}::${item.name}`);
+        }
+      }
     }
 
     const report: RegressionReportItem[] = [];
@@ -704,8 +728,16 @@ async function runRegressionGateCompare(
 }
 
 async function runRegressionGateBaseline(
-  targetCategory?: string
+  targetCategory?: string,
+  targetBenchmark?: string
 ): Promise<{ passed: boolean; report: RegressionReportItem[]; results: BenchmarkResult[] }> {
+  if (targetBenchmark) {
+    const exists = REGRESSION_THRESHOLDS.some((t) => t.name === targetBenchmark);
+    if (!exists) {
+      throw new Error(`Benchmark "${targetBenchmark}" not found in regression thresholds.`);
+    }
+  }
+
   const baselinePath = path.join(process.cwd(), 'benchmarks', 'results.json');
   if (!fs.existsSync(baselinePath)) {
     console.warn('⚠️ No baseline results.json found.');
@@ -728,7 +760,7 @@ async function runRegressionGateBaseline(
   }
 
   const isMatchingMachine = isRecordedMachine(baselineSystem);
-  const currentResults = await executeBenchmarksInDir(process.cwd(), targetCategory);
+  const currentResults = await executeBenchmarksInDir(process.cwd(), targetCategory, targetBenchmark);
 
   const report: RegressionReportItem[] = [];
   let allPassed = true;
@@ -738,6 +770,7 @@ async function runRegressionGateBaseline(
   console.log('=====================================================\n');
 
   for (const res of currentResults) {
+    if (targetBenchmark && res.name !== targetBenchmark) continue;
     const key = `${res.category}::${res.name}`;
     const baseline = baselineMap.get(key);
     const threshold = REGRESSION_THRESHOLDS.find((t) => t.name === res.name && t.category === res.category);
@@ -811,7 +844,8 @@ if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes(
     runRegressionGate({
       compareRef: parsed.compareRef,
       runs: parsed.runs,
-      targetCategory: parsed.targetCategory
+      targetCategory: parsed.targetCategory,
+      targetBenchmark: parsed.targetBenchmark
     }).then(({ passed }) => {
       if (!passed) process.exit(1);
     }).catch((err) => {
