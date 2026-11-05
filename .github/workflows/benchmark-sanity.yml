@@ -1,0 +1,33 @@
+name: Benchmark Sanity (Nightly)
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sanity:
+    name: 20-Run Benchmark Sanity Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Packages & Harness
+        run: npm run build
+
+      - name: Run 20 Self-Comparison Sanity Gate
+        run: npm run benchmark:sanity -- 20
