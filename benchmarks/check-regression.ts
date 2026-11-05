@@ -36,6 +36,7 @@ export interface GateOptions {
   targetCategory?: string;
   compareRef?: string;
   runs?: number;
+  workerRunner?: (targetDir: string, targetCategory?: string, targetBenchmark?: string) => Promise<BenchmarkResult[]>;
 }
 
 export function parseBenchmarkGateArgs(argv: string[]): {
@@ -222,7 +223,8 @@ async function executeBenchmarksInDir(
   const shouldRun = (cat: string) =>
     !targetCategory ||
     targetCategory.toLowerCase() === 'all' ||
-    cat.toLowerCase().includes(targetCategory.toLowerCase());
+    cat.toLowerCase().includes(targetCategory.toLowerCase()) ||
+    targetCategory.toLowerCase().includes(cat.toLowerCase());
 
   async function loadBench(subpath: string) {
     const tsPath = path.join(targetDir, 'benchmarks', `${subpath}.ts`);
@@ -273,7 +275,7 @@ async function executeBenchmarksInDir(
 
 let activeWorkerChild: ChildProcess | null = null;
 
-function runBenchmarkWorkerProcess(
+export function runBenchmarkWorkerProcess(
   targetDir: string,
   targetCategory?: string,
   targetBenchmark?: string
@@ -448,16 +450,17 @@ async function runRegressionGateCompare(
 
     console.log(`⚡ Running comparative benchmark gate: ${runs} interleaved runs on the SAME machine...\n`);
 
+    const workerRunner = options.workerRunner || runBenchmarkWorkerProcess;
     const baseRuns: BenchmarkResult[][] = [];
     const currentRuns: BenchmarkResult[][] = [];
 
     for (let r = 0; r < runs; r++) {
       console.log(`▶ [Run ${r + 1}/${runs}] Executing base ref (${compareRef})...`);
-      const baseResult = await runBenchmarkWorkerProcess(tempWorktree, options.targetCategory);
+      const baseResult = await workerRunner(tempWorktree, options.targetCategory);
       baseRuns.push(baseResult);
 
       console.log(`▶ [Run ${r + 1}/${runs}] Executing current working tree...`);
-      const currentResult = await runBenchmarkWorkerProcess(process.cwd(), options.targetCategory);
+      const currentResult = await workerRunner(process.cwd(), options.targetCategory);
       currentRuns.push(currentResult);
     }
 
@@ -523,6 +526,8 @@ async function runRegressionGateCompare(
         console.log(`   Re-running ONLY this row up to 2 more times in fresh worker processes...`);
 
         let retrySuccess = false;
+        let validReRunsCompleted = 0;
+
         for (let attempt = 1; attempt <= 2; attempt++) {
           console.log(`   ▶ [Re-run ${attempt}/2] Spawning fresh workers for "${name}"...`);
 
@@ -530,15 +535,29 @@ async function runRegressionGateCompare(
           const retryCurrentResults: BenchmarkResult[] = [];
 
           for (let rr = 0; rr < 3; rr++) {
-            const bRes = await runBenchmarkWorkerProcess(tempWorktree, category, name);
-            const cRes = await runBenchmarkWorkerProcess(process.cwd(), category, name);
+            const bRes = await workerRunner(tempWorktree, undefined, name);
+            const cRes = await workerRunner(process.cwd(), undefined, name);
+
+            if (!bRes || bRes.length === 0 || !cRes || cRes.length === 0) {
+              const errMsg = `❌ Error: re-run produced no results for benchmark "${name}" (base rows: ${bRes?.length ?? 0}, current rows: ${cRes?.length ?? 0}).`;
+              console.error(errMsg);
+              throw new Error(`re-run produced no results for benchmark "${name}"`);
+            }
+
             const bItem = bRes.find((r) => r.name === name);
             const cItem = cRes.find((r) => r.name === name);
-            if (bItem) retryBaseResults.push(bItem);
-            if (cItem) retryCurrentResults.push(cItem);
+            if (!bItem || !cItem) {
+              const errMsg = `❌ Error: re-run produced no results for benchmark "${name}" in worker output.`;
+              console.error(errMsg);
+              throw new Error(`re-run produced no results for benchmark "${name}"`);
+            }
+
+            retryBaseResults.push(bItem);
+            retryCurrentResults.push(cItem);
           }
 
           if (retryBaseResults.length > 0 && retryCurrentResults.length > 0) {
+            validReRunsCompleted++;
             const rBaseVals = retryBaseResults.map((r) => r.avgMs);
             const rBaseOps = retryBaseResults.map((r) => r.opsPerSec);
             const rCurrVals = retryCurrentResults.map((r) => r.avgMs);
@@ -561,6 +580,8 @@ async function runRegressionGateCompare(
               isMatchingMachine
             });
 
+            console.log(`   [Re-run ${attempt}/2] Base: ${rBaseAvg}ms (${rBaseOpsVal.toLocaleString()} ops/s) | Current: ${rCurrAvg}ms (${rCurrOpsVal.toLocaleString()} ops/s) | Δ: ${retryItem.deltaPercent > 0 ? '+' : ''}${retryItem.deltaPercent}% (max +${retryItem.maxAllowedPercent}%)`);
+
             if (retryItem.passed) {
               console.log(`   ✅ Re-run ${attempt}/2 PASSED (${retryItem.deltaPercent > 0 ? '+' : ''}${retryItem.deltaPercent}%). Fluke cleared.`);
               item = retryItem;
@@ -571,6 +592,12 @@ async function runRegressionGateCompare(
               item = retryItem;
             }
           }
+        }
+
+        if (validReRunsCompleted === 0) {
+          const errMsg = `❌ Error: re-run produced no results for benchmark "${name}".`;
+          console.error(errMsg);
+          throw new Error(`re-run produced no results for benchmark "${name}"`);
         }
 
         if (!retrySuccess) {

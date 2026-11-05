@@ -10,8 +10,10 @@ import {
   evaluateBenchmarkRow,
   computeMedian,
   computeRobustStat,
-  runRegressionGate
+  runRegressionGate,
+  runBenchmarkWorkerProcess
 } from '../benchmarks/check-regression.js';
+import { REGRESSION_THRESHOLDS } from '../benchmarks/regression-thresholds.js';
 
 describe('Item 5: benchmark:gate --compare <ref>', () => {
   it('parses --compare <ref>, --runs <n>, and category from CLI args', () => {
@@ -203,5 +205,70 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
     // When confirmed through retry evaluation, confirmed flag must be set
     const confirmedRow = { ...row, confirmed: true };
     assert.equal(confirmedRow.confirmed, true, 'Persistent failure must be marked confirmed');
+  });
+
+  it('for every display category name used in the report, a re-run finds its row', async () => {
+    const displayCategories = Array.from(new Set(REGRESSION_THRESHOLDS.map((t) => t.category)));
+    assert.ok(displayCategories.length >= 7, 'Must have at least 7 display categories');
+
+    for (const cat of displayCategories) {
+      const row = REGRESSION_THRESHOLDS.find((t) => t.category === cat)!;
+      // Re-run worker targets only the exact benchmark name without --category
+      const res = await runBenchmarkWorkerProcess(process.cwd(), undefined, row.name);
+      assert.equal(res.length, 1, `Re-run for category "${cat}" must return exactly 1 row`);
+      assert.equal(res[0].name, row.name);
+      assert.equal(res[0].category, cat);
+    }
+  });
+
+  it('a worker that returns 0 rows fails the gate with "re-run produced no results", not "confirmed"', async () => {
+    let reRunAttempted = false;
+    const mockWorkerRunner = async (dir: string, category?: string, benchmark?: string) => {
+      if (benchmark) {
+        reRunAttempted = true;
+        // Simulate worker returning 0 rows on re-run
+        return [];
+      }
+      const isBase = dir.includes('samrey-bench-wt');
+      return [
+        {
+          name: 'Single Signal Update (10,000 mutations)',
+          category: 'Reactivity',
+          iterations: 10,
+          warmupIterations: 2,
+          minMs: isBase ? 1.0 : 2.0,
+          medianMs: isBase ? 1.0 : 2.0,
+          avgMs: isBase ? 1.0 : 2.0,
+          p95Ms: isBase ? 1.0 : 2.0,
+          opsPerSec: isBase ? 1000 : 500,
+          heapDeltaKb: 0
+        }
+      ];
+    };
+
+    await assert.rejects(
+      async () => {
+        await runRegressionGate({
+          compareRef: 'HEAD',
+          runs: 5,
+          targetCategory: 'reactivity',
+          workerRunner: mockWorkerRunner
+        });
+      },
+      (err: any) => {
+        assert.ok(reRunAttempted, 'Re-run must have been attempted');
+        assert.match(
+          err.message,
+          /re-run produced no results/i,
+          `Error must state "re-run produced no results", got: ${err.message}`
+        );
+        assert.doesNotMatch(
+          err.message,
+          /confirmed/i,
+          'Must not mark or report confirmed when worker returned 0 rows'
+        );
+        return true;
+      }
+    );
   });
 });
