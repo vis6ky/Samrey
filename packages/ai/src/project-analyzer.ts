@@ -118,7 +118,7 @@ export function analyzeProject(projectRoot = process.cwd()): ProjectAnalysisRepo
         }
 
         // 2. Foreign React / Vue imports
-        if (line.includes("from 'react'") || line.includes('from "react"') || line.includes("from 'vue'")) {
+        if (/\bfrom\s+['"](react|vue|svelte|@angular|solid-js)['"]/.test(line)) {
           issues.push({
             filePath: relPath,
             line: lineNum,

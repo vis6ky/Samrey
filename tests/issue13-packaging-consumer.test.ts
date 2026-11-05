@@ -13,7 +13,7 @@ describe('Issue 13: Packaging & Plain Node.js Consumer Import Acceptance', () =>
     try {
       // 1. Reuse shared packed tarball fixture
       const packed = getSharedTarballs();
-      assert.equal(packed.length, 11, 'Must produce 11 tarballs');
+      assert.equal(packed.length, 13, 'Must produce 13 tarballs');
 
       // 2. Initialize consumer project
       const consumerDir = path.join(tempDir, 'consumer');

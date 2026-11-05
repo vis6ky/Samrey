@@ -1136,3 +1136,18 @@ export function getExamples(domain?: string): SamreyCodeExample[] {
 export function getExampleById(id: string): SamreyCodeExample | undefined {
   return SAMREY_EXAMPLES.find((e) => e.id.toLowerCase() === id.toLowerCase());
 }
+
+export function getExamplesByQuery(query: string): SamreyCodeExample[] {
+  if (!query) return SAMREY_EXAMPLES;
+  const lower = query.toLowerCase().trim();
+  return SAMREY_EXAMPLES.filter(
+    (e) =>
+      e.id.toLowerCase().includes(lower) ||
+      e.title.toLowerCase().includes(lower) ||
+      e.domain.toLowerCase().includes(lower) ||
+      e.tags.some((t) => t.toLowerCase().includes(lower)) ||
+      e.summary.toLowerCase().includes(lower)
+  );
+}
+
+

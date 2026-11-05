@@ -34,6 +34,8 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
     'ssr',
     'testing',
     'devtools',
+    'ai',
+    'mcp-server',
     'cli'
   ];
 
@@ -241,7 +243,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       }
 
       const tarballs = fs.readdirSync(tarballDir).filter(f => f.endsWith('.tgz'));
-      assert.equal(tarballs.length, 11, 'Must generate 11 tarball archives');
+      assert.equal(tarballs.length, 13, 'Must generate 13 tarball archives');
 
       // Verify tarballs do not contain tests, benchmarks, secrets, or .env files
       for (const tarball of tarballs) {

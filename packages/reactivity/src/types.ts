@@ -24,6 +24,7 @@ export interface Signal<T> {
   (): T;
   value: T;
   set(newValue: T | ((prev: T) => T)): void;
+  update(updater: (prev: T) => T): void;
 }
 
 export interface ReadonlySignal<T> {

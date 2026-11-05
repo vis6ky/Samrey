@@ -18,7 +18,7 @@ describe('Item 4: Starter Template Acceptance & Plain TS Integration', { timeout
   it('verifies all 4 starter templates (spa, ssr, minimal, ssg) with packed tarballs in clean room', async () => {
     // 1. Reuse shared packed tarball fixture
     const tarballs = getSharedTarballs();
-    assert.strictEqual(tarballs.length, 11, 'Must produce 11 tarballs');
+    assert.strictEqual(tarballs.length, 13, 'Must produce 13 tarballs');
 
     const templates = ['spa', 'ssr', 'minimal', 'ssg'] as const;
 

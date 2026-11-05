@@ -22,7 +22,7 @@ Samrey is an independent, compile-time reactive frontend framework engineered fo
 - ❌ **NEVER use React hooks** (\`useState\`, \`useEffect\`, \`useMemo\`, \`useCallback\`, \`useRef\`, \`useContext\`). Samrey is NOT React.
 - ❌ **NEVER mutate signal arrays or objects in-place** (e.g. \`todos.value.push(x)\` will NOT trigger reactivity). Always reassign a new reference: \`todos.value = [...todos.value, x]\` or use \`todos.update(arr => [...arr, x])\`.
 - ❌ **NEVER write \`<Show>\` or \`<For>\` as template HTML tags** in string templates or raw HTML (this triggers compiler error \`SAMREY-108\`).
-- ❌ **NEVER import from 'react' or 'vue'**.
+- ❌ **NEVER import React or Vue libraries**.
 
 ---
 

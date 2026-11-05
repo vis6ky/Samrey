@@ -34,6 +34,8 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
     'ssr',
     'testing',
     'devtools',
+    'ai',
+    'mcp-server',
     'cli'
   ];
 
@@ -74,7 +76,7 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
       }
 
       const tarballFiles = fs.readdirSync(tarballDir).filter(f => f.endsWith('.tgz'));
-      assert.equal(tarballFiles.length, 11, 'All 11 packages must produce .tgz tarballs');
+      assert.equal(tarballFiles.length, 13, 'All 13 packages must produce .tgz tarballs');
 
       // Create consumer package.json
       const consumerManifest = {

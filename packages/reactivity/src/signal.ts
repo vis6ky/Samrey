@@ -58,6 +58,7 @@ export function signal<T>(initialValue: T): Signal<T> {
   });
 
   accessor.set = (val: T | ((prev: T) => T)) => write(val, false);
+  accessor.update = (updater: (prev: T) => T) => write(updater, false);
 
   return accessor;
 }

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@samrey/reactivity": ["../../packages/reactivity/src/index.ts"],
+      "@samrey/runtime": ["../../packages/runtime/src/index.ts"],
+      "@samrey/compiler": ["../../packages/compiler/src/index.ts"],
+      "@samrey/security": ["../../packages/security/src/index.ts"],
+      "@samrey/router": ["../../packages/router/src/index.ts"],
+      "@samrey/http": ["../../packages/http/src/index.ts"],
+      "@samrey/forms": ["../../packages/forms/src/index.ts"],
+      "@samrey/ssr": ["../../packages/ssr/src/index.ts"],
+      "@samrey/testing": ["../../packages/testing/src/index.ts"],
+      "@samrey/cli": ["../../packages/cli/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}
+

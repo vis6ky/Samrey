@@ -130,6 +130,7 @@ export function validateSamreyCode(
     'Match',
     'createRouter',
     'RouterView',
+    'RouterOutlet',
     'Link',
     'useRoute',
     'useNavigate',

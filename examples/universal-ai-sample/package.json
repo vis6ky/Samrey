@@ -1,0 +1,31 @@
+{
+  "name": "samrey-universal-ai-sample",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Universal AI Verification Sample Application built with Samrey Framework",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@samrey/compiler": "^2.0.0",
+    "@samrey/forms": "^2.0.0",
+    "@samrey/http": "^2.0.0",
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/router": "^2.0.0",
+    "@samrey/runtime": "^2.0.0",
+    "@samrey/security": "^2.0.0",
+    "@samrey/ssr": "^2.0.0"
+  },
+  "devDependencies": {
+    "@samrey/cli": "^2.0.0",
+    "@samrey/testing": "^2.0.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.3"
+  }
+}
+

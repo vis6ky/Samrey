@@ -12,7 +12,6 @@ import { runTestCommand } from './commands/test.js';
 import { runAuditCommand } from './commands/audit.js';
 import { runAnalyzeCommand } from './commands/analyze.js';
 import { runGenerateCommand, GenerateArtifactType } from './commands/generate.js';
-import { runAiCommand } from './commands/ai.js';
 import { CommandResult } from './commands/create.js';
 
 export const CLI_VERSION = '2.0.0';
@@ -60,6 +59,7 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
   const cwd = cliOptions.cwd || process.cwd();
 
   if (args[0] === 'ai') {
+    const { runAiCommand } = await import('./commands/ai.js');
     return runAiCommand(args, { cwd });
   }
 
@@ -199,6 +199,7 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
     }
 
     case 'ai': {
+      const { runAiCommand } = await import('./commands/ai.js');
       return runAiCommand(args, { cwd });
     }
 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Samrey AI Universal Verification</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --text: #1a1a1a;
+        --border: #e2e8f0;
+        --primary: #2563eb;
+      }
+      [data-theme="dark"] {
+        --bg: #0f172a;
+        --text: #f8fafc;
+        --border: #334155;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .samrey-app-shell {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+      .app-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1rem;
+      }
+      .main-nav {
+        display: flex;
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+      .nav-link {
+        text-decoration: none;
+        color: var(--primary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+      }
+      .nav-link.active {
+        background: var(--primary);
+        color: white;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+

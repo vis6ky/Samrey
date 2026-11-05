@@ -12,7 +12,71 @@ import { createResource } from '@samrey/http';
 import { renderToString } from '@samrey/ssr';
 import { validateSamreyCode } from './code-validator.js';
 
-class MockDOMNode {
+const VOID_TAGS = new Set([
+  'AREA', 'BASE', 'BR', 'COL', 'EMBED', 'HR', 'IMG', 'INPUT',
+  'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR'
+]);
+
+function parseHtmlFragment(html: string): MockDOMNode[] {
+  const root = new MockDOMNode(11, '#document-fragment');
+  const stack: MockDOMNode[] = [root];
+
+  const tagRegex = /<!--[\s\S]*?-->|<(?:\/([a-zA-Z0-9-]+)|([a-zA-Z0-9-]+)([^>]*))\s*>|([^<]+)/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = tagRegex.exec(html)) !== null) {
+    const [full, closeTag, openTag, rawAttrs, textContent] = match;
+
+    if (full.startsWith('<!--')) {
+      const commentText = full.slice(4, -3);
+      const commentNode = new MockDOMNode(8, '#comment', commentText);
+      stack[stack.length - 1].appendChild(commentNode);
+    } else if (closeTag) {
+      const upper = closeTag.toUpperCase();
+      for (let i = stack.length - 1; i > 0; i--) {
+        if (stack[i].nodeName === upper) {
+          stack.length = i;
+          break;
+        }
+      }
+    } else if (openTag) {
+      const upper = openTag.toUpperCase();
+      const elem = new MockDOMNode(1, upper);
+
+      let attrStr = rawAttrs ? rawAttrs.trim() : '';
+      const selfClose = attrStr.endsWith('/');
+      if (selfClose) {
+        attrStr = attrStr.slice(0, -1).trim();
+      }
+
+      if (attrStr) {
+        const attrRegex = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+        let attrMatch: RegExpExecArray | null;
+        while ((attrMatch = attrRegex.exec(attrStr)) !== null) {
+          const name = attrMatch[1];
+          const val = attrMatch[2] ?? attrMatch[3] ?? attrMatch[4] ?? '';
+          elem.setAttribute(name, val);
+        }
+      }
+
+      stack[stack.length - 1].appendChild(elem);
+
+      if (!selfClose && !VOID_TAGS.has(upper)) {
+        stack.push(elem);
+      }
+    } else if (textContent) {
+      const text = textContent;
+      if (text.length > 0) {
+        const textNode = new MockDOMNode(3, '#text', text);
+        stack[stack.length - 1].appendChild(textNode);
+      }
+    }
+  }
+
+  return root.childNodes;
+}
+
+export class MockDOMNode {
   public nodeType: number;
   public nodeName: string;
   private _textContent: string = '';
@@ -23,6 +87,8 @@ class MockDOMNode {
   public content?: MockDOMNode;
   public previousSibling: MockDOMNode | null = null;
   public nextSibling: MockDOMNode | null = null;
+  public value: string = '';
+  public checked: boolean = false;
 
   constructor(type: number, name: string, text = '') {
     this.nodeType = type;
@@ -35,12 +101,60 @@ class MockDOMNode {
 
   get textContent(): string {
     if (this.nodeType === 3) return this._textContent;
-    const childrenText = this.childNodes.map((c) => c.textContent).join('');
-    return childrenText || this._textContent;
+    if (this.nodeType === 8) return this._textContent;
+    return this.childNodes.map((c) => c.textContent).join('');
   }
 
   set textContent(txt: string) {
     this._textContent = txt;
+    if (this.nodeType === 1 || this.nodeType === 11) {
+      this.childNodes = [];
+      if (txt) {
+        this.appendChild(new MockDOMNode(3, '#text', txt));
+      }
+    }
+  }
+
+  get innerHTML(): string {
+    const target = this.content ?? this;
+    return target.childNodes.map((c) => c.outerHTML).join('');
+  }
+
+  set innerHTML(html: string) {
+    const target = this.content ?? this;
+    while (target.childNodes.length > 0) {
+      target.removeChild(target.childNodes[0]);
+    }
+    if (!html) return;
+    const parsed = parseHtmlFragment(html);
+    for (const node of parsed) {
+      target.appendChild(node);
+    }
+  }
+
+  get classList() {
+    const self = this;
+    return {
+      add(...classes: string[]) {
+        const current = (self.attributes['class'] || '').split(/\s+/).filter(Boolean);
+        for (const c of classes) {
+          if (!current.includes(c)) current.push(c);
+        }
+        self.attributes['class'] = current.join(' ');
+      },
+      remove(...classes: string[]) {
+        const current = (self.attributes['class'] || '').split(/\s+/).filter(Boolean);
+        self.attributes['class'] = current.filter((c) => !classes.includes(c)).join(' ');
+      },
+      contains(c: string) {
+        const current = (self.attributes['class'] || '').split(/\s+/).filter(Boolean);
+        return current.includes(c);
+      },
+      toggle(c: string) {
+        if (this.contains(c)) this.remove(c);
+        else this.add(c);
+      }
+    };
   }
 
   get firstChild(): MockDOMNode | null {
@@ -48,12 +162,18 @@ class MockDOMNode {
   }
 
   get outerHTML(): string {
-    if (this.nodeType === 3) return this.textContent;
-    if (this.nodeType === 8) return `<!--${this.textContent}-->`;
+    if (this.nodeType === 3) return this._textContent;
+    if (this.nodeType === 8) return `<!--${this._textContent}-->`;
+    if (this.nodeType === 11) {
+      return this.childNodes.map((c) => c.outerHTML).join('');
+    }
     const tag = this.nodeName.toLowerCase();
     const attrs = Object.entries(this.attributes).map(([k, v]) => ` ${k}="${v}"`).join('');
-    const children = this.childNodes.map(c => c.outerHTML).join('');
-    return `<${tag}${attrs}>${children || this.textContent}</${tag}>`;
+    if (VOID_TAGS.has(this.nodeName)) {
+      return `<${tag}${attrs}>`;
+    }
+    const children = this.childNodes.map((c) => c.outerHTML).join('');
+    return `<${tag}${attrs}>${children}</${tag}>`;
   }
 
   appendChild(child: MockDOMNode): MockDOMNode {
@@ -100,21 +220,65 @@ class MockDOMNode {
     return this.removeChild(oldChild);
   }
 
+  remove(): void {
+    if (this.parentNode) {
+      this.parentNode.removeChild(this);
+    }
+  }
+
+  matches(sel: string): boolean {
+    const trimmed = sel.trim();
+    if (trimmed.startsWith('.')) {
+      const clsName = trimmed.slice(1);
+      const classes = (this.attributes['class'] || '').split(/\s+/);
+      return classes.includes(clsName);
+    }
+    if (trimmed.startsWith('#')) {
+      const id = trimmed.slice(1);
+      return this.attributes['id'] === id;
+    }
+    return this.nodeName === trimmed.toUpperCase();
+  }
+
   querySelector(sel: string): MockDOMNode | null {
-    const tag = sel.replace(/[.#]/, '').toUpperCase();
-    if (this.nodeName === tag) return this;
+    if (this.matches(sel)) return this;
     for (const child of this.childNodes) {
+      if (child.matches(sel)) return child;
       const match = child.querySelector(sel);
       if (match) return match;
     }
     return null;
   }
 
-  setAttribute(k: string, v: string) { this.attributes[k] = v; }
+  querySelectorAll(sel: string): MockDOMNode[] {
+    const results: MockDOMNode[] = [];
+    if (this.matches(sel)) results.push(this);
+    for (const child of this.childNodes) {
+      results.push(...child.querySelectorAll(sel));
+    }
+    return results;
+  }
+
+  setAttribute(k: string, v: string) {
+    this.attributes[k] = v;
+    if (k === 'value') this.value = v;
+    if (k === 'checked') this.checked = true;
+  }
   getAttribute(k: string) { return this.attributes[k] ?? null; }
+  removeAttribute(k: string) {
+    delete this.attributes[k];
+    if (k === 'value') this.value = '';
+    if (k === 'checked') this.checked = false;
+  }
+  hasAttribute(k: string) { return k in this.attributes; }
+
   addEventListener(evt: string, fn: Function) {
     if (!this.eventListeners[evt]) this.eventListeners[evt] = [];
     this.eventListeners[evt].push(fn);
+  }
+  removeEventListener(evt: string, fn: Function) {
+    if (!this.eventListeners[evt]) return;
+    this.eventListeners[evt] = this.eventListeners[evt].filter((f) => f !== fn);
   }
   dispatchEvent(evt: any): boolean {
     const type = typeof evt === 'string' ? evt : evt.type;
@@ -123,9 +287,13 @@ class MockDOMNode {
     return true;
   }
   cloneNode(deep = false): MockDOMNode {
-    const clone = new MockDOMNode(this.nodeType, this.nodeName, this.textContent);
+    const clone = new MockDOMNode(this.nodeType, this.nodeName, this._textContent);
     clone.attributes = { ...this.attributes };
-    if (this.content) clone.content = this.content.cloneNode(deep);
+    clone.value = this.value;
+    clone.checked = this.checked;
+    if (this.content) {
+      clone.content = this.content.cloneNode(deep);
+    }
     if (deep) {
       for (const c of this.childNodes) clone.appendChild(c.cloneNode(true));
     }
@@ -133,17 +301,35 @@ class MockDOMNode {
   }
 }
 
-function ensureDom() {
-  if (typeof globalThis !== 'undefined' && typeof (globalThis as any).document === 'undefined') {
+export function ensureMockDom() {
+  if (typeof globalThis !== 'undefined') {
     (globalThis as any).Node = MockDOMNode;
-    (globalThis as any).document = {
-      createElement: (tag: string) => new MockDOMNode(1, tag),
-      createTextNode: (txt: string) => new MockDOMNode(3, '#text', txt),
-      createComment: (txt: string) => new MockDOMNode(8, '#comment', txt),
-      createDocumentFragment: () => new MockDOMNode(11, '#document-fragment')
-    };
+    if (typeof (globalThis as any).document === 'undefined' || !(globalThis as any).document.body) {
+      const mockDoc = {
+        createElement: (tag: string) => new MockDOMNode(1, tag),
+        createTextNode: (txt: string) => new MockDOMNode(3, '#text', txt),
+        createComment: (txt: string) => new MockDOMNode(8, '#comment', txt),
+        createDocumentFragment: () => new MockDOMNode(11, '#document-fragment'),
+        body: new MockDOMNode(1, 'BODY'),
+        head: new MockDOMNode(1, 'HEAD')
+      };
+      (globalThis as any).document = mockDoc;
+    }
+    if (typeof (globalThis as any).window === 'undefined') {
+      (globalThis as any).window = {
+        document: (globalThis as any).document,
+        location: { pathname: '/', search: '', hash: '' },
+        addEventListener: () => {},
+        removeEventListener: () => {}
+      };
+    }
   }
 }
+
+function ensureDom() {
+  ensureMockDom();
+}
+
 
 export interface CompatibilityTask {
   id: string;

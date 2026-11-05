@@ -88,3 +88,5 @@ function generateQuickFix(code: string, sourceCode?: string, errorMsg?: string):
   return undefined;
 }
 
+export const diagnoseCompilerError = diagnoseError;
+
