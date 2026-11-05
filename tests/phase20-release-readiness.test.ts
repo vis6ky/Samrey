@@ -8,6 +8,7 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { buildAllPackages } from '../scripts/build-packages.js';
 
 // Samrey Native Modules
 import { signal, computed, effect, batch, untrack, createStore, produce, reconcile, createMemo, createRoot, createContext, useContext } from '../packages/reactivity/src/index.js';
@@ -235,6 +236,12 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       fs.rmSync(consumerDir, { recursive: true, force: true });
       fs.mkdirSync(tarballDir, { recursive: true });
       fs.mkdirSync(consumerDir, { recursive: true });
+
+      // Ensure dist/ is built for all packages
+      const isBuilt = fs.existsSync(path.join(process.cwd(), 'packages', 'reactivity', 'dist', 'index.js'));
+      if (!isBuilt) {
+        buildAllPackages();
+      }
 
       // Run npm pack on all packages
       for (const pkg of PACKAGES) {

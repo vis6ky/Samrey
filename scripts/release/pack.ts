@@ -30,8 +30,8 @@ export function getSharedTarballs(force = false): PackedTarball[] {
 
   if (!force && fs.existsSync(SHARED_TARBALL_DIR)) {
     const files = fs.readdirSync(SHARED_TARBALL_DIR).filter(f => f.endsWith('.tgz'));
-    if (files.length === 11) {
-      const { topologicalOrder } = validateDependencyTopology();
+    const { topologicalOrder } = validateDependencyTopology();
+    if (files.length === topologicalOrder.length) {
       const results: PackedTarball[] = [];
       let valid = true;
       for (const fullPkgName of topologicalOrder) {
@@ -52,7 +52,7 @@ export function getSharedTarballs(force = false): PackedTarball[] {
           break;
         }
       }
-      if (valid && results.length === 11) {
+      if (valid && results.length === topologicalOrder.length) {
         sharedCache = results;
         return sharedCache;
       }
