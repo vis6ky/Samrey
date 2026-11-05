@@ -49,6 +49,491 @@ const FORBIDDEN_HOOKS = [
   'useLayoutEffect'
 ];
 
+export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
+  '@samrey/reactivity': new Set([
+    'PROXIED',
+    'batch',
+    'cancelPendingEffect',
+    'computed',
+    'createContext',
+    'createMemo',
+    'createOwner',
+    'createRoot',
+    'createStore',
+    'effect',
+    'getActiveSubscriber',
+    'getGlobalClock',
+    'getGlobalErrorHandler',
+    'getOwner',
+    'handleError',
+    'incrementClock',
+    'isStore',
+    'onCleanup',
+    'onError',
+    'produce',
+    'queueEffect',
+    'reconcile',
+    'runWithOwner',
+    'setActiveSubscriber',
+    'setGlobalErrorHandler',
+    'setOwner',
+    'signal',
+    'trackDependency',
+    'untrack',
+    'useContext'
+  ]),
+  '@samrey/runtime': new Set([
+    'Dynamic',
+    'ErrorBoundary',
+    'For',
+    'Match',
+    'Portal',
+    'Show',
+    'Suspense',
+    'Switch',
+    'appendChildren',
+    'bindAttr',
+    'bindAttribute',
+    'bindClass',
+    'bindDynamicChild',
+    'bindEvent',
+    'bindProperty',
+    'bindText',
+    'clearDevDiagnosticHistory',
+    'computeIsDev',
+    'createComponent',
+    'el',
+    'emitDevDiagnostic',
+    'frag',
+    'fragment',
+    'getDevDiagnosticHistory',
+    'hydrate',
+    'isDev',
+    'mount',
+    'on',
+    'onCleanup',
+    'onDevDiagnostic',
+    'onError',
+    'onMount',
+    'rawHtml',
+    'reportDuplicateKey',
+    'reportHydrationMismatch',
+    'reportReactiveGraphWarning',
+    'reportResourceError',
+    'reportRouterError',
+    'reportStaleItemWarning',
+    'reportUnnecessaryUpdate',
+    'svg',
+    'svgEl',
+    'template',
+    'text'
+  ]),
+  '@samrey/compiler': new Set([
+    'ERROR_REGISTRY',
+    'SamreyCompilerError',
+    'TemplateParser',
+    'buildAIR',
+    'buildAIRFromAST',
+    'classifyBindingContext',
+    'classifySecurityNode',
+    'compileTemplate',
+    'evaluateConstantExpression',
+    'findUnsupportedTemplateTags',
+    'formatSamreyDiagnostic',
+    'generateCode',
+    'generateModuleCode',
+    'generateSourceFrame',
+    'hoistTemplates',
+    'isStaticSubtree',
+    'lintA11y',
+    'lintAccessibility',
+    'parseTemplate'
+  ]),
+  '@samrey/router': new Set([
+    'Link',
+    'Route',
+    'Router',
+    'RouterOutlet',
+    'createBrowserHistory',
+    'createLink',
+    'createMemoryHistory',
+    'createRouter',
+    'matchPath',
+    'matchRoute',
+    'matchRoutes',
+    'setRouterInstance',
+    'useLocation',
+    'useNavigate',
+    'useParams',
+    'useRouter',
+    'useSearchParams'
+  ]),
+  '@samrey/forms': new Set([
+    'bindField',
+    'computeAriaAttributes',
+    'createField',
+    'createForm',
+    'getAccessibleFieldProps',
+    'validateSchema',
+    'validators'
+  ]),
+  '@samrey/http': new Set([
+    'HttpClient',
+    'HttpError',
+    'RequestCache',
+    'createHttpCache',
+    'createHttpClient',
+    'createResource',
+    'defaultRequestCache',
+    'httpClient'
+  ]),
+  '@samrey/ssr': new Set([
+    'createSSRContext',
+    'createServerData',
+    'deserializeHydrationState',
+    'escapeHtml',
+    'escapeJsonState',
+    'generatePreHydrationScript',
+    'generateStaticSite',
+    'getDelegatedEventScript',
+    'getSSRContext',
+    'hydrate',
+    'hydrateFromSSR',
+    'invalidateClientDataCache',
+    'isSensitiveKey',
+    'renderToStream',
+    'renderToString',
+    'replayCapturedEvents',
+    'resolveSSRContext',
+    'runWithSSRContext',
+    'safeJsonParse',
+    'sanitizeSsrState',
+    'serializeState',
+    'serializeStateForHydration',
+    'stripSecrets'
+  ]),
+  '@samrey/testing': new Set([
+    'cleanupAllTestContainers',
+    'createMockResource',
+    'fireEvent',
+    'flushReactivity',
+    'mount',
+    'renderTest',
+    'renderTestComponent',
+    'waitFor',
+    'waitForNextUpdate'
+  ]),
+  '@samrey/devtools': new Set([
+    'ComponentInspector',
+    'DevToolsBridge',
+    'FormInspector',
+    'GraphInspector',
+    'NetworkInspector',
+    'OwnerInspector',
+    'PerfInspector',
+    'PerformanceInspector',
+    'ReactiveGraphInspector',
+    'RouterInspector',
+    'SamreyDevToolsBridge',
+    'computeIsDev',
+    'defaultComponentInspector',
+    'defaultFormInspector',
+    'defaultGraphInspector',
+    'defaultNetworkInspector',
+    'defaultOwnerInspector',
+    'defaultPerformanceInspector',
+    'defaultRouterInspector',
+    'getGraphSnapshot',
+    'initDevTools',
+    'initDevtools',
+    'isDevToolsActive',
+    'isSensitiveKey',
+    'samreyDevToolsBridge',
+    'sanitizePayload'
+  ]),
+  '@samrey/security': new Set([
+    'TrustedTypesPolicy',
+    'createCsrfToken',
+    'escapeForScriptPayload',
+    'escapeHtmlAttribute',
+    'escapeHtmlText',
+    'escapeJsonStringForScript',
+    'generateCsrfToken',
+    'getSamreyTemplateTrustedPolicy',
+    'getSamreyTrustedPolicy',
+    'isSafeUrl',
+    'isSensitiveKey',
+    'resetTrustedPolicyForTest',
+    'safeJsonParse',
+    'safeJsonStringify',
+    'sanitizeAttribute',
+    'sanitizeCssStyle',
+    'sanitizeHtml',
+    'sanitizeHtmlString',
+    'sanitizeRedirectUri',
+    'sanitizeUri',
+    'sanitizeUrl',
+    'scrubPrototypePollution',
+    'setAllowedScriptOrigins',
+    'stripSecrets',
+    'stripSensitiveState',
+    'timingSafeEqual',
+    'validateCsrfToken',
+    'verifyCsrfToken'
+  ]),
+  '@samrey/cli': new Set([
+    'CLI_VERSION',
+    'HELP_TEXT',
+    'auditSource',
+    'generateStarterProject',
+    'runAnalyzeCommand',
+    'runAuditCommand',
+    'runBuildCommand',
+    'runCLI',
+    'runCreateCommand',
+    'runDevCommand',
+    'runGenerateCommand',
+    'runPreviewCommand',
+    'runSamreyAudit',
+    'runTestCommand',
+    'samreyPlugin',
+    'samreyVitePlugin',
+    'scaffoldArtifact',
+    'validateProjectName'
+  ]),
+  '@samrey/ai': new Set([
+    'ALL_OFFICIAL_PACKAGES',
+    'COMPATIBILITY_TASKS',
+    'DEFAULT_AI_CONFIG',
+    'DEFAULT_SECURITY_POLICY',
+    'MockDOMNode',
+    'SAMREY_API_REGISTRY',
+    'SAMREY_DOC_SECTIONS',
+    'SAMREY_EXAMPLES',
+    'SAMREY_SKILLS',
+    'analyzeProject',
+    'createAiConfig',
+    'diagnoseCompilerError',
+    'diagnoseError',
+    'discoverSamreyProject',
+    'ensureMockDom',
+    'generateAgentsMd',
+    'generateClaudeMd',
+    'generateCopilotInstructions',
+    'generateCursorMdc',
+    'generateGeminiMd',
+    'getApiReference',
+    'getAuthoritativeInstructionContent',
+    'getBestPractices',
+    'getDocumentation',
+    'getExampleById',
+    'getExamples',
+    'getExamplesByQuery',
+    'installSkills',
+    'runCompatibilitySuite',
+    'searchDocs',
+    'validateSamreyCode',
+    'writeAllInstructions'
+  ]),
+  '@samrey/mcp-server': new Set([
+    'MCP_ERROR_CODES',
+    'MCP_PROMPTS',
+    'MCP_RESOURCES',
+    'MCP_TOOLS',
+    'SamreyMcpServer',
+    'executeSafeCommand',
+    'getPromptMessages',
+    'handleToolCall',
+    'readResource',
+    'redactSecrets',
+    'resolveSafePath'
+  ])
+};
+
+export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
+  '@samrey/reactivity': new Set([
+    'Signal',
+    'ReadonlySignal',
+    'Subscriber',
+    'Dependency',
+    'Owner',
+    'Dispose',
+    'Context',
+    'EffectFunction',
+    'MemoFunction',
+    'Store',
+    'ReactiveNode'
+  ]),
+  '@samrey/router': new Set([
+    'RouteConfig',
+    'RouteRecord',
+    'RouterOptions',
+    'RouteMatch',
+    'NavigateOptions',
+    'HistoryLocation',
+    'RouteParams',
+    'RouterInstance',
+    'History'
+  ]),
+  '@samrey/forms': new Set([
+    'FormConfig',
+    'FieldConfig',
+    'ValidationResult',
+    'FieldState',
+    'FormState',
+    'ValidatorFn',
+    'FormErrors',
+    'StandardSchemaV1',
+    'Validator'
+  ]),
+  '@samrey/runtime': new Set([
+    'Component',
+    'Props',
+    'Accessor',
+    'Setter',
+    'BindingContext',
+    'DynamicChild',
+    'TemplateNode',
+    'SecurityClassification',
+    'AIRNode',
+    'ChildValue',
+    'ElementProps',
+    'DevDiagnostic',
+    'ShowProps',
+    'ForProps',
+    'MatchProps',
+    'SwitchProps',
+    'ErrorBoundaryProps',
+    'DynamicProps',
+    'PortalProps',
+    'SuspenseProps'
+  ]),
+  '@samrey/http': new Set([
+    'RequestCache',
+    'HttpClient',
+    'HttpError',
+    'HttpClientOptions',
+    'FetchOptions',
+    'Resource',
+    'ResourceStatus',
+    'HttpCacheOptions',
+    'ResourceOptions',
+    'RequestOptions'
+  ]),
+  '@samrey/ssr': new Set([
+    'SSRContext',
+    'ServerData',
+    'HydrationOptions',
+    'SerializeOptions',
+    'DeserializeOptions',
+    'StateValidator',
+    'HydrateOptions',
+    'HydrationResult',
+    'StaticPathEntry',
+    'StaticRouteConfig',
+    'SSGOptions',
+    'GeneratedPage',
+    'SSGResult',
+    'SSRHeadMetadata',
+    'RenderToStringOptions',
+    'RenderToStreamOptions',
+    'ServerDataOptions',
+    'ServerDataActions'
+  ]),
+  '@samrey/testing': new Set([
+    'TestRenderResult',
+    'RenderResult',
+    'TestContainer'
+  ]),
+  '@samrey/security': new Set([
+    'SamreyTrustedPolicy',
+    'TrustedTypesOptions',
+    'SecretGuardOptions'
+  ]),
+  '@samrey/compiler': new Set([
+    'SourceLocationInfo',
+    'SamreyErrorCode',
+    'ErrorDefinition',
+    'SamreyDiagnosticOptions',
+    'Position',
+    'SourceLocation',
+    'ASTAttributeNode',
+    'ASTTextNode',
+    'ASTInterpolationNode',
+    'ASTElementNode',
+    'ASTComponentNode',
+    'ASTShowNode',
+    'ASTForNode',
+    'ASTRootNode',
+    'ASTNode',
+    'SecurityContext',
+    'AIRStaticNode',
+    'AIRDynamicTextNode',
+    'AIRDynamicAttrNode',
+    'AIRDynamicEventNode',
+    'AIRControlFlowSlotNode',
+    'AIRNode',
+    'AIRTemplateUnit',
+    'AIRCompilationResult',
+    'ParseOptions',
+    'ParseResult',
+    'ConstantFoldResult'
+  ]),
+  '@samrey/devtools': new Set([
+    'InspectedSignalNode',
+    'InspectedNetworkRequest',
+    'InspectedRouterState',
+    'InspectedFormState'
+  ]),
+  '@samrey/cli': new Set([
+    'ExecResult',
+    'AnalyzeCommandOptions',
+    'DevCommandOptions',
+    'TestCommandOptions',
+    'GenerateArtifactType',
+    'GenerateCommandOptions',
+    'CreateCommandOptions',
+    'CommandResult',
+    'AuditCommandOptions',
+    'PreviewCommandOptions',
+    'BuildCommandOptions',
+    'AuditReport',
+    'StarterProjectFiles',
+    'SamreyPluginOptions'
+  ]),
+  '@samrey/ai': new Set([
+    'InstalledSamreyPackage',
+    'SamreyProjectContext',
+    'CodeValidationError',
+    'CodeValidationWarning',
+    'CodeValidationResult',
+    'ProjectAnalysisReport',
+    'SamreyCodeExample',
+    'DiagnosticDiagnosis',
+    'DocSection',
+    'ApiReference',
+    'SearchResult',
+    'AgentSkillDefinition',
+    'AiPlatform',
+    'SecurityPolicy',
+    'AiIntegrationConfig',
+    'CompatibilityTask',
+    'TaskExecutionResult',
+    'CompatibilitySuiteReport'
+  ]),
+  '@samrey/mcp-server': new Set([
+    'SafeCommandResult',
+    'JsonRpcRequest',
+    'JsonRpcResponse',
+    'McpToolDefinition',
+    'McpResourceDefinition',
+    'McpPromptDefinition',
+    'ToolCallResult',
+    'ToolContext',
+    'SamreyMcpServerOptions'
+  ])
+};
+
 export function validateSamreyCode(
   source: string,
   options: { filename?: string; isTemplateOnly?: boolean } = {}
@@ -67,6 +552,73 @@ export function validateSamreyCode(
         message: `Forbidden ${forbidden.name} import detected. Samrey is an independent framework with its own compile-time reactive runtime.`,
         suggestion: 'Import reactive primitives from @samrey/reactivity and DOM helpers from @samrey/runtime.'
       });
+    }
+  }
+
+  // 1b. Validate @samrey/* Imports Against Official Package Exports
+  const importRegex = /import\s+([\s\S]*?)\s+from\s+['"](@samrey\/[a-z0-9-]+)['"]/g;
+  let impMatch: RegExpExecArray | null;
+  while ((impMatch = importRegex.exec(code)) !== null) {
+    const rawClause = impMatch[1].trim();
+    const pkg = impMatch[2];
+    const isGlobalTypeImport = /^\s*type\s+/.test(rawClause);
+
+    const validExports = OFFICIAL_PACKAGE_EXPORTS[pkg];
+    const validTypes = KNOWN_TYPE_EXPORTS[pkg];
+
+    if (!validExports) {
+      errors.push({
+        message: `Package "${pkg}" is not a recognized @samrey package.`,
+        suggestion: `Use one of the official packages: ${Object.keys(OFFICIAL_PACKAGE_EXPORTS).join(', ')}.`
+      });
+      continue;
+    }
+
+    const namedMatch = rawClause.match(/\{([\s\S]*?)\}/);
+    if (namedMatch) {
+      const items = namedMatch[1].split(',');
+      for (const item of items) {
+        const trimmed = item.trim();
+        if (!trimmed) continue;
+        const isItemType = isGlobalTypeImport || /^\s*type\s+/.test(trimmed);
+        const withoutType = trimmed.replace(/^\s*type\s+/, '').trim();
+        const symbol = withoutType.split(/\s+as\s+/)[0].trim();
+        if (!symbol) continue;
+
+        if (isItemType) {
+          if (!validExports.has(symbol) && (!validTypes || !validTypes.has(symbol))) {
+            errors.push({
+              message: `Type "${symbol}" is not exported by ${pkg}.`,
+              suggestion: `Verify type exports for ${pkg}.`
+            });
+          }
+        } else {
+          if (!validExports.has(symbol)) {
+            if (validTypes && validTypes.has(symbol)) {
+              // Imported type without type keyword
+              continue;
+            }
+
+            let suggestion = `Check the official API reference for ${pkg}.`;
+            if (pkg === '@samrey/router') {
+              if (symbol === 'RouterView') suggestion = 'Use "RouterOutlet" from @samrey/router instead.';
+              if (symbol === 'useRoute') suggestion = 'Use "useLocation" or "useParams" from @samrey/router.';
+            } else if (pkg === '@samrey/reactivity') {
+              if (symbol === 'store') suggestion = 'Use "createStore" from @samrey/reactivity.';
+            } else if (pkg === '@samrey/forms') {
+              if (symbol === 'Field' || symbol === 'useField') suggestion = 'Use "createField" or "bindField" from @samrey/forms.';
+            } else if (pkg === '@samrey/testing') {
+              if (symbol === 'render') suggestion = 'Use "renderTest" from @samrey/testing.';
+              if (symbol === 'flushMicrotasks') suggestion = 'Use "flushReactivity" from @samrey/testing.';
+            }
+
+            errors.push({
+              message: `Symbol "${symbol}" is not exported by ${pkg}.`,
+              suggestion
+            });
+          }
+        }
+      }
     }
   }
 
@@ -114,13 +666,18 @@ export function validateSamreyCode(
     'effect',
     'batch',
     'untrack',
-    'store',
+    'createStore',
+    'produce',
+    'reconcile',
     'createRoot',
     'onCleanup',
     'onError',
     'template',
     'bindText',
     'bindAttr',
+    'bindAttribute',
+    'bindClass',
+    'bindProperty',
     'bindDynamicChild',
     'on',
     'createComponent',
@@ -129,19 +686,22 @@ export function validateSamreyCode(
     'Switch',
     'Match',
     'createRouter',
-    'RouterView',
     'RouterOutlet',
     'Link',
-    'useRoute',
+    'useLocation',
+    'useParams',
     'useNavigate',
+    'useRouter',
     'createForm',
-    'Field',
-    'useField',
+    'createField',
+    'bindField',
     'createResource',
     'createHttpClient',
     'renderToString',
     'renderToStream',
-    'hydrate'
+    'hydrate',
+    'renderTest',
+    'flushReactivity'
   ];
 
   for (const api of apiCandidates) {
@@ -160,6 +720,47 @@ export function validateSamreyCode(
       line,
       suggestion: `Replace with immutable assignment: "signal.value = [...signal.value, newItem]" or "signal.update(arr => [...arr, newItem])".`
     });
+  }
+
+  // 4b. Detect Direct Signal Value Reads or Static Literals in bind* Helpers
+  const twoArgBindHelpers = ['bindText', 'bindDynamicChild'];
+  for (const helper of twoArgBindHelpers) {
+    const calls = extractCallArguments(code, helper);
+    for (const call of calls) {
+      if (call.args.length >= 2) {
+        checkBindAccessor(helper, call.args[1], call.line, errors);
+      }
+    }
+  }
+
+  const threeArgBindHelpers = ['bindAttr', 'bindAttribute', 'bindClass', 'bindProperty', 'bindStyle'];
+  for (const helper of threeArgBindHelpers) {
+    const calls = extractCallArguments(code, helper);
+    for (const call of calls) {
+      if (call.args.length >= 3) {
+        checkBindAccessor(helper, call.args[2], call.line, errors);
+      }
+    }
+  }
+
+  // 4c. Detect Unsafe Dynamic / Non-Literal innerHTML Assignments
+  const innerHtmlRegex = /\b([a-zA-Z0-9_$.]+)?\binnerHTML\s*=\s*([^;\n]+)/g;
+  let ihMatch: RegExpExecArray | null;
+  while ((ihMatch = innerHtmlRegex.exec(code)) !== null) {
+    const rawRhs = ihMatch[2].trim();
+    const line = code.slice(0, ihMatch.index).split('\n').length;
+
+    const isSafeLiteral =
+      /^(?:'[^']*'|"[^"]*"|null|undefined|''|""|``)$/.test(rawRhs) ||
+      (/^`[\s\S]*`$/.test(rawRhs) && !rawRhs.includes('${'));
+
+    if (!isSafeLiteral) {
+      errors.push({
+        message: `Unsafe innerHTML assignment detected with non-literal expression "${rawRhs}". This introduces Cross-Site Scripting (XSS) vulnerabilities.`,
+        line,
+        suggestion: 'Use "rawHtml()" from @samrey/runtime for trusted markup, or sanitize the HTML with "sanitizeHtml()" from @samrey/security before assignment.'
+      });
+    }
   }
 
   // 5. Template compilation check
@@ -230,4 +831,134 @@ function extractTemplateString(source: string): string | null {
   }
 
   return null;
+}
+
+function checkBindAccessor(
+  helperName: string,
+  accessorExpr: string,
+  line: number,
+  errors: CodeValidationError[]
+): void {
+  const trimmed = (accessorExpr || '').trim();
+  if (!trimmed) return;
+
+  const isArrowFn = /^(?:\([^)]*\)|[a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>/.test(trimmed);
+  const isFuncExpr = /^function\b/.test(trimmed);
+
+  if (isArrowFn || isFuncExpr) {
+    return;
+  }
+
+  if (/\.value\b/.test(trimmed)) {
+    errors.push({
+      message: `Direct signal value read "${trimmed}" passed to ${helperName}(). Reactive bindings require an accessor function (e.g., "() => ${trimmed}").`,
+      line,
+      suggestion: `Wrap the signal access in an arrow function: "() => ${trimmed}". Passing a signal value directly evaluates it once and loses reactivity.`
+    });
+  } else if (/^(['"`]|true\b|false\b|\d)/.test(trimmed)) {
+    errors.push({
+      message: `Static literal "${trimmed}" passed to ${helperName}(). Samrey bind helpers require an accessor function.`,
+      line,
+      suggestion: `Pass an accessor function like "() => ${trimmed}" or set static properties directly during element creation.`
+    });
+  } else {
+    errors.push({
+      message: `Argument "${trimmed}" passed to ${helperName}() is not an accessor function. Samrey bind helpers require a getter function (e.g. "() => ${trimmed}.value").`,
+      line,
+      suggestion: `Pass an accessor function "() => ..." instead of a bare variable or signal instance.`
+    });
+  }
+}
+
+function extractCallArguments(
+  code: string,
+  functionName: string
+): Array<{ rawCall: string; args: string[]; line: number }> {
+  const results: Array<{ rawCall: string; args: string[]; line: number }> = [];
+  const regex = new RegExp(`\\b${functionName}\\s*\\(`, 'g');
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(code)) !== null) {
+    const startIndex = match.index;
+    const openParenIndex = match.index + match[0].length - 1;
+    let depth = 1;
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inBacktick = false;
+    let inLineComment = false;
+    let inBlockComment = false;
+    let currentArg = '';
+    const args: string[] = [];
+
+    let i = openParenIndex + 1;
+    for (; i < code.length; i++) {
+      const char = code[i];
+      const prevChar = i > 0 ? code[i - 1] : '';
+
+      if (inLineComment) {
+        if (char === '\n') inLineComment = false;
+        continue;
+      }
+      if (inBlockComment) {
+        if (char === '/' && prevChar === '*') inBlockComment = false;
+        continue;
+      }
+
+      if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
+        if (char === '/' && code[i + 1] === '/') {
+          inLineComment = true;
+          i++;
+          continue;
+        }
+        if (char === '/' && code[i + 1] === '*') {
+          inBlockComment = true;
+          i++;
+          continue;
+        }
+      }
+
+      if (char === "'" && !inDoubleQuote && !inBacktick && prevChar !== '\\') {
+        inSingleQuote = !inSingleQuote;
+        currentArg += char;
+        continue;
+      }
+      if (char === '"' && !inSingleQuote && !inBacktick && prevChar !== '\\') {
+        inDoubleQuote = !inDoubleQuote;
+        currentArg += char;
+        continue;
+      }
+      if (char === '`' && !inSingleQuote && !inDoubleQuote && prevChar !== '\\') {
+        inBacktick = !inBacktick;
+        currentArg += char;
+        continue;
+      }
+
+      if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
+        if (char === '(' || char === '{' || char === '[') {
+          depth++;
+          currentArg += char;
+        } else if (char === ')' || char === '}' || char === ']') {
+          depth--;
+          if (depth === 0) {
+            args.push(currentArg.trim());
+            break;
+          }
+          currentArg += char;
+        } else if (char === ',' && depth === 1) {
+          args.push(currentArg.trim());
+          currentArg = '';
+        } else {
+          currentArg += char;
+        }
+      } else {
+        currentArg += char;
+      }
+    }
+
+    const line = code.slice(0, startIndex).split('\n').length;
+    const rawCall = code.slice(startIndex, i + 1);
+    results.push({ rawCall, args, line });
+  }
+
+  return results;
 }
