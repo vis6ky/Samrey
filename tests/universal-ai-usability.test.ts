@@ -268,8 +268,14 @@ const _tmpl = template('<div><Show when="isAuth"><span>Secret</span></Show></div
     const criteria: Record<string, boolean> = {};
     let mcpServer: SamreyMcpServer;
 
-    before(() => {
-      mcpServer = new SamreyMcpServer({ projectRoot: SAMPLE_APP_DIR });
+    before(async () => {
+      mcpServer = new SamreyMcpServer({ projectRoot: SAMPLE_APP_DIR, allowExec: true });
+      await mcpServer.handleMessage({
+        jsonrpc: '2.0',
+        id: 0,
+        method: 'initialize',
+        params: {}
+      });
     });
 
     it('(1) Documentation Discovery: discovers CLAUDE.md instructions and MCP resources', async () => {

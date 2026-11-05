@@ -17,18 +17,21 @@ export interface SamreyMcpServerOptions {
   projectRoot?: string;
   serverName?: string;
   serverVersion?: string;
+  allowExec?: boolean;
 }
 
 export class SamreyMcpServer {
   private projectRoot: string;
   private serverName: string;
   private serverVersion: string;
+  private allowExec: boolean;
   private isInitialized = false;
 
   constructor(options: SamreyMcpServerOptions = {}) {
     this.projectRoot = options.projectRoot || process.cwd();
     this.serverName = options.serverName || '@samrey/mcp-server';
     this.serverVersion = options.serverVersion || '2.0.0';
+    this.allowExec = options.allowExec ?? false;
   }
 
   public async handleMessage(rawMessage: string | JsonRpcRequest): Promise<JsonRpcResponse | null> {
@@ -50,7 +53,10 @@ export class SamreyMcpServer {
       request = rawMessage;
     }
 
+    const isNotification = Boolean(request && request.id === undefined);
+
     if (!request || request.jsonrpc !== '2.0' || typeof request.method !== 'string') {
+      if (isNotification) return null;
       return {
         jsonrpc: '2.0',
         id: request?.id ?? null,
@@ -64,13 +70,31 @@ export class SamreyMcpServer {
     const id = request.id;
     const method = request.method;
     const params = request.params || {};
-    const ctx: ToolContext = { projectRoot: this.projectRoot };
+    const ctx: ToolContext = {
+      projectRoot: this.projectRoot,
+      allowExec: this.allowExec
+    };
+
+    // Protocol requirement: Server must be initialized before processing tool calls
+    if (!this.isInitialized && method === 'tools/call') {
+      if (isNotification) return null;
+      return {
+        jsonrpc: '2.0',
+        id: id ?? null,
+        error: {
+          code: -32002, // ServerNotInitialized in LSP/MCP
+          message: 'Server not initialized. Client must call "initialize" first.'
+        }
+      };
+    }
 
     try {
+      let response: JsonRpcResponse | null = null;
+
       switch (method) {
         case 'initialize': {
           this.isInitialized = true;
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result: {
@@ -86,6 +110,7 @@ export class SamreyMcpServer {
               }
             }
           };
+          break;
         }
 
         case 'notifications/initialized': {
@@ -94,77 +119,123 @@ export class SamreyMcpServer {
         }
 
         case 'ping': {
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result: {}
           };
+          break;
         }
 
         case 'tools/list': {
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result: {
               tools: MCP_TOOLS
             }
           };
+          break;
         }
 
         case 'tools/call': {
+          if (!params || typeof params !== 'object' || Array.isArray(params)) {
+            response = {
+              jsonrpc: '2.0',
+              id: id ?? null,
+              error: {
+                code: MCP_ERROR_CODES.INVALID_PARAMS,
+                message: 'Invalid params: Expected object.'
+              }
+            };
+            break;
+          }
+
           const toolName = params.name;
-          const toolArgs = params.arguments || {};
-          const result = await handleToolCall(toolName, toolArgs, ctx);
-          return {
+          if (!toolName || typeof toolName !== 'string') {
+            response = {
+              jsonrpc: '2.0',
+              id: id ?? null,
+              error: {
+                code: MCP_ERROR_CODES.INVALID_PARAMS,
+                message: 'Invalid params: tool "name" string is required.'
+              }
+            };
+            break;
+          }
+
+          const toolArgs = params.arguments;
+          if (
+            toolArgs !== undefined &&
+            (typeof toolArgs !== 'object' || toolArgs === null || Array.isArray(toolArgs))
+          ) {
+            response = {
+              jsonrpc: '2.0',
+              id: id ?? null,
+              error: {
+                code: MCP_ERROR_CODES.INVALID_PARAMS,
+                message: 'Invalid params: tool "arguments" must be an object.'
+              }
+            };
+            break;
+          }
+
+          const result = await handleToolCall(toolName, toolArgs || {}, ctx);
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result
           };
+          break;
         }
 
         case 'resources/list': {
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result: {
               resources: MCP_RESOURCES
             }
           };
+          break;
         }
 
         case 'resources/read': {
           const uri = params.uri;
           const result = readResource(uri, this.projectRoot);
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result
           };
+          break;
         }
 
         case 'prompts/list': {
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result: {
               prompts: MCP_PROMPTS
             }
           };
+          break;
         }
 
         case 'prompts/get': {
           const promptName = params.name;
           const promptArgs = params.arguments || {};
           const result = getPromptMessages(promptName, promptArgs);
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             result
           };
+          break;
         }
 
         default: {
-          return {
+          response = {
             jsonrpc: '2.0',
             id: id ?? null,
             error: {
@@ -172,9 +243,18 @@ export class SamreyMcpServer {
               message: `Method "${method}" not found.`
             }
           };
+          break;
         }
       }
+
+      if (isNotification) {
+        return null;
+      }
+      return response;
     } catch (err: any) {
+      if (isNotification) {
+        return null;
+      }
       return {
         jsonrpc: '2.0',
         id: id ?? null,

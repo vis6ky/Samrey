@@ -47,7 +47,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/**/*.test.ts"
+    "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@samrey/ai": "^2.0.0"

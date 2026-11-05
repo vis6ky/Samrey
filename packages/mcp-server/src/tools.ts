@@ -25,6 +25,79 @@ import { resolveSafePath, executeSafeCommand, redactSecrets } from './security.j
 
 export interface ToolContext {
   projectRoot: string;
+  allowExec?: boolean;
+}
+
+const NAME_REGEX = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const MAX_NAME_LENGTH = 100;
+
+function validateArtifactName(name: string): string | null {
+  if (!name || typeof name !== 'string') {
+    return 'Name is required and must be a string.';
+  }
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return 'Name cannot be empty.';
+  }
+  if (trimmed.length > MAX_NAME_LENGTH) {
+    return `Name exceeds maximum length of ${MAX_NAME_LENGTH} characters.`;
+  }
+  if (!NAME_REGEX.test(trimmed)) {
+    return `Invalid name "${trimmed}". Must match /^[A-Za-z_][A-Za-z0-9_]*$/ and contain only alphanumeric characters or underscores.`;
+  }
+  return null;
+}
+
+const ALLOWED_DIR_PREFIXES = ['src/', 'examples/', 'tests/'];
+const FORBIDDEN_FILE_PATTERNS = [
+  /(^|\/)package\.json$/i,
+  /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i,
+  /(^|\/)\.git(\/|$)/i,
+  /(^|\/)\.github(\/|$)/i,
+  /(^|\/)node_modules(\/|$)/i,
+  /(^|\/)[^/]+\.config\.[a-z0-9]+$/i,
+  /(^|\/)tsconfig(\.[^/]+)?\.json$/i
+];
+
+function validateTargetPath(
+  targetPath: string,
+  root: string,
+  overwrite = false
+): { valid: boolean; error?: string; resolvedPath?: string } {
+  if (typeof targetPath !== 'string') {
+    return { valid: false, error: 'Target path must be a string.' };
+  }
+  const cleanRel = targetPath.replace(/\\/g, '/').replace(/^\.\//, '');
+
+  for (const pattern of FORBIDDEN_FILE_PATTERNS) {
+    if (pattern.test(cleanRel)) {
+      return { valid: false, error: `Refusing to write to protected file: "${targetPath}".` };
+    }
+  }
+
+  const isAllowedPrefix = ALLOWED_DIR_PREFIXES.some((prefix) => cleanRel.startsWith(prefix));
+  if (!isAllowedPrefix) {
+    return {
+      valid: false,
+      error: `Target path "${targetPath}" must be located within one of the allowed directories: src/, examples/, tests/.`
+    };
+  }
+
+  let resolved: string;
+  try {
+    resolved = resolveSafePath(root, targetPath);
+  } catch (err: any) {
+    return { valid: false, error: err?.message || String(err) };
+  }
+
+  if (fs.existsSync(resolved) && overwrite !== true) {
+    return {
+      valid: false,
+      error: `Refusing to overwrite existing file at "${targetPath}". Pass overwrite: true to allow.`
+    };
+  }
+
+  return { valid: true, resolvedPath: resolved };
 }
 
 export const MCP_TOOLS: McpToolDefinition[] = [
@@ -216,7 +289,7 @@ export const MCP_TOOLS: McpToolDefinition[] = [
   // 16. samrey_run_tests
   {
     name: 'samrey_run_tests',
-    description: 'Execute application test suites within controlled project boundaries.',
+    description: 'Execute application test suites within controlled project boundaries. Note: executes project code. Requires SAMREY_MCP_ALLOW_EXEC=1 or allowExec server option.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -228,7 +301,7 @@ export const MCP_TOOLS: McpToolDefinition[] = [
   // 17. samrey_build_project
   {
     name: 'samrey_build_project',
-    description: 'Compile and bundle the Samrey project for production via Vite.',
+    description: 'Compile and bundle the Samrey project for production via Vite. Note: executes project code. Requires SAMREY_MCP_ALLOW_EXEC=1 or allowExec server option.',
     inputSchema: {
       type: 'object',
       properties: {}
@@ -399,7 +472,15 @@ export async function handleToolCall(
     }
 
     case 'samrey_generate_component': {
-      const name = String(args.name).trim();
+      const name = String(args.name || '').trim();
+      const nameError = validateArtifactName(name);
+      if (nameError) {
+        return {
+          content: [{ type: 'text', text: nameError }],
+          isError: true
+        };
+      }
+
       const code = `import { signal } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
@@ -418,7 +499,14 @@ export function ${name}(${args.withProps !== false ? `props: ${name}Props = {}` 
 }
 `;
       if (args.targetPath) {
-        const dest = resolveSafePath(root, args.targetPath);
+        const pathValidation = validateTargetPath(args.targetPath, root, Boolean(args.overwrite));
+        if (!pathValidation.valid || !pathValidation.resolvedPath) {
+          return {
+            content: [{ type: 'text', text: pathValidation.error || 'Invalid target path.' }],
+            isError: true
+          };
+        }
+        const dest = pathValidation.resolvedPath;
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, code, 'utf8');
         return {
@@ -436,7 +524,15 @@ export function ${name}(${args.withProps !== false ? `props: ${name}Props = {}` 
     }
 
     case 'samrey_generate_page': {
-      const name = String(args.name).trim();
+      const name = String(args.name || '').trim();
+      const nameError = validateArtifactName(name);
+      if (nameError) {
+        return {
+          content: [{ type: 'text', text: nameError }],
+          isError: true
+        };
+      }
+
       const code = `import { template } from '@samrey/runtime';
 
 const _tmpl = template('<main class="page-container p-6"><h2>${name}</h2><p>Page loaded successfully.</p></main>');
@@ -446,7 +542,14 @@ export function ${name}() {
 }
 `;
       if (args.targetPath) {
-        const dest = resolveSafePath(root, args.targetPath);
+        const pathValidation = validateTargetPath(args.targetPath, root, Boolean(args.overwrite));
+        if (!pathValidation.valid || !pathValidation.resolvedPath) {
+          return {
+            content: [{ type: 'text', text: pathValidation.error || 'Invalid target path.' }],
+            isError: true
+          };
+        }
+        const dest = pathValidation.resolvedPath;
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, code, 'utf8');
         return {
@@ -457,7 +560,15 @@ export function ${name}() {
     }
 
     case 'samrey_generate_route': {
-      const routeSnippet = `{ path: '${args.path}', component: ${args.componentName} }`;
+      const componentName = String(args.componentName || '').trim();
+      const nameError = validateArtifactName(componentName);
+      if (nameError) {
+        return {
+          content: [{ type: 'text', text: nameError }],
+          isError: true
+        };
+      }
+      const routeSnippet = `{ path: '${args.path}', component: ${componentName} }`;
       return {
         content: [{ type: 'text', text: routeSnippet }]
       };
@@ -478,6 +589,20 @@ export function ${name}() {
     }
 
     case 'samrey_run_tests': {
+      const canExec = Boolean(
+        ctx.allowExec ||
+        process.env.SAMREY_MCP_ALLOW_EXEC === '1' ||
+        process.env.SAMREY_MCP_ALLOW_EXEC === 'true'
+      );
+      if (!canExec) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'Execution disabled: Running tests executes project code. To enable, set SAMREY_MCP_ALLOW_EXEC=1 in your environment or pass allowExec: true to the MCP server.'
+          }],
+          isError: true
+        };
+      }
       try {
         const testArgs = ['test'];
         if (args.testPath) {
@@ -501,6 +626,20 @@ export function ${name}() {
     }
 
     case 'samrey_build_project': {
+      const canExec = Boolean(
+        ctx.allowExec ||
+        process.env.SAMREY_MCP_ALLOW_EXEC === '1' ||
+        process.env.SAMREY_MCP_ALLOW_EXEC === 'true'
+      );
+      if (!canExec) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'Execution disabled: Running build executes project code and bundler plugins. To enable, set SAMREY_MCP_ALLOW_EXEC=1 in your environment or pass allowExec: true to the MCP server.'
+          }],
+          isError: true
+        };
+      }
       try {
         const res = await executeSafeCommand('npm', ['run', 'build'], root);
         return {
