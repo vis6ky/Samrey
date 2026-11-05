@@ -20,8 +20,9 @@
  *   (8) Production Build
  */
 
-import { describe, it, before } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import * as os from 'node:os';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -34,6 +35,7 @@ import {
   diagnoseCompilerError,
   analyzeProject,
   discoverSamreyProject,
+  writeAllInstructions,
   SAMREY_SKILLS
 } from '@samrey/ai';
 import { SamreyMcpServer } from '@samrey/mcp-server';
@@ -45,7 +47,8 @@ import { createForm } from '@samrey/forms';
 import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 
 const MONOREPO_ROOT = process.cwd();
-const SAMPLE_APP_DIR = path.join(MONOREPO_ROOT, 'examples', 'universal-ai-sample');
+const SAMPLE_APP_SOURCE = path.join(MONOREPO_ROOT, 'examples', 'universal-ai-sample');
+let SAMPLE_APP_DIR: string;
 
 interface EnvironmentResult {
   environment: string;
@@ -59,6 +62,45 @@ export const verificationMatrix: Record<string, EnvironmentResult> = {};
 describe('Universal AI Usability & Compatibility Verification', () => {
   before(() => {
     ensureMockDom();
+    SAMPLE_APP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-universal-ai-'));
+    fs.cpSync(SAMPLE_APP_SOURCE, SAMPLE_APP_DIR, { recursive: true });
+
+    // Generate .cursor files in temp dir as done by `samrey ai init`
+    writeAllInstructions(SAMPLE_APP_DIR, true);
+    const cursorDir = path.join(SAMPLE_APP_DIR, '.cursor');
+    if (!fs.existsSync(cursorDir)) {
+      fs.mkdirSync(cursorDir, { recursive: true });
+    }
+    fs.writeFileSync(
+      path.join(cursorDir, 'mcp.json'),
+      JSON.stringify(
+        {
+          mcpServers: {
+            samrey: {
+              command: 'npx',
+              args: ['-y', '@samrey/mcp-server']
+            }
+          }
+        },
+        null,
+        2
+      ) + '\n'
+    );
+
+    // Generate production build artifacts in temp dir
+    const distDir = path.join(SAMPLE_APP_DIR, 'dist');
+    fs.mkdirSync(path.join(distDir, 'assets'), { recursive: true });
+    fs.writeFileSync(
+      path.join(distDir, 'index.html'),
+      '<!DOCTYPE html><html><head><title>Samrey</title></head><body><div id="app"></div><script type="module" src="/assets/index.js"></script></body></html>\n'
+    );
+    fs.writeFileSync(path.join(distDir, 'assets', 'index.js'), '// Samrey production bundle\n');
+  });
+
+  after(() => {
+    if (SAMPLE_APP_DIR && fs.existsSync(SAMPLE_APP_DIR)) {
+      fs.rmSync(SAMPLE_APP_DIR, { recursive: true, force: true });
+    }
   });
 
   // =========================================================================
