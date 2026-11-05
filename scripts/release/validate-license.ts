@@ -25,6 +25,8 @@ const PACKAGES = [
   'ssr',
   'testing',
   'devtools',
+  'ai',
+  'mcp-server',
   'cli'
 ];
 

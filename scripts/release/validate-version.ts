@@ -25,6 +25,8 @@ const PACKAGES = [
   'ssr',
   'testing',
   'devtools',
+  'ai',
+  'mcp-server',
   'cli'
 ];
 
@@ -88,7 +90,7 @@ if (process.argv[1]?.endsWith('validate-version.ts') || process.argv[1]?.endsWit
     result.mismatches.forEach(m => console.log(`      - ${m}`));
   }
 
-  console.log(`\nVersion Consistency Audit: ${result.allMatch ? 'PASSED (11/11 Packages + Root Pinned to ' + result.expectedVersion + ')' : 'FAILED'}`);
+  console.log(`\nVersion Consistency Audit: ${result.allMatch ? `PASSED (${Object.keys(result.packageVersions).length}/${Object.keys(result.packageVersions).length} Packages + Root Pinned to ${result.expectedVersion})` : 'FAILED'}`);
   if (!result.allMatch) {
     process.exit(1);
   }

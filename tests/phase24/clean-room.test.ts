@@ -22,7 +22,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
     fs.mkdirSync(consumerDir, { recursive: true });
 
     const tarballs = packAllPackages(tarballDir);
-    assert.strictEqual(tarballs.length, 11, 'Must pack 11 tarballs');
+    assert.strictEqual(tarballs.length, 13, 'Must pack 13 tarballs');
 
     const consumerManifest = {
       name: 'samrey-v2-consumer',

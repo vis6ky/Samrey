@@ -52,7 +52,9 @@ export const VALID_SAMREY_PACKAGES = [
   '@samrey/ssr',
   '@samrey/testing',
   '@samrey/devtools',
-  '@samrey/cli'
+  '@samrey/cli',
+  '@samrey/ai',
+  '@samrey/mcp-server'
 ];
 
 /**

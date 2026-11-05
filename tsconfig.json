@@ -60,6 +60,18 @@
       ],
       "@samrey/devtools": [
         "./packages/devtools/src/index.ts"
+      ],
+      "@samrey/ai": [
+        "./packages/ai/src/index.ts"
+      ],
+      "@samrey/ai/*": [
+        "./packages/ai/*"
+      ],
+      "@samrey/mcp-server": [
+        "./packages/mcp-server/src/index.ts"
+      ],
+      "@samrey/mcp-server/*": [
+        "./packages/mcp-server/*"
       ]
     },
     "allowImportingTsExtensions": true,

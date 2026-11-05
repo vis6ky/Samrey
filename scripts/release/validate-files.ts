@@ -27,6 +27,8 @@ const PACKAGES = [
   'ssr',
   'testing',
   'devtools',
+  'ai',
+  'mcp-server',
   'cli'
 ];
 
@@ -97,7 +99,7 @@ if (process.argv[1]?.endsWith('validate-files.ts') || process.argv[1]?.endsWith(
       }
     }
   }
-  console.log(`\nPublished File Audit: ${allValid ? 'PASSED (0 Blacklisted Files in 11 Tarballs)' : 'FAILED'}`);
+  console.log(`\nPublished File Audit: ${allValid ? `PASSED (0 Blacklisted Files in ${packages.length} Tarballs)` : 'FAILED'}`);
   if (!allValid) {
     process.exit(1);
   }

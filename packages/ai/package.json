@@ -1,0 +1,63 @@
+{
+  "name": "@samrey/ai",
+  "version": "2.0.0",
+  "description": "Universal AI Development Integration, Knowledge Engine & Validation Suite for Samrey Framework",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vis6ky/Samrey.git",
+    "directory": "packages/ai"
+  },
+  "homepage": "https://github.com/vis6ky/Samrey#readme",
+  "bugs": {
+    "url": "https://github.com/vis6ky/Samrey/issues"
+  },
+  "keywords": [
+    "samrey",
+    "ai",
+    "mcp",
+    "skills",
+    "llm",
+    "agents",
+    "gemini",
+    "claude",
+    "cursor",
+    "copilot"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "skills",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@samrey/compiler": "^2.0.0",
+    "@samrey/reactivity": "^2.0.0",
+    "@samrey/runtime": "^2.0.0",
+    "@samrey/security": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

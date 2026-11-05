@@ -21,14 +21,14 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
 
   it('Gate 2: Package Manifest Hardening & Metadata Parity', () => {
     const { packages, allValid } = validateAllPackages('2.0.0');
-    assert.strictEqual(packages.length, 11, 'Must validate all 11 packages');
+    assert.strictEqual(packages.length, 13, 'Must validate all 13 packages');
     assert.ok(allValid, 'All package manifests must be hardened');
   });
 
   it('Gate 3: Dependency Graph Topological Integrity (0 Cycles)', () => {
     const topology = validateDependencyTopology();
     assert.strictEqual(topology.hasCycles, false, 'Dependency graph must have 0 cycles');
-    assert.strictEqual(topology.topologicalOrder.length, 11, 'Must include all 11 packages in topological sort');
+    assert.strictEqual(topology.topologicalOrder.length, 13, 'Must include all 13 packages in topological sort');
   });
 
   it('Gate 4: Public API 100% Contract Parity & Freeze', async () => {
@@ -45,7 +45,7 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
   it('Gate 6: Release Publication Dry-Run Simulation', () => {
     const publishRes = runPublish({ tag: 'latest', dryRun: true, forceLatest: true });
     assert.strictEqual(publishRes.isDryRun, true);
-    assert.strictEqual(publishRes.publishedPackages.length, 11);
+    assert.strictEqual(publishRes.publishedPackages.length, 13);
     assert.strictEqual(publishRes.success, true);
   });
 });

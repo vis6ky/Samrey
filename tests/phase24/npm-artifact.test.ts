@@ -14,14 +14,14 @@ import { packAllPackages } from '../../scripts/release/pack.js';
 describe('Phase 24 — NPM Artifact Certification Gate', () => {
   const PACKAGES = [
     'reactivity', 'runtime', 'security', 'compiler', 'router',
-    'http', 'forms', 'ssr', 'testing', 'devtools', 'cli'
+    'http', 'forms', 'ssr', 'testing', 'devtools', 'ai', 'mcp-server', 'cli'
   ];
 
-  it('1. Packs all 11 packages and verifies SHA256 checksums', () => {
+  it('1. Packs all 13 packages and verifies SHA256 checksums', () => {
     const tarballDir = path.join('/tmp', 'samrey-p24-tarballs');
     const packed = packAllPackages(tarballDir);
 
-    assert.strictEqual(packed.length, 11, 'Must produce 11 tarballs');
+    assert.strictEqual(packed.length, 13, 'Must produce 13 tarballs');
     for (const p of packed) {
       assert.ok(fs.existsSync(p.destinationPath), `Tarball file must exist: ${p.destinationPath}`);
       assert.ok(p.sizeBytes > 0, `Tarball size must be > 0: ${p.packageName}`);
@@ -33,7 +33,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
     const tarballDir = path.join('/tmp', 'samrey-p24-tarballs');
     const files = fs.readdirSync(tarballDir).filter(f => f.endsWith('.tgz'));
 
-    assert.strictEqual(files.length, 11, 'Expected 11 .tgz archives');
+    assert.strictEqual(files.length, 13, 'Expected 13 .tgz archives');
 
     for (const tgz of files) {
       const fullPath = path.join(tarballDir, tgz);

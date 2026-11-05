@@ -12,6 +12,7 @@ import { runTestCommand } from './commands/test.js';
 import { runAuditCommand } from './commands/audit.js';
 import { runAnalyzeCommand } from './commands/analyze.js';
 import { runGenerateCommand, GenerateArtifactType } from './commands/generate.js';
+import { runAiCommand } from './commands/ai.js';
 import { CommandResult } from './commands/create.js';
 
 export const CLI_VERSION = '2.0.0';
@@ -32,6 +33,7 @@ COMMANDS:
   audit                Run small static checks (img alt, javascript: URIs, inline handlers, <script>)
   analyze              Inspect real build artifact file sizes (raw and gzip)
   generate <type> <n>  Scaffold components, routes, stores, or async resources
+  ai <subcommand>      Universal AI development integration, doctor, and MCP server
 
 OPTIONS:
   -h, --help           Display help information
@@ -55,6 +57,12 @@ EXAMPLES:
 `;
 
 export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}): Promise<CommandResult> {
+  const cwd = cliOptions.cwd || process.cwd();
+
+  if (args[0] === 'ai') {
+    return runAiCommand(args, { cwd });
+  }
+
   if (args.length === 0 || args.includes('-h') || args.includes('--help') || args[0] === 'help') {
     return {
       success: true,
@@ -73,7 +81,6 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
 
   const command = args[0];
   const dryRun = args.includes('--dry-run');
-  const cwd = cliOptions.cwd || process.cwd();
 
   switch (command) {
     case 'create': {
@@ -189,6 +196,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         };
       }
       return runGenerateCommand({ type, name, dryRun });
+    }
+
+    case 'ai': {
+      return runAiCommand(args, { cwd });
     }
 
     default: {

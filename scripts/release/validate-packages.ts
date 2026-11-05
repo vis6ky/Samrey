@@ -29,6 +29,8 @@ const PACKAGES = [
   'ssr',
   'testing',
   'devtools',
+  'ai',
+  'mcp-server',
   'cli'
 ];
 
@@ -150,7 +152,7 @@ if (process.argv[1]?.endsWith('validate-packages.ts') || process.argv[1]?.endsWi
       }
     }
   }
-  console.log(`\nPackage Manifest Audit: ${allValid ? 'PASSED (11/11 Valid)' : 'FAILED'}`);
+  console.log(`\nPackage Manifest Audit: ${allValid ? `PASSED (${packages.length}/${packages.length} Valid)` : 'FAILED'}`);
   if (!allValid) {
     process.exit(1);
   }
