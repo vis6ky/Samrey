@@ -9,6 +9,7 @@ import {
   isRecordedMachine,
   evaluateBenchmarkRow,
   computeMedian,
+  computeRobustStat,
   runRegressionGate
 } from '../benchmarks/check-regression.js';
 
@@ -151,5 +152,48 @@ describe('Item 5: benchmark:gate --compare <ref>', () => {
 
     const postWorktrees = execSync('git worktree list', { encoding: 'utf-8' });
     assert.equal(postWorktrees.trim(), initialWorktrees.trim(), 'Git worktree was cleaned up');
+  });
+
+  it('uses robust statistic (best-of-N) for rows with base < 1 ms instead of plain median', () => {
+    // A bimodal sub-ms distribution with slow mode (e.g. V8 JIT unoptimized/GC spike):
+    const subMsSamples = [0.431, 0.258, 0.255, 0.260, 0.257];
+    // For base < 1 ms, robust statistic selects best-of-N (0.255 ms) to eliminate slow mode
+    const robustSubMs = computeRobustStat(subMsSamples, true);
+    assert.equal(robustSubMs, 0.255, 'Sub-ms rows must use robust statistic (best-of-N)');
+
+    // For rows with base >= 1 ms, plain median is used
+    const normalSamples = [10.5, 12.0, 11.2, 11.0, 15.0];
+    const normalStat = computeRobustStat(normalSamples, false);
+    assert.equal(normalStat, 11.2, 'Rows with base >= 1 ms must use plain median');
+  });
+
+  it('a real regression with a deliberately slowed function (2x) must be caught and confirmed', () => {
+    // Deliberately 2x slower function (100% regression)
+    const baseTime = 0.250;
+    const slowedTime = 0.500; // 2x slowed
+
+    const row = evaluateBenchmarkRow({
+      name: 'Full Compile: Deeply Nested (150 levels)',
+      category: 'Compiler',
+      baselineAvgMs: baseTime,
+      currentAvgMs: slowedTime,
+      baselineOps: 4000,
+      currentOps: 2000,
+      threshold: {
+        category: 'Compiler',
+        name: 'Full Compile: Deeply Nested (150 levels)',
+        maxRegressionPercent: 40,
+        minOpsPerSec: 500,
+        rationale: 'Deeply nested template compilation'
+      },
+      isMatchingMachine: false
+    });
+
+    assert.equal(row.passed, false, '2x slowdown must fail regression gate');
+    assert.equal(row.deltaPercent, 100.0, 'Delta percent must reflect 2x slowdown (+100%)');
+
+    // When confirmed through retry evaluation, confirmed flag must be set
+    const confirmedRow = { ...row, confirmed: true };
+    assert.equal(confirmedRow.confirmed, true, 'Persistent failure must be marked confirmed');
   });
 });

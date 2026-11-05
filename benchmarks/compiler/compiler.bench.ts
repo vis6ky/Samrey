@@ -37,9 +37,11 @@ function generateTemplate(nodeCount: number, options: { nested?: boolean; dynami
   return parts.join('\n');
 }
 
-export function runCompilerBenchmarks(): BenchmarkResult[] {
+export function runCompilerBenchmarks(targetBenchmark?: string): BenchmarkResult[] {
   const results: BenchmarkResult[] = [];
   const category = 'Compiler';
+
+  const shouldBench = (name: string) => !targetBenchmark || name === targetBenchmark;
 
   const t10 = generateTemplate(10, { dynamic: true });
   const t100 = generateTemplate(100, { dynamic: true });
@@ -48,41 +50,59 @@ export function runCompilerBenchmarks(): BenchmarkResult[] {
   const tDeep = generateTemplate(150, { nested: true });
 
   // 1. Stage-by-Stage on 100-node template
-  results.push(benchmark('Stage 1: Source -> AST (100 nodes)', () => {
-    const parser = new TemplateParser(t100);
-    parser.parse();
-  }, { category, iterations: 20 }));
+  if (shouldBench('Stage 1: Source -> AST (100 nodes)')) {
+    results.push(benchmark('Stage 1: Source -> AST (100 nodes)', () => {
+      const parser = new TemplateParser(t100);
+      parser.parse();
+    }, { category, warmup: 15, iterations: 40 }));
+  }
 
-  const { ast: ast100 } = new TemplateParser(t100).parse();
-  results.push(benchmark('Stage 2: AST -> AIR (100 nodes)', () => {
-    buildAIRFromAST(ast100);
-  }, { category, iterations: 20 }));
+  if (shouldBench('Stage 2: AST -> AIR (100 nodes)') || shouldBench('Stage 3: AIR -> Codegen (100 nodes)')) {
+    const { ast: ast100 } = new TemplateParser(t100).parse();
+    if (shouldBench('Stage 2: AST -> AIR (100 nodes)')) {
+      results.push(benchmark('Stage 2: AST -> AIR (100 nodes)', () => {
+        buildAIRFromAST(ast100);
+      }, { category, warmup: 15, iterations: 40 }));
+    }
 
-  const { templates, bindingsCode } = buildAIRFromAST(ast100);
-  results.push(benchmark('Stage 3: AIR -> Codegen (100 nodes)', () => {
-    generateModuleCode(templates, bindingsCode.join('\n  '));
-  }, { category, iterations: 20 }));
+    if (shouldBench('Stage 3: AIR -> Codegen (100 nodes)')) {
+      const { templates, bindingsCode } = buildAIRFromAST(ast100);
+      results.push(benchmark('Stage 3: AIR -> Codegen (100 nodes)', () => {
+        generateModuleCode(templates, bindingsCode.join('\n  '));
+      }, { category, warmup: 20, iterations: 50 }));
+    }
+  }
 
   // 2. Full pipeline across scales
-  results.push(benchmark('Full Compile: Small (~10 nodes dynamic)', () => {
-    compileTemplate(t10);
-  }, { category, iterations: 25 }));
+  if (shouldBench('Full Compile: Small (~10 nodes dynamic)')) {
+    results.push(benchmark('Full Compile: Small (~10 nodes dynamic)', () => {
+      compileTemplate(t10);
+    }, { category, warmup: 20, iterations: 50 }));
+  }
 
-  results.push(benchmark('Full Compile: Medium (~100 nodes dynamic)', () => {
-    compileTemplate(t100);
-  }, { category, iterations: 20 }));
+  if (shouldBench('Full Compile: Medium (~100 nodes dynamic)')) {
+    results.push(benchmark('Full Compile: Medium (~100 nodes dynamic)', () => {
+      compileTemplate(t100);
+    }, { category, warmup: 15, iterations: 40 }));
+  }
 
-  results.push(benchmark('Full Compile: Large (~1,000 nodes)', () => {
-    compileTemplate(t1000);
-  }, { category, iterations: 10 }));
+  if (shouldBench('Full Compile: Large (~1,000 nodes)')) {
+    results.push(benchmark('Full Compile: Large (~1,000 nodes)', () => {
+      compileTemplate(t1000);
+    }, { category, iterations: 10 }));
+  }
 
-  results.push(benchmark('Full Compile: Very Large (~10,000 nodes)', () => {
-    compileTemplate(t10000);
-  }, { category, iterations: 5 }));
+  if (shouldBench('Full Compile: Very Large (~10,000 nodes)')) {
+    results.push(benchmark('Full Compile: Very Large (~10,000 nodes)', () => {
+      compileTemplate(t10000);
+    }, { category, iterations: 5 }));
+  }
 
-  results.push(benchmark('Full Compile: Deeply Nested (150 levels)', () => {
-    compileTemplate(tDeep);
-  }, { category, iterations: 15 }));
+  if (shouldBench('Full Compile: Deeply Nested (150 levels)')) {
+    results.push(benchmark('Full Compile: Deeply Nested (150 levels)', () => {
+      compileTemplate(tDeep);
+    }, { category, warmup: 25, iterations: 50 }));
+  }
 
   return results;
 }

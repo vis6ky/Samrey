@@ -1,41 +1,47 @@
 import { signal, computed, effect, batch, createRoot } from '../../packages/reactivity/src/index.js';
 import { benchmark, BenchmarkResult } from '../utils/harness.js';
 
-export function runReactivityBenchmarks(): BenchmarkResult[] {
+export function runReactivityBenchmarks(targetBenchmark?: string): BenchmarkResult[] {
   const results: BenchmarkResult[] = [];
   const category = 'Reactivity';
 
+  const shouldBench = (name: string) => !targetBenchmark || name === targetBenchmark;
+
   // 1. Single Signal Update (10,000 writes)
-  results.push(benchmark('Single Signal Update (10,000 mutations)', () => {
-    createRoot((dispose) => {
-      const s = signal(0);
-      let observed = 0;
-      effect(() => {
-        observed = s.value;
+  if (shouldBench('Single Signal Update (10,000 mutations)')) {
+    results.push(benchmark('Single Signal Update (10,000 mutations)', () => {
+      createRoot((dispose) => {
+        const s = signal(0);
+        let observed = 0;
+        effect(() => {
+          observed = s.value;
+        });
+        for (let i = 0; i < 10_000; i++) {
+          s.value = i;
+        }
+        dispose();
       });
-      for (let i = 0; i < 10_000; i++) {
-        s.value = i;
-      }
-      dispose();
-    });
-  }, { category, iterations: 20, trackMemory: true }));
+    }, { category, iterations: 20, trackMemory: true }));
+  }
 
   // 2. 100 Signals Independent Mutations
-  results.push(benchmark('100 Independent Signals with Effects', () => {
-    createRoot((dispose) => {
-      const signals = Array.from({ length: 100 }, (_, i) => signal(i));
-      let sum = 0;
-      for (const s of signals) {
-        effect(() => {
-          sum += s.value;
-        });
-      }
-      for (const s of signals) {
-        s.value += 1;
-      }
-      dispose();
-    });
-  }, { category, iterations: 20 }));
+  if (shouldBench('100 Independent Signals with Effects')) {
+    results.push(benchmark('100 Independent Signals with Effects', () => {
+      createRoot((dispose) => {
+        const signals = Array.from({ length: 100 }, (_, i) => signal(i));
+        let sum = 0;
+        for (const s of signals) {
+          effect(() => {
+            sum += s.value;
+          });
+        }
+        for (const s of signals) {
+          s.value += 1;
+        }
+        dispose();
+      });
+    }, { category, warmup: 20, iterations: 50 }));
+  }
 
   // 3. 1,000 Signals Independent Mutations
   results.push(benchmark('1,000 Independent Signals with Effects', () => {
@@ -108,32 +114,34 @@ export function runReactivityBenchmarks(): BenchmarkResult[] {
   }, { category, iterations: 20 }));
 
   // 7. Nested Effects (depth 4)
-  results.push(benchmark('Nested Effects (4 levels deep)', () => {
-    createRoot((dispose) => {
-      const s1 = signal(0);
-      const s2 = signal(0);
-      const s3 = signal(0);
-      const s4 = signal(0);
+  if (shouldBench('Nested Effects (4 levels deep)')) {
+    results.push(benchmark('Nested Effects (4 levels deep)', () => {
+      createRoot((dispose) => {
+        const s1 = signal(0);
+        const s2 = signal(0);
+        const s3 = signal(0);
+        const s4 = signal(0);
 
-      effect(() => {
-        const v1 = s1.value;
         effect(() => {
-          const v2 = s2.value;
+          const v1 = s1.value;
           effect(() => {
-            const v3 = s3.value;
+            const v2 = s2.value;
             effect(() => {
-              const v4 = s4.value + v1 + v2 + v3;
+              const v3 = s3.value;
+              effect(() => {
+                const v4 = s4.value + v1 + v2 + v3;
+              });
             });
           });
         });
-      });
 
-      for (let i = 0; i < 50; i++) {
-        s4.value = i;
-      }
-      dispose();
-    });
-  }, { category, iterations: 20 }));
+        for (let i = 0; i < 50; i++) {
+          s4.value = i;
+        }
+        dispose();
+      });
+    }, { category, warmup: 20, iterations: 50 }));
+  }
 
   // 8. Batched Signal Updates (1,000 mutations in 1 batch)
   results.push(benchmark('Batched Updates (1,000 signals in 1 batch)', () => {

@@ -5,6 +5,8 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  schedule:
+    - cron: '0 3 * * *'
 
 jobs:
   validate:
@@ -51,7 +53,7 @@ jobs:
       - name: Build All Packages & Artifacts
         run: npm run build
 
-      - name: Performance Regression Gate
+      - name: Performance Regression Gate & Benchmark Sanity
         if: matrix.node-version == '22.x'
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.base.sha }}" ]; then
@@ -59,3 +61,4 @@ jobs:
           else
             npm run benchmark:gate -- --compare HEAD~1
           fi
+          npm run benchmark:sanity -- 20

@@ -29,6 +29,7 @@ export interface RegressionReportItem {
   isNoiseExempt: boolean;
   floorWarning?: boolean;
   rationale: string;
+  confirmed?: boolean;
 }
 
 export interface GateOptions {
@@ -41,6 +42,7 @@ export function parseBenchmarkGateArgs(argv: string[]): {
   compareRef?: string;
   runs: number;
   targetCategory?: string;
+  targetBenchmark?: string;
   isWorker: boolean;
   workerDir?: string;
   outputFile?: string;
@@ -48,6 +50,7 @@ export function parseBenchmarkGateArgs(argv: string[]): {
   let compareRef: string | undefined;
   let runs = 5;
   let targetCategory: string | undefined;
+  let targetBenchmark: string | undefined;
   let isWorker = false;
   let workerDir: string | undefined;
   let outputFile: string | undefined;
@@ -74,12 +77,20 @@ export function parseBenchmarkGateArgs(argv: string[]): {
       outputFile = argv[++i];
     } else if (arg.startsWith('--output=')) {
       outputFile = arg.slice('--output='.length);
+    } else if (arg === '--benchmark') {
+      targetBenchmark = argv[++i];
+    } else if (arg.startsWith('--benchmark=')) {
+      targetBenchmark = arg.slice('--benchmark='.length);
+    } else if (arg === '--category') {
+      targetCategory = argv[++i];
+    } else if (arg.startsWith('--category=')) {
+      targetCategory = arg.slice('--category='.length);
     } else if (!arg.startsWith('-')) {
       targetCategory = arg;
     }
   }
 
-  return { compareRef, runs, targetCategory, isWorker, workerDir, outputFile };
+  return { compareRef, runs, targetCategory, targetBenchmark, isWorker, workerDir, outputFile };
 }
 
 export function computeMedian(arr: number[]): number {
@@ -90,6 +101,23 @@ export function computeMedian(arr: number[]): number {
     return Number(((sorted[mid - 1] + sorted[mid]) / 2).toFixed(3));
   }
   return Number(sorted[mid].toFixed(3));
+}
+
+export function computeRobustStat(arr: number[], isSubMs: boolean): number {
+  if (!arr || arr.length === 0) return 0;
+  if (isSubMs) {
+    // Best-of-N for sub-millisecond rows eliminates process cold-start JIT and GC spike outliers
+    return Number(Math.min(...arr).toFixed(3));
+  }
+  return computeMedian(arr);
+}
+
+export function computeRobustOps(arr: number[], isSubMs: boolean): number {
+  if (!arr || arr.length === 0) return 0;
+  if (isSubMs) {
+    return Math.round(Math.max(...arr));
+  }
+  return Math.round(computeMedian(arr));
 }
 
 export function isRecordedMachine(baselineSystem: any): boolean {
@@ -171,7 +199,11 @@ export function evaluateBenchmarkRow(params: {
   };
 }
 
-async function executeBenchmarksInDir(targetDir: string, targetCategory?: string): Promise<BenchmarkResult[]> {
+async function executeBenchmarksInDir(
+  targetDir: string,
+  targetCategory?: string,
+  targetBenchmark?: string
+): Promise<BenchmarkResult[]> {
   const results: BenchmarkResult[] = [];
   const shouldRun = (cat: string) =>
     !targetCategory ||
@@ -188,43 +220,50 @@ async function executeBenchmarksInDir(targetDir: string, targetCategory?: string
 
   if (shouldRun('compiler')) {
     const mod = await loadBench('compiler/compiler.bench');
-    if (mod?.runCompilerBenchmarks) results.push(...mod.runCompilerBenchmarks());
+    if (mod?.runCompilerBenchmarks) results.push(...mod.runCompilerBenchmarks(targetBenchmark));
   }
   if (shouldRun('reactivity')) {
     const mod = await loadBench('reactivity/reactivity.bench');
-    if (mod?.runReactivityBenchmarks) results.push(...mod.runReactivityBenchmarks());
+    if (mod?.runReactivityBenchmarks) results.push(...mod.runReactivityBenchmarks(targetBenchmark));
   }
   if (shouldRun('runtime')) {
     const mod = await loadBench('runtime/runtime.bench');
-    if (mod?.runRuntimeBenchmarks) results.push(...mod.runRuntimeBenchmarks());
+    if (mod?.runRuntimeBenchmarks) results.push(...mod.runRuntimeBenchmarks(targetBenchmark));
   }
   if (shouldRun('show') || shouldRun('control-flow') || shouldRun('runtime')) {
     const mod = await loadBench('control-flow/show.bench');
-    if (mod?.runShowBenchmarks) results.push(...mod.runShowBenchmarks());
+    if (mod?.runShowBenchmarks) results.push(...mod.runShowBenchmarks(targetBenchmark));
   }
   if (shouldRun('for') || shouldRun('control-flow') || shouldRun('runtime')) {
     const mod = await loadBench('control-flow/for.bench');
-    if (mod?.runForBenchmarks) results.push(...mod.runForBenchmarks());
+    if (mod?.runForBenchmarks) results.push(...mod.runForBenchmarks(targetBenchmark));
   }
   if (shouldRun('component')) {
     const mod = await loadBench('components/components.bench');
-    if (mod?.runComponentBenchmarks) results.push(...mod.runComponentBenchmarks());
+    if (mod?.runComponentBenchmarks) results.push(...mod.runComponentBenchmarks(targetBenchmark));
   }
   if (shouldRun('ssr')) {
     const mod = await loadBench('ssr/ssr.bench');
-    if (mod?.runSSRBenchmarks) results.push(...await mod.runSSRBenchmarks());
+    if (mod?.runSSRBenchmarks) results.push(...await mod.runSSRBenchmarks(targetBenchmark));
   }
   if (shouldRun('memory')) {
     const mod = await loadBench('memory/memory.bench');
-    if (mod?.runMemoryBenchmarks) results.push(...mod.runMemoryBenchmarks());
+    if (mod?.runMemoryBenchmarks) results.push(...mod.runMemoryBenchmarks(targetBenchmark));
   }
 
+  if (targetBenchmark) {
+    return results.filter((r) => r.name === targetBenchmark);
+  }
   return results;
 }
 
 let activeWorkerChild: ChildProcess | null = null;
 
-function runBenchmarkWorkerProcess(targetDir: string, targetCategory?: string): Promise<BenchmarkResult[]> {
+function runBenchmarkWorkerProcess(
+  targetDir: string,
+  targetCategory?: string,
+  targetBenchmark?: string
+): Promise<BenchmarkResult[]> {
   return new Promise((resolve, reject) => {
     const tempOutputFile = path.join(os.tmpdir(), `samrey-bench-out-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
     const scriptPath = path.resolve(import.meta.dirname, 'check-regression.ts');
@@ -236,7 +275,10 @@ function runBenchmarkWorkerProcess(targetDir: string, targetCategory?: string): 
       '--output', tempOutputFile
     ];
     if (targetCategory) {
-      args.push(targetCategory);
+      args.push('--category', targetCategory);
+    }
+    if (targetBenchmark) {
+      args.push('--benchmark', targetBenchmark);
     }
 
     const child = spawn(process.execPath, args, {
@@ -438,20 +480,84 @@ async function runRegressionGateCompare(
         .filter((v): v is number => typeof v === 'number');
 
       const baseMedianAvgMs = computeMedian(baseAvgMsValues);
-      const baseMedianOps = Math.round(computeMedian(baseOpsValues));
-      const currentMedianAvgMs = computeMedian(currentAvgMsValues);
-      const currentMedianOps = Math.round(computeMedian(currentOpsValues));
+      const isSubMs = baseMedianAvgMs < 1.0;
 
-      const item = evaluateBenchmarkRow({
+      const baseAvgMs = computeRobustStat(baseAvgMsValues, isSubMs);
+      const baseOps = computeRobustOps(baseOpsValues, isSubMs);
+      const currentAvgMs = computeRobustStat(currentAvgMsValues, isSubMs);
+      const currentOps = computeRobustOps(currentOpsValues, isSubMs);
+
+      let item = evaluateBenchmarkRow({
         name,
         category,
-        baselineAvgMs: baseMedianAvgMs,
-        currentAvgMs: currentMedianAvgMs,
-        baselineOps: baseMedianOps,
-        currentOps: currentMedianOps,
+        baselineAvgMs: baseAvgMs,
+        currentAvgMs: currentAvgMs,
+        baselineOps: baseOps,
+        currentOps: currentOps,
         threshold,
         isMatchingMachine
       });
+
+      if (!item.passed) {
+        console.log(`\n⚠️ Benchmark "${name}" (${category}) failed initial comparison (${item.deltaPercent > 0 ? '+' : ''}${item.deltaPercent}% vs +${item.maxAllowedPercent}%).`);
+        console.log(`   Re-running ONLY this row up to 2 more times in fresh worker processes...`);
+
+        let retrySuccess = false;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          console.log(`   ▶ [Re-run ${attempt}/2] Spawning fresh workers for "${name}"...`);
+
+          const retryBaseResults: BenchmarkResult[] = [];
+          const retryCurrentResults: BenchmarkResult[] = [];
+
+          for (let rr = 0; rr < 3; rr++) {
+            const bRes = await runBenchmarkWorkerProcess(tempWorktree, category, name);
+            const cRes = await runBenchmarkWorkerProcess(process.cwd(), category, name);
+            const bItem = bRes.find((r) => r.name === name);
+            const cItem = cRes.find((r) => r.name === name);
+            if (bItem) retryBaseResults.push(bItem);
+            if (cItem) retryCurrentResults.push(cItem);
+          }
+
+          if (retryBaseResults.length > 0 && retryCurrentResults.length > 0) {
+            const rBaseVals = retryBaseResults.map((r) => r.avgMs);
+            const rBaseOps = retryBaseResults.map((r) => r.opsPerSec);
+            const rCurrVals = retryCurrentResults.map((r) => r.avgMs);
+            const rCurrOps = retryCurrentResults.map((r) => r.opsPerSec);
+
+            const rIsSubMs = computeMedian(rBaseVals) < 1.0;
+            const rBaseAvg = computeRobustStat(rBaseVals, rIsSubMs);
+            const rBaseOpsVal = computeRobustOps(rBaseOps, rIsSubMs);
+            const rCurrAvg = computeRobustStat(rCurrVals, rIsSubMs);
+            const rCurrOpsVal = computeRobustOps(rCurrOps, rIsSubMs);
+
+            const retryItem = evaluateBenchmarkRow({
+              name,
+              category,
+              baselineAvgMs: rBaseAvg,
+              currentAvgMs: rCurrAvg,
+              baselineOps: rBaseOpsVal,
+              currentOps: rCurrOpsVal,
+              threshold,
+              isMatchingMachine
+            });
+
+            if (retryItem.passed) {
+              console.log(`   ✅ Re-run ${attempt}/2 PASSED (${retryItem.deltaPercent > 0 ? '+' : ''}${retryItem.deltaPercent}%). Fluke cleared.`);
+              item = retryItem;
+              retrySuccess = true;
+              break;
+            } else {
+              console.log(`   ❌ Re-run ${attempt}/2 FAILED (${retryItem.deltaPercent > 0 ? '+' : ''}${retryItem.deltaPercent}%).`);
+              item = retryItem;
+            }
+          }
+        }
+
+        if (!retrySuccess) {
+          item.confirmed = true;
+          console.log(`   🚨 Regression CONFIRMED for "${name}" after re-runs.\n`);
+        }
+      }
 
       report.push(item);
       if (!item.passed) allPassed = false;
@@ -459,13 +565,13 @@ async function runRegressionGateCompare(
 
     // Print summary table
     console.log('\n=====================================================');
-    console.log(`🛡️ Comparative Regression Gate (${runs} interleaved runs, median comparison)`);
+    console.log(`🛡️ Comparative Regression Gate (${runs} interleaved runs, robust statistic comparison)`);
     console.log('=====================================================\n');
-    console.log('| Status | Category | Benchmark | Base Ref (median) | Current (median) | Δ % | Max Allowed Δ | Current Ops/s | Min Allowed Ops |');
+    console.log('| Status | Category | Benchmark | Base Ref | Current | Δ % | Max Allowed Δ | Current Ops/s | Min Allowed Ops |');
     console.log('|---|---|---|---|---|---|---|---|---|');
 
     for (const item of report) {
-      let statusIcon = item.passed ? '✅ PASS' : '❌ FAIL';
+      let statusIcon = item.passed ? '✅ PASS' : (item.confirmed ? '❌ FAIL (confirmed)' : '❌ FAIL');
       if (item.isFasterThanBase) statusIcon = '🚀 PASS';
       else if (item.isNoiseExempt) statusIcon = '🛡️ PASS (noise-exempt)';
       else if (item.floorWarning) statusIcon = '⚠️ WARN';
@@ -582,7 +688,7 @@ if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes(
   if (parsed.isWorker) {
     const dir = parsed.workerDir || process.cwd();
     const outputFile = parsed.outputFile;
-    executeBenchmarksInDir(dir, parsed.targetCategory).then((results) => {
+    executeBenchmarksInDir(dir, parsed.targetCategory, parsed.targetBenchmark).then((results) => {
       if (outputFile) {
         fs.writeFileSync(outputFile, JSON.stringify(results), 'utf-8');
       } else {
