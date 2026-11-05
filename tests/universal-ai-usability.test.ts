@@ -1,15 +1,20 @@
 /**
  * @license Apache-2.0
- * Universal AI Usability Verification Test Suite
+ * AI Integration & Assistant Profiles — Automated Integration & Self-Check Suite
  *
- * Verifies that Samrey is fully usable across 5 major AI coding environments:
- * 1. Gemini CLI
- * 2. Claude Code
- * 3. Cursor
- * 4. OpenAI Codex
- * 5. GitHub Copilot
+ * NOTE: This is an automated integration self-check suite executing in Node.js.
+ * It validates framework instruction files, schemas, MCP tool contracts, and sample
+ * code patterns for 5 AI assistant profiles without directly invoking proprietary
+ * external AI CLI/IDE processes.
  *
- * Each environment is tested against the 8 mandatory framework criteria:
+ * Target Assistant Profiles Evaluated:
+ * 1. Gemini Profile (GEMINI.md contract & CLI workflow)
+ * 2. Claude Profile (CLAUDE.md contract & MCP tool schema simulation)
+ * 3. Cursor Profile (.cursor/rules contract & IDE rule validation)
+ * 4. OpenAI Codex / ChatGPT Profile (AGENTS.md contract)
+ * 5. GitHub Copilot Profile (.github/copilot-instructions.md contract)
+ *
+ * Each assistant profile is validated against the 8 mandatory framework criteria:
  *   (1) Documentation Discovery
  *   (2) Framework API Retrieval
  *   (3) Native Component Generation
@@ -59,7 +64,7 @@ interface EnvironmentResult {
 
 export const verificationMatrix: Record<string, EnvironmentResult> = {};
 
-describe('Universal AI Usability & Compatibility Verification', () => {
+describe('AI Integration: Automated Self-Check for Coding Assistant Contracts', () => {
   before(() => {
     ensureMockDom();
     SAMPLE_APP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-universal-ai-'));
@@ -104,9 +109,9 @@ describe('Universal AI Usability & Compatibility Verification', () => {
   });
 
   // =========================================================================
-  // ENVIRONMENT 1: Gemini CLI
+  // ENVIRONMENT 1: Gemini Profile
   // =========================================================================
-  describe('Environment 1: Google Gemini CLI', () => {
+  describe('Assistant Profile 1: Gemini Instruction Contract (GEMINI.md & CLI self-check)', () => {
     const envName = 'Gemini CLI';
     const criteria: Record<string, boolean> = {};
 
@@ -261,9 +266,9 @@ const _tmpl = template('<div><Show when="isAuth"><span>Secret</span></Show></div
   });
 
   // =========================================================================
-  // ENVIRONMENT 2: Claude Code
+  // ASSISTANT PROFILE 2: Claude Code Contract
   // =========================================================================
-  describe('Environment 2: Claude Code', () => {
+  describe('Assistant Profile 2: Claude Code Contract (CLAUDE.md & MCP tool schema self-check)', () => {
     const envName = 'Claude Code';
     const criteria: Record<string, boolean> = {};
     let mcpServer: SamreyMcpServer;
@@ -467,9 +472,9 @@ export function ClaudeButton() {
   });
 
   // =========================================================================
-  // ENVIRONMENT 3: Cursor
+  // ASSISTANT PROFILE 3: Cursor Contract
   // =========================================================================
-  describe('Environment 3: Cursor', () => {
+  describe('Assistant Profile 3: Cursor Contract (.cursor/rules & IDE rules self-check)', () => {
     const envName = 'Cursor';
     const criteria: Record<string, boolean> = {};
 
@@ -575,9 +580,9 @@ export function CursorItem(props: { text: string }) {
   });
 
   // =========================================================================
-  // ENVIRONMENT 4: OpenAI Codex / ChatGPT
+  // ASSISTANT PROFILE 4: OpenAI Codex / ChatGPT Contract
   // =========================================================================
-  describe('Environment 4: OpenAI Codex / ChatGPT', () => {
+  describe('Assistant Profile 4: OpenAI Codex / ChatGPT Contract (AGENTS.md universal prompt self-check)', () => {
     const envName = 'OpenAI Codex';
     const criteria: Record<string, boolean> = {};
 
@@ -702,9 +707,9 @@ export function CodexUser() {
   });
 
   // =========================================================================
-  // ENVIRONMENT 5: GitHub Copilot
+  // ASSISTANT PROFILE 5: GitHub Copilot Contract
   // =========================================================================
-  describe('Environment 5: GitHub Copilot', () => {
+  describe('Assistant Profile 5: GitHub Copilot Contract (.github/copilot-instructions.md self-check)', () => {
     const envName = 'GitHub Copilot';
     const criteria: Record<string, boolean> = {};
 
@@ -815,10 +820,10 @@ export function CopilotNav() {
   });
 
   // =========================================================================
-  // FINAL MATRIX ASSERTION
+  // ASSISTANT PROFILE CONTRACT SYNTHESIS
   // =========================================================================
-  describe('Platform Compatibility Matrix Synthesis', () => {
-    it('verifies 100% criteria fulfillment across all 5 AI coding environments', () => {
+  describe('Assistant Profile Contract Synthesis & Verification Matrix', () => {
+    it('verifies 100% contract fulfillment across all 5 assistant profile specifications', () => {
       const requiredEnvironments = ['Gemini CLI', 'Claude Code', 'Cursor', 'OpenAI Codex', 'GitHub Copilot'];
       const requiredCriteria = [
         'docDiscovery',

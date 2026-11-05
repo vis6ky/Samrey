@@ -1,23 +1,35 @@
 # Samrey Universal AI Platform Compatibility Matrix & Verification Report
 
 ## Executive Summary
-This document provides empirical verification evidence demonstrating that **Samrey** is universally usable across modern AI coding environments without manual explanation of the framework.
+This document provides empirical verification evidence demonstrating how **Samrey** integrates with modern AI coding environments and tooling.
 
 Unlike traditional frontend frameworks that rely on runtime Virtual DOM reconciliation and component re-execution, Samrey is an independent, compile-time reactive framework with zero Virtual DOM. To ensure that AI coding assistants do not hallucinate React hooks (`useState`, `useEffect`) or Vue directives (`v-if`, `v-for`), the `@samrey/ai` and `@samrey/mcp-server` packages provide a unified multi-agent integration layer.
 
-Empirical verification was conducted against the concrete reference application located at `examples/universal-ai-sample/` using the automated verification suite `tests/universal-ai-usability.test.ts` (41/41 passing assertions across all 5 environments).
+### Verification Methodology & Distinction
+To ensure full transparency and avoid false assurance, the framework maintains a strict distinction between **Direct Execution** and **Automated Contract Simulation**:
+
+1. **Direct Live Execution**:
+   - **MCP Server Stdio Process (`packages/mcp-server/tests/stdio.test.ts`)**: Spawns `@samrey/mcp-server` as a live standalone Node.js child process over stdio, writing JSON-RPC 2.0 lines to `stdin` and reading line-delimited responses from `stdout` (handshake, notifications, ping, 18 tools, 8 resources, 7 prompts, error codes).
+   - **CLI Tooling Execution (`packages/cli/tests/cli.test.ts`)**: Directly executes `samrey ai doctor`, `samrey ai docs`, `samrey ai validate`, `samrey ai init`, and `samrey ai skills` in terminal processes.
+   - **Template Compiler & AST Verification (`packages/compiler/tests/*.test.ts`)**: Directly compiles templates, verifies AIR trees, hoists static nodes, and generates accurate source frames.
+   - **Code Validator Hardening (`tests/code-validator-hardening.test.ts`)**: Directly audits imported symbols against official package export sets, detects direct `.value` reads in `bind*` helpers, and flags unescaped dynamic `innerHTML` assignments.
+
+2. **Automated Contract Simulation & Self-Check (`tests/universal-ai-usability.test.ts`)**:
+   - Evaluates the 5 coding assistant configuration profiles (**Gemini CLI**, **Claude Code**, **Cursor IDE**, **OpenAI Codex / ChatGPT**, **GitHub Copilot**) using automated in-repo integration tests.
+   - Validates that generated instructions (`GEMINI.md`, `CLAUDE.md`, `.cursor/rules/samrey.mdc`, `AGENTS.md`, `.github/copilot-instructions.md`), MCP schemas, prompt templates, and sample code pass all 8 mandatory framework criteria.
+   - *Note*: These profile self-checks execute in Node.js test runners without launching proprietary, third-party closed-source commercial AI vendor CLI binaries or remote API models.
 
 ---
 
 ## 1. Platform Compatibility Matrix
 
-| AI Environment | Primary Integration Mode | Fallback / Documented Alternative | Doc Discovery | API Retrieval | Component Generation | Reactive State | Routing | Compilation | Error Diagnosis | Production Build | Overall Score |
-| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Google Gemini CLI** | `GEMINI.md` + `samrey ai` CLI | AGENTS.md + Portable Skills | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | **100%** (8/8) |
-| **Claude Code** | Stdio MCP Server (`@samrey/mcp-server`) | `CLAUDE.md` + Portable Skills | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | **100%** (8/8) |
-| **Cursor IDE** | `.cursor/rules/samrey.mdc` + `.cursor/mcp.json` | Stdio MCP Server | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | **100%** (8/8) |
-| **OpenAI Codex / ChatGPT** | `AGENTS.md` + Portable Skills (`skills/`) | CLI `samrey ai validate` | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | **100%** (8/8) |
-| **GitHub Copilot** | `.github/copilot-instructions.md` | `AGENTS.md` Workspace Rules | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | ✅ **PASS** | **100%** (8/8) |
+| Assistant Profile | Primary Integration Mode | Fallback / Documented Alternative | Verification Mode | Profile Score |
+| :--- | :--- | :--- | :--- | :---: |
+| **Google Gemini Profile** | `GEMINI.md` + `samrey ai` CLI | AGENTS.md + Portable Skills | Automated Contract Self-Check + CLI Execution | **100%** (8/8) |
+| **Claude Code Profile** | Stdio MCP Server (`@samrey/mcp-server`) | `CLAUDE.md` + Portable Skills | Live Stdio Child Process + Contract Self-Check | **100%** (8/8) |
+| **Cursor IDE Profile** | `.cursor/rules/samrey.mdc` + `.cursor/mcp.json` | Stdio MCP Server | Live Stdio Child Process + Rules Self-Check | **100%** (8/8) |
+| **OpenAI Codex Profile** | `AGENTS.md` + Portable Skills (`skills/`) | CLI `samrey ai validate` | Automated Contract Self-Check + CLI Execution | **100%** (8/8) |
+| **GitHub Copilot Profile** | `.github/copilot-instructions.md` | `AGENTS.md` Workspace Rules | Automated Contract Self-Check | **100%** (8/8) |
 
 ---
 
@@ -141,17 +153,39 @@ Empirical verification was conducted against the concrete reference application 
 ## 4. Test Suite Execution Summary
 The test execution logs confirm 100% compliance:
 
+### A. Live Child-Process Stdio JSON-RPC MCP Server Test
+```bash
+$ node --import tsx --test packages/mcp-server/tests/stdio.test.ts
+
+▶ MCP Server: Real Stdio JSON-RPC Process Integration
+  ✔ 1. Handles initialize handshake over real stdio (76ms)
+  ✔ 2. Emits no response for notifications/initialized (0.7ms)
+  ✔ 3. Lists all 18 tools with complete JSON schemas over stdio (0.3ms)
+  ✔ 4. Executes documentation search tool (samrey_search_docs) via live stdio (0.9ms)
+  ✔ 5. Executes code validation tool (samrey_validate_code) via live stdio (3.0ms)
+  ✔ 6. Lists and retrieves prompts via live stdio (0.7ms)
+  ✔ 7. Lists and reads resources via live stdio (0.7ms)
+  ✔ 8. Returns proper JSON-RPC error codes over stdio for invalid calls (0.4ms)
+  ✔ 9. Handles malformed JSON strings on stdin gracefully with parse error (-32700) (0.8ms)
+✔ MCP Server: Real Stdio JSON-RPC Process Integration (90ms)
+ℹ tests 9
+ℹ suites 1
+ℹ pass 9
+ℹ fail 0
+```
+
+### B. Automated Assistant Profile Contracts & Instructions Self-Check
 ```bash
 $ node --import tsx --test tests/universal-ai-usability.test.ts
 
-▶ Universal AI Usability & Compatibility Verification
-  ▶ Environment 1: Google Gemini CLI (8/8 PASS)
-  ▶ Environment 2: Claude Code (8/8 PASS)
-  ▶ Environment 3: Cursor (8/8 PASS)
-  ▶ Environment 4: OpenAI Codex / ChatGPT (8/8 PASS)
-  ▶ Environment 5: GitHub Copilot (8/8 PASS)
-  ▶ Platform Compatibility Matrix Synthesis (1/1 PASS)
-✔ Universal AI Usability & Compatibility Verification (34.5ms)
+▶ AI Integration: Automated Self-Check for Coding Assistant Contracts
+  ▶ Assistant Profile 1: Gemini Instruction Contract (GEMINI.md & CLI self-check) (8/8 PASS)
+  ▶ Assistant Profile 2: Claude Code Contract (CLAUDE.md & MCP tool schema self-check) (8/8 PASS)
+  ▶ Assistant Profile 3: Cursor Contract (.cursor/rules & IDE rules self-check) (8/8 PASS)
+  ▶ Assistant Profile 4: OpenAI Codex / ChatGPT Contract (AGENTS.md universal prompt self-check) (8/8 PASS)
+  ▶ Assistant Profile 5: GitHub Copilot Contract (.github/copilot-instructions.md self-check) (8/8 PASS)
+  ▶ Assistant Profile Contract Synthesis & Verification Matrix (1/1 PASS)
+✔ AI Integration: Automated Self-Check for Coding Assistant Contracts (88ms)
 ℹ tests 41
 ℹ suites 7
 ℹ pass 41
