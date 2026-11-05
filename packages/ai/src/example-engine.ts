@@ -180,21 +180,21 @@ export function TodoList() {
   },
   {
     id: 'deep-store-reactivity',
-    title: 'Nested State Management with store()',
+    title: 'Nested State Management with createStore()',
     domain: 'reactivity',
     summary: 'Deep proxy-based reactive object tracking with in-place nested property mutation.',
-    tags: ['store', 'proxy', 'state-management'],
+    tags: ['createStore', 'store', 'proxy', 'state-management'],
     files: [
       {
         filename: 'UserSettings.ts',
         language: 'typescript',
-        code: `import { store, effect } from '@samrey/reactivity';
+        code: `import { createStore, effect } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
 const _tmpl = template('<div class="settings"><p id="theme"></p><button id="dark">Dark</button><button id="light">Light</button></div>');
 
 export function UserSettings() {
-  const state = store({
+  const state = createStore({
     user: {
       profile: {
         theme: 'light',
@@ -221,15 +221,15 @@ export function UserSettings() {
   },
   {
     id: 'router-navigation',
-    title: 'Declarative Client Routing & RouterView',
+    title: 'Declarative Client Routing & RouterOutlet',
     domain: 'routing',
     summary: 'Configuring client-side routes with createRouter, Link, and dynamic parameter consumption.',
-    tags: ['router', 'RouterView', 'Link', 'useRoute', 'navigation'],
+    tags: ['router', 'RouterOutlet', 'Link', 'useParams', 'navigation'],
     files: [
       {
         filename: 'AppRouter.ts',
         language: 'typescript',
-        code: `import { createRouter, RouterView, Link, useRoute } from '@samrey/router';
+        code: `import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
 import { template, bindText } from '@samrey/runtime';
 
 const _homeTmpl = template('<div class="page"><h2>Home Dashboard</h2></div>');
@@ -241,19 +241,17 @@ function Home() {
 }
 
 function User() {
-  const route = useRoute();
+  const params = useParams();
   const root = _userTmpl() as HTMLElement;
-  bindText(root.querySelector('#uid')!, () => \`User ID: \${route.params.id || 'none'}\`);
+  bindText(root.querySelector('#uid')!, () => \`User ID: \${params.value.id || 'none'}\`);
   return root;
 }
 
 export function App() {
-  const router = createRouter({
-    routes: [
-      { path: '/', component: Home },
-      { path: '/user/:id', component: User }
-    ]
-  });
+  const router = createRouter([
+    { path: '/', component: Home },
+    { path: '/user/:id', component: User }
+  ]);
 
   const root = _navTmpl() as HTMLElement;
   const links = root.querySelector('.links')!;
@@ -261,7 +259,7 @@ export function App() {
   links.appendChild(Link({ href: '/user/42', children: 'User 42' }));
 
   const content = root.querySelector('.content')!;
-  content.appendChild(RouterView());
+  content.appendChild(RouterOutlet());
 
   return root;
 }`
@@ -337,7 +335,7 @@ export function UserProfile(props: { userId: number }) {
       {
         filename: 'LoginForm.ts',
         language: 'typescript',
-        code: `import { createForm, Field } from '@samrey/forms';
+        code: `import { createForm } from '@samrey/forms';
 import { template, on, bindText } from '@samrey/runtime';
 
 const _tmpl = template(\`
@@ -378,25 +376,25 @@ export function LoginForm() {
     title: 'Component Unit Testing with @samrey/testing',
     domain: 'testing',
     summary: 'Testing component mounting, DOM queries, and user event triggering.',
-    tags: ['testing', 'render', 'fireEvent', 'assertions'],
+    tags: ['testing', 'renderTest', 'fireEvent', 'flushReactivity', 'assertions'],
     files: [
       {
         filename: 'Counter.test.ts',
         language: 'typescript',
         code: `import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, fireEvent, flushMicrotasks } from '@samrey/testing';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 import { Counter } from './Counter.js';
 
 describe('Counter Component', () => {
   it('renders initial count and increments on button click', async () => {
-    const { container } = render(Counter, { initial: 10 });
+    const { container } = renderTest(() => Counter({ initial: 10 }));
     const button = container.querySelector('button')!;
 
     assert.ok(button.textContent?.includes('Count: 10'));
 
     fireEvent(button, 'click');
-    await flushMicrotasks();
+    await flushReactivity();
 
     assert.ok(button.textContent?.includes('Count: 11'));
   });
@@ -790,7 +788,7 @@ export function LiveClock() {
       {
         filename: 'src/context/ThemeContext.ts',
         language: 'typescript',
-        code: `import { signal, createContext, useContext, Signal } from '@samrey/reactivity';
+        code: `import { signal, createContext, useContext, type Signal } from '@samrey/reactivity';
 import { template, bindAttr, on } from '@samrey/runtime';
 
 export interface ThemeContextValue {

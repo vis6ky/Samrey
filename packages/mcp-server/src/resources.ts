@@ -39,7 +39,7 @@ export const MCP_RESOURCES: McpResourceDefinition[] = [
   {
     uri: 'samrey://docs/routing',
     name: 'Samrey Client-Side Routing Guide',
-    description: 'Route configuration, RouterView, Link navigation, and parameters.',
+    description: 'Route configuration, RouterOutlet, Link navigation, and parameters.',
     mimeType: 'text/markdown'
   },
   {

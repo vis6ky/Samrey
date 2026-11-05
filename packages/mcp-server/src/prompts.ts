@@ -121,7 +121,7 @@ export function getPromptMessages(
             role: 'user',
             content: {
               type: 'text',
-              text: `Configure client routing in Samrey for routes: ${routes}.\nUse "createRouter", "RouterView", "Link", and "useRoute" from @samrey/router.`
+              text: `Configure client routing in Samrey for routes: ${routes}.\nUse "createRouter", "RouterOutlet", "Link", "useParams", and "useLocation" from @samrey/router.`
             }
           }
         ]

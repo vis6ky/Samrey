@@ -220,28 +220,26 @@ The Samrey compiler converts JSX / HTML templates into fine-grained reactive run
     title: 'Client-Side Routing (@samrey/router)',
     category: 'router',
     package: '@samrey/router',
-    summary: 'Type-safe reactive client router with RouterView, Link, params, and history mode.',
-    keywords: ['router', 'routing', 'RouterView', 'Link', 'useRoute', 'useNavigate', 'navigation'],
+    summary: 'Type-safe reactive client router with RouterOutlet, Link, params, and history mode.',
+    keywords: ['router', 'routing', 'RouterOutlet', 'Link', 'useParams', 'useLocation', 'useNavigate', 'navigation'],
     content: `# Client-Side Routing (@samrey/router)
 
 Samrey provides a reactive client router that synchronizes URL changes with fine-grained DOM view swaps.
 
 \`\`\`ts
-import { createRouter, RouterView, Link, useRoute } from '@samrey/router';
+import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
 import { HomeView } from './views/Home.js';
 import { UserView } from './views/User.js';
 
-export const router = createRouter({
-  routes: [
-    { path: '/', component: HomeView },
-    { path: '/users/:id', component: UserView }
-  ]
-});
+export const router = createRouter([
+  { path: '/', component: HomeView },
+  { path: '/users/:id', component: UserView }
+]);
 
 export function App() {
-  const route = useRoute();
-  // route.params, route.path, route.query are reactive signals
-  return RouterView();
+  const params = useParams();
+  // params is a reactive signal containing dynamic route parameters
+  return RouterOutlet();
 }
 \`\`\``
   },
@@ -257,7 +255,7 @@ export function App() {
 \`@samrey/forms\` manages input state, touched/dirty tracking, field validation, and accessible error association.
 
 \`\`\`ts
-import { createForm, Field } from '@samrey/forms';
+import { createForm } from '@samrey/forms';
 
 const form = createForm({
   initialValues: { email: '', password: '' },
@@ -318,21 +316,22 @@ const html = await renderToString(() => App());
     title: 'Component & Integration Testing (@samrey/testing)',
     category: 'testing',
     package: '@samrey/testing',
-    summary: 'DOM-based component mounting, fireEvent, flushMicrotasks, and clean test isolation.',
-    keywords: ['testing', 'test', 'render', 'fireEvent', 'flushMicrotasks', 'assert', 'harness'],
+    summary: 'DOM-based component mounting, fireEvent, flushReactivity, and clean test isolation.',
+    keywords: ['testing', 'test', 'renderTest', 'fireEvent', 'flushReactivity', 'assert', 'harness'],
     content: `# Component & Integration Testing (@samrey/testing)
 
 Test Samrey components in Node.js with built-in DOM mock or JSDOM/HappyDOM.
 
 \`\`\`ts
-import { render, fireEvent, flushMicrotasks } from '@samrey/testing';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 import assert from 'node:assert/strict';
 import { Counter } from './Counter.js';
 
-const { container, findByText } = render(Counter, { initial: 5 });
+const { container } = renderTest(() => Counter({ initial: 5 }));
 const btn = container.querySelector('button')!;
 
 fireEvent(btn, 'click');
+await flushReactivity();
 assert.ok(container.textContent?.includes('Count: 6'));
 \`\`\``
   },

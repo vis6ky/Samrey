@@ -10,11 +10,11 @@ Samrey provides 10 portable agent skills conforming to the Agent Skills open sta
 | **samrey-project-creation** | Scaffold projects and configure Vite plugins | \`samrey create\`, templates |
 | **samrey-components** | Author native component functions returning DOM | \`template()\`, \`bindText()\`, \`bindAttr()\`, \`on()\` |
 | **samrey-reactivity** | Model state with signals, computed values, and stores | \`signal()\`, \`computed()\`, \`effect()\`, \`batch()\` |
-| **samrey-routing** | Configure client SPA routes and navigation | \`createRouter()\`, \`RouterView()\`, \`Link()\` |
-| **samrey-http** | Fetch async data with reactive resource states | \`createResource()\`, \`createHttpClient()\` |
-| **samrey-forms** | Form state, touched tracking, and schema validation | \`createForm()\`, \`Field()\`, Standard Schema |
-| **samrey-ssr** | Server-side rendering, streaming, and hydration | \`renderToString()\`, \`renderToStream()\`, \`hydrate()\` |
-| **samrey-testing** | Unit and integration test components in headless DOM | \`render()\`, \`fireEvent()\`, \`flushMicrotasks()\` |
+| **samrey-routing** | Configure client SPA routes and navigation | `createRouter()`, `RouterOutlet()`, `Link()` |
+| **samrey-http** | Fetch async data with reactive resource states | `createResource()`, `createHttpClient()` |
+| **samrey-forms** | Form state, touched tracking, and schema validation | `createForm()`, `createField()`, Standard Schema |
+| **samrey-ssr** | Server-side rendering, streaming, and hydration | `renderToString()`, `renderToStream()`, `hydrate()` |
+| **samrey-testing** | Unit and integration test components in headless DOM | `renderTest()`, `fireEvent()`, `flushReactivity()` |
 | **samrey-debugging** | Resolve compiler errors and reactivity pitfalls | \`SAMREY-101\`..\`SAMREY-108\` error codes |
 
 ---

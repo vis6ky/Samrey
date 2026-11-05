@@ -9,26 +9,26 @@ description: Unit and integration test Samrey components and reactive state with
 Teaches how to mount components into headless DOM test environments, simulate user events, and assert reactive DOM updates.
 
 ## Relevant APIs
-- `render(componentFn: Function, props?: object): RenderResult`
+- `renderTest(componentFactory: () => unknown): TestRenderResult`
 - `fireEvent(element: Element, eventName: string, eventInit?: object): boolean`
-- `flushMicrotasks(): Promise<void>`
+- `flushReactivity(): Promise<void>`
 
 ## Verified Code Example
 ```ts
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, fireEvent, flushMicrotasks } from '@samrey/testing';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 import { Counter } from './Counter.js';
 
 describe('Counter Component', () => {
   it('renders initial state and increments reactively', async () => {
-    const { container } = render(Counter, { initial: 5 });
+    const { container } = renderTest(() => Counter({ initial: 5 }));
     const button = container.querySelector('button')!;
 
     assert.ok(button.textContent?.includes('5'), 'Initial count must be 5');
 
     fireEvent(button, 'click');
-    await flushMicrotasks();
+    await flushReactivity();
 
     assert.ok(button.textContent?.includes('6'), 'Count must increment to 6');
   });

@@ -17,7 +17,7 @@ Teaches how to model reactive data flow using signals, derivations, effects, and
 
 ## Verified Code Example
 ```ts
-import { signal, computed, effect, batch, store } from '@samrey/reactivity';
+import { signal, computed, effect, batch, createStore } from '@samrey/reactivity';
 
 // 1. Primitive Signal
 const count = signal(0);
@@ -37,7 +37,7 @@ batch(() => {
 }); // logs once with count: 4
 
 // 5. Deep Proxy Store
-const appState = store({
+const appState = createStore({
   user: { name: 'Alice', preferences: { darkTheme: true } }
 });
 appState.user.preferences.darkTheme = false; // deeply reactive!

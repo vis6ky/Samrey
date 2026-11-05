@@ -10,7 +10,7 @@ Samrey is an independent, compile-time reactive frontend framework engineered fo
 - **Zero Virtual DOM**: Components run **EXACTLY ONCE** during creation. There is no VDOM diffing or reconciliation pass.
 - **Compile-Time Static Hoisting**: Invariant HTML markup is hoisted into `template("...")` cloning operations (`_tmpl$1 = template("<div>...</div>")`).
 - **Surgical Fine-Grained Bindings**: State changes trigger microscopic surgical DOM updates (`bindText`, `bindAttr`, `on`) without re-running component functions.
-- **Pure Signals**: Reactive state is managed via `signal()`, `computed()`, `effect()`, and `store()` from `@samrey/reactivity`.
+- **Pure Signals**: Reactive state is managed via `signal()`, `computed()`, `effect()`, and `createStore()` from `@samrey/reactivity`.
 
 ---
 
@@ -129,24 +129,22 @@ export function ItemList() {
 
 ### F. Client-Side Routing
 ```ts
-import { createRouter, RouterView, Link, useRoute } from '@samrey/router';
+import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
 import { template } from '@samrey/runtime';
 
 function Home() { return template('<div>Home Page</div>')(); }
 function Dashboard() { return template('<div>Dashboard Page</div>')(); }
 
-export const router = createRouter({
-  routes: [
-    { path: '/', component: Home },
-    { path: '/dashboard', component: Dashboard }
-  ]
-});
+export const router = createRouter([
+  { path: '/', component: Home },
+  { path: '/dashboard', component: Dashboard }
+]);
 
 export function Navigation() {
   const nav = template('<nav><div class="nav-links"></div><main></main></nav>')() as HTMLElement;
   nav.querySelector('.nav-links')!.appendChild(Link({ href: '/', children: 'Home' }));
   nav.querySelector('.nav-links')!.appendChild(Link({ href: '/dashboard', children: 'Dashboard' }));
-  nav.querySelector('main')!.appendChild(RouterView());
+  nav.querySelector('main')!.appendChild(RouterOutlet());
   return nav;
 }
 ```
@@ -191,15 +189,15 @@ const form = createForm({
 ```ts
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, fireEvent, flushMicrotasks } from '@samrey/testing';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 import { Counter } from './Counter.js';
 
 describe('Counter', () => {
   it('increments count on click', async () => {
-    const { container } = render(Counter, { initial: 0 });
+    const { container } = renderTest(() => Counter({ initial: 0 }));
     const btn = container.querySelector('button')!;
     fireEvent(btn, 'click');
-    await flushMicrotasks();
+    await flushReactivity();
     assert.ok(btn.textContent?.includes('1'));
   });
 });

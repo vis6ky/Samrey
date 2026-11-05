@@ -38,7 +38,7 @@ Use this skill when understanding the conceptual foundation of Samrey, answering
 1. **Zero Virtual DOM**: Component functions execute **EXACTLY ONCE** on mount. They do NOT re-run on signal updates.
 2. **Compile-Time Static Hoisting**: The compiler extracts HTML skeletons into hoisted browser \`<template>\` elements (\`_tmpl$1 = template("...")\`).
 3. **Fine-Grained Surgical DOM Updates**: Signals trigger micro-updates targeting specific text nodes or attributes via \`bindText\` and \`bindAttr\`.
-4. **Pure Signals**: Reactive state is driven by \`signal()\`, \`computed()\`, \`effect()\`, and \`store()\` from \`@samrey/reactivity\`.
+4. **Pure Signals**: Reactive state is driven by \`signal()\`, \`computed()\`, \`effect()\`, and \`createStore()\` from \`@samrey/reactivity\`.
 
 ## Common Mistakes
 - **Mistake**: Expecting the component function to re-execute like a React function component when state changes.
@@ -193,7 +193,7 @@ Teaches how to model reactive data flow using signals, derivations, effects, and
 
 ## Verified Code Example
 \`\`\`ts
-import { signal, computed, effect, batch, store } from '@samrey/reactivity';
+import { signal, computed, effect, batch, createStore } from '@samrey/reactivity';
 
 // 1. Primitive Signal
 const count = signal(0);
@@ -213,7 +213,7 @@ batch(() => {
 }); // logs once with count: 4
 
 // 5. Deep Proxy Store
-const appState = store({
+const appState = createStore({
   user: { name: 'Alice', preferences: { darkTheme: true } }
 });
 appState.user.preferences.darkTheme = false; // deeply reactive!
@@ -232,27 +232,28 @@ Run unit tests checking signal subscriber notifications and value correctness.
   {
     id: 'samrey-routing',
     name: 'samrey-routing',
-    description: 'Implement client-side SPA routing with createRouter, RouterView, Link, and route parameters.',
+    description: 'Implement client-side SPA routing with createRouter, RouterOutlet, Link, and route parameters.',
     content: `---
 name: samrey-routing
-description: Implement client-side SPA routing with createRouter, RouterView, Link, and route parameters.
+description: Implement client-side SPA routing with createRouter, RouterOutlet, Link, and route parameters.
 ---
 
 # Samrey Client-Side Routing (@samrey/router)
 
 ## Purpose
-Explains how to define routes, mount the RouterView outlet, create navigation links, and access dynamic route parameters.
+Explains how to define routes, mount the RouterOutlet outlet, create navigation links, and access dynamic route parameters.
 
 ## Relevant APIs
-- \`createRouter({ routes, mode }): SamreyRouter\`
-- \`RouterView(): Node\`
+- \`createRouter(routes: RouteRecord[], initialPath?: string): RouterInstance\`
+- \`RouterOutlet(): Node\`
 - \`Link({ href, children, class, activeClass }): HTMLAnchorElement\`
-- \`useRoute(): ReactiveRouteState\`
+- \`useParams(): ReadonlySignal<Record<string, string>>\`
+- \`useLocation(): ReadonlySignal<string>\`
 - \`useNavigate(): (to: string) => void\`
 
 ## Verified Code Example
 \`\`\`ts
-import { createRouter, RouterView, Link, useRoute } from '@samrey/router';
+import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
 import { template, bindText } from '@samrey/runtime';
 
 function HomePage() {
@@ -260,18 +261,16 @@ function HomePage() {
 }
 
 function ProductPage() {
-  const route = useRoute();
+  const params = useParams();
   const root = template('<div><h2>Product Details</h2><p class="id"></p></div>')() as HTMLElement;
-  bindText(root.querySelector('.id')!, () => \`Product ID: \${route.params.id}\`);
+  bindText(root.querySelector('.id')!, () => \`Product ID: \${params.value.id || ''}\`);
   return root;
 }
 
-export const router = createRouter({
-  routes: [
-    { path: '/', component: HomePage },
-    { path: '/products/:id', component: ProductPage }
-  ]
-});
+export const router = createRouter([
+  { path: '/', component: HomePage },
+  { path: '/products/:id', component: ProductPage }
+]);
 
 export function NavigationBar() {
   const nav = template('<header><nav class="nav"></nav><main></main></header>')() as HTMLElement;
@@ -280,7 +279,7 @@ export function NavigationBar() {
   navEl.appendChild(Link({ href: '/', children: 'Home' }));
   navEl.appendChild(Link({ href: '/products/101', children: 'Product #101' }));
   
-  nav.querySelector('main')!.appendChild(RouterView());
+  nav.querySelector('main')!.appendChild(RouterOutlet());
   return nav;
 }
 \`\`\`
@@ -501,26 +500,26 @@ description: Unit and integration test Samrey components and reactive state with
 Teaches how to mount components into headless DOM test environments, simulate user events, and assert reactive DOM updates.
 
 ## Relevant APIs
-- \`render(componentFn: Function, props?: object): RenderResult\`
+- \`renderTest(componentFactory: () => unknown): TestRenderResult\`
 - \`fireEvent(element: Element, eventName: string, eventInit?: object): boolean\`
-- \`flushMicrotasks(): Promise<void>\`
+- \`flushReactivity(): Promise<void>\`
 
 ## Verified Code Example
 \`\`\`ts
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, fireEvent, flushMicrotasks } from '@samrey/testing';
+import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
 import { Counter } from './Counter.js';
 
 describe('Counter Component', () => {
   it('renders initial state and increments reactively', async () => {
-    const { container } = render(Counter, { initial: 5 });
+    const { container } = renderTest(() => Counter({ initial: 5 }));
     const button = container.querySelector('button')!;
 
     assert.ok(button.textContent?.includes('5'), 'Initial count must be 5');
 
     fireEvent(button, 'click');
-    await flushMicrotasks();
+    await flushReactivity();
 
     assert.ok(button.textContent?.includes('6'), 'Count must increment to 6');
   });
