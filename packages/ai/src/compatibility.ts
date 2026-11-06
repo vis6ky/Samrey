@@ -73,7 +73,7 @@ function parseHtmlFragment(html: string): MockDOMNode[] {
     }
   }
 
-  return root.childNodes;
+  return [...root.childNodes];
 }
 
 export class MockDOMNode {
@@ -84,6 +84,7 @@ export class MockDOMNode {
   public childNodes: MockDOMNode[] = [];
   public attributes: Record<string, string> = {};
   public eventListeners: Record<string, Function[]> = {};
+  public style: Record<string, any> = {};
   public content?: MockDOMNode;
   public previousSibling: MockDOMNode | null = null;
   public nextSibling: MockDOMNode | null = null;
@@ -289,6 +290,7 @@ export class MockDOMNode {
   cloneNode(deep = false): MockDOMNode {
     const clone = new MockDOMNode(this.nodeType, this.nodeName, this._textContent);
     clone.attributes = { ...this.attributes };
+    clone.style = { ...this.style };
     clone.value = this.value;
     clone.checked = this.checked;
     if (this.content) {

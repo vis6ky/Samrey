@@ -809,6 +809,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   let templateCounter = 0;
 
   const isSingleRoot = ast.children.length === 1 && ast.children[0].type === 'Element';
+  const elementRoots = ast.children.filter((n) => n.type === 'Element' || n.type === 'Component');
+  if (elementRoots.length > 1) {
+    diagnostics.push(
+      'Multi-root template detected: Consider wrapping sibling root elements in a single container element for consistent DOM operations.'
+    );
+  }
   const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
 
   function normalizeNodes(nodes: ASTNode[]): ASTNode[] {
