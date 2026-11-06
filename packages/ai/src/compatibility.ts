@@ -3,6 +3,9 @@
  * @samrey/ai - AI Framework Compatibility & Benchmark Validation Suite
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { spawn } from 'node:child_process';
 import { signal, computed, effect, batch } from '@samrey/reactivity';
 import { template, Show, For, on, bindText, bindAttr, createComponent } from '@samrey/runtime';
 import { compileTemplate } from '@samrey/compiler';
@@ -341,13 +344,135 @@ export interface CompatibilityTask {
   execute: (inputCode?: string) => Promise<TaskExecutionResult>;
 }
 
+export interface StdioHandshakeResult {
+  connected: boolean;
+  latencyMs: number;
+  serverInfo?: { name: string; version: string };
+  error?: string;
+}
+
+export async function verifyStdioHandshake(mcpBinPath?: string): Promise<StdioHandshakeResult> {
+  let resolvedBin = mcpBinPath;
+  if (!resolvedBin) {
+    const candidatePaths = [
+      path.resolve(process.cwd(), 'packages/mcp-server/bin/samrey-mcp.js'),
+      path.resolve(process.cwd(), '../mcp-server/bin/samrey-mcp.js'),
+      path.resolve(process.cwd(), 'node_modules/@samrey/mcp-server/bin/samrey-mcp.js')
+    ];
+    for (const cand of candidatePaths) {
+      if (fs.existsSync(cand)) {
+        resolvedBin = cand;
+        break;
+      }
+    }
+  }
+
+  if (!resolvedBin || !fs.existsSync(resolvedBin)) {
+    return { connected: false, latencyMs: 0, error: 'MCP server executable not found' };
+  }
+
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    let settled = false;
+
+    const spawnArgs: string[] = [];
+    const distPath = path.resolve(path.dirname(resolvedBin), '..', 'dist', 'server.js');
+    if (!fs.existsSync(distPath)) {
+      spawnArgs.push('--import', 'tsx');
+    }
+    spawnArgs.push(resolvedBin);
+
+    const child = spawn(process.execPath, spawnArgs, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, NODE_ENV: 'test' }
+    });
+
+    let stderrOutput = '';
+    child.stderr?.on('data', (chunk) => {
+      stderrOutput += chunk.toString();
+    });
+
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        try { child.kill('SIGKILL'); } catch {}
+        resolve({
+          connected: false,
+          latencyMs: performance.now() - t0,
+          error: `Stdio handshake timed out after 10000ms. Stderr: ${stderrOutput}`
+        });
+      }
+    }, 10000);
+
+    child.on('error', (err) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timeout);
+        resolve({ connected: false, latencyMs: performance.now() - t0, error: err.message });
+      }
+    });
+
+    child.on('exit', (code) => {
+      if (!settled && code !== 0 && code !== null) {
+        settled = true;
+        clearTimeout(timeout);
+        resolve({
+          connected: false,
+          latencyMs: performance.now() - t0,
+          error: `Process exited with code ${code}. Stderr: ${stderrOutput}`
+        });
+      }
+    });
+
+    let buffer = '';
+    child.stdout.on('data', (chunk) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const res = JSON.parse(trimmed);
+          if (res.id === 1 && res.result && res.result.serverInfo) {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timeout);
+              const latencyMs = performance.now() - t0;
+              try { child.kill(); } catch {}
+              resolve({
+                connected: true,
+                latencyMs,
+                serverInfo: res.result.serverInfo
+              });
+            }
+          }
+        } catch {}
+      }
+    });
+
+    const initReq = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'samrey-compatibility-suite', version: '2.0.0' }
+      }
+    }) + '\n';
+
+    child.stdin.write(initReq);
+  });
+}
+
 export interface TaskExecutionResult {
   taskId: string;
   taskName: string;
   passed: boolean;
   score: number; // 0 to 100
   criteria: {
-    connectionCompatibility: boolean;
+    apiContractConformance: boolean;
     documentationUnderstanding: boolean;
     codeGenerationCorrectness: boolean;
     successfulCompilation: boolean;
@@ -365,8 +490,10 @@ export interface CompatibilitySuiteReport {
   passedTasks: number;
   overallScore: number;
   isFullyCompatible: boolean;
+  connectionDetails?: StdioHandshakeResult;
   summary: {
     connectionCompatibility: boolean;
+    apiContractConformance: boolean;
     documentationUnderstanding: boolean;
     codeGenerationCorrectness: boolean;
     successfulCompilation: boolean;
@@ -393,7 +520,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: val.valid,
           documentationUnderstanding: val.detectedApis.length > 0,
           codeGenerationCorrectness: !val.foreignFrameworkDetected,
           successfulCompilation: val.compiles,
@@ -428,7 +555,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed: runtimeCorrect,
         score: runtimeCorrect ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: runtimeCorrect,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -464,7 +591,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -504,7 +631,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed: showNode !== null,
         score: 100,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: showNode !== null,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -551,7 +678,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed: forNode !== null,
         score: 100,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: forNode !== null,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -584,7 +711,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -615,7 +742,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed: clicked,
         score: clicked ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: clicked,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -643,7 +770,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -676,7 +803,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -713,7 +840,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed: hasErrors,
         score: hasErrors ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: hasErrors,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -741,7 +868,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -770,7 +897,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: true,
@@ -799,7 +926,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
         passed,
         score: passed ? 100 : 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: passed,
           documentationUnderstanding: true,
           codeGenerationCorrectness: true,
           successfulCompilation: passed,
@@ -815,6 +942,8 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
 export async function runCompatibilitySuite(options: {
   platform?: string;
   model?: string;
+  mcpBinPath?: string;
+  skipConnectionCheck?: boolean;
 } = {}): Promise<CompatibilitySuiteReport> {
   ensureDom();
   const taskResults: TaskExecutionResult[] = [];
@@ -830,7 +959,7 @@ export async function runCompatibilitySuite(options: {
         passed: false,
         score: 0,
         criteria: {
-          connectionCompatibility: true,
+          apiContractConformance: false,
           documentationUnderstanding: false,
           codeGenerationCorrectness: false,
           successfulCompilation: false,
@@ -842,11 +971,17 @@ export async function runCompatibilitySuite(options: {
     }
   }
 
+  let connectionDetails: StdioHandshakeResult | undefined;
+  if (!options.skipConnectionCheck) {
+    connectionDetails = await verifyStdioHandshake(options.mcpBinPath);
+  }
+
   const passedTasks = taskResults.filter((t) => t.passed).length;
   const overallScore = Math.round((passedTasks / COMPATIBILITY_TASKS.length) * 100);
 
   const summary = {
-    connectionCompatibility: taskResults.every((t) => t.criteria.connectionCompatibility),
+    connectionCompatibility: connectionDetails ? connectionDetails.connected : true,
+    apiContractConformance: taskResults.every((t) => t.criteria.apiContractConformance),
     documentationUnderstanding: taskResults.filter((t) => t.criteria.documentationUnderstanding).length >= 12,
     codeGenerationCorrectness: taskResults.filter((t) => t.criteria.codeGenerationCorrectness).length >= 12,
     successfulCompilation: taskResults.filter((t) => t.criteria.successfulCompilation).length >= 12,
@@ -861,7 +996,8 @@ export async function runCompatibilitySuite(options: {
     totalTasks: COMPATIBILITY_TASKS.length,
     passedTasks,
     overallScore,
-    isFullyCompatible: passedTasks === COMPATIBILITY_TASKS.length,
+    isFullyCompatible: passedTasks === COMPATIBILITY_TASKS.length && summary.connectionCompatibility,
+    connectionDetails,
     summary,
     taskResults
   };

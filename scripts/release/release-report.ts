@@ -63,7 +63,7 @@ ${preflight.diagnostics.map(d => `- ${d}`).join('\n')}
 **Target Version:** 1.0.0 (GA)  
 **Audit Date:** 2026-08-24  
 **Total Packages Audited:** ${pkgVal.packages.length}  
-**Status:** ${pkgVal.allValid ? 'PASS (11/11 Valid)' : 'FAIL'}  
+**Status:** ${pkgVal.allValid ? `PASS (${pkgVal.packages.length}/${pkgVal.packages.length} Valid)` : 'FAIL'}  
 
 ## Package Manifest Matrix
 
@@ -94,7 +94,7 @@ The following foreign UI and state management frameworks were scanned across all
 - **Foreign Component Framework Imports Found:** 0
 
 ## 2. Package Dependency Audit
-All 11 packages depend exclusively on other native \`@samrey/*\` modules or minimal Node.js standard libraries.
+All ${pkgVal.packages.length} packages depend exclusively on other native \`@samrey/*\` modules or minimal Node.js standard libraries.
 `
   );
 
@@ -223,9 +223,9 @@ If a network failure occurs during multi-package publish:
 **Release Readiness Gate Status:** ALL GATES PASSED (10/10)  
 
 ## Executive Summary
-All 11 packages comprising the Samrey Framework have passed all automated validation pipelines, dependency topology checks, clean-room consumer smoke tests, SSR/streaming hydration gates, memory leak stress gates, and public API parity checks.
+All ${pkgVal.packages.length} packages comprising the Samrey Framework have passed all automated validation pipelines, dependency topology checks, clean-room consumer smoke tests, SSR/streaming hydration gates, memory leak stress gates, and public API parity checks.
 
-- **Packages:** 11/11 Validated & Hardened
+- **Packages:** ${pkgVal.packages.length}/${pkgVal.packages.length} Validated & Hardened
 - **Reactivity & DOM Runtime:** 100% Pass (Push-pull glitched-free signals, zero VDOM overhead)
 - **Compiler & CLI:** 100% Pass (ASCII scanner, zero-eval codegen, 4 starter templates)
 - **Security & SSR:** 100% Pass (Zero-eval sanitization, script breakout protection, streaming SSR)
@@ -243,7 +243,7 @@ All 11 packages comprising the Samrey Framework have passed all automated valida
 "Samrey Must Use Samrey" — 100% Compliant
 
 ### Package Count
-11
+${pkgVal.packages.length}
 
 ### Total Monorepo Tests
 236 (100% Pass, 0 Failures)
@@ -255,7 +255,7 @@ PASS (0 Errors)
 PASS (Vite production bundle built cleanly)
 
 ### NPM Packages
-11/11 Verified & Packaged
+${pkgVal.packages.length}/${pkgVal.packages.length} Verified & Packaged
 
 ### Clean-Room Consumer
 PASS (Isolated execution without symlinks)

@@ -37,9 +37,6 @@
   },
   "files": [
     "dist",
-    "src",
-    "skills",
-    "templates",
     "README.md",
     "LICENSE"
   ],

@@ -125,5 +125,6 @@ if (process.argv[1]?.endsWith('pack.ts') || process.argv[1]?.endsWith('pack.js')
     console.log(`  • ${t.packageName.padEnd(22)}: ${t.filename} (${(t.sizeBytes / 1024).toFixed(2)} kB)`);
     console.log(`      SHA256: ${t.sha256}`);
   }
-  console.log(`\nPackaging Status: PASSED (${tarballs.length}/11 Archives Ready)`);
+  const { topologicalOrder } = validateDependencyTopology();
+  console.log(`\nPackaging Status: PASSED (${tarballs.length}/${topologicalOrder.length} Archives Ready)`);
 }

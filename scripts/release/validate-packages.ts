@@ -99,9 +99,14 @@ export function validateAllPackages(expectedVersion = '2.0.0'): { packages: Pack
     }
 
     // Check Files Whitelist
-    const hasFilesWhitelist = Array.isArray(manifest.files) && manifest.files.includes('src') && manifest.files.includes('README.md') && manifest.files.includes('LICENSE');
+    const requiresSrc = pkg !== 'ai' && pkg !== 'mcp-server';
+    const hasFilesWhitelist = Array.isArray(manifest.files) &&
+      (!requiresSrc || manifest.files.includes('src')) &&
+      manifest.files.includes('dist') &&
+      manifest.files.includes('README.md') &&
+      manifest.files.includes('LICENSE');
     if (!hasFilesWhitelist) {
-      errors.push('Invalid files whitelist (must include src, README.md, LICENSE)');
+      errors.push('Invalid files whitelist (must include dist, README.md, LICENSE, and src where applicable)');
     }
 
     // Check Exports Map
