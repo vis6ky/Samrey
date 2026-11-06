@@ -3,6 +3,8 @@
  * @samrey/runtime - Main Entry Point
  */
 
+/// <reference path="./ambient.d.ts" />
+
 export * from './template.js';
 export * from './bindings.js';
 export * from './events.js';

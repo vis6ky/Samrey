@@ -30,6 +30,16 @@ export function buildAllPackages(): void {
       { cwd: process.cwd(), stdio: 'pipe' }
     );
 
+    // Copy any static declaration files from src/ to dist/
+    if (fs.existsSync(srcDir)) {
+      const srcFiles = fs.readdirSync(srcDir);
+      for (const file of srcFiles) {
+        if (file.endsWith('.d.ts')) {
+          fs.copyFileSync(path.join(srcDir, file), path.join(distDir, file));
+        }
+      }
+    }
+
     // Build CLI bin bundle if cli
     if (pkg === 'cli') {
       execSync('npm run build', { cwd: pkgDir, stdio: 'pipe' });

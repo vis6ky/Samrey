@@ -28,11 +28,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./ambient": "./dist/ambient.d.ts",
+    "./client": "./dist/ambient.d.ts"
   },
   "files": [
     "dist",
     "src",
+    "ambient.d.ts",
     "README.md",
     "LICENSE"
   ],
