@@ -98,7 +98,25 @@ export class TemplateParser {
     while (this.cursor < this.length) {
       const node = this.parseNode();
       if (node) {
-        children.push(node);
+        this.appendChild(children, node);
+      }
+    }
+
+    // Strip leading and trailing purely whitespace text nodes from root children
+    while (children.length > 0) {
+      const first = children[0];
+      if (first.type === 'Text' && first.value.trim() === '') {
+        children.shift();
+      } else {
+        break;
+      }
+    }
+    while (children.length > 0) {
+      const last = children[children.length - 1];
+      if (last.type === 'Text' && last.value.trim() === '') {
+        children.pop();
+      } else {
+        break;
       }
     }
 
@@ -260,6 +278,19 @@ export class TemplateParser {
     }
   }
 
+  private appendChild(children: ASTNode[], child: ASTNode): void {
+    if (child.type === 'Text') {
+      if (child.value.length === 0) return;
+      const last = children[children.length - 1];
+      if (last && last.type === 'Text') {
+        last.value += child.value;
+        last.loc.end = child.loc.end;
+        return;
+      }
+    }
+    children.push(child);
+  }
+
   private parseTagNode(): ASTNode | null {
     const startPos = this.getPosition();
     this.advance(1); // skip '<'
@@ -363,7 +394,7 @@ export class TemplateParser {
 
         const child = this.parseNode();
         if (child) {
-          children.push(child);
+          this.appendChild(children, child);
         }
       }
 
@@ -447,7 +478,7 @@ export class TemplateParser {
       const closingTag = '</Show>';
       while (this.cursor < this.length && !this.peekString(closingTag)) {
         const child = this.parseNode();
-        if (child) children.push(child);
+        if (child) this.appendChild(children, child);
       }
       if (this.peekString(closingTag)) {
         this.advance(closingTag.length);
@@ -515,7 +546,7 @@ export class TemplateParser {
       const closingTag = '</For>';
       while (this.cursor < this.length && !this.peekString(closingTag)) {
         const child = this.parseNode();
-        if (child) children.push(child);
+        if (child) this.appendChild(children, child);
       }
       if (this.peekString(closingTag)) {
         this.advance(closingTag.length);
@@ -780,7 +811,48 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   const isSingleRoot = ast.children.length === 1 && ast.children[0].type === 'Element';
   const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
 
-  function processNodes(nodes: ASTNode[], currentPath: number[], isRootLevel = false): string {
+  function normalizeNodes(nodes: ASTNode[]): ASTNode[] {
+    const normalized: ASTNode[] = [];
+    for (const node of nodes) {
+      if (node.type === 'Text') {
+        if (node.value.length === 0) continue;
+        const last = normalized[normalized.length - 1];
+        if (last && last.type === 'Text') {
+          last.value += node.value;
+          continue;
+        }
+        normalized.push({ ...node });
+      } else if (node.type === 'Interpolation') {
+        const fold = evaluateConstantExpression(node.expression);
+        if (fold.isConstant && fold.value !== null) {
+          const trimmed = node.expression.trim();
+          if (trimmed === 'null' || trimmed === 'undefined' || trimmed === 'false' || trimmed === 'true') {
+            continue;
+          }
+          const textVal = escapeHtmlText(fold.value);
+          if (textVal.length === 0) continue;
+          const last = normalized[normalized.length - 1];
+          if (last && last.type === 'Text') {
+            last.value += textVal;
+            continue;
+          }
+          normalized.push({
+            type: 'Text',
+            value: textVal,
+            loc: node.loc
+          });
+        } else {
+          normalized.push(node);
+        }
+      } else {
+        normalized.push(node);
+      }
+    }
+    return normalized;
+  }
+
+  function processNodes(rawNodes: ASTNode[], currentPath: number[], isRootLevel = false): string {
+    const nodes = normalizeNodes(rawNodes);
     const htmlParts: string[] = [];
     let childIndex = 0;
 
@@ -793,27 +865,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         htmlParts.push(node.value);
         childIndex++;
       } else if (node.type === 'Interpolation') {
-        // Compile-time Constant Expression Folding for static interpolations
-        const fold = evaluateConstantExpression(node.expression);
-        if (fold.isConstant && fold.value !== null) {
-          const trimmedExpr = node.expression.trim();
-          if (trimmedExpr === 'null' || trimmedExpr === 'undefined' || trimmedExpr === 'false' || trimmedExpr === 'true') {
-            // Null, undefined, and booleans render empty string in text interpolations
-          } else {
-            htmlParts.push(escapeHtmlText(fold.value));
-            childIndex++;
-          }
-        } else {
-          htmlParts.push('<!-- dynamic-slot -->');
-          const dynamicSlot: AIRDynamicTextNode = {
-            type: 'dynamic-text',
-            expression: node.expression,
-            path: nodePath,
-            securityContext: node.securityContext
-          };
-          slots.push(dynamicSlot);
-          childIndex++;
-        }
+        htmlParts.push('<!-- dynamic-slot -->');
+        const dynamicSlot: AIRDynamicTextNode = {
+          type: 'dynamic-text',
+          expression: node.expression,
+          path: nodePath,
+          securityContext: node.securityContext
+        };
+        slots.push(dynamicSlot);
+        childIndex++;
       } else if (node.type === 'Element') {
         let tagOpen = `<${node.tag}`;
 
