@@ -31,6 +31,15 @@ export function generateModuleCode(templates: AIRTemplateUnit[], componentBody: 
   if (componentBody.includes('bindAttr(')) {
     neededImports.add('bindAttr');
   }
+  if (componentBody.includes('bindAttribute(')) {
+    neededImports.add('bindAttribute');
+  }
+  if (componentBody.includes('bindClass(')) {
+    neededImports.add('bindClass');
+  }
+  if (componentBody.includes('bindProperty(')) {
+    neededImports.add('bindProperty');
+  }
   if (componentBody.includes('on(')) {
     neededImports.add('on');
   }
