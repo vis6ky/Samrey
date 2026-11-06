@@ -763,6 +763,54 @@ export function validateSamreyCode(
     }
   }
 
+  // 4d. Detect document.write() / document.writeln()
+  const docWriteRegex = /\bdocument\s*\.\s*(?:write|writeln)\s*\(/g;
+  let dwMatch: RegExpExecArray | null;
+  while ((dwMatch = docWriteRegex.exec(code)) !== null) {
+    const line = code.slice(0, dwMatch.index).split('\n').length;
+    errors.push({
+      message: 'Dangerous "document.write()" call detected. Direct document writing blocks page parsing, destroys DOM state, and introduces severe XSS risks.',
+      line,
+      suggestion: 'Use fine-grained DOM templates with "template()" or surgical text bindings with "bindText()".'
+    });
+  }
+
+  // 4e. Detect eval()
+  const evalRegex = /\beval\s*\(/g;
+  let evalMatch: RegExpExecArray | null;
+  while ((evalMatch = evalRegex.exec(code)) !== null) {
+    const line = code.slice(0, evalMatch.index).split('\n').length;
+    errors.push({
+      message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
+      line,
+      suggestion: 'Use statically analyzed functions or compute values with "computed()" and pure signals from @samrey/reactivity.'
+    });
+  }
+
+  // 4f. Detect new Function()
+  const newFunctionRegex = /\bnew\s+Function\s*\(/g;
+  let fnMatch: RegExpExecArray | null;
+  while ((fnMatch = newFunctionRegex.exec(code)) !== null) {
+    const line = code.slice(0, fnMatch.index).split('\n').length;
+    errors.push({
+      message: 'Dangerous "new Function()" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
+      line,
+      suggestion: 'Define standard closures or use explicit compiled handlers instead of generating code strings dynamically.'
+    });
+  }
+
+  // 4g. Detect javascript: URIs in Attributes
+  const jsUriRegex = /\b(?:[a-zA-Z0-9_:-]+)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
+  let jsUriMatch: RegExpExecArray | null;
+  while ((jsUriMatch = jsUriRegex.exec(code)) !== null) {
+    const line = code.slice(0, jsUriMatch.index).split('\n').length;
+    errors.push({
+      message: `Dangerous "javascript:" URI scheme detected in attribute (${jsUriMatch[0]}). Executing script via URI schemes enables XSS attacks.`,
+      line,
+      suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
+    });
+  }
+
   // 5. Template compilation check
   let compiles = false;
   let compiledCode: string | undefined;

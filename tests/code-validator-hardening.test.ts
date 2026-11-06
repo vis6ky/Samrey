@@ -177,5 +177,96 @@ describe('Item 5: validateSamreyCode Hardening', () => {
       assert.ok(!res.errors.some(e => e.message.toLowerCase().includes('innerhtml')), 'Safe static literal should not be flagged as error');
     });
   });
+
+  describe('(d) Dangerous execution patterns (document.write, eval, new Function, javascript: URIs)', () => {
+    it('flags document.write() and document.writeln() calls with clear message and fix suggestion', () => {
+      const code = `
+        export function Comp() {
+          document.write('<div>Injected</div>');
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.valid, false);
+      const err = res.errors.find(e => e.message.includes('document.write'));
+      assert.ok(err, 'Must flag document.write');
+      assert.ok(err?.suggestion, 'Must provide fix suggestion for document.write');
+    });
+
+    it('flags eval() calls with clear message and fix suggestion', () => {
+      const code = `
+        export function Run(input) {
+          const val = eval(input);
+          return val;
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.valid, false);
+      const err = res.errors.find(e => e.message.includes('eval('));
+      assert.ok(err, 'Must flag eval');
+      assert.ok(err?.suggestion, 'Must provide fix suggestion for eval');
+    });
+
+    it('flags new Function() constructors with clear message and fix suggestion', () => {
+      const code = `
+        export function DynamicCode(body) {
+          const fn = new Function('a', 'b', body);
+          return fn(1, 2);
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.valid, false);
+      const err = res.errors.find(e => e.message.includes('new Function'));
+      assert.ok(err, 'Must flag new Function');
+      assert.ok(err?.suggestion, 'Must provide fix suggestion for new Function');
+    });
+
+    it('flags javascript: URIs in attributes with clear message and fix suggestion', () => {
+      const code = `
+        import { template } from '@samrey/runtime';
+        const _tmpl = template('<a href="javascript:alert(1)">Click Me</a>');
+        export function XssLink() {
+          return _tmpl();
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.valid, false);
+      const err = res.errors.find(e => e.message.includes('javascript:'));
+      assert.ok(err, 'Must flag javascript: URI in attribute');
+      assert.ok(err?.suggestion, 'Must provide fix suggestion for javascript: URI');
+    });
+
+    it('allows clean, idiomatic Samrey samples without false positives', () => {
+      const cleanSamples = [
+        `
+          import { signal, computed } from '@samrey/reactivity';
+          import { template, on, bindText } from '@samrey/runtime';
+
+          const _tmpl = template('<button class="btn"><span class="txt"></span></button>');
+
+          export function CleanCounter(props: { initial?: number }) {
+            const count = signal(props.initial ?? 0);
+            const double = computed(() => count.value * 2);
+            const root = _tmpl() as HTMLButtonElement;
+            bindText(root.querySelector('.txt')!, () => count.value.toString());
+            on(root, 'click', () => count.update(n => n + 1));
+            return root;
+          }
+        `,
+        `
+          import { template } from '@samrey/runtime';
+          const _tmpl = template('<a href="/dashboard" class="nav-link">Dashboard</a>');
+          export function NavItem() {
+            return _tmpl();
+          }
+        `
+      ];
+
+      for (const sample of cleanSamples) {
+        const res = validateSamreyCode(sample);
+        assert.strictEqual(res.errors.length, 0, `Expected 0 errors for clean sample, got: ${JSON.stringify(res.errors)}`);
+        assert.strictEqual(res.valid, true);
+      }
+    });
+  });
 });
 
