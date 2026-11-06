@@ -365,6 +365,70 @@ describe('MCP Server Security & Hardening', () => {
         /prohibited|rejected|not allowed/i
       );
     });
+
+    it('rejects node --input-type code evaluation', async () => {
+      await assert.rejects(
+        () => executeSafeCommand('node', ['--input-type=module'], tempRoot),
+        /prohibited|rejected|not allowed/i
+      );
+      await assert.rejects(
+        () => executeSafeCommand('node', ['--input-type', 'module'], tempRoot),
+        /prohibited|rejected|not allowed/i
+      );
+    });
+
+    it('rejects unauthorized npm subcommands (npm exec, x, install, i, pkg, config, run other)', async () => {
+      const unauthorizedNpmArgs = [
+        ['exec', 'whoami'],
+        ['x', 'cowsay'],
+        ['install', 'malicious-pkg'],
+        ['i', 'malicious-pkg'],
+        ['pkg', 'get', 'name'],
+        ['config', 'list'],
+        ['run', 'deploy'],
+        ['run', 'start'],
+        ['publish'],
+        ['audit', 'fix']
+      ];
+
+      for (const args of unauthorizedNpmArgs) {
+        await assert.rejects(
+          () => executeSafeCommand('npm', args, tempRoot),
+          /prohibited|rejected|not allowed|allowed/i,
+          `Should reject unauthorized npm command: npm ${args.join(' ')}`
+        );
+      }
+    });
+
+    it('rejects mutating or unauthorized git subcommands (push, commit, clone, etc.)', async () => {
+      const unauthorizedGitArgs = [
+        ['commit', '-m', 'evil'],
+        ['push', 'origin', 'main'],
+        ['clone', 'https://github.com/evil/repo.git'],
+        ['reset', '--hard', 'HEAD~1'],
+        ['clean', '-fd']
+      ];
+
+      for (const args of unauthorizedGitArgs) {
+        await assert.rejects(
+          () => executeSafeCommand('git', args, tempRoot),
+          /prohibited|rejected|not allowed|allowed/i,
+          `Should reject unauthorized git subcommand: git ${args.join(' ')}`
+        );
+      }
+    });
+
+    it('allows legitimate npm and git commands', async () => {
+      // Legitimate read-only git command
+      const gitRes = await executeSafeCommand('git', ['status'], tempRoot);
+      assert.equal(typeof gitRes.exitCode, 'number');
+
+      // Legitimate npm subcommands: test, run build, run typecheck
+      // They may exit with non-zero in empty tempRoot, but must NOT throw security rejection
+      await assert.doesNotReject(
+        () => executeSafeCommand('npm', ['test', '--help'], tempRoot)
+      );
+    });
   });
 
   // =========================================================================

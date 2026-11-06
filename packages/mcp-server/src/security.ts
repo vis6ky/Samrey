@@ -18,7 +18,8 @@ const FORBIDDEN_ARG_PATTERNS: Record<string, Array<RegExp | string>> = {
     /^--import(=|$)/,
     /^--loader(=|$)/,
     /^-r$/,
-    /^--require(=|$)/
+    /^--require(=|$)/,
+    /^--input-type(=|$)/
   ],
   git: [
     /^-c.*/,
@@ -28,6 +29,18 @@ const FORBIDDEN_ARG_PATTERNS: Record<string, Array<RegExp | string>> = {
     /^--config-env(=|$)/
   ]
 };
+
+const GIT_ALLOWED_READ_ONLY_SUBCOMMANDS = new Set([
+  'status',
+  'log',
+  'diff',
+  'rev-parse',
+  'branch',
+  'describe',
+  'show'
+]);
+
+const NPM_ALLOWED_RUN_SCRIPTS = new Set(['build', 'typecheck']);
 
 export function redactSecrets(text: string): string {
   if (!text) return text;
@@ -294,7 +307,39 @@ export function executeSafeCommand(
       );
     }
 
-    // 3. Inspect arguments for command injection / dangerous flags
+    // 3. Exact subcommand validation per binary
+    if (cmd === 'npm') {
+      if (args.length === 0) {
+        return reject(new Error(`Security Exception: npm command requires a subcommand.`));
+      }
+      const sub = args[0];
+      if (sub === 'test') {
+        // Allowed: npm test ...
+      } else if (sub === 'run') {
+        const script = args[1];
+        if (!script || !NPM_ALLOWED_RUN_SCRIPTS.has(script)) {
+          return reject(
+            new Error(`Security Exception: Prohibited npm run script "${script || ''}". Allowed scripts: build, typecheck.`)
+          );
+        }
+      } else {
+        return reject(
+          new Error(`Security Exception: Prohibited npm subcommand "${sub}". Allowed: test, run build, run typecheck.`)
+        );
+      }
+    } else if (cmd === 'git') {
+      if (args.length === 0) {
+        return reject(new Error(`Security Exception: git command requires a subcommand.`));
+      }
+      const sub = args[0];
+      if (!GIT_ALLOWED_READ_ONLY_SUBCOMMANDS.has(sub)) {
+        return reject(
+          new Error(`Security Exception: Prohibited git subcommand "${sub}". Only read-only subcommands are allowed: status, log, diff, rev-parse, branch, describe, show.`)
+        );
+      }
+    }
+
+    // 4. Inspect arguments for command injection / dangerous flags
     const forbidden = FORBIDDEN_ARG_PATTERNS[cmd] || [];
     for (const arg of args) {
       for (const pattern of forbidden) {
