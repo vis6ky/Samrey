@@ -49,3 +49,4 @@ describe('SF-07: Static Template Hoisting Multi-Root Return Ambiguity', () => {
     );
   });
 });
+
