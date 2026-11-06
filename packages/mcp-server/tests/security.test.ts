@@ -495,6 +495,61 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
       assert.ok(!redacted.includes('secretpass123'));
       assert.ok(redacted.includes('[REDACTED_SECRET]'));
     });
+
+    it('redacts Slack tokens (xox[abprs]-...)', () => {
+      const samples = [
+        'Bot token: xoxb-1234567890-1234567890-abcdef123456',
+        'User token: xoxp-9876543210-9876543210-fedcba654321',
+        'App token: xoxa-2-1111222233-4444555566-abcdef987654',
+        'Refresh token: xoxr-1234567890-abcdef1234567890',
+        'Slash command token: xoxs-9988776655-aabbccddeeff'
+      ];
+
+      for (const sample of samples) {
+        const redacted = redactSecrets(sample);
+        assert.ok(!redacted.includes('xoxb-'));
+        assert.ok(!redacted.includes('xoxp-'));
+        assert.ok(!redacted.includes('xoxa-'));
+        assert.ok(!redacted.includes('xoxr-'));
+        assert.ok(!redacted.includes('xoxs-'));
+        assert.ok(redacted.includes('[REDACTED_SECRET]'));
+      }
+    });
+
+    it('redacts Stripe API keys (sk_live_, sk_test_, rk_live_, pk_live_)', () => {
+      const dummyId = '51A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P';
+      const samples = [
+        `Stripe secret live: ${['sk', 'live', dummyId].join('_')}`,
+        `Stripe secret test: ${['sk', 'test', dummyId].join('_')}`,
+        `Stripe restricted live: ${['rk', 'live', dummyId].join('_')}`,
+        `Stripe publishable live: ${['pk', 'live', dummyId].join('_')}`
+      ];
+
+      for (const sample of samples) {
+        const redacted = redactSecrets(sample);
+        assert.ok(!redacted.includes(['sk', 'live'].join('_')));
+        assert.ok(!redacted.includes(['sk', 'test'].join('_')));
+        assert.ok(!redacted.includes(['rk', 'live'].join('_')));
+        assert.ok(!redacted.includes(['pk', 'live'].join('_')));
+        assert.ok(redacted.includes('[REDACTED_SECRET]'));
+      }
+    });
+
+    it('redacts bare JWTs (eyJ....eyJ....signature)', () => {
+      const jwt = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      const bareJwt = 'Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c in header';
+
+      const redacted = redactSecrets(bareJwt);
+      assert.ok(!redacted.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'));
+      assert.ok(!redacted.includes('eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ'));
+      assert.ok(redacted.includes('[REDACTED_SECRET]'));
+    });
+
+    it('produces no false positive on ordinary technical prose', () => {
+      const prose = 'Samrey uses fine-grained reactivity with signals and computed values. The component renders a button and lists items with For({ each: () => items.value, key: i => i.id }).';
+      const redacted = redactSecrets(prose);
+      assert.equal(redacted, prose, 'Ordinary documentation and code prose must not be altered');
+    });
   });
 
   // =========================================================================

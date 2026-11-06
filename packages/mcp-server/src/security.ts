@@ -89,6 +89,15 @@ export function redactSecrets(text: string): string {
   result = result.replace(/AIza[0-9A-Za-z\-_]{10,}/g, '[REDACTED_SECRET]');
   result = result.replace(/sk-[a-zA-Z0-9_\-]{10,}/g, '[REDACTED_SECRET]');
 
+  // 10. Slack tokens (xox[abprs]-...)
+  result = result.replace(/\bxox[abprs]-[A-Za-z0-9_\-]{8,}\b/g, '[REDACTED_SECRET]');
+
+  // 11. Stripe API keys (sk_live_, sk_test_, rk_live_, pk_live_)
+  result = result.replace(/\b(?:sk|rk|pk)_(?:live|test)_[a-zA-Z0-9]{10,}\b/g, '[REDACTED_SECRET]');
+
+  // 12. Bare JWT tokens (eyJ....eyJ....signature)
+  result = result.replace(/\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED_SECRET]');
+
   return result;
 }
 
