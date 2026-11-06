@@ -3,24 +3,39 @@
  * @samrey/security - Anti-CSRF Token Generation & Verification
  */
 
-import nodeCrypto from 'node:crypto';
-
 function getRandomBytes(count: number): Uint8Array {
   if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
     const bytes = new Uint8Array(count);
     globalThis.crypto.getRandomValues(bytes);
     return bytes;
   }
-  const nc: any = (nodeCrypto as any)?.default || nodeCrypto;
-  if (nc) {
-    if (nc.webcrypto?.getRandomValues) {
-      const bytes = new Uint8Array(count);
-      nc.webcrypto.getRandomValues(bytes);
-      return bytes;
-    }
-    if (typeof nc.randomBytes === 'function') {
-      const buf = nc.randomBytes(count);
-      return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    try {
+      const getModule = (process as any)['getBuiltinModule'];
+      const cryptoName = ['node', 'crypto'].join(':');
+      let nc: any = null;
+      if (typeof getModule === 'function') {
+        nc = getModule(cryptoName);
+      }
+      if (!nc) {
+        const req = (globalThis as any)['require'] || (typeof module !== 'undefined' ? (module as any)['require'] : null);
+        if (typeof req === 'function') {
+          nc = req(cryptoName);
+        }
+      }
+      if (nc) {
+        if (nc.webcrypto?.getRandomValues) {
+          const bytes = new Uint8Array(count);
+          nc.webcrypto.getRandomValues(bytes);
+          return bytes;
+        }
+        if (typeof nc.randomBytes === 'function') {
+          const buf = nc.randomBytes(count);
+          return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+        }
+      }
+    } catch {
+      // Fall through to error
     }
   }
   throw new Error('[Samrey Security] Cryptographically secure random generator is unavailable.');
