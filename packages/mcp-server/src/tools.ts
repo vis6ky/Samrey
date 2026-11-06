@@ -21,7 +21,7 @@ import {
   installSkills
 } from '@samrey/ai';
 import { McpToolDefinition, ToolCallResult } from './protocol.js';
-import { resolveSafePath, executeSafeCommand, redactSecrets } from './security.js';
+import { resolveSafePath, executeSafeCommand, redactSecrets, safeWriteFile } from './security.js';
 
 export interface ToolContext {
   projectRoot: string;
@@ -507,8 +507,14 @@ export function ${name}(${args.withProps !== false ? `props: ${name}Props = {}` 
           };
         }
         const dest = pathValidation.resolvedPath;
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, code, 'utf8');
+        try {
+          safeWriteFile(dest, code, root, Boolean(args.overwrite));
+        } catch (err: any) {
+          return {
+            content: [{ type: 'text', text: err?.message || String(err) }],
+            isError: true
+          };
+        }
         return {
           content: [
             {
@@ -550,8 +556,14 @@ export function ${name}() {
           };
         }
         const dest = pathValidation.resolvedPath;
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, code, 'utf8');
+        try {
+          safeWriteFile(dest, code, root, Boolean(args.overwrite));
+        } catch (err: any) {
+          return {
+            content: [{ type: 'text', text: err?.message || String(err) }],
+            isError: true
+          };
+        }
         return {
           content: [{ type: 'text', text: `Generated page view "${name}" at ${args.targetPath}:\n\n${code}` }]
         };

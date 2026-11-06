@@ -97,28 +97,174 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
     ? path.resolve(cleanRel)
     : path.resolve(realRoot, cleanRel);
 
-  // Find the deepest existing ancestor of the target to handle both existing and newly generated paths
-  let curr = resolvedTarget;
-  const uncreatedParts: string[] = [];
-
-  while (!fs.existsSync(curr)) {
-    const parent = path.dirname(curr);
-    if (parent === curr) break;
-    uncreatedParts.unshift(path.basename(curr));
-    curr = parent;
-  }
-
-  const realAncestor = fs.realpathSync.native ? fs.realpathSync.native(curr) : fs.realpathSync(curr);
-  const realTarget = uncreatedParts.length > 0
-    ? path.join(realAncestor, ...uncreatedParts)
-    : realAncestor;
-
-  const rel = path.relative(realRoot, realTarget);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+  // Initial lexical boundary check
+  const lexicalRel = path.relative(realRoot, resolvedTarget);
+  if (lexicalRel.startsWith('..') || path.isAbsolute(lexicalRel)) {
     throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
   }
 
-  return realTarget;
+  // Walk and lstat every existing path component from realRoot down to resolvedTarget.
+  // If any component is a symlink (dangling or not), resolve it with readlink and require
+  // the resolved target to be inside the real root; treat a dangling link whose target
+  // is outside as a violation.
+  const segments = lexicalRel.split(path.sep).filter(Boolean);
+  let current = realRoot;
+
+  for (let i = 0; i < segments.length; i++) {
+    const nextPath = path.join(current, segments[i]);
+
+    let stat: fs.Stats | null = null;
+    try {
+      stat = fs.lstatSync(nextPath);
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') throw err;
+      // Component does not exist on disk.
+      // Verify remaining path doesn't escape root.
+      const remainingRel = path.relative(realRoot, path.join(current, ...segments.slice(i)));
+      if (remainingRel.startsWith('..') || path.isAbsolute(remainingRel)) {
+        throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+      }
+      current = nextPath;
+      continue;
+    }
+
+    if (stat.isSymbolicLink()) {
+      // Resolve the symlink target (handle chains up to limit)
+      let linkTarget = nextPath;
+      let depth = 0;
+      while (depth < 40) {
+        let linkStat: fs.Stats | null = null;
+        try {
+          linkStat = fs.lstatSync(linkTarget);
+        } catch (err: any) {
+          if (err.code !== 'ENOENT') throw err;
+          // Dangling link reached!
+          break;
+        }
+        if (!linkStat || !linkStat.isSymbolicLink()) {
+          break;
+        }
+        depth++;
+        const rawTarget = fs.readlinkSync(linkTarget);
+        linkTarget = path.resolve(path.dirname(linkTarget), rawTarget);
+
+        const relCheck = path.relative(realRoot, linkTarget);
+        if (relCheck.startsWith('..') || path.isAbsolute(relCheck)) {
+          throw new Error(
+            `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
+          );
+        }
+      }
+
+      if (depth >= 40) {
+        throw new Error(`Security Exception: Symlink loop detected.`);
+      }
+
+      // Check final link target location
+      const finalRel = path.relative(realRoot, linkTarget);
+      if (finalRel.startsWith('..') || path.isAbsolute(finalRel)) {
+        throw new Error(
+          `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
+        );
+      }
+
+      // If the link target exists, use realpath to be 100% sure
+      if (fs.existsSync(linkTarget)) {
+        const realLinkTarget = fs.realpathSync.native
+          ? fs.realpathSync.native(linkTarget)
+          : fs.realpathSync(linkTarget);
+        const realRel = path.relative(realRoot, realLinkTarget);
+        if (realRel.startsWith('..') || path.isAbsolute(realRel)) {
+          throw new Error(
+            `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
+          );
+        }
+        current = realLinkTarget;
+      } else {
+        // Dangling link whose target is inside root
+        current = linkTarget;
+      }
+    } else {
+      // Regular file or directory
+      current = nextPath;
+    }
+  }
+
+  const finalCheck = path.relative(realRoot, current);
+  if (finalCheck.startsWith('..') || path.isAbsolute(finalCheck)) {
+    throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+  }
+
+  return current;
+}
+
+/**
+ * Securely writes a file ensuring parent directory authenticity,
+ * refusing to follow symlinks at the final component, and re-verifying
+ * boundary constraints prior to opening.
+ */
+export function safeWriteFile(
+  filePath: string,
+  content: string,
+  projectRoot: string,
+  overwrite = false
+): void {
+  const resolvedRoot = path.resolve(projectRoot);
+  const realRoot = fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
+
+  const parentDir = path.dirname(filePath);
+  if (!fs.existsSync(parentDir)) {
+    fs.mkdirSync(parentDir, { recursive: true });
+  }
+
+  // 1. Verify parent directory with O_DIRECTORY | O_NOFOLLOW if practical
+  const dirFlags = (fs.constants.O_RDONLY || 0) | (fs.constants.O_DIRECTORY || 0) | (fs.constants.O_NOFOLLOW || 0);
+  let parentFd: number | null = null;
+  try {
+    parentFd = fs.openSync(parentDir, dirFlags);
+  } catch (err: any) {
+    throw new Error(`Security Exception: Cannot open parent directory securely (${err.message}).`);
+  } finally {
+    if (parentFd !== null) {
+      try { fs.closeSync(parentFd); } catch {}
+    }
+  }
+
+  // 2. Re-run realpath check on parent directory immediately before opening
+  const realParent = fs.realpathSync.native ? fs.realpathSync.native(parentDir) : fs.realpathSync(parentDir);
+  const parentRel = path.relative(realRoot, realParent);
+  if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
+    throw new Error(`Security Exception: Parent directory escapes project root boundary "${realRoot}".`);
+  }
+
+  // 3. Check destination file
+  let destStat: fs.Stats | null = null;
+  try {
+    destStat = fs.lstatSync(filePath);
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+
+  // A symlink at the final component can NEVER be followed
+  if (destStat && destStat.isSymbolicLink()) {
+    throw new Error(`Security Exception: Destination "${filePath}" is a symlink and cannot be written.`);
+  }
+
+  if (destStat && !overwrite) {
+    throw new Error(`Security Exception: Refusing to overwrite existing file "${filePath}". Pass overwrite: true to allow.`);
+  }
+
+  // 4. Open file securely with O_NOFOLLOW
+  const fileFlags = destStat
+    ? fs.constants.O_WRONLY | fs.constants.O_TRUNC | (fs.constants.O_NOFOLLOW || 0)
+    : fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0);
+
+  const fd = fs.openSync(filePath, fileFlags);
+  try {
+    fs.writeFileSync(fd, content, 'utf8');
+  } finally {
+    try { fs.closeSync(fd); } catch {}
+  }
 }
 
 export interface SafeCommandResult {

@@ -201,6 +201,91 @@ describe('MCP Server Security & Hardening', () => {
         assert.equal(res.isError, true, `Should refuse forbidden target: "${targetPath}"`);
       }
     });
+
+    it('rejects dangling symlink pointing to missing file outside the root', async () => {
+      const missingOutsideFile = path.join(outsideDir, 'not-yet.ts');
+      const danglingOutsideLink = path.join(tempRoot, 'src', 'dangling-outside.ts');
+      try { fs.unlinkSync(danglingOutsideLink); } catch {}
+      try { fs.unlinkSync(missingOutsideFile); } catch {}
+      fs.symlinkSync(missingOutsideFile, danglingOutsideLink);
+
+      // 1. resolveSafePath must throw
+      assert.throws(
+        () => resolveSafePath(tempRoot, 'src/dangling-outside.ts'),
+        /escapes project root/i
+      );
+
+      // 2. samrey_generate_component must fail and not create the outside file
+      const res = await handleToolCall(
+        'samrey_generate_component',
+        { name: 'DanglingEsc', targetPath: 'src/dangling-outside.ts' },
+        ctx
+      );
+      assert.equal(res.isError, true);
+      assert.equal(fs.existsSync(missingOutsideFile), false, 'Must not create missing file outside root');
+    });
+
+    it('allows dangling symlink pointing to missing file inside the root', () => {
+      const missingInsideFile = path.join(tempRoot, 'src', 'components', 'Future.ts');
+      const danglingInsideLink = path.join(tempRoot, 'src', 'dangling-inside.ts');
+      try { fs.unlinkSync(danglingInsideLink); } catch {}
+      try { fs.unlinkSync(missingInsideFile); } catch {}
+      fs.symlinkSync(missingInsideFile, danglingInsideLink);
+
+      assert.doesNotThrow(() => {
+        const resolved = resolveSafePath(tempRoot, 'src/dangling-inside.ts');
+        assert.ok(resolved.startsWith(tempRoot));
+      });
+    });
+
+    it('rejects symlink pointing to an existing file outside the root and never overwrites it', async () => {
+      const outsideFile = path.join(outsideDir, 'secret.txt');
+      const linkToOutside = path.join(tempRoot, 'src', 'link-to-secret.ts');
+      try { fs.unlinkSync(linkToOutside); } catch {}
+      fs.symlinkSync(outsideFile, linkToOutside);
+
+      // resolveSafePath must throw
+      assert.throws(
+        () => resolveSafePath(tempRoot, 'src/link-to-secret.ts'),
+        /escapes project root/i
+      );
+
+      // Even with overwrite: true, must refuse and must not modify secret.txt
+      const originalSecret = fs.readFileSync(outsideFile, 'utf8');
+      const res = await handleToolCall(
+        'samrey_generate_component',
+        { name: 'SecretHacker', targetPath: 'src/link-to-secret.ts', overwrite: true },
+        ctx
+      );
+      assert.equal(res.isError, true);
+      assert.equal(fs.readFileSync(outsideFile, 'utf8'), originalSecret, 'Must not overwrite outside file');
+    });
+
+    it('prevents file writing when directory is swapped for a symlink pointing outside', async () => {
+      const swappableDir = path.join(tempRoot, 'src', 'swappable');
+      fs.mkdirSync(swappableDir, { recursive: true });
+
+      // Before swap: resolveSafePath was valid
+      const targetPath = 'src/swappable/Comp.ts';
+      assert.doesNotThrow(() => resolveSafePath(tempRoot, targetPath));
+
+      // Attacker swaps directory with symlink to outsideDir
+      fs.rmSync(swappableDir, { recursive: true, force: true });
+      fs.symlinkSync(outsideDir, swappableDir);
+
+      // Writing must fail and must not create file in outsideDir
+      const res = await handleToolCall(
+        'samrey_generate_component',
+        { name: 'SwappedComp', targetPath },
+        ctx
+      );
+      assert.equal(res.isError, true);
+      assert.equal(
+        fs.existsSync(path.join(outsideDir, 'Comp.ts')),
+        false,
+        'File must not land outside project root when directory was swapped'
+      );
+    });
   });
 
   // =========================================================================
