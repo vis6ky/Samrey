@@ -10,7 +10,40 @@ import { handleError } from './owner.js';
 let activeSubscriber: Subscriber | null = null;
 let globalClock = 1;
 let batchDepth = 0;
+let isFlushing = false;
+const MAX_BATCH_CYCLES = 1000;
 const pendingEffects: Set<Subscriber> = new Set();
+
+function drainPendingEffects(): void {
+  if (isFlushing) return;
+  isFlushing = true;
+  try {
+    let cycles = 0;
+    while (pendingEffects.size > 0) {
+      if (++cycles > MAX_BATCH_CYCLES) {
+        pendingEffects.clear();
+        const err = new Error('[SAMREY-301] Maximum reactive batch update cycles (1000) exceeded. Detected cyclic dependency or infinite effect loop.');
+        handleError(err);
+        throw err;
+      }
+      const current = Array.from(pendingEffects);
+      pendingEffects.clear();
+      const len = current.length;
+      for (let i = 0; i < len; i++) {
+        const sub = current[i];
+        if (!sub.isDisposed) {
+          try {
+            sub.update();
+          } catch (err) {
+            handleError(err);
+          }
+        }
+      }
+    }
+  } finally {
+    isFlushing = false;
+  }
+}
 
 export function getGlobalClock(): number {
   return globalClock;
@@ -39,14 +72,9 @@ export function trackDependency(dep: Dependency): void {
 
 export function queueEffect(sub: Subscriber): void {
   if (sub.isDisposed) return;
-  if (batchDepth > 0) {
-    pendingEffects.add(sub);
-  } else {
-    try {
-      sub.update();
-    } catch (err) {
-      handleError(err);
-    }
+  pendingEffects.add(sub);
+  if (batchDepth === 0) {
+    drainPendingEffects();
   }
 }
 
@@ -61,22 +89,7 @@ export function batch<T>(fn: () => T): T {
   } finally {
     batchDepth--;
     if (batchDepth === 0 && pendingEffects.size > 0) {
-      // Drain queue safely handling re-entrant queuing
-      while (pendingEffects.size > 0) {
-        const current = Array.from(pendingEffects);
-        pendingEffects.clear();
-        const len = current.length;
-        for (let i = 0; i < len; i++) {
-          const sub = current[i];
-          if (!sub.isDisposed) {
-            try {
-              sub.update();
-            } catch (err) {
-              handleError(err);
-            }
-          }
-        }
-      }
+      drainPendingEffects();
     }
   }
 }

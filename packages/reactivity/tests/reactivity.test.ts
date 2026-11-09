@@ -8,7 +8,8 @@ import {
   untrack, 
   createRoot, 
   onCleanup,
-  createStore
+  createStore,
+  onError
 } from '../src/index.js';
 
 describe('@samrey/reactivity', () => {
@@ -176,5 +177,30 @@ describe('@samrey/reactivity', () => {
     assert.equal(runs, 1);
     num.value = NaN;
     assert.equal(runs, 1); // Must not re-run on NaN -> NaN
+  });
+
+  it('prevents infinite effect loops in batch() by enforcing maximum update cycle limit (SAMREY-301)', () => {
+    const count = signal(0);
+
+    createRoot(() => {
+      effect(() => {
+        if (count.value > 0) {
+          count.value++;
+        }
+      });
+    });
+
+    assert.throws(
+      () => {
+        batch(() => {
+          count.value = 1;
+        });
+      },
+      (err: any) => {
+        assert.ok(err instanceof Error);
+        assert.ok(err.message.includes('SAMREY-301'));
+        return true;
+      }
+    );
   });
 });
