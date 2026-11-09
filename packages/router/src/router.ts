@@ -278,7 +278,18 @@ export function Router(props: { routes?: RouteRecord[]; children?: any; initialP
   return RouterOutlet();
 }
 
-export function Link(props: { href: string; class?: string; activeClass?: string; children?: any }) {
+export interface LinkProps {
+  href: string;
+  class?: string;
+  activeClass?: string;
+  target?: string;
+  rel?: string;
+  download?: string | boolean;
+  children?: any;
+  [key: string]: any;
+}
+
+export function Link(props: LinkProps) {
   const router = useRouter();
   const isExternal = /^(https?:|\/\/|mailto:|tel:)/i.test(props.href);
   const safeTo = isExternal ? props.href : sanitizeRedirectUri(props.href, '/');
@@ -287,7 +298,9 @@ export function Link(props: { href: string; class?: string; activeClass?: string
     if (e.defaultPrevented || (e.button !== undefined && e.button !== 0) || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
       return;
     }
-    if (isExternal) return;
+    if (isExternal || (props.target && props.target !== '_self')) {
+      return;
+    }
     e.preventDefault();
     router.navigate(safeTo);
   };
@@ -307,9 +320,12 @@ export function Link(props: { href: string; class?: string; activeClass?: string
     return base;
   });
 
+  const { class: _cls, activeClass: _ac, href: _h, children: _ch, ...restAttrs } = props;
+
   return el(
     'a',
     {
+      ...restAttrs,
       href: safeTo,
       class: computedClass,
       onClick: handleClick

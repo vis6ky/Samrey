@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate } from '../src/index.js';
+import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, Link } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -132,5 +132,31 @@ describe('@samrey/router', () => {
         delete (globalThis as any).window;
       }
     }
+  });
+
+  it('does not prevent default on Link click when target="_blank" and passes target attribute through', () => {
+    const linkEl = Link({
+      href: '/docs',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      children: 'Docs'
+    }) as any;
+
+    const targetVal = linkEl.getAttribute ? linkEl.getAttribute('target') : (linkEl.attributes?.target || linkEl.target);
+    const relVal = linkEl.getAttribute ? linkEl.getAttribute('rel') : (linkEl.attributes?.rel || linkEl.rel);
+
+    assert.equal(targetVal, '_blank', 'Must pass target attribute through');
+    assert.equal(relVal, 'noopener noreferrer', 'Must pass rel attribute through');
+
+    let prevented = false;
+    const mockEvent = {
+      type: 'click',
+      defaultPrevented: false,
+      button: 0,
+      preventDefault: () => { prevented = true; }
+    } as any;
+
+    linkEl.dispatchEvent(mockEvent);
+    assert.equal(prevented, false, 'Link with target="_blank" must not preventDefault()');
   });
 });
