@@ -98,6 +98,7 @@ export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
     'bindDynamicChild',
     'bindEvent',
     'bindProperty',
+    'bindStyle',
     'bindText',
     'clearDevDiagnosticHistory',
     'computeIsDev',

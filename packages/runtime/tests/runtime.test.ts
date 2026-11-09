@@ -8,7 +8,8 @@ import {
   Show, 
   For,
   ErrorBoundary,
-  onMount
+  onMount,
+  bindStyle
 } from '../src/index.js';
 import { signal, onCleanup, effect, createRoot } from '@samrey/reactivity';
 
@@ -499,6 +500,63 @@ describe('@samrey/runtime', () => {
       disposeEarly();
       await Promise.resolve();
       assert.equal(abortedMount, false, 'onMount must not run if owner was disposed before microtask');
+    });
+  });
+
+  describe('bindStyle', () => {
+    it('reactively updates, sanitizes, and removes inline CSS properties', () => {
+      const styles: Record<string, string> = {};
+      const el = {
+        nodeType: 1,
+        nodeName: 'DIV',
+        style: {
+          setProperty: (prop: string, val: string) => {
+            styles[prop] = val;
+          },
+          removeProperty: (prop: string) => {
+            delete styles[prop];
+          }
+        }
+      } as unknown as HTMLElement;
+
+      const color = signal<string | null>('red');
+      bindStyle(el, 'color', () => color.value);
+      assert.equal(styles['color'], 'red');
+
+      color.value = 'blue';
+      assert.equal(styles['color'], 'blue');
+
+      // Sanitizes dangerous values
+      color.value = 'url(javascript:evil)';
+      assert.equal(styles['color'], 'url("")');
+
+      // Removes property when null/undefined/false
+      color.value = null;
+      assert.equal(styles['color'], undefined);
+    });
+
+    it('supports custom CSS variables and camelCase conversion', () => {
+      const styles: Record<string, string> = {};
+      const el = {
+        nodeType: 1,
+        nodeName: 'DIV',
+        style: {
+          setProperty: (prop: string, val: string) => {
+            styles[prop] = val;
+          },
+          removeProperty: (prop: string) => {
+            delete styles[prop];
+          }
+        }
+      } as unknown as HTMLElement;
+
+      const bg = signal('yellow');
+      bindStyle(el, 'backgroundColor', () => bg.value);
+      assert.equal(styles['background-color'], 'yellow');
+
+      const brand = signal('#123456');
+      bindStyle(el, '--brand-color', () => brand.value);
+      assert.equal(styles['--brand-color'], '#123456');
     });
   });
 });

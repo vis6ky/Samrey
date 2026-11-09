@@ -209,3 +209,44 @@ export function bindClass(element: Element, className: string, getter: () => boo
   });
 }
 
+export function bindStyle(element: Element, propertyName: string, getter: () => unknown): void {
+  const cssProp = propertyName.startsWith('--')
+    ? propertyName
+    : propertyName.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+
+  let prevVal: string | null = null;
+  effect(() => {
+    const rawVal = getter();
+    if (rawVal === null || rawVal === undefined || rawVal === false) {
+      if (prevVal !== null) {
+        prevVal = null;
+        if ('style' in element && (element as any).style) {
+          const s = (element as any).style;
+          if (typeof s.removeProperty === 'function') {
+            s.removeProperty(cssProp);
+          } else {
+            delete s[propertyName];
+            delete s[cssProp];
+          }
+        }
+      }
+      return;
+    }
+
+    const sanitized = sanitizeCssStyle(rawVal).trim();
+    if (sanitized !== prevVal) {
+      prevVal = sanitized;
+      if ('style' in element && (element as any).style) {
+        const s = (element as any).style;
+        if (typeof s.setProperty === 'function') {
+          s.setProperty(cssProp, sanitized);
+        } else {
+          s[propertyName] = sanitized;
+          s[cssProp] = sanitized;
+        }
+      }
+    }
+  });
+}
+
+

@@ -40,6 +40,9 @@ export function generateModuleCode(templates: AIRTemplateUnit[], componentBody: 
   if (componentBody.includes('bindProperty(')) {
     neededImports.add('bindProperty');
   }
+  if (componentBody.includes('bindStyle(')) {
+    neededImports.add('bindStyle');
+  }
   if (componentBody.includes('on(')) {
     neededImports.add('on');
   }

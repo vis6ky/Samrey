@@ -58,7 +58,7 @@ describe('Item 5: validateSamreyCode Hardening', () => {
     it('allows valid imports from official packages', () => {
       const code = `
         import { signal, computed, effect, createStore } from '@samrey/reactivity';
-        import { template, on, bindText, Show, For } from '@samrey/runtime';
+        import { template, on, bindText, bindStyle, Show, For } from '@samrey/runtime';
         import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
         import { createForm } from '@samrey/forms';
         import { renderTest, flushReactivity } from '@samrey/testing';
@@ -99,16 +99,18 @@ describe('Item 5: validateSamreyCode Hardening', () => {
       );
     });
 
-    it('flags bindAttr, bindClass, and bindProperty when passed a direct .value read', () => {
+    it('flags bindAttr, bindClass, bindProperty, and bindStyle when passed a direct .value read', () => {
       const code = `
-        import { bindAttr, bindClass } from '@samrey/runtime';
+        import { bindAttr, bindClass, bindStyle } from '@samrey/runtime';
         bindAttr(button, 'disabled', isSubmitting.value);
         bindClass(item, 'active', isActive.value);
+        bindStyle(panel, 'color', themeColor.value);
       `;
       const res = validateSamreyCode(code);
       assert.strictEqual(res.valid, false);
       assert.ok(res.errors.some(e => e.message.includes('bindAttr') && e.message.includes('isSubmitting.value')));
       assert.ok(res.errors.some(e => e.message.includes('bindClass') && e.message.includes('isActive.value')));
+      assert.ok(res.errors.some(e => e.message.includes('bindStyle') && e.message.includes('themeColor.value')));
     });
 
     it('flags bindText when passed a raw signal instance or non-function primitive', () => {
