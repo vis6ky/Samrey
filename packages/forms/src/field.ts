@@ -12,11 +12,12 @@ export interface FieldState<T> {
   error: ReadonlySignal<string | null>;
   touched: ReadonlySignal<boolean>;
   dirty: ReadonlySignal<boolean>;
+  isValidating: ReadonlySignal<boolean>;
   aria: ReadonlySignal<AriaBindingAttributes>;
   setValue: (val: T) => void;
   setTouched: (touched: boolean) => void;
   setError: (msg: string | null) => void;
-  validate: () => boolean;
+  validate: () => boolean | Promise<boolean>;
 }
 
 function areValuesEqual(a: unknown, b: unknown): boolean {
@@ -42,6 +43,10 @@ function areValuesEqual(a: unknown, b: unknown): boolean {
   return false;
 }
 
+function isPromise(val: unknown): val is Promise<string | null | undefined> {
+  return typeof val === 'object' && val !== null && typeof (val as Record<string, unknown>).then === 'function';
+}
+
 export function createField<T>(
   name: string,
   initialValue: T,
@@ -50,13 +55,29 @@ export function createField<T>(
   const valueSignal = signal<T>(initialValue);
   const errorSignal = signal<string | null>(null);
   const touchedSignal = signal<boolean>(false);
+  const isValidatingSignal = signal<boolean>(false);
   const initial = initialValue;
 
-  function runValidation(): boolean {
+  function runValidation(): boolean | Promise<boolean> {
     if (!validator) return true;
-    const msg = validator(valueSignal.value);
-    errorSignal.value = msg || null;
-    return !msg;
+    const res = validator(valueSignal.value);
+    if (isPromise(res)) {
+      isValidatingSignal.value = true;
+      return res
+        .then((msg) => {
+          errorSignal.value = msg || null;
+          return !msg;
+        })
+        .catch((err) => {
+          errorSignal.value = err?.message || 'Validation error';
+          return false;
+        })
+        .finally(() => {
+          isValidatingSignal.value = false;
+        });
+    }
+    errorSignal.value = res || null;
+    return !res;
   }
 
   function setValue(val: T): void {
@@ -93,6 +114,7 @@ export function createField<T>(
     error: computed(() => errorSignal.value),
     touched: computed(() => touchedSignal.value),
     dirty: dirtySignal,
+    isValidating: computed(() => isValidatingSignal.value),
     aria: ariaSignal,
     setValue,
     setTouched,

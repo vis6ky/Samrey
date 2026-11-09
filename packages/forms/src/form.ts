@@ -64,12 +64,16 @@ export function createForm<TValues extends Record<string, any>>(
     formErrorSignal.value = null;
     let allValid = true;
 
-    // 1. Mark fields as touched and run synchronous field-level validators
+    // 1. Mark fields as touched and run field-level validators
     for (const key of Object.keys(fields) as (keyof TValues)[]) {
       const f = fields[key];
       f.setTouched(true);
       f.setError(null);
-      if (!f.validate()) {
+      const res = f.validate();
+      if (res instanceof Promise) {
+        const ok = await res;
+        if (!ok) allValid = false;
+      } else if (!res) {
         allValid = false;
       }
     }

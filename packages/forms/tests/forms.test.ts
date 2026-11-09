@@ -26,6 +26,28 @@ describe('@samrey/forms', () => {
     assert.equal(emailField.aria.value['aria-invalid'], undefined);
   });
 
+  it('handles asynchronous field validators without assigning raw Promise to error signal', async () => {
+    const usernameField = createField('username', 'existing_user', async (val) => {
+      await new Promise((r) => setTimeout(r, 10));
+      return val === 'existing_user' ? 'Username already taken' : null;
+    });
+
+    assert.equal(usernameField.error.value, null);
+
+    usernameField.setTouched(true);
+    // While validating or right after trigger, error must NOT be [object Promise]
+    assert.ok(typeof usernameField.error.value !== 'object' || usernameField.error.value === null, 'Error must not be a Promise object');
+
+    const valid = await usernameField.validate();
+    assert.equal(valid, false);
+    assert.equal(usernameField.error.value, 'Username already taken');
+
+    usernameField.setValue('new_unique_user');
+    const valid2 = await usernameField.validate();
+    assert.equal(valid2, true);
+    assert.equal(usernameField.error.value, null);
+  });
+
   it('computes correct ARIA accessible attributes', () => {
     const validAria = computeAriaAttributes('username', false, true);
     assert.equal(validAria['aria-required'], true);
