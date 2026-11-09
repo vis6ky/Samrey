@@ -169,9 +169,28 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
 
 export const bindAttribute = bindAttr;
 
+const DANGEROUS_PROP_NAMES = new Set([
+  'innerhtml',
+  'outerhtml',
+  'srcdoc',
+  '__proto__',
+  'constructor',
+  'prototype'
+]);
+
 export function bindProperty(element: Element, propName: string, getter: () => unknown): void {
+  const lowerProp = propName.toLowerCase();
+  if (DANGEROUS_PROP_NAMES.has(lowerProp) || lowerProp.startsWith('on')) {
+    console.warn(`[Samrey Security Warning] Refusing to bind dangerous property "${propName}". Use dedicated event bindings or trusted primitives.`);
+    return;
+  }
+
   effect(() => {
-    (element as any)[propName] = getter();
+    try {
+      (element as any)[propName] = getter();
+    } catch (err) {
+      console.warn(`[Samrey Runtime] Failed to set property "${propName}":`, err);
+    }
   });
 }
 

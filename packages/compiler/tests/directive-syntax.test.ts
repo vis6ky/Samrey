@@ -125,6 +125,21 @@ describe('Item 6: Directive Syntax Support (class:name={x} and .property={x})', 
       text.value = 'updated';
       assert.strictEqual(input.value, 'updated');
     });
+
+    it('bindProperty refuses to set dangerous properties like innerHTML, outerHTML, srcdoc, or prototype pollution', () => {
+      const el = { innerHTML: 'safe', outerHTML: 'safe', srcdoc: 'safe' } as any;
+
+      const payload = signal('<img src=x onerror=alert(1)>');
+      bindProperty(el, 'innerHTML', () => payload.value);
+      bindProperty(el, 'outerHTML', () => payload.value);
+      bindProperty(el, 'srcdoc', () => payload.value);
+      bindProperty(el, '__proto__', () => ({}));
+      bindProperty(el, 'onclick', () => () => {});
+
+      assert.strictEqual(el.innerHTML, 'safe', 'innerHTML must not be modified by bindProperty');
+      assert.strictEqual(el.outerHTML, 'safe', 'outerHTML must not be modified by bindProperty');
+      assert.strictEqual(el.srcdoc, 'safe', 'srcdoc must not be modified by bindProperty');
+    });
   });
 
   describe('d. Malformed directive validation and compiler errors', () => {
