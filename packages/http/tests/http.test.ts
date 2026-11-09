@@ -21,6 +21,18 @@ describe('@samrey/http', () => {
     assert.deepEqual(userResource.data.value, { id: 1, name: 'User #1' });
   });
 
+  it('supports iterable tuple destructuring as documented in AGENTS.md (const [users] = createResource(...))', async () => {
+    const [users, actions] = createResource(async () => ({ count: 42 }));
+    assert.ok(users, 'Resource must be destructurable into [users]');
+    assert.equal(typeof users.loading.value, 'boolean');
+    assert.equal(typeof users.refetch, 'function');
+    assert.equal(typeof actions.refetch, 'function');
+
+    const result = await users.refetch();
+    assert.deepEqual(result, { count: 42 });
+    assert.deepEqual(users.data.value, { count: 42 });
+  });
+
   it('deduplicates simultaneous identical in-flight requests', async () => {
     const cache = new RequestCache();
     let networkCalls = 0;

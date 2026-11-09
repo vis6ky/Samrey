@@ -103,11 +103,17 @@ export function createResource<T, S = unknown>(
     }
   });
 
-  return {
+  const resource: Resource<T> = {
     data: computed(() => data.value),
     error: computed(() => error.value),
     status: computed(() => status.value),
     loading: computed(() => status.value === 'pending'),
-    refetch: () => load()
+    refetch: (explicitSource?: S) => load(explicitSource),
+    *[Symbol.iterator]() {
+      yield resource;
+      yield { refetch: resource.refetch };
+    }
   };
+
+  return resource;
 }
