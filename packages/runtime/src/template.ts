@@ -7,20 +7,27 @@ import { TrustedTypesPolicy } from '@samrey/security';
 
 function patchMultiRootFragment(fragment: Node): Node {
   const frag = fragment as any;
+  const rootNodes: any[] = Array.from(frag.childNodes || []);
+
+  function getActiveRoots(): any[] {
+    return rootNodes.length > 0 ? rootNodes : Array.from(frag.childNodes || []);
+  }
 
   if (!frag.classList) {
     frag.classList = {
       add: (...tokens: string[]) => {
-        for (let i = 0; i < frag.childNodes.length; i++) {
-          const child = frag.childNodes[i];
+        const nodes = getActiveRoots();
+        for (let i = 0; i < nodes.length; i++) {
+          const child = nodes[i];
           if (child.nodeType === 1 && child.classList) {
             child.classList.add(...tokens);
           }
         }
       },
       remove: (...tokens: string[]) => {
-        for (let i = 0; i < frag.childNodes.length; i++) {
-          const child = frag.childNodes[i];
+        const nodes = getActiveRoots();
+        for (let i = 0; i < nodes.length; i++) {
+          const child = nodes[i];
           if (child.nodeType === 1 && child.classList) {
             child.classList.remove(...tokens);
           }
@@ -28,8 +35,9 @@ function patchMultiRootFragment(fragment: Node): Node {
       },
       toggle: (token: string, force?: boolean) => {
         let res = false;
-        for (let i = 0; i < frag.childNodes.length; i++) {
-          const child = frag.childNodes[i];
+        const nodes = getActiveRoots();
+        for (let i = 0; i < nodes.length; i++) {
+          const child = nodes[i];
           if (child.nodeType === 1 && child.classList) {
             res = child.classList.toggle(token, force) || res;
           }
@@ -37,8 +45,9 @@ function patchMultiRootFragment(fragment: Node): Node {
         return res;
       },
       contains: (token: string) => {
-        for (let i = 0; i < frag.childNodes.length; i++) {
-          const child = frag.childNodes[i];
+        const nodes = getActiveRoots();
+        for (let i = 0; i < nodes.length; i++) {
+          const child = nodes[i];
           if (child.nodeType === 1 && child.classList && child.classList.contains(token)) {
             return true;
           }
@@ -50,8 +59,9 @@ function patchMultiRootFragment(fragment: Node): Node {
 
   if (!frag.setAttribute) {
     frag.setAttribute = (name: string, value: string) => {
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1 && child.setAttribute) {
           child.setAttribute(name, value);
         }
@@ -61,8 +71,9 @@ function patchMultiRootFragment(fragment: Node): Node {
 
   if (!frag.getAttribute) {
     frag.getAttribute = (name: string) => {
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1 && child.getAttribute) {
           return child.getAttribute(name);
         }
@@ -73,8 +84,9 @@ function patchMultiRootFragment(fragment: Node): Node {
 
   if (!frag.removeAttribute) {
     frag.removeAttribute = (name: string) => {
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1 && child.removeAttribute) {
           child.removeAttribute(name);
         }
@@ -84,8 +96,9 @@ function patchMultiRootFragment(fragment: Node): Node {
 
   if (!frag.hasAttribute) {
     frag.hasAttribute = (name: string) => {
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1 && child.hasAttribute) {
           return child.hasAttribute(name);
         }
@@ -98,8 +111,9 @@ function patchMultiRootFragment(fragment: Node): Node {
     frag.style = new Proxy({} as any, {
       get(_target, prop: string | symbol) {
         if (typeof prop === 'string') {
-          for (let i = 0; i < frag.childNodes.length; i++) {
-            const child = frag.childNodes[i];
+          const nodes = getActiveRoots();
+          for (let i = 0; i < nodes.length; i++) {
+            const child = nodes[i];
             if (child.nodeType === 1 && child.style && prop in child.style) {
               return child.style[prop];
             }
@@ -109,8 +123,9 @@ function patchMultiRootFragment(fragment: Node): Node {
       },
       set(_target, prop: string | symbol, value: any) {
         if (typeof prop === 'string') {
-          for (let i = 0; i < frag.childNodes.length; i++) {
-            const child = frag.childNodes[i];
+          const nodes = getActiveRoots();
+          for (let i = 0; i < nodes.length; i++) {
+            const child = nodes[i];
             if (child.nodeType === 1 && child.style) {
               child.style[prop] = value;
             }
@@ -123,8 +138,9 @@ function patchMultiRootFragment(fragment: Node): Node {
 
   if (!frag.querySelector) {
     frag.querySelector = (selector: string) => {
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1) {
           if (child.matches && child.matches(selector)) return child;
           if (child.querySelector) {
@@ -140,8 +156,9 @@ function patchMultiRootFragment(fragment: Node): Node {
   if (!frag.querySelectorAll) {
     frag.querySelectorAll = (selector: string) => {
       const results: any[] = [];
-      for (let i = 0; i < frag.childNodes.length; i++) {
-        const child = frag.childNodes[i];
+      const nodes = getActiveRoots();
+      for (let i = 0; i < nodes.length; i++) {
+        const child = nodes[i];
         if (child.nodeType === 1) {
           if (child.matches && child.matches(selector)) results.push(child);
           if (child.querySelectorAll) {

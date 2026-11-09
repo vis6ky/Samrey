@@ -78,6 +78,92 @@ describe('@samrey/runtime', () => {
     assert.ok(node !== null);
   });
 
+  it('preserves multi-root fragment operations (classList, setAttribute, querySelector) after fragment is appended to DOM and drained', () => {
+    const classListMock = (classes: Set<string>) => ({
+      add: (...tokens: string[]) => tokens.forEach((t) => classes.add(t)),
+      remove: (...tokens: string[]) => tokens.forEach((t) => classes.delete(t)),
+      toggle: (token: string) => {
+        if (classes.has(token)) { classes.delete(token); return false; }
+        classes.add(token); return true;
+      },
+      contains: (token: string) => classes.has(token)
+    });
+
+    const el1Classes = new Set<string>(['first']);
+    const el2Classes = new Set<string>(['second']);
+    const el1Attrs: Record<string, string> = { class: 'first' };
+    const el2Attrs: Record<string, string> = { class: 'second' };
+
+    const el1: any = {
+      nodeType: 1,
+      tagName: 'DIV',
+      classList: classListMock(el1Classes),
+      setAttribute: (k: string, v: string) => { el1Attrs[k] = v; },
+      getAttribute: (k: string) => el1Attrs[k] || null,
+      hasAttribute: (k: string) => k in el1Attrs,
+      removeAttribute: (k: string) => { delete el1Attrs[k]; },
+      matches: (sel: string) => sel === '.first' || sel === 'div',
+      querySelector: () => null,
+      querySelectorAll: () => []
+    };
+
+    const el2: any = {
+      nodeType: 1,
+      tagName: 'DIV',
+      classList: classListMock(el2Classes),
+      setAttribute: (k: string, v: string) => { el2Attrs[k] = v; },
+      getAttribute: (k: string) => el2Attrs[k] || null,
+      hasAttribute: (k: string) => k in el2Attrs,
+      removeAttribute: (k: string) => { delete el2Attrs[k]; },
+      matches: (sel: string) => sel === '.second' || sel === 'div',
+      querySelector: () => null,
+      querySelectorAll: () => []
+    };
+
+    const mockDoc: any = {
+      createElement: (tag: string) => {
+        if (tag === 'template') {
+          return {
+            content: {
+              cloneNode: () => {
+                const frag: any = {
+                  nodeType: 11,
+                  childNodes: [el1, el2]
+                };
+                return frag;
+              }
+            }
+          };
+        }
+        return {};
+      }
+    };
+
+    (globalThis as any).document = mockDoc;
+    try {
+      const tmpl = template('<div class="first"></div><div class="second"></div>');
+      const frag: any = tmpl();
+      assert.strictEqual(frag.nodeType, 11);
+
+      // Simulate appending the fragment to a parent, draining frag.childNodes
+      frag.childNodes = [];
+
+      // Operations on frag must continue to work on root elements via rootNodes
+      frag.classList.add('highlight');
+      assert.ok(el1Classes.has('highlight'), 'First element should receive class');
+      assert.ok(el2Classes.has('highlight'), 'Second element should receive class');
+
+      frag.setAttribute('data-theme', 'dark');
+      assert.strictEqual(el1Attrs['data-theme'], 'dark');
+      assert.strictEqual(el2Attrs['data-theme'], 'dark');
+
+      const found = frag.querySelector('.second');
+      assert.strictEqual(found, el2, 'querySelector should find el2 even when frag.childNodes is drained');
+    } finally {
+      delete (globalThis as any).document;
+    }
+  });
+
   it('binds signal to text and attribute safely', () => {
     const count = signal(10);
     const mockNode = { textContent: '' } as unknown as Node;
