@@ -107,6 +107,13 @@ describe('Item 5: Cleanup & Consistency Audit', () => {
         assert.strictEqual(typeof (t.criteria as any).apiContractConformance, 'boolean');
       }
     });
+
+    it('sets connectionCompatibility to false when there are no live connection details (e.g. skipConnectionCheck)', async () => {
+      const suite = await runCompatibilitySuite({ skipConnectionCheck: true });
+      assert.strictEqual(suite.connectionDetails, undefined);
+      assert.strictEqual(suite.summary.connectionCompatibility, false, 'connectionCompatibility must be false when live connection details are absent');
+      assert.strictEqual(suite.isFullyCompatible, false, 'isFullyCompatible must be false when live connection details are absent');
+    });
   });
 
   describe('5. PLATFORM_COMPATIBILITY_MATRIX.md Truthful Phrasing', () => {
@@ -117,6 +124,13 @@ describe('Item 5: Cleanup & Consistency Audit', () => {
         !lines.includes('empirical verification evidence demonstrating'),
         'Header must not claim empirical verification evidence for self-checks'
       );
+    });
+
+    it('uses "Self-Check Report" as document title and does not use "Verification Report"', () => {
+      const matrixDoc = fs.readFileSync(path.join(process.cwd(), 'docs/ai/PLATFORM_COMPATIBILITY_MATRIX.md'), 'utf8');
+      const firstLine = matrixDoc.split('\n')[0].trim();
+      assert.strictEqual(firstLine, '# Samrey Universal AI Platform Compatibility Matrix & Self-Check Report');
+      assert.ok(!matrixDoc.includes('Verification Report'), 'Document must not use "Verification Report" in title or body');
     });
   });
 });

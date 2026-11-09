@@ -988,7 +988,7 @@ export async function runCompatibilitySuite(options: {
   const overallScore = Math.round((passedTasks / COMPATIBILITY_TASKS.length) * 100);
 
   const summary = {
-    connectionCompatibility: connectionDetails ? connectionDetails.connected : true,
+    connectionCompatibility: Boolean(connectionDetails && connectionDetails.connected),
     apiContractConformance: taskResults.every((t) => t.criteria.apiContractConformance),
     documentationUnderstanding: taskResults.filter((t) => t.criteria.documentationUnderstanding).length >= 12,
     codeGenerationCorrectness: taskResults.filter((t) => t.criteria.codeGenerationCorrectness).length >= 12,
