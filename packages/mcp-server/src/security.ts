@@ -115,6 +115,18 @@ export function redactSecrets(text: string): string {
   // 12. Bare JWT tokens (eyJ....eyJ....signature)
   result = result.replace(/\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED_SECRET]');
 
+  // 13. Azure connection strings (AccountKey=...)
+  result = result.replace(/\bAccountKey\s*=\s*(?:'[^']*'|"[^"]*"|[A-Za-z0-9+/=]{16,})/gi, 'AccountKey=[REDACTED_SECRET]');
+
+  // 14. SendGrid API keys (SG.xxx.yyy)
+  result = result.replace(/\bSG\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{8,}\b/g, '[REDACTED_SECRET]');
+
+  // 15. Twilio Account SIDs and API Key secrets (AC/SK + 32 hex)
+  result = result.replace(/\b(?:AC|SK)[0-9a-fA-F]{32}\b/g, '[REDACTED_SECRET]');
+
+  // 16. Docker config "auth" values
+  result = result.replace(/"auth"\s*:\s*"[^"]+"/gi, '"auth": "[REDACTED_SECRET]"');
+
   return result;
 }
 

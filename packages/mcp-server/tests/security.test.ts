@@ -689,8 +689,68 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
       assert.ok(redacted.includes('[REDACTED_SECRET]'));
     });
 
+    it('redacts Azure connection strings (AccountKey=...) and standalone AccountKey values', () => {
+      const connStr = 'DefaultEndpointsProtocol=https;AccountName=samreystorage;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;EndpointSuffix=core.windows.net';
+      const redacted = redactSecrets(connStr);
+      assert.ok(!redacted.includes('Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='));
+      assert.ok(redacted.includes('AccountKey=[REDACTED_SECRET]'));
+      assert.ok(redacted.includes('AccountName=samreystorage'));
+
+      const standalone = 'AccountKey="bXljdXN0b21rZXkxMjM0NTY3ODkwMTI="';
+      const redactedStandalone = redactSecrets(standalone);
+      assert.ok(!redactedStandalone.includes('bXljdXN0b21rZXkxMjM0NTY3ODkwMTI='));
+      assert.ok(redactedStandalone.includes('AccountKey=[REDACTED_SECRET]'));
+    });
+
+    it('redacts SendGrid API keys (SG.xxx.yyy)', () => {
+      const samples = [
+        'SendGrid key: SG.9a8b7c6d5e4f3a2b1c0d9e.1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2',
+        'SG_KEY=SG.abcdefghijklmnopqrstuvwxyz.1234567890abcdefghijklmnopqrstuvwxyz1234567890'
+      ];
+      for (const sample of samples) {
+        const redacted = redactSecrets(sample);
+        assert.ok(!redacted.includes('9a8b7c6d5e4f3a2b1c0d9e'));
+        assert.ok(!redacted.includes('1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2'));
+        assert.ok(!redacted.includes('abcdefghijklmnopqrstuvwxyz'));
+        assert.ok(redacted.includes('[REDACTED_SECRET]'));
+      }
+    });
+
+    it('redacts Twilio Account SIDs and API Key secrets (AC/SK + 32 hex)', () => {
+      const twilioAccountSid = ['AC', '0123456789abcdef0123456789abcdef'].join('');
+      const twilioApiKey = ['SK', 'fedcba9876543210fedcba9876543210'].join('');
+      const text = `Twilio SID: ${twilioAccountSid}, API Key: ${twilioApiKey}`;
+
+      const redacted = redactSecrets(text);
+      assert.ok(!redacted.includes(twilioAccountSid));
+      assert.ok(!redacted.includes(twilioApiKey));
+      assert.ok(redacted.includes('[REDACTED_SECRET]'));
+    });
+
+    it('redacts Docker config "auth" values', () => {
+      const dockerConfig = JSON.stringify({
+        auths: {
+          'https://index.docker.io/v1/': {
+            auth: 'dXNlcm5hbWU6c3VwZXJzZWNyZXRwYXNzd29yZA==',
+            email: 'user@example.com'
+          }
+        }
+      }, null, 2);
+
+      const redacted = redactSecrets(dockerConfig);
+      assert.ok(!redacted.includes('dXNlcm5hbWU6c3VwZXJzZWNyZXRwYXNzd29yZA=='));
+      assert.ok(redacted.includes('"auth": "[REDACTED_SECRET]"'));
+      assert.ok(redacted.includes('user@example.com'));
+    });
+
     it('produces no false positive on ordinary technical prose', () => {
-      const prose = 'Samrey uses fine-grained reactivity with signals and computed values. The component renders a button and lists items with For({ each: () => items.value, key: i => i.id }).';
+      const prose = [
+        'Samrey uses fine-grained reactivity with signals and computed values. The component renders a button and lists items with For({ each: () => items.value, key: i => i.id }).',
+        'We deploy the application to Azure Storage using standard blob storage containers and CDN rules.',
+        'Emails are dispatched via the SendGrid service using transactional email templates and webhooks.',
+        'SMS notifications are routed through Twilio messaging services with callback status webhooks.',
+        'Docker configuration specifies registry endpoints and authentication policies for containers.'
+      ].join('\n');
       const redacted = redactSecrets(prose);
       assert.equal(redacted, prose, 'Ordinary documentation and code prose must not be altered');
     });
