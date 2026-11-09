@@ -235,6 +235,114 @@ describe('Item 5: validateSamreyCode Hardening', () => {
       assert.ok(err?.suggestion, 'Must provide fix suggestion for javascript: URI');
     });
 
+    it('flags javascript: URIs in el() and attribute objects', () => {
+      const code = `
+        import { el } from '@samrey/runtime';
+        export function XssElement() {
+          return el('a', { href: 'javascript:void(0)', title: 'Link' }, 'Click');
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.valid, false, 'Must flag javascript: URI in el() attribute object');
+      const err = res.errors.find(e => e.message.includes('javascript:'));
+      assert.ok(err, 'Must report javascript: error');
+      assert.ok(err?.suggestion, 'Must provide suggestion for el() javascript: URI');
+    });
+
+    it('flags setTimeout and setInterval with string arguments', () => {
+      const code1 = `
+        export function BadTimer() {
+          setTimeout("alert('pwned')", 1000);
+        }
+      `;
+      const res1 = validateSamreyCode(code1);
+      assert.strictEqual(res1.valid, false, 'Must flag setTimeout with string argument');
+      assert.ok(
+        res1.errors.some(e => e.message.includes('setTimeout') || e.message.includes('string argument')),
+        'Must report error for setTimeout with string'
+      );
+
+      const code2 = `
+        export function BadInterval() {
+          setInterval('doPoll()', 500);
+        }
+      `;
+      const res2 = validateSamreyCode(code2);
+      assert.strictEqual(res2.valid, false, 'Must flag setInterval with string argument');
+      assert.ok(
+        res2.errors.some(e => e.message.includes('setInterval') || e.message.includes('string argument')),
+        'Must report error for setInterval with string'
+      );
+    });
+
+    it('flags outerHTML and insertAdjacentHTML with non-literal dynamic expressions', () => {
+      const code1 = `
+        export function InjectOuter(element, userContent) {
+          element.outerHTML = userContent;
+        }
+      `;
+      const res1 = validateSamreyCode(code1);
+      assert.strictEqual(res1.valid, false, 'Must flag dynamic outerHTML assignment');
+      assert.ok(
+        res1.errors.some(e => e.message.includes('outerHTML')),
+        'Must report error for dynamic outerHTML'
+      );
+
+      const code2 = `
+        export function InjectAdjacent(element, untrustedMarkup) {
+          element.insertAdjacentHTML('beforeend', untrustedMarkup);
+        }
+      `;
+      const res2 = validateSamreyCode(code2);
+      assert.strictEqual(res2.valid, false, 'Must flag dynamic insertAdjacentHTML call');
+      assert.ok(
+        res2.errors.some(e => e.message.includes('insertAdjacentHTML')),
+        'Must report error for dynamic insertAdjacentHTML'
+      );
+    });
+
+    it('does not flag obj.eval(...) member method calls', () => {
+      const code = `
+        export function MathCalculator(calc, formula) {
+          return calc.eval(formula);
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.errors.length, 0, `obj.eval() must not be flagged as global eval, got errors: ${JSON.stringify(res.errors)}`);
+      assert.strictEqual(res.valid, true);
+    });
+
+    it('does not flag dangerous pattern keywords when present in comments or string literals', () => {
+      const code = `
+        // Note: Do not use eval() or document.write() in your code.
+        /* Avoid new Function(), innerHTML, outerHTML, insertAdjacentHTML, and javascript: links */
+        // Also avoid setTimeout('code', 1000) with string arguments.
+        export function SafeHelpDoc() {
+          const warningMessage = "Never use eval(), new Function(), or document.write()";
+          const uriNote = "The javascript: URI scheme is blocked by modern CSP";
+          const timerNote = "Avoid setTimeout('string', delay) and outerHTML = userInput";
+          return { warningMessage, uriNote, timerNote };
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.errors.length, 0, `Comments and strings must not trigger false positives, got errors: ${JSON.stringify(res.errors)}`);
+      assert.strictEqual(res.valid, true);
+    });
+
+    it('allows safe setTimeout/setInterval callbacks and safe literal HTML sinks', () => {
+      const code = `
+        export function SafeTimers(el) {
+          setTimeout(() => { console.log('safe'); }, 1000);
+          setInterval(function() { console.log('tick'); }, 500);
+          el.outerHTML = '<div class="static"></div>';
+          el.insertAdjacentHTML('beforeend', '<p>Static HTML</p>');
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.errors.length, 0, `Safe callbacks and static literals must pass, got: ${JSON.stringify(res.errors)}`);
+      assert.strictEqual(res.valid, true);
+    });
+
     it('allows clean, idiomatic Samrey samples without false positives', () => {
       const cleanSamples = [
         `

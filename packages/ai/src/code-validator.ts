@@ -332,6 +332,8 @@ export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
     'installSkills',
     'runCompatibilitySuite',
     'searchDocs',
+    'stripComments',
+    'tokenizeCode',
     'validateSamreyCode',
     'writeAllInstructions'
   ]),
@@ -534,6 +536,308 @@ export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
   ])
 };
 
+export interface CodeToken {
+  type: 'identifier' | 'keyword' | 'string' | 'template' | 'number' | 'punct';
+  value: string;
+  raw: string;
+  line: number;
+  col: number;
+  start: number;
+  end: number;
+}
+
+const JS_KEYWORDS = new Set([
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+  'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
+  'if', 'import', 'in', 'instanceof', 'new', 'return', 'super', 'switch',
+  'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
+  'let', 'static', 'enum', 'await', 'async', 'type', 'interface', 'as',
+  'from', 'of', 'null', 'undefined', 'true', 'false'
+]);
+
+export function stripComments(code: string): string {
+  let result = '';
+  let i = 0;
+  while (i < code.length) {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      result += '  ';
+      i += 2;
+      while (i < code.length && code[i] !== '\n') {
+        result += ' ';
+        i++;
+      }
+      if (i < code.length && code[i] === '\n') {
+        result += '\n';
+        i++;
+      }
+    } else if (code[i] === '/' && code[i + 1] === '*') {
+      result += '  ';
+      i += 2;
+      while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) {
+        result += code[i] === '\n' ? '\n' : ' ';
+        i++;
+      }
+      if (i < code.length) {
+        result += '  ';
+        i += 2;
+      }
+    } else if (code[i] === "'" || code[i] === '"' || code[i] === '`') {
+      const quote = code[i];
+      result += quote;
+      i++;
+      while (i < code.length && code[i] !== quote) {
+        if (code[i] === '\\' && i + 1 < code.length) {
+          result += code[i] + code[i + 1];
+          i += 2;
+        } else {
+          result += code[i];
+          i++;
+        }
+      }
+      if (i < code.length) {
+        result += code[i];
+        i++;
+      }
+    } else {
+      result += code[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+export function tokenizeCode(code: string): CodeToken[] {
+  const tokens: CodeToken[] = [];
+  let i = 0;
+  let line = 1;
+  let col = 1;
+
+  function advance(): string {
+    const ch = code[i];
+    i++;
+    if (ch === '\n') {
+      line++;
+      col = 1;
+    } else {
+      col++;
+    }
+    return ch;
+  }
+
+  const templateBraceStack: number[] = [];
+
+  while (i < code.length) {
+    const char = code[i];
+
+    if (char === ' ' || char === '\t' || char === '\r' || char === '\n') {
+      advance();
+      continue;
+    }
+
+    if (char === '/' && code[i + 1] === '/') {
+      while (i < code.length && code[i] !== '\n') {
+        advance();
+      }
+      continue;
+    }
+
+    if (char === '/' && code[i + 1] === '*') {
+      advance(); advance();
+      while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) {
+        advance();
+      }
+      if (i < code.length) {
+        advance(); advance();
+      }
+      continue;
+    }
+
+    if (char === "'" || char === '"') {
+      const quote = char;
+      const start = i;
+      const startLine = line;
+      const startCol = col;
+      advance();
+      let value = '';
+      while (i < code.length && code[i] !== quote) {
+        if (code[i] === '\\' && i + 1 < code.length) {
+          advance();
+          value += code[i];
+          advance();
+        } else if (code[i] === '\n') {
+          break;
+        } else {
+          value += code[i];
+          advance();
+        }
+      }
+      if (i < code.length && code[i] === quote) {
+        advance();
+      }
+      tokens.push({
+        type: 'string',
+        value,
+        raw: code.slice(start, i),
+        line: startLine,
+        col: startCol,
+        start,
+        end: i
+      });
+      continue;
+    }
+
+    if (char === '`') {
+      const start = i;
+      const startLine = line;
+      const startCol = col;
+      advance();
+      let value = '';
+      while (i < code.length) {
+        if (code[i] === '\\' && i + 1 < code.length) {
+          advance();
+          value += code[i];
+          advance();
+        } else if (code[i] === '$' && code[i + 1] === '{') {
+          advance(); advance();
+          templateBraceStack.push(1);
+          break;
+        } else if (code[i] === '`') {
+          advance();
+          break;
+        } else {
+          value += code[i];
+          advance();
+        }
+      }
+      tokens.push({
+        type: 'template',
+        value,
+        raw: code.slice(start, i),
+        line: startLine,
+        col: startCol,
+        start,
+        end: i
+      });
+      continue;
+    }
+
+    if (templateBraceStack.length > 0) {
+      if (char === '{') {
+        templateBraceStack[templateBraceStack.length - 1]++;
+      } else if (char === '}') {
+        templateBraceStack[templateBraceStack.length - 1]--;
+        if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+          templateBraceStack.pop();
+          const start = i;
+          const startLine = line;
+          const startCol = col;
+          advance();
+          let value = '';
+          while (i < code.length) {
+            if (code[i] === '\\' && i + 1 < code.length) {
+              advance();
+              value += code[i];
+              advance();
+            } else if (code[i] === '$' && code[i + 1] === '{') {
+              advance(); advance();
+              templateBraceStack.push(1);
+              break;
+            } else if (code[i] === '`') {
+              advance();
+              break;
+            } else {
+              value += code[i];
+              advance();
+            }
+          }
+          tokens.push({
+            type: 'template',
+            value,
+            raw: code.slice(start, i),
+            line: startLine,
+            col: startCol,
+            start,
+            end: i
+          });
+          continue;
+        }
+      }
+    }
+
+    if (/[0-9]/.test(char) || (char === '.' && /[0-9]/.test(code[i + 1] || ''))) {
+      const start = i;
+      const startLine = line;
+      const startCol = col;
+      while (i < code.length && /[0-9a-zA-Z_.]/.test(code[i])) {
+        advance();
+      }
+      tokens.push({
+        type: 'number',
+        value: code.slice(start, i),
+        raw: code.slice(start, i),
+        line: startLine,
+        col: startCol,
+        start,
+        end: i
+      });
+      continue;
+    }
+
+    if (/[a-zA-Z_$]/.test(char)) {
+      const start = i;
+      const startLine = line;
+      const startCol = col;
+      while (i < code.length && /[a-zA-Z0-9_$]/.test(code[i])) {
+        advance();
+      }
+      const val = code.slice(start, i);
+      tokens.push({
+        type: JS_KEYWORDS.has(val) ? 'keyword' : 'identifier',
+        value: val,
+        raw: val,
+        line: startLine,
+        col: startCol,
+        start,
+        end: i
+      });
+      continue;
+    }
+
+    const start = i;
+    const startLine = line;
+    const startCol = col;
+    const three = code.slice(i, i + 3);
+    if (three === '===' || three === '!==') {
+      advance(); advance(); advance();
+      tokens.push({ type: 'punct', value: three, raw: three, line: startLine, col: startCol, start, end: i });
+      continue;
+    }
+    const two = code.slice(i, i + 2);
+    if (
+      two === '==' || two === '!=' || two === '<=' || two === '>=' || two === '=>' ||
+      two === '??' || two === '?.' || two === '&&' || two === '||' || two === '++' ||
+      two === '--' || two === '+=' || two === '-='
+    ) {
+      advance(); advance();
+      tokens.push({ type: 'punct', value: two, raw: two, line: startLine, col: startCol, start, end: i });
+      continue;
+    }
+
+    advance();
+    tokens.push({
+      type: 'punct',
+      value: char,
+      raw: char,
+      line: startLine,
+      col: startCol,
+      start,
+      end: i
+    });
+  }
+
+  return tokens;
+}
+
 export function validateSamreyCode(
   source: string,
   options: { filename?: string; isTemplateOnly?: boolean } = {}
@@ -543,10 +847,13 @@ export function validateSamreyCode(
   const warnings: CodeValidationWarning[] = [];
   const detectedApis: string[] = [];
 
+  const codeWithoutComments = stripComments(code);
+  const tokens = tokenizeCode(code);
+
   // 1. Detect Foreign Framework Imports
   let foreignFrameworkDetected: string | undefined;
   for (const forbidden of FORBIDDEN_IMPORTS) {
-    if (forbidden.match.test(code)) {
+    if (forbidden.match.test(codeWithoutComments)) {
       foreignFrameworkDetected = forbidden.name;
       errors.push({
         message: `Forbidden ${forbidden.name} import detected. Samrey is an independent framework with its own compile-time reactive runtime.`,
@@ -558,7 +865,7 @@ export function validateSamreyCode(
   // 1b. Validate @samrey/* Imports Against Official Package Exports
   const importRegex = /import\s+([\s\S]*?)\s+from\s+['"](@samrey\/[a-z0-9-]+)['"]/g;
   let impMatch: RegExpExecArray | null;
-  while ((impMatch = importRegex.exec(code)) !== null) {
+  while ((impMatch = importRegex.exec(codeWithoutComments)) !== null) {
     const rawClause = impMatch[1].trim();
     const pkg = impMatch[2];
     const isGlobalTypeImport = /^\s*type\s+/.test(rawClause);
@@ -625,9 +932,9 @@ export function validateSamreyCode(
   // 2. Detect React Hooks
   for (const hook of FORBIDDEN_HOOKS) {
     const hookRegex = new RegExp(`\\b${hook}\\s*\\(`, 'g');
-    const match = hookRegex.exec(code);
+    const match = hookRegex.exec(codeWithoutComments);
     if (match) {
-      const line = code.slice(0, match.index).split('\n').length;
+      const line = codeWithoutComments.slice(0, match.index).split('\n').length;
       errors.push({
         message: `Foreign React hook "${hook}()" detected. React hooks are not part of Samrey.`,
         line,
@@ -646,7 +953,7 @@ export function validateSamreyCode(
   // 2b. Detect Vue Directives (v-if, v-for, v-model, etc.)
   const vueDirectives = ['v-if', 'v-for', 'v-model', 'v-show', 'v-else', 'v-html', 'v-text'];
   for (const dir of vueDirectives) {
-    if (new RegExp(`\\b${dir}\\b`).test(code)) {
+    if (new RegExp(`\\b${dir}\\b`).test(codeWithoutComments)) {
       foreignFrameworkDetected = 'Vue';
       errors.push({
         message: `Foreign Vue directive "${dir}" detected. Samrey does not use Vue directives.`,
@@ -705,7 +1012,7 @@ export function validateSamreyCode(
   ];
 
   for (const api of apiCandidates) {
-    if (new RegExp(`\\b${api}\\b`).test(code)) {
+    if (new RegExp(`\\b${api}\\b`).test(codeWithoutComments)) {
       detectedApis.push(api);
     }
   }
@@ -713,8 +1020,8 @@ export function validateSamreyCode(
   // 4. In-place array mutation on signals
   const inPlaceRegex = /\.value\.(push|splice|pop|shift|unshift|sort|reverse)\s*\(/g;
   let inPlaceMatch: RegExpExecArray | null;
-  while ((inPlaceMatch = inPlaceRegex.exec(code)) !== null) {
-    const line = code.slice(0, inPlaceMatch.index).split('\n').length;
+  while ((inPlaceMatch = inPlaceRegex.exec(codeWithoutComments)) !== null) {
+    const line = codeWithoutComments.slice(0, inPlaceMatch.index).split('\n').length;
     warnings.push({
       message: `In-place array mutation ".value.${inPlaceMatch[1]}()" detected. Signal subscribers will NOT be notified of array interior changes.`,
       line,
@@ -725,7 +1032,7 @@ export function validateSamreyCode(
   // 4b. Detect Direct Signal Value Reads or Static Literals in bind* Helpers
   const twoArgBindHelpers = ['bindText', 'bindDynamicChild'];
   for (const helper of twoArgBindHelpers) {
-    const calls = extractCallArguments(code, helper);
+    const calls = extractCallArguments(codeWithoutComments, helper);
     for (const call of calls) {
       if (call.args.length >= 2) {
         checkBindAccessor(helper, call.args[1], call.line, errors);
@@ -735,7 +1042,7 @@ export function validateSamreyCode(
 
   const threeArgBindHelpers = ['bindAttr', 'bindAttribute', 'bindClass', 'bindProperty', 'bindStyle'];
   for (const helper of threeArgBindHelpers) {
-    const calls = extractCallArguments(code, helper);
+    const calls = extractCallArguments(codeWithoutComments, helper);
     for (const call of calls) {
       if (call.args.length >= 3) {
         checkBindAccessor(helper, call.args[2], call.line, errors);
@@ -743,72 +1050,236 @@ export function validateSamreyCode(
     }
   }
 
-  // 4c. Detect Unsafe Dynamic / Non-Literal innerHTML Assignments
-  const innerHtmlRegex = /\b([a-zA-Z0-9_$.]+)?\binnerHTML\s*=\s*([^;\n]+)/g;
-  let ihMatch: RegExpExecArray | null;
-  while ((ihMatch = innerHtmlRegex.exec(code)) !== null) {
-    const rawRhs = ihMatch[2].trim();
-    const line = code.slice(0, ihMatch.index).split('\n').length;
-
-    const isSafeLiteral =
-      /^(?:'[^']*'|"[^"]*"|null|undefined|''|""|``)$/.test(rawRhs) ||
-      (/^`[\s\S]*`$/.test(rawRhs) && !rawRhs.includes('${'));
-
-    if (!isSafeLiteral) {
+  // 4c. Detect document.write() / document.writeln() via AST tokens
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      (t.value === 'write' || t.value === 'writeln') &&
+      idx >= 2 &&
+      tokens[idx - 1].value === '.' &&
+      tokens[idx - 2].value === 'document' &&
+      idx + 1 < tokens.length &&
+      tokens[idx + 1].value === '('
+    ) {
       errors.push({
-        message: `Unsafe innerHTML assignment detected with non-literal expression "${rawRhs}". This introduces Cross-Site Scripting (XSS) vulnerabilities.`,
-        line,
-        suggestion: 'Use "rawHtml()" from @samrey/runtime for trusted markup, or sanitize the HTML with "sanitizeHtml()" from @samrey/security before assignment.'
+        message: 'Dangerous "document.write()" call detected. Direct document writing blocks page parsing, destroys DOM state, and introduces severe XSS risks.',
+        line: t.line,
+        suggestion: 'Use fine-grained DOM templates with "template()" or surgical text bindings with "bindText()".'
       });
     }
   }
 
-  // 4d. Detect document.write() / document.writeln()
-  const docWriteRegex = /\bdocument\s*\.\s*(?:write|writeln)\s*\(/g;
-  let dwMatch: RegExpExecArray | null;
-  while ((dwMatch = docWriteRegex.exec(code)) !== null) {
-    const line = code.slice(0, dwMatch.index).split('\n').length;
-    errors.push({
-      message: 'Dangerous "document.write()" call detected. Direct document writing blocks page parsing, destroys DOM state, and introduces severe XSS risks.',
-      line,
-      suggestion: 'Use fine-grained DOM templates with "template()" or surgical text bindings with "bindText()".'
-    });
+  // 4d. Detect eval() (skipping obj.eval(...) member method calls unless preceded by window or globalThis)
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (t.value === 'eval' && t.type === 'identifier') {
+      const prev = idx > 0 ? tokens[idx - 1] : null;
+      const next = idx + 1 < tokens.length ? tokens[idx + 1] : null;
+
+      if (next && next.value === '(') {
+        if (prev && (prev.value === '.' || prev.value === '?.')) {
+          const prevPrev = idx > 1 ? tokens[idx - 2] : null;
+          if (prevPrev && (prevPrev.value === 'window' || prevPrev.value === 'globalThis')) {
+            errors.push({
+              message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
+              line: t.line,
+              suggestion: 'Use statically analyzed functions or compute values with "computed()" and pure signals from @samrey/reactivity.'
+            });
+          }
+        } else {
+          errors.push({
+            message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
+            line: t.line,
+            suggestion: 'Use statically analyzed functions or compute values with "computed()" and pure signals from @samrey/reactivity.'
+          });
+        }
+      }
+    }
   }
 
-  // 4e. Detect eval()
-  const evalRegex = /\beval\s*\(/g;
-  let evalMatch: RegExpExecArray | null;
-  while ((evalMatch = evalRegex.exec(code)) !== null) {
-    const line = code.slice(0, evalMatch.index).split('\n').length;
-    errors.push({
-      message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
-      line,
-      suggestion: 'Use statically analyzed functions or compute values with "computed()" and pure signals from @samrey/reactivity.'
-    });
+  // 4e. Detect new Function()
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      t.value === 'Function' &&
+      t.type === 'identifier' &&
+      idx > 0 &&
+      tokens[idx - 1].value === 'new' &&
+      idx + 1 < tokens.length &&
+      tokens[idx + 1].value === '('
+    ) {
+      errors.push({
+        message: 'Dangerous "new Function()" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
+        line: t.line,
+        suggestion: 'Define standard closures or use explicit compiled handlers instead of generating code strings dynamically.'
+      });
+    }
   }
 
-  // 4f. Detect new Function()
-  const newFunctionRegex = /\bnew\s+Function\s*\(/g;
-  let fnMatch: RegExpExecArray | null;
-  while ((fnMatch = newFunctionRegex.exec(code)) !== null) {
-    const line = code.slice(0, fnMatch.index).split('\n').length;
-    errors.push({
-      message: 'Dangerous "new Function()" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
-      line,
-      suggestion: 'Define standard closures or use explicit compiled handlers instead of generating code strings dynamically.'
-    });
+  // 4f. Detect setTimeout() / setInterval() with string arguments
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      (t.value === 'setTimeout' || t.value === 'setInterval') &&
+      t.type === 'identifier'
+    ) {
+      const prev = idx > 0 ? tokens[idx - 1] : null;
+      if (prev && (prev.value === '.' || prev.value === '?.')) {
+        const prevPrev = idx > 1 ? tokens[idx - 2] : null;
+        if (!prevPrev || (prevPrev.value !== 'window' && prevPrev.value !== 'globalThis')) {
+          continue;
+        }
+      }
+      const next = idx + 1 < tokens.length ? tokens[idx + 1] : null;
+      if (next && next.value === '(') {
+        const firstArgToken = idx + 2 < tokens.length ? tokens[idx + 2] : null;
+        if (firstArgToken && (firstArgToken.type === 'string' || firstArgToken.type === 'template')) {
+          errors.push({
+            message: `Dangerous "${t.value}()" execution with string argument detected. Passing strings to timer functions performs implicit code evaluation (eval) and introduces code injection vulnerabilities.`,
+            line: t.line,
+            suggestion: `Pass a callback function closure instead of a string: "${t.value}(() => ..., delay)".`
+          });
+        }
+      }
+    }
   }
 
-  // 4g. Detect javascript: URIs in Attributes
-  const jsUriRegex = /\b(?:[a-zA-Z0-9_:-]+)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
+  // 4g. Detect Unsafe Dynamic / Non-Literal innerHTML and outerHTML Assignments
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      (t.value === 'outerHTML' || t.value === 'innerHTML') &&
+      t.type === 'identifier' &&
+      idx + 1 < tokens.length &&
+      tokens[idx + 1].value === '='
+    ) {
+      let rhsTokens: CodeToken[] = [];
+      let j = idx + 2;
+      let parenDepth = 0;
+      let braceDepth = 0;
+      let bracketDepth = 0;
+
+      while (j < tokens.length) {
+        const tok = tokens[j];
+        if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0) {
+          if (tok.value === ';' || tok.value === '}' || tok.value === ',') {
+            break;
+          }
+        }
+        if (tok.value === '(') parenDepth++;
+        else if (tok.value === ')') parenDepth--;
+        else if (tok.value === '{') braceDepth++;
+        else if (tok.value === '}') braceDepth--;
+        else if (tok.value === '[') bracketDepth++;
+        else if (tok.value === ']') bracketDepth--;
+        rhsTokens.push(tok);
+        j++;
+      }
+
+      const isSingleString = rhsTokens.length === 1 && rhsTokens[0].type === 'string';
+      const isStaticTemplate = rhsTokens.length === 1 && rhsTokens[0].type === 'template';
+      const isNullOrUndefined =
+        rhsTokens.length === 1 && (rhsTokens[0].value === 'null' || rhsTokens[0].value === 'undefined');
+
+      if (!isSingleString && !isStaticTemplate && !isNullOrUndefined) {
+        const rhsRaw = rhsTokens.length > 0
+          ? code.slice(rhsTokens[0].start, rhsTokens[rhsTokens.length - 1].end).trim()
+          : '';
+        if (t.value === 'outerHTML') {
+          errors.push({
+            message: `Unsafe outerHTML assignment detected with non-literal expression "${rhsRaw}". This introduces Cross-Site Scripting (XSS) vulnerabilities.`,
+            line: t.line,
+            suggestion: 'Use fine-grained DOM templates with "template()", or sanitize the HTML with "sanitizeHtml()" from @samrey/security before assignment.'
+          });
+        } else {
+          errors.push({
+            message: `Unsafe innerHTML assignment detected with non-literal expression "${rhsRaw}". This introduces Cross-Site Scripting (XSS) vulnerabilities.`,
+            line: t.line,
+            suggestion: 'Use "rawHtml()" from @samrey/runtime for trusted markup, or sanitize the HTML with "sanitizeHtml()" from @samrey/security before assignment.'
+          });
+        }
+      }
+    }
+  }
+
+  // 4h. Detect insertAdjacentHTML with non-literal dynamic expressions
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      t.value === 'insertAdjacentHTML' &&
+      t.type === 'identifier' &&
+      idx + 1 < tokens.length &&
+      tokens[idx + 1].value === '('
+    ) {
+      let j = idx + 2;
+      let parenDepth = 1;
+      let argTokens: CodeToken[][] = [[]];
+
+      while (j < tokens.length && parenDepth > 0) {
+        const tok = tokens[j];
+        if (tok.value === '(') parenDepth++;
+        else if (tok.value === ')') {
+          parenDepth--;
+          if (parenDepth === 0) break;
+        }
+
+        if (tok.value === ',' && parenDepth === 1) {
+          argTokens.push([]);
+        } else {
+          argTokens[argTokens.length - 1].push(tok);
+        }
+        j++;
+      }
+
+      if (argTokens.length >= 2) {
+        const markupArg = argTokens[1];
+        const isSingleString = markupArg.length === 1 && markupArg[0].type === 'string';
+        const isStaticTemplate = markupArg.length === 1 && markupArg[0].type === 'template';
+
+        if (!isSingleString && !isStaticTemplate) {
+          const argRaw = markupArg.length > 0
+            ? code.slice(markupArg[0].start, markupArg[markupArg.length - 1].end).trim()
+            : '';
+          errors.push({
+            message: `Unsafe insertAdjacentHTML call detected with non-literal markup expression "${argRaw}". Inserting unverified markup introduces Cross-Site Scripting (XSS) vulnerabilities.`,
+            line: t.line,
+            suggestion: 'Use fine-grained DOM templates with "template()", append DOM elements, or sanitize the HTML with "sanitizeHtml()" from @samrey/security before insertion.'
+          });
+        }
+      }
+    }
+  }
+
+  // 4i. Detect javascript: URIs in HTML Attributes
+  const jsUriRegex = /\b([a-zA-Z0-9_:-]+)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
   let jsUriMatch: RegExpExecArray | null;
-  while ((jsUriMatch = jsUriRegex.exec(code)) !== null) {
-    const line = code.slice(0, jsUriMatch.index).split('\n').length;
+  while ((jsUriMatch = jsUriRegex.exec(codeWithoutComments)) !== null) {
+    const line = codeWithoutComments.slice(0, jsUriMatch.index).split('\n').length;
     errors.push({
       message: `Dangerous "javascript:" URI scheme detected in attribute (${jsUriMatch[0]}). Executing script via URI schemes enables XSS attacks.`,
       line,
       suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
     });
+  }
+
+  // 4j. Detect javascript: URIs in el() / Attribute Objects
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      (t.type === 'string' || t.type === 'template') &&
+      /^\s*javascript:/i.test(t.value)
+    ) {
+      if (idx >= 2 && tokens[idx - 1].value === ':') {
+        const keyToken = tokens[idx - 2];
+        if (keyToken.type === 'identifier' || keyToken.type === 'string') {
+          errors.push({
+            message: `Dangerous "javascript:" URI scheme detected in attribute/property "${keyToken.value}". Executing script via URI schemes enables XSS attacks.`,
+            line: t.line,
+            suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
+          });
+        }
+      }
+    }
   }
 
   // 5. Template compilation check
