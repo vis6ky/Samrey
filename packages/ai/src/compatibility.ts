@@ -103,6 +103,14 @@ export class MockDOMNode {
     }
   }
 
+  get id(): string {
+    return this.attributes['id'] || '';
+  }
+
+  set id(val: string) {
+    this.attributes['id'] = val;
+  }
+
   get textContent(): string {
     if (this.nodeType === 3) return this._textContent;
     if (this.nodeType === 8) return this._textContent;

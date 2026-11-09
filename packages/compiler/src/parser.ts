@@ -679,7 +679,12 @@ export class TemplateParser {
 
   private extractBalancedCurly(): string {
     if (this.peekCode() !== 123) return ''; // '{'
-    this.advance(1); // skip opening '{'
+    const isDouble = this.source.charCodeAt(this.cursor + 1) === 123;
+    if (isDouble) {
+      this.advance(2); // skip '{{'
+    } else {
+      this.advance(1); // skip '{'
+    }
 
     let depth = 1;
     const startOffset = this.cursor;
@@ -709,6 +714,9 @@ export class TemplateParser {
           if (depth === 0) {
             const rawContent = this.source.slice(startOffset, this.cursor);
             this.advance(1); // skip closing '}'
+            if (isDouble && this.peekCode() === 125) {
+              this.advance(1); // skip second closing '}'
+            }
             return rawContent.trim();
           }
         }

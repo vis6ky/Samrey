@@ -11,17 +11,29 @@ describe('SF-01: AOT Compiler Codegen Props & Scope Parameters', () => {
   it('emits props and scope parameters in Render function declaration', () => {
     const res = compileTemplate('<div><p>{{ props.user.name }}</p></div>');
     assert.ok(
-      res.generatedCode.includes('export default function Render(props?: any, scope?: any) {'),
-      `Expected Render(props?: any, scope?: any), but got:\n${res.generatedCode}`
+      res.generatedCode.includes('export default function Render(props, scope) {'),
+      `Expected Render(props, scope), but got:\n${res.generatedCode}`
     );
   });
 
   it('generateModuleCode generates Render with props and scope parameters', () => {
     const code = generateModuleCode([], '');
     assert.ok(
-      code.includes('export default function Render(props?: any, scope?: any) {'),
-      `Expected Render(props?: any, scope?: any), but got:\n${code}`
+      code.includes('export default function Render(props, scope) {'),
+      `Expected Render(props, scope), but got:\n${code}`
     );
+  });
+
+  it('generates valid JavaScript parseable by plain JS parser without TS compiler', () => {
+    const res = compileTemplate('<div><p>{{ props.user.name }}</p></div>');
+    // Strip import/export so new Function can parse the module statements as valid JS
+    const jsBody = res.generatedCode
+      .replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?/g, '')
+      .replace(/export\s+default\s+/, '');
+
+    assert.doesNotThrow(() => {
+      new Function(jsBody);
+    }, 'Generated code must be valid JavaScript without TypeScript syntax errors');
   });
 });
 
