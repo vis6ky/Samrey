@@ -10,6 +10,9 @@ import { spawn } from 'node:child_process';
 const ALLOWED_BARE_BINARIES = new Set(['npm', 'node', 'git']);
 
 const FORBIDDEN_ARG_PATTERNS: Record<string, Array<RegExp | string>> = {
+  npm: [
+    /^--script-shell(=|$)/
+  ],
   node: [
     /^-e$/,
     /^--eval$/,
@@ -26,7 +29,21 @@ const FORBIDDEN_ARG_PATTERNS: Record<string, Array<RegExp | string>> = {
     /^--upload-pack(=|$)/,
     /^--receive-pack(=|$)/,
     /^--exec-path(=|$)/,
-    /^--config-env(=|$)/
+    /^--config-env(=|$)/,
+    /^--output(=|$)/,
+    /^--output-directory(=|$)/,
+    /^--ext-diff$/,
+    /^--textconv$/,
+    /^--no-index$/,
+    /^-O.*$/,
+    /^--work-tree(=|$)/,
+    /^--git-dir(=|$)/,
+    /^--template(=|$)/,
+    /^--separate-git-dir(=|$)/,
+    /^--attr-source(=|$)/,
+    /^--src-prefix(=|$)/,
+    /^--dst-prefix(=|$)/,
+    /^--line-prefix(=|$)/
   ]
 };
 
@@ -323,7 +340,39 @@ export function executeSafeCommand(
       }
       const sub = args[0];
       if (sub === 'test') {
-        // Allowed: npm test ...
+        // "npm test: accept at most one extra argument, an absolute path inside the project root; reject `--`, flags, and `--script-shell`."
+        if (args.length > 2) {
+          return reject(
+            new Error(`Security Exception: npm test accepts at most one extra argument, received ${args.length - 1}.`)
+          );
+        }
+        if (args.length === 2) {
+          const extra = args[1];
+          if (extra === '--' || extra.startsWith('-')) {
+            return reject(
+              new Error(`Security Exception: npm test extra argument cannot be a flag or "--", received "${extra}".`)
+            );
+          }
+          if (!path.isAbsolute(extra)) {
+            return reject(
+              new Error(`Security Exception: npm test extra argument must be an absolute path inside project root, received "${extra}".`)
+            );
+          }
+          const resolvedRoot = path.resolve(cwd);
+          const realRoot = fs.existsSync(resolvedRoot)
+            ? (fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot))
+            : resolvedRoot;
+          let realExtra = path.resolve(extra);
+          if (fs.existsSync(realExtra)) {
+            realExtra = fs.realpathSync.native ? fs.realpathSync.native(realExtra) : fs.realpathSync(realExtra);
+          }
+          const rel = path.relative(realRoot, realExtra);
+          if (rel.startsWith('..') || path.isAbsolute(rel)) {
+            return reject(
+              new Error(`Security Exception: npm test argument "${extra}" escapes project root boundary "${realRoot}".`)
+            );
+          }
+        }
       } else if (sub === 'run') {
         const script = args[1];
         if (!script || !NPM_ALLOWED_RUN_SCRIPTS.has(script)) {
@@ -345,6 +394,45 @@ export function executeSafeCommand(
         return reject(
           new Error(`Security Exception: Prohibited git subcommand "${sub}". Only read-only subcommands are allowed: status, log, diff, rev-parse, branch, describe, show.`)
         );
+      }
+    } else if (cmd === 'node') {
+      // "node: drop it from the allowlist unless a tool needs it; if needed, allow only node --test <path inside root>."
+      if (args.length === 0 || args[0] !== '--test') {
+        return reject(
+          new Error(`Security Exception: Prohibited node invocation. Only "node --test <path inside root>" is allowed.`)
+        );
+      }
+      if (args.length > 2) {
+        return reject(
+          new Error(`Security Exception: node --test accepts at most one test path argument, received ${args.length - 1}.`)
+        );
+      }
+      if (args.length === 2) {
+        const testPath = args[1];
+        if (testPath.startsWith('-')) {
+          return reject(
+            new Error(`Security Exception: node --test path argument cannot be a flag, received "${testPath}".`)
+          );
+        }
+        if (!path.isAbsolute(testPath)) {
+          return reject(
+            new Error(`Security Exception: node --test path argument must be an absolute path inside project root, received "${testPath}".`)
+          );
+        }
+        const resolvedRoot = path.resolve(cwd);
+        const realRoot = fs.existsSync(resolvedRoot)
+          ? (fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot))
+          : resolvedRoot;
+        let realTarget = path.resolve(testPath);
+        if (fs.existsSync(realTarget)) {
+          realTarget = fs.realpathSync.native ? fs.realpathSync.native(realTarget) : fs.realpathSync(realTarget);
+        }
+        const rel = path.relative(realRoot, realTarget);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) {
+          return reject(
+            new Error(`Security Exception: node --test path "${testPath}" escapes project root boundary "${realRoot}".`)
+          );
+        }
       }
     }
 

@@ -418,15 +418,159 @@ describe('MCP Server Security & Hardening', () => {
       }
     });
 
+    it('rejects git path and arbitrary execution options (--output, --ext-diff, --textconv, --no-index, -O)', async () => {
+      const outsideFile = path.join(os.tmpdir(), `samrey-git-diff-out-${Date.now()}`);
+
+      // 1. git diff --output=/tmp/x
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', `--output=${outsideFile}`], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+      assert.strictEqual(fs.existsSync(outsideFile), false, 'git diff --output must not create any file');
+
+      // 2. git diff --output /tmp/x
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', '--output', outsideFile], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+      assert.strictEqual(fs.existsSync(outsideFile), false, 'git diff --output must not create any file');
+
+      // 3. git diff -O/tmp/x
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', `-O${outsideFile}`], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+
+      // 4. git diff -O /tmp/x
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', '-O', outsideFile], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+
+      // 5. git diff --ext-diff
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', '--ext-diff'], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+
+      // 6. git diff --textconv
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', '--textconv'], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+
+      // 7. git diff --no-index
+      await assert.rejects(
+        () => executeSafeCommand('git', ['diff', '--no-index', 'a', 'b'], tempRoot),
+        /prohibited|rejected|not allowed|Security Exception/i
+      );
+    });
+
+    it('hardens npm test: rejects "--", flags, --script-shell, outside paths, and >1 extra arg', async () => {
+      const insideFile = path.join(tempRoot, 'example.test.js');
+      fs.writeFileSync(insideFile, '// test\n');
+      const outsideFile = path.join(os.tmpdir(), 'outside.test.js');
+
+      // Rejects "--"
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', '--'], tempRoot),
+        /prohibited|rejected|flag|--/i
+      );
+
+      // Rejects flags (e.g. --help, -w, --coverage)
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', '--help'], tempRoot),
+        /prohibited|rejected|flag/i
+      );
+
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', '-w'], tempRoot),
+        /prohibited|rejected|flag/i
+      );
+
+      // Rejects --script-shell
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', '--script-shell=/bin/sh'], tempRoot),
+        /prohibited|rejected|script-shell|flag/i
+      );
+
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['run', 'build', '--script-shell=/bin/sh'], tempRoot),
+        /prohibited|rejected|script-shell/i
+      );
+
+      // Rejects relative test path
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', 'example.test.js'], tempRoot),
+        /absolute path|relative/i
+      );
+
+      // Rejects path outside project root
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', outsideFile], tempRoot),
+        /escapes project root|boundary/i
+      );
+
+      // Rejects more than 1 extra argument
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['test', insideFile, insideFile], tempRoot),
+        /at most one extra argument/i
+      );
+    });
+
+    it('hardens node: allows only "node --test <path inside root>" and rejects other node calls', async () => {
+      const insideFile = path.join(tempRoot, 'node-example.test.js');
+      fs.writeFileSync(insideFile, 'import { test } from "node:test"; test("ok", () => {});\n');
+      const outsideFile = path.join(os.tmpdir(), 'outside-node.test.js');
+
+      // Rejects node without arguments or with arbitrary script execution
+      await assert.rejects(
+        () => executeSafeCommand('node', [], tempRoot),
+        /prohibited|rejected|allowed/i
+      );
+
+      await assert.rejects(
+        () => executeSafeCommand('node', ['index.js'], tempRoot),
+        /prohibited|rejected|allowed/i
+      );
+
+      // Rejects node --test with path outside root
+      await assert.rejects(
+        () => executeSafeCommand('node', ['--test', outsideFile], tempRoot),
+        /escapes project root|boundary/i
+      );
+
+      // Rejects node --test with relative path
+      await assert.rejects(
+        () => executeSafeCommand('node', ['--test', 'relative.js'], tempRoot),
+        /absolute path|relative/i
+      );
+
+      // Allows legitimate node --test <path inside root>
+      await assert.doesNotReject(
+        () => executeSafeCommand('node', ['--test', insideFile], tempRoot)
+      );
+    });
+
     it('allows legitimate npm and git commands', async () => {
       // Legitimate read-only git command
       const gitRes = await executeSafeCommand('git', ['status'], tempRoot);
       assert.equal(typeof gitRes.exitCode, 'number');
 
-      // Legitimate npm subcommands: test, run build, run typecheck
-      // They may exit with non-zero in empty tempRoot, but must NOT throw security rejection
+      // Legitimate npm subcommands: test without args, test with inside absolute path, run build, run typecheck
+      const safeTestFile = path.join(tempRoot, 'sample.test.js');
+      fs.writeFileSync(safeTestFile, '// test\n');
+
       await assert.doesNotReject(
-        () => executeSafeCommand('npm', ['test', '--help'], tempRoot)
+        () => executeSafeCommand('npm', ['test'], tempRoot)
+      );
+
+      await assert.doesNotReject(
+        () => executeSafeCommand('npm', ['test', safeTestFile], tempRoot)
+      );
+
+      await assert.doesNotReject(
+        () => executeSafeCommand('npm', ['run', 'build'], tempRoot)
       );
     });
   });
