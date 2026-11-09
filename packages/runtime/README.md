@@ -68,6 +68,36 @@ mount(App, document.getElementById('root')!);
 
 Universal: Node.js (>= 18.0.0 for SSR), browser environments (DOM APIs required for client rendering).
 
+## TypeScript Ambient Declarations for `.samrey` Templates
+
+To enable TypeScript typechecking when importing `.samrey` template files, include `@samrey/runtime/ambient` using either of the following approaches:
+
+### Option A: Triple-slash Reference (Recommended for `env.d.ts` or entry files)
+Add the reference directive at the top of your `env.d.ts`, `vite-env.d.ts`, or source entry file:
+
+```ts
+/// <reference types="@samrey/runtime/ambient" />
+```
+
+### Option B: `tsconfig.json` Types Configuration
+Add `@samrey/runtime/ambient` to your `tsconfig.json` compiler options:
+
+```json
+{
+  "compilerOptions": {
+    "types": ["@samrey/runtime/ambient"]
+  }
+}
+```
+
+### Return Types & Multi-Root Support
+Components compiled from `.samrey` files are typed as:
+```ts
+(props?: any, scope?: any) => HTMLElement | DocumentFragment
+```
+- **Single-root templates** (e.g. `<div class="card">...</div>`) return `HTMLElement`.
+- **Multi-root templates** (e.g. `<header>...</header><main>...</main>`) return a `DocumentFragment`.
+
 ## Security
 
 Automatic HTML attribute sanitization and URL validation for `href`, `src`, and `action` bindings.

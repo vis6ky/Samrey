@@ -29,8 +29,14 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./ambient": "./dist/ambient.d.ts",
-    "./client": "./dist/ambient.d.ts"
+    "./ambient": {
+      "types": "./dist/ambient.d.ts",
+      "default": "./dist/ambient.d.ts"
+    },
+    "./client": {
+      "types": "./dist/ambient.d.ts",
+      "default": "./dist/ambient.d.ts"
+    }
   },
   "files": [
     "dist",

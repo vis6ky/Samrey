@@ -66,7 +66,8 @@ export function generateStarterProject(
         lib: ['ES2022', 'DOM', 'DOM.Iterable'],
         strict: true,
         skipLibCheck: true,
-        esModuleInterop: true
+        esModuleInterop: true,
+        types: ['node', '@samrey/runtime/ambient']
       },
       include: ['src/**/*', 'tests/**/*']
     },

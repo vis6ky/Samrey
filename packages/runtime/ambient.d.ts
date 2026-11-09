@@ -4,6 +4,6 @@
  */
 
 declare module '*.samrey' {
-  const template: (props?: any, scope?: any) => HTMLElement;
+  const template: (props?: any, scope?: any) => HTMLElement | DocumentFragment;
   export default template;
 }

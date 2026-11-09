@@ -32,7 +32,7 @@ describe('SF-06: Ambient TypeScript Declarations for *.samrey Templates', () => 
       fs.writeFileSync(
         testFilePath,
         `import AppTemplate from './TestComponent.samrey';
-const el: HTMLElement = AppTemplate({ title: 'Hello' });
+const el: HTMLElement | DocumentFragment = AppTemplate({ title: 'Hello' });
 `,
         'utf8'
       );
@@ -54,7 +54,7 @@ const el: HTMLElement = AppTemplate({ title: 'Hello' });
       // Reference ambient declaration in the file or compiler options
       const fileWithRef = `/// <reference path="${path.resolve('packages/runtime/dist/ambient.d.ts')}" />
 import AppTemplate from './TestComponent.samrey';
-const el: HTMLElement = AppTemplate({ title: 'Hello' });
+const el: HTMLElement | DocumentFragment = AppTemplate({ title: 'Hello' });
 `;
       fs.writeFileSync(testFilePath, fileWithRef, 'utf8');
 
