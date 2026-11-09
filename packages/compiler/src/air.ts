@@ -29,6 +29,20 @@ export interface AIRDynamicAttrNode {
   securityContext: SecurityContext;
 }
 
+export interface AIRDynamicClassNode {
+  type: 'dynamic-class';
+  className: string;
+  expression: string;
+  path: number[];
+}
+
+export interface AIRDynamicPropertyNode {
+  type: 'dynamic-property';
+  propertyName: string;
+  expression: string;
+  path: number[];
+}
+
 export interface AIRDynamicEventNode {
   type: 'dynamic-event';
   eventName: string;
@@ -44,12 +58,26 @@ export interface AIRControlFlowSlotNode {
   helperCode: string;
 }
 
-export type AIRNode = AIRStaticNode | AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode;
+export type AIRNode =
+  | AIRStaticNode
+  | AIRDynamicTextNode
+  | AIRDynamicAttrNode
+  | AIRDynamicClassNode
+  | AIRDynamicPropertyNode
+  | AIRDynamicEventNode
+  | AIRControlFlowSlotNode;
 
 export interface AIRTemplateUnit {
   id: string;
   staticHtml: string;
-  dynamicSlots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[];
+  dynamicSlots: (
+    | AIRDynamicTextNode
+    | AIRDynamicAttrNode
+    | AIRDynamicClassNode
+    | AIRDynamicPropertyNode
+    | AIRDynamicEventNode
+    | AIRControlFlowSlotNode
+  )[];
 }
 
 export interface AIRCompilationResult {

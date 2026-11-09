@@ -472,6 +472,8 @@ export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
     'AIRStaticNode',
     'AIRDynamicTextNode',
     'AIRDynamicAttrNode',
+    'AIRDynamicClassNode',
+    'AIRDynamicPropertyNode',
     'AIRDynamicEventNode',
     'AIRControlFlowSlotNode',
     'AIRNode',

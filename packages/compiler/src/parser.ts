@@ -21,6 +21,8 @@ import {
   AIRTemplateUnit,
   AIRDynamicTextNode,
   AIRDynamicAttrNode,
+  AIRDynamicClassNode,
+  AIRDynamicPropertyNode,
   AIRDynamicEventNode,
   AIRControlFlowSlotNode
 } from './air.js';
@@ -591,6 +593,24 @@ export class TemplateParser {
     const name = this.source.slice(nameStart, this.cursor);
     if (!name) return null;
 
+    if (name === 'class:' || (name.startsWith('class:') && name.length === 6)) {
+      this.recordDiagnostic(
+        'Invalid class directive syntax "class:": missing class name after colon',
+        startPos,
+        'SAMREY-105',
+        'A class directive requires a class name after "class:", for example: class:active={isActive}.',
+        'Specify a class name, e.g. class:active={...}'
+      );
+    } else if (name === '.' || (name.startsWith('.') && name.length === 1)) {
+      this.recordDiagnostic(
+        'Invalid property directive syntax ".": missing property name after dot',
+        startPos,
+        'SAMREY-105',
+        'A property directive requires a property name after ".", for example: .value={inputValue}.',
+        'Specify a property name, e.g. .value={...}'
+      );
+    }
+
     const isEvent = name.charCodeAt(0) === 64 || (name.length > 2 && name.startsWith('on') && name.charCodeAt(2) >= 65 && name.charCodeAt(2) <= 90);
     const eventName = isEvent
       ? (name.charCodeAt(0) === 64 ? name.slice(1) : name.slice(2).toLowerCase())
@@ -823,7 +843,14 @@ export function buildAIRFromAST(ast: ASTRootNode): {
       'Multi-root template detected: Consider wrapping sibling root elements in a single container element for consistent DOM operations.'
     );
   }
-  const slots: (AIRDynamicTextNode | AIRDynamicAttrNode | AIRDynamicEventNode | AIRControlFlowSlotNode)[] = [];
+  const slots: (
+    | AIRDynamicTextNode
+    | AIRDynamicAttrNode
+    | AIRDynamicClassNode
+    | AIRDynamicPropertyNode
+    | AIRDynamicEventNode
+    | AIRControlFlowSlotNode
+  )[] = [];
 
   function normalizeNodes(nodes: ASTNode[]): ASTNode[] {
     const normalized: ASTNode[] = [];
@@ -911,6 +938,28 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               path: nodePath
             };
             slots.push(eventSlot);
+          } else if (attr.name.startsWith('class:') && attr.name.length > 6) {
+            const className = attr.name.slice(6);
+            if (attr.isDynamic && attr.expression) {
+              const classSlot: AIRDynamicClassNode = {
+                type: 'dynamic-class',
+                className,
+                expression: attr.expression,
+                path: nodePath
+              };
+              slots.push(classSlot);
+            }
+          } else if (attr.name.startsWith('.') && attr.name.length > 1) {
+            const propertyName = attr.name.slice(1);
+            if (attr.isDynamic && attr.expression) {
+              const propSlot: AIRDynamicPropertyNode = {
+                type: 'dynamic-property',
+                propertyName,
+                expression: attr.expression,
+                path: nodePath
+              };
+              slots.push(propSlot);
+            }
           } else if (attr.isDynamic && attr.expression) {
             // Compile-time Constant Expression Folding for static attributes
             const fold = evaluateConstantExpression(attr.expression);
@@ -1039,6 +1088,10 @@ export function buildAIRFromAST(ast: ASTRootNode): {
       bindingsCode.push(`bindText(${target}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-attr') {
       bindingsCode.push(`bindAttr(${target}, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
+    } else if (slot.type === 'dynamic-class') {
+      bindingsCode.push(`bindClass(${target}, ${JSON.stringify(slot.className)}, () => (${slot.expression}));`);
+    } else if (slot.type === 'dynamic-property') {
+      bindingsCode.push(`bindProperty(${target}, ${JSON.stringify(slot.propertyName)}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-event') {
       bindingsCode.push(`on(${target}, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
     } else if (slot.type === 'control-flow-slot') {
