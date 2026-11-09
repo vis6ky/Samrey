@@ -940,26 +940,28 @@ export function buildAIRFromAST(ast: ASTRootNode): {
             slots.push(eventSlot);
           } else if (attr.name.startsWith('class:') && attr.name.length > 6) {
             const className = attr.name.slice(6);
-            if (attr.isDynamic && attr.expression) {
-              const classSlot: AIRDynamicClassNode = {
-                type: 'dynamic-class',
-                className,
-                expression: attr.expression,
-                path: nodePath
-              };
-              slots.push(classSlot);
-            }
+            const expr = attr.isDynamic && attr.expression
+              ? attr.expression
+              : (attr.value === 'true' || attr.value === '' || attr.value === null ? 'true' : attr.value === 'false' ? 'false' : JSON.stringify(attr.value));
+            const classSlot: AIRDynamicClassNode = {
+              type: 'dynamic-class',
+              className,
+              expression: expr,
+              path: nodePath
+            };
+            slots.push(classSlot);
           } else if (attr.name.startsWith('.') && attr.name.length > 1) {
             const propertyName = attr.name.slice(1);
-            if (attr.isDynamic && attr.expression) {
-              const propSlot: AIRDynamicPropertyNode = {
-                type: 'dynamic-property',
-                propertyName,
-                expression: attr.expression,
-                path: nodePath
-              };
-              slots.push(propSlot);
-            }
+            const expr = attr.isDynamic && attr.expression
+              ? attr.expression
+              : JSON.stringify(attr.value ?? '');
+            const propSlot: AIRDynamicPropertyNode = {
+              type: 'dynamic-property',
+              propertyName,
+              expression: expr,
+              path: nodePath
+            };
+            slots.push(propSlot);
           } else if (attr.isDynamic && attr.expression) {
             // Compile-time Constant Expression Folding for static attributes
             const fold = evaluateConstantExpression(attr.expression);

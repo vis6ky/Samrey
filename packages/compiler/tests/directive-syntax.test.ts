@@ -49,6 +49,16 @@ describe('Item 6: Directive Syntax Support (class:name={x} and .property={x})', 
       assert.ok(result.generatedCode.includes('bindClass(root, "selected", () => (isSelected.value))'));
       assert.ok(result.generatedCode.includes('bindClass(root, "is-loading", () => (loading.value))'));
     });
+
+    it('compiles static quoted and boolean class: directives without emitting raw class: attribute', () => {
+      const source = '<button class="btn" class:active="true" class:disabled></button>';
+      const result = compileTemplate(source);
+
+      assert.ok(!result.templates[0].staticHtml.includes('class:active'));
+      assert.ok(!result.templates[0].staticHtml.includes('class:disabled'));
+      assert.ok(result.generatedCode.includes('bindClass(root, "active", () => (true))'));
+      assert.ok(result.generatedCode.includes('bindClass(root, "disabled", () => (true))'));
+    });
   });
 
   describe('b. Compiler code generation for .property={x}', () => {
@@ -88,6 +98,14 @@ describe('Item 6: Directive Syntax Support (class:name={x} and .property={x})', 
 
       assert.ok(result.generatedCode.includes('bindProperty(root, "checked", () => (isChecked.value))'));
       assert.ok(result.generatedCode.includes('bindProperty(root, "disabled", () => (isDisabled.value))'));
+    });
+
+    it('compiles static quoted .property directives without emitting raw .property attribute', () => {
+      const source = '<input type="text" .value="fixed text" />';
+      const result = compileTemplate(source);
+
+      assert.ok(!result.templates[0].staticHtml.includes('.value'));
+      assert.ok(result.generatedCode.includes('bindProperty(root, "value", () => ("fixed text"))'));
     });
   });
 
