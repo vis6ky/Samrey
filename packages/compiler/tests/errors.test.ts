@@ -78,6 +78,28 @@ describe('@samrey/compiler - Structured Error Code System & Source Framing', () 
     assert.ok(err.message.includes('Unterminated attribute'));
   });
 
+  it('records SAMREY-106 for unclosed HTML comments at EOF', () => {
+    const source = `<div><!-- unclosed comment block`;
+    const parser = new TemplateParser(source);
+    const { diagnostics, errors } = parser.parse();
+
+    assert.ok(diagnostics.some((d) => d.includes('SAMREY-106')));
+    const err = errors.find((e) => e.code === 'SAMREY-106');
+    assert.ok(err !== undefined);
+    assert.ok(err.message.includes('Unclosed HTML comment'));
+  });
+
+  it('records SAMREY-107 for duplicate attributes on an element', () => {
+    const source = `<div class="box" id="item-1" id="item-2">Hello</div>`;
+    const parser = new TemplateParser(source);
+    const { diagnostics, errors } = parser.parse();
+
+    assert.ok(diagnostics.some((d) => d.includes('SAMREY-107')));
+    const err = errors.find((e) => e.code === 'SAMREY-107');
+    assert.ok(err !== undefined);
+    assert.ok(err.message.includes('Duplicate attribute "id"'));
+  });
+
   it('formats human-readable diagnostic messages with code, file, line, column, frame, explanation and suggestion', () => {
     const err = new SamreyCompilerError({
       code: 'SAMREY-102',

@@ -270,13 +270,20 @@ export class TemplateParser {
   }
 
   private skipComment(): void {
+    const commentStart = this.getPosition();
     this.advance(4); // skip <!--
     const endIdx = this.source.indexOf('-->', this.cursor);
     if (endIdx !== -1) {
       this.advance(endIdx - this.cursor + 3);
     } else {
       this.advance(this.length - this.cursor);
-      this.recordDiagnostic('Unclosed HTML comment at EOF');
+      this.recordDiagnostic(
+        'Unclosed HTML comment at EOF',
+        commentStart,
+        'SAMREY-106',
+        'An HTML comment "<!--" was opened but reached the end of the file without "-->".',
+        'Add "-->" to close the comment block.'
+      );
     }
   }
 
@@ -321,6 +328,7 @@ export class TemplateParser {
 
     // Parse attributes
     const attributes: ASTAttributeNode[] = [];
+    const seenAttrs = new Set<string>();
     while (this.cursor < this.length) {
       this.skipWhitespace();
       const nextCode = this.peekCode();
@@ -330,7 +338,18 @@ export class TemplateParser {
 
       const attr = this.parseAttribute();
       if (attr) {
-        attributes.push(attr);
+        if (seenAttrs.has(attr.name)) {
+          this.recordDiagnostic(
+            `Duplicate attribute "${attr.name}" on <${tagName}>`,
+            attr.loc.start,
+            'SAMREY-107',
+            `The attribute "${attr.name}" is defined multiple times on <${tagName}>.`,
+            `Remove or consolidate duplicate "${attr.name}" attribute declarations.`
+          );
+        } else {
+          seenAttrs.add(attr.name);
+          attributes.push(attr);
+        }
       } else {
         this.advance(1);
       }
