@@ -28,6 +28,19 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.equal(plugin.transform(realTs, 'src/App.ts'), null);
   });
 
+  it('transforms .samrey files with query parameters and hash fragments (e.g. HMR or asset queries)', () => {
+    const plugin = samreyVitePlugin();
+    const hmrTransformed = plugin.transform('<div>HMR</div>', '/src/App.samrey?t=1731145600');
+    assert.ok(hmrTransformed !== null, 'Must transform files with ?t=... timestamp query');
+    assert.ok(hmrTransformed.code.includes('/*#__PURE__*/ template('));
+
+    const queryTransformed = plugin.transform('<div>Worker</div>', '/src/Worker.samrey?worker&v=123');
+    assert.ok(queryTransformed !== null, 'Must transform files with ?worker query');
+
+    const hashTransformed = plugin.transform('<div>Hash</div>', '/src/Component.samrey#chunk1');
+    assert.ok(hashTransformed !== null, 'Must transform files with #hash');
+  });
+
   it('audits template for security and a11y non-conformances', () => {
     const badCode = '<img src="pic.jpg"><script>alert(1)</script>';
     const report = auditSource(badCode, 'Header.tsx');

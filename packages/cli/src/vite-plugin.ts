@@ -73,25 +73,26 @@ export function samreyVitePlugin(options: SamreyPluginOptions = {}) {
   return {
     name: 'vite-plugin-samrey',
     transform(code: string, id: string) {
-      if (!id.endsWith('.samrey')) {
+      const cleanId = id.split(/[?#]/)[0];
+      if (!cleanId.endsWith('.samrey')) {
         return null;
       }
 
       for (const pattern of allExclude) {
-        if (pattern.test(id)) {
+        if (pattern.test(cleanId) || pattern.test(id)) {
           return null;
         }
       }
 
       if (userInclude && userInclude.length > 0) {
-        const matchesInclude = userInclude.some((reg) => reg.test(id));
+        const matchesInclude = userInclude.some((reg) => reg.test(cleanId) || reg.test(id));
         if (!matchesInclude) {
           return null;
         }
       }
 
       try {
-        const result = compileTemplate(code, { filename: id });
+        const result = compileTemplate(code, { filename: cleanId });
         return {
           code: result.generatedCode,
           map: null
