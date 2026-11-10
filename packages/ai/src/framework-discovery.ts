@@ -93,7 +93,7 @@ export function discoverSamreyProject(projectRoot = process.cwd()): SamreyProjec
       // Check if root itself is a Samrey package or monorepo
       if (pkg.name?.startsWith('@samrey/')) {
         isSamreyProject = true;
-        frameworkVersion = pkg.version || '2.0.0';
+        frameworkVersion = pkg.version || '2.1.0';
       } else if (installedPackages.length > 0) {
         isSamreyProject = true;
       }
@@ -111,7 +111,7 @@ export function discoverSamreyProject(projectRoot = process.cwd()): SamreyProjec
                 if (subPkg.name && !installedPackages.some((p) => p.name === subPkg.name)) {
                   installedPackages.push({
                     name: subPkg.name,
-                    version: subPkg.version || '2.0.0',
+                    version: subPkg.version || '2.1.0',
                     type: 'workspace'
                   });
                 }
@@ -206,7 +206,7 @@ export function discoverSamreyProject(projectRoot = process.cwd()): SamreyProjec
     projectName,
     projectVersion,
     isSamreyProject,
-    frameworkVersion: frameworkVersion === 'unknown' ? '2.0.0' : frameworkVersion,
+    frameworkVersion: frameworkVersion === 'unknown' ? '2.1.0' : frameworkVersion,
     installedPackages,
     features,
     configFiles,

@@ -72,7 +72,7 @@ describe('Item 6: CLI Binary Bundle Missing & Build Instruction', () => {
       stdio: ['ignore', 'pipe', 'pipe']
     });
     assert.equal(versionChild.status, 0);
-    assert.ok((versionChild.stdout || '').includes('samrey v2.0.0'));
+    assert.ok((versionChild.stdout || '').includes('samrey v2.1.0'));
 
     const helpChild = spawnSync(process.execPath, [binScript, '--help'], {
       encoding: 'utf-8',

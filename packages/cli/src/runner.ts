@@ -14,7 +14,7 @@ import { runAnalyzeCommand } from './commands/analyze.js';
 import { runGenerateCommand, GenerateArtifactType } from './commands/generate.js';
 import { CommandResult } from './commands/create.js';
 
-export const CLI_VERSION = '2.0.0';
+export const CLI_VERSION = '2.1.0';
 
 export const HELP_TEXT = `
 Samrey Framework CLI v${CLI_VERSION}

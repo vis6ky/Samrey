@@ -1,6 +1,6 @@
 {
   "name": "@samrey/cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Command-line tool, Vite plugin integration, and static security/a11y auditor for Samrey applications.",
   "license": "Apache-2.0",
   "repository": {
@@ -51,9 +51,9 @@
     "samrey": "./bin/samrey.js"
   },
   "dependencies": {
-    "@samrey/ai": "^2.0.0",
-    "@samrey/compiler": "^2.0.0",
-    "@samrey/mcp-server": "^2.0.0"
+    "@samrey/ai": "^2.1.0",
+    "@samrey/compiler": "^2.1.0",
+    "@samrey/mcp-server": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

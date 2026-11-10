@@ -7,7 +7,7 @@ authors:
     affiliation: "Samrey Framework"
   - name: "Samrey Framework Contributors"
     website: "https://github.com/vis6ky/Samrey"
-version: "2.0.0"
+version: "2.1.0"
 date-released: "2026-11-04"
 license: "Apache-2.0"
 repository-code: "https://github.com/vis6ky/Samrey"

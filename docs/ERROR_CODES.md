@@ -127,6 +127,21 @@ Samrey features a centralized, deterministic error model with structured codes (
 - **Explanation**: The same attribute name is declared multiple times on a single element.
 - **Suggestion**: Consolidate duplicate attributes into a single dynamic binding or class expression.
 
+#### `SAMREY-109` / `AETH-109`: Duplicate Template Reference
+- **Message**: `[SAMREY-109] Duplicate template ref "<name>" on <TagName>`
+- **Explanation**: A template ref attribute was defined multiple times with the same identifier within the template scope.
+- **Suggestion**: Ensure all ref names within a template are unique.
+
+#### `SAMREY-110` / `AETH-110`: Invalid Template Reference Identifier
+- **Message**: `[SAMREY-110] Invalid template ref identifier "<name>" on <TagName>`
+- **Explanation**: A template ref attribute value is not a valid JavaScript identifier.
+- **Suggestion**: Reference identifiers must match `/^[a-zA-Z_$][a-zA-Z0-9_$]*$/` (no spaces, hyphens, or starting numbers).
+
+#### `SAMREY-111` / `AETH-111`: Unsupported Template Reference Placement
+- **Message**: `[SAMREY-111] Unsupported template ref on <TagName>`
+- **Explanation**: A template ref attribute was placed on an unsupported structure such as a custom component, control flow tag (`<Show>`, `<For>`), or nested template.
+- **Suggestion**: Place ref attributes directly on standard HTML elements within the template.
+
 ---
 
 ### Security & Accessibility (`AETH-201` – `AETH-299`)

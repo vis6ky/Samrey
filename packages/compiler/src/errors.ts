@@ -20,6 +20,9 @@ export type SamreyErrorCode =
   | 'SAMREY-106' // Unclosed Comment
   | 'SAMREY-107' // Duplicate Attribute
   | 'SAMREY-108' // Unsupported Template-Level Control Flow or Custom Component Tag
+  | 'SAMREY-109' // Duplicate Template Reference
+  | 'SAMREY-110' // Invalid Template Reference Identifier
+  | 'SAMREY-111' // Unsupported Template Reference Placement
   | 'SAMREY-201' // Security Violation: Dangerous Scheme / Insecure Payload
   | 'SAMREY-202' // Accessibility Violation: Missing required accessibility attributes
   | 'SAMREY-301' // Reactivity: Cyclic Dependency / Infinite Effect Loop
@@ -100,6 +103,24 @@ export const ERROR_REGISTRY: Record<string, ErrorDefinition> = {
     title: 'Unsupported Template-Level Control Flow or Custom Component Tag',
     defaultExplanation: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.',
     defaultSuggestion: 'Template-level control flow is not supported. Compose it with Show()/For() in TypeScript.'
+  },
+  'SAMREY-109': {
+    code: 'SAMREY-109',
+    title: 'Duplicate Template Reference',
+    defaultExplanation: 'A template ref attribute was defined multiple times with the same identifier in the template.',
+    defaultSuggestion: 'Use unique ref names for each referenced element in the template.'
+  },
+  'SAMREY-110': {
+    code: 'SAMREY-110',
+    title: 'Invalid Template Reference Identifier',
+    defaultExplanation: 'A template ref attribute value is not a valid JavaScript identifier.',
+    defaultSuggestion: 'Reference names must start with a letter, underscore, or dollar sign and contain only alphanumeric characters, underscores, or dollar signs.'
+  },
+  'SAMREY-111': {
+    code: 'SAMREY-111',
+    title: 'Unsupported Template Reference Placement',
+    defaultExplanation: 'A template ref attribute was placed on an unsupported structure such as a custom component, control flow tag, or nested template.',
+    defaultSuggestion: 'Place ref attributes directly on standard HTML elements within the template.'
   },
   'SAMREY-201': {
     code: 'SAMREY-201',

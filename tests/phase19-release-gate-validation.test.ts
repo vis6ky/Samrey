@@ -47,7 +47,7 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
         assert.equal(manifest.name, `@samrey/${pkg}`);
-        assert.equal(manifest.version, '2.0.0');
+        assert.equal(manifest.version, '2.1.0');
         assert.equal(manifest.license, 'Apache-2.0');
         assert.ok(manifest.description && manifest.description.length > 5, `Missing description in @samrey/${pkg}`);
         assert.ok(manifest.exports, `Missing exports in @samrey/${pkg}`);
@@ -81,7 +81,7 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
       // Create consumer package.json
       const consumerManifest = {
         name: 'samrey-release-consumer',
-        version: '2.0.0',
+        version: '2.1.0',
         private: true,
         type: 'module',
         dependencies: {} as Record<string, string>,
@@ -181,12 +181,12 @@ describe('Samrey Phase 19 — Release Gate, Production Deployment & NPM Distribu
   });
 
   describe('5 & 6. Version Consistency & Zero Foreign Framework Gate', () => {
-    it('verifies exact version 2.0.0 across monorepo and CLI', async () => {
+    it('verifies exact version 2.1.0 across monorepo and CLI', async () => {
       const cliMod = await import('../packages/cli/src/index.js');
-      assert.equal(cliMod.CLI_VERSION, '2.0.0');
+      assert.equal(cliMod.CLI_VERSION, '2.1.0');
 
       const rootManifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-      assert.equal(rootManifest.version, '2.0.0');
+      assert.equal(rootManifest.version, '2.1.0');
     });
 
     it('verifies zero foreign frontend frameworks in source code and package dependencies', () => {

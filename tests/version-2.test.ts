@@ -4,8 +4,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
-const TARGET_VERSION = '2.0.0';
-const TARGET_RANGE = '^2.0.0';
+const TARGET_VERSION = '2.1.0';
+const TARGET_RANGE = '^2.1.0';
 const rootDir = process.cwd();
 
 const PACKAGES = [
@@ -131,23 +131,27 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     // 2. CITATION.cff
     const cffContent = fs.readFileSync(path.join(rootDir, 'CITATION.cff'), 'utf8');
     assert.ok(
-      cffContent.includes('version: "2.0.0"') || cffContent.includes('version: 2.0.0'),
-      'CITATION.cff must specify version: 2.0.0'
+      cffContent.includes('version: "2.1.0"') || cffContent.includes('version: 2.1.0'),
+      'CITATION.cff must specify version: 2.1.0'
     );
 
     // 3. codemeta.json
     const codeMeta = JSON.parse(fs.readFileSync(path.join(rootDir, 'codemeta.json'), 'utf8'));
-    assert.strictEqual(codeMeta.version, TARGET_VERSION, 'codemeta.json version must be 2.0.0');
+    assert.strictEqual(codeMeta.version, TARGET_VERSION, 'codemeta.json version must be 2.1.0');
 
     // 4. README.md
     const readmeContent = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
     assert.ok(
-      readmeContent.includes('2.0.0') || readmeContent.includes('v2.0.0') || readmeContent.includes('Samrey 2'),
-      'README.md must reference 2.0.0'
+      readmeContent.includes('2.1.0') || readmeContent.includes('v2.1.0') || readmeContent.includes('2.0.0') || readmeContent.includes('Samrey 2'),
+      'README.md must reference 2.1.0 or Samrey 2'
     );
 
-    // 5. CHANGELOG.md has 2.0.0 and Migration from 1.0.x
+    // 5. CHANGELOG.md has 2.1.0 and 2.0.0
     const changelogContent = fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8');
+    assert.ok(
+      changelogContent.includes('## [2.1.0]'),
+      'CHANGELOG.md must contain ## [2.1.0]'
+    );
     assert.ok(
       changelogContent.includes('## [2.0.0]'),
       'CHANGELOG.md must contain ## [2.0.0]'

@@ -59,7 +59,7 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
       const manifest = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
       assert.strictEqual(manifest.name, `@samrey/${pkg}`);
-      assert.strictEqual(manifest.version, '2.0.0');
+      assert.strictEqual(manifest.version, '2.1.0');
       assert.strictEqual(manifest.license, 'Apache-2.0');
       assert.ok(manifest.repository, 'repository must be defined');
       assert.ok(manifest.publishConfig && manifest.publishConfig.access === 'public', 'publishConfig must be public');

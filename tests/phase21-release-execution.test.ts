@@ -31,11 +31,11 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
   });
 
   it('2. Package Manifest Hardening Verification', () => {
-    const { packages, allValid } = validateAllPackages('2.0.0');
+    const { packages, allValid } = validateAllPackages('2.1.0');
     assert.strictEqual(packages.length, 13, 'Must audit 13 packages');
     assert.ok(allValid, 'All 13 packages must have hardened manifests');
     for (const p of packages) {
-      assert.strictEqual(p.version, '2.0.0', `${p.packageName} version must be 2.0.0`);
+      assert.strictEqual(p.version, '2.1.0', `${p.packageName} version must be 2.1.0`);
       assert.strictEqual(p.license, 'Apache-2.0', `${p.packageName} license must be Apache-2.0`);
       assert.ok(p.hasPublishConfig, `${p.packageName} must specify public publishConfig`);
       assert.ok(p.hasFilesWhitelist, `${p.packageName} must have clean files whitelist`);
@@ -58,9 +58,9 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
   });
 
   it('5. Release Version Synchronization', () => {
-    const versionResult = validateVersionConsistency('2.0.0');
-    assert.strictEqual(versionResult.rootVersion, '2.0.0', 'Root version must match 2.0.0');
-    assert.ok(versionResult.allMatch, 'All package versions must match 2.0.0');
+    const versionResult = validateVersionConsistency('2.1.0');
+    assert.strictEqual(versionResult.rootVersion, '2.1.0', 'Root version must match 2.1.0');
+    assert.ok(versionResult.allMatch, 'All package versions must match 2.1.0');
   });
 
   it('6. Legal & License Header Audit', () => {

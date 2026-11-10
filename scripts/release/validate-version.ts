@@ -30,7 +30,7 @@ const PACKAGES = [
   'cli'
 ];
 
-export function validateVersionConsistency(expectedVersion = '2.0.0'): VersionValidationResult {
+export function validateVersionConsistency(expectedVersion = '2.1.0'): VersionValidationResult {
   const rootManifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
   const rootVersion = rootManifest.version;
   const packageVersions: Record<string, string> = {};

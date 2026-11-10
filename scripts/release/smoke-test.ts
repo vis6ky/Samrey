@@ -34,7 +34,7 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/samrey-public-consume
 
   const consumerPkg = {
     name: 'samrey-clean-room-consumer',
-    version: '2.0.0',
+    version: '2.1.0',
     type: 'module',
     dependencies: {} as Record<string, string>,
     overrides: {} as Record<string, string>

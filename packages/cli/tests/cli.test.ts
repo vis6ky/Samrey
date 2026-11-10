@@ -111,7 +111,7 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
 
     const versionResult = await runCLI(['--version']);
     assert.equal(versionResult.exitCode, 0);
-    assert.ok(versionResult.message.includes('samrey v2.0.0'));
+    assert.ok(versionResult.message.includes('samrey v2.1.0'));
   });
 
   it('executes "samrey create" in dry-run mode with deterministic output', async () => {

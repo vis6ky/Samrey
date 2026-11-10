@@ -26,7 +26,7 @@ describe('Phase 24 — Clean-Room Consumer Verification Gate', () => {
 
     const consumerManifest = {
       name: 'samrey-v2-consumer',
-      version: '2.0.0',
+      version: '2.1.0',
       private: true,
       type: 'module',
       dependencies: {} as Record<string, string>,

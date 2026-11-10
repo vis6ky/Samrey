@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-11-10
+
+### Minor Release — Template References (`root.refs` & `root.ref()`)
+
+Version 2.1.0 introduces fine-grained Template References, enabling direct access to named DOM elements inside cloned templates without runtime `querySelector` overhead:
+
+1. **Template Reference Syntax (`ref="..."`)**:
+   - Developers declare references inside HTML string templates via `ref="identifier"` attributes (e.g. `<form ref="form"><input ref="email" /><button ref="submit">Login</button></form>`).
+2. **Four Universal Access Patterns**:
+   - Direct reference collection: `const { form, email, submit } = root.refs;`
+   - Destructuring refs object: `const { refs } = root; bindEvent(refs.submit, 'click', login);`
+   - Direct property access: `root.refs.email; root.refs.submit;`
+   - Dynamic reference lookup: `root.ref('email');`
+3. **High-Performance O(1) Path Indexing**:
+   - Element paths are resolved once at template initialization time. Clones resolve elements through native child index paths with zero repeated DOM queries or selector parsing overhead (>1.6 billion property access ops/sec).
+4. **Compile-Time Static TypeScript Inference**:
+   - Static template literal parsing infers exact DOM element types (e.g. `root.refs.email` -> `HTMLInputElement`, `root.refs.submit` -> `HTMLButtonElement`).
+5. **AOT Compiler & Static Diagnostics**:
+   - Added diagnostics `SAMREY-109` (duplicate template reference), `SAMREY-110` (invalid reference identifier), and `SAMREY-111` (unsupported reference placement on custom components or control flow tags).
+6. **Instance Isolation & Reactive Lifecycle Cleanup**:
+   - Clones have independent registries and DOM nodes. Metadata is automatically released when reactive scopes dispose or via explicit `root.disposeRefs()`.
+
+---
+
 ## [2.0.0] - 2026-11-04
 
 ### Migration from 1.0.x

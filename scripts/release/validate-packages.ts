@@ -34,7 +34,7 @@ const PACKAGES = [
   'cli'
 ];
 
-export function validateAllPackages(expectedVersion = '2.0.0'): { packages: PackageValidationResult[]; allValid: boolean } {
+export function validateAllPackages(expectedVersion = '2.1.0'): { packages: PackageValidationResult[]; allValid: boolean } {
   const results: PackageValidationResult[] = [];
   let allValid = true;
 

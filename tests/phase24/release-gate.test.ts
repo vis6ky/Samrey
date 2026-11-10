@@ -20,7 +20,7 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
   });
 
   it('Gate 2: Package Manifest Hardening & Metadata Parity', () => {
-    const { packages, allValid } = validateAllPackages('2.0.0');
+    const { packages, allValid } = validateAllPackages('2.1.0');
     assert.strictEqual(packages.length, 13, 'Must validate all 13 packages');
     assert.ok(allValid, 'All package manifests must be hardened');
   });
@@ -37,9 +37,9 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
     assert.ok(allValid, 'Public API contract must match 100%');
   });
 
-  it('Gate 5: Version Synchronization Pinned to 2.0.0', () => {
-    const versionRes = validateVersionConsistency('2.0.0');
-    assert.ok(versionRes.allMatch, 'Root and all 11 packages must be 2.0.0');
+  it('Gate 5: Version Synchronization Pinned to 2.1.0', () => {
+    const versionRes = validateVersionConsistency('2.1.0');
+    assert.ok(versionRes.allMatch, 'Root and all 11 packages must be 2.1.0');
   });
 
   it('Gate 6: Release Publication Dry-Run Simulation', () => {

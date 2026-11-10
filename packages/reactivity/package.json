@@ -1,6 +1,6 @@
 {
   "name": "@samrey/reactivity",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Fine-grained push-pull topological signal engine with versioned transaction clocks and Owner cleanup hierarchy.",
   "license": "Apache-2.0",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "@samrey/ai",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Universal AI Development Integration, Knowledge Engine & Validation Suite for Samrey Framework",
   "license": "Apache-2.0",
   "repository": {
@@ -49,10 +49,10 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@samrey/compiler": "^2.0.0",
-    "@samrey/reactivity": "^2.0.0",
-    "@samrey/runtime": "^2.0.0",
-    "@samrey/security": "^2.0.0"
+    "@samrey/compiler": "^2.1.0",
+    "@samrey/reactivity": "^2.1.0",
+    "@samrey/runtime": "^2.1.0",
+    "@samrey/security": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

@@ -13,11 +13,11 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 
 describe('Phase 24 — CLI Tooling Final Gate', () => {
-  it('1. Verifies CLI version matches v2.0.0', async () => {
-    assert.strictEqual(CLI_VERSION, '2.0.0');
+  it('1. Verifies CLI version matches v2.1.0', async () => {
+    assert.strictEqual(CLI_VERSION, '2.1.0');
     const versionRes = await runCLI(['--version']);
     assert.strictEqual(versionRes.success, true);
-    assert.ok(versionRes.message?.includes('2.0.0'));
+    assert.ok(versionRes.message?.includes('2.1.0'));
   });
 
   it('2. Verifies CLI help command output', async () => {
@@ -38,9 +38,9 @@ describe('Phase 24 — CLI Tooling Final Gate', () => {
       assert.ok(files['src/App.ts'] || files['src/entry-client.ts'], `Template ${tmpl} missing App component`);
 
       const manifest = JSON.parse(files['package.json']);
-      assert.strictEqual(manifest.version, '2.0.0');
-      assert.strictEqual(manifest.dependencies['@samrey/reactivity'], '^2.0.0');
-      assert.strictEqual(manifest.dependencies['@samrey/runtime'], '^2.0.0');
+      assert.strictEqual(manifest.version, '2.1.0');
+      assert.strictEqual(manifest.dependencies['@samrey/reactivity'], '^2.1.0');
+      assert.strictEqual(manifest.dependencies['@samrey/runtime'], '^2.1.0');
     }
   });
 

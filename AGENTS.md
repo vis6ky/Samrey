@@ -59,18 +59,19 @@ batch(() => {
 import { signal } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
-// Hoisted static template
-const _tmpl = template('<button class="btn">Count: <span class="num"></span></button>');
+// Hoisted static template with Template References (Samrey 2.1.0)
+const _tmpl = template('<button ref="btn" class="btn">Count: <span ref="num" class="num"></span></button>');
 
 export function Counter(props: { initial?: number }) {
   const count = signal(props.initial ?? 0);
-  const root = _tmpl() as HTMLButtonElement;
+  const root = _tmpl.clone();
+  const { btn, num } = root.refs;
 
   // Surgical text node update — only this span updates when count changes
-  bindText(root.querySelector('.num')!, () => count.value.toString());
+  bindText(num, () => count.value.toString());
 
   // Event handler
-  on(root, 'click', () => count.update(n => n + 1));
+  on(btn, 'click', () => count.update(n => n + 1));
 
   return root;
 }

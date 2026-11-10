@@ -38,8 +38,27 @@ Statically categorizes attribute or text bindings (HTML, URI, SafeAttr, CSS).
 
 ## `@samrey/runtime`
 
-### `template(htmlString: string): () => Node`
-Returns a factory function that clones the pre-parsed HTML template via `cloneNode(true)`.
+### `template<S extends string>(htmlString: S): TemplateFactory<S>`
+Returns a factory function with a `.clone()` method and fine-grained template references (`root.refs`). Clones pre-parsed HTML via native `cloneNode(true)` with O(1) child path indexing.
+
+- **`factory()` / `factory.clone()`**: Instantiates the template into a `TemplateRoot<S>`.
+- **`root.refs`**: Strongly-typed registry object containing named element references defined via `ref="..."` attributes.
+- **`root.ref(name: string)`**: Dynamic element lookup returning the referenced `HTMLElement` or `undefined` if not found.
+- **`root.disposeRefs()`**: Explicitly releases references to underlying DOM nodes for garbage collection. Automatic cleanup is also registered when called within a reactive scope (`onCleanup`).
+
+#### Example
+```ts
+const view = template(`
+  <form ref="form">
+    <input ref="email" type="email" />
+    <button ref="submit">Login</button>
+  </form>
+`);
+
+const root = view.clone();
+const { form, email, submit } = root.refs;
+bindEvent(submit, 'click', login);
+```
 
 ### `bindText(node: Node, getter: () => unknown): void`
 Surgically updates node `textContent` reactively.

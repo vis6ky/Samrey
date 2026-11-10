@@ -36,7 +36,7 @@ Samrey is an isomorphic web framework designed from first principles to deliver 
 npm install @samrey/reactivity @samrey/runtime @samrey/compiler
 ```
 
-### 2. Hello World Example
+### 2. Hello World Example (with Samrey 2.1.0 Template References)
 
 ```typescript
 import { signal, computed } from '@samrey/reactivity';
@@ -48,19 +48,18 @@ function Counter() {
 
   const tmpl = template(`
     <div class="counter-card">
-      <h2>Count: <span>0</span></h2>
-      <p>Doubled: <span>0</span></p>
-      <button>Increment</button>
+      <h2>Count: <span ref="countVal">0</span></h2>
+      <p>Doubled: <span ref="doubleVal">0</span></p>
+      <button ref="btn">Increment</button>
     </div>
   `);
 
-  const root = tmpl() as HTMLElement;
-  const spans = root.querySelectorAll('span');
-  const button = root.querySelector('button');
+  const root = tmpl.clone();
+  const { countVal, doubleVal, btn } = root.refs;
 
-  if (spans[0]) bindText(spans[0], () => count.value);
-  if (spans[1]) bindText(spans[1], () => double.value);
-  if (button) bindEvent(button, 'click', () => count.value++);
+  bindText(countVal, () => count.value);
+  bindText(doubleVal, () => double.value);
+  bindEvent(btn, 'click', () => count.value++);
 
   return root;
 }

@@ -86,6 +86,7 @@ export class TemplateParser {
   private diagnostics: string[] = [];
   private errors: SamreyCompilerError[] = [];
   private unsupportedTags: Array<{ tag: string; loc: SourceLocation }> = [];
+  private templateRefs: Set<string> = new Set();
 
   constructor(source: string, options?: ParseOptions) {
     this.source = source;
@@ -94,6 +95,7 @@ export class TemplateParser {
   }
 
   public parse(): ParseResult {
+    this.templateRefs.clear();
     const startPos = this.getPosition();
     const children: ASTNode[] = [];
 
@@ -349,6 +351,29 @@ export class TemplateParser {
         } else {
           seenAttrs.add(attr.name);
           attributes.push(attr);
+
+          if (attr.name === 'ref') {
+            const refName = attr.value ?? attr.expression ?? '';
+            if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(refName)) {
+              this.recordDiagnostic(
+                `Invalid template ref identifier "${refName}" on <${tagName}>`,
+                attr.loc.start,
+                'SAMREY-110',
+                `The ref identifier "${refName}" is not a valid JavaScript identifier.`,
+                `Reference identifiers must start with a letter, underscore, or dollar sign and contain only alphanumeric characters, underscores, or dollar signs.`
+              );
+            } else if (this.templateRefs.has(refName)) {
+              this.recordDiagnostic(
+                `Duplicate template ref "${refName}" on <${tagName}>`,
+                attr.loc.start,
+                'SAMREY-109',
+                `A template ref with identifier "${refName}" was already declared in this template.`,
+                `Ensure all ref names within a template are unique.`
+              );
+            } else {
+              this.templateRefs.add(refName);
+            }
+          }
         }
       } else {
         this.advance(1);
@@ -434,6 +459,17 @@ export class TemplateParser {
     const loc: SourceLocation = { start: startPos, end: endPos };
 
     if (isComponent) {
+      for (const attr of attributes) {
+        if (attr.name === 'ref') {
+          this.recordDiagnostic(
+            `Unsupported template ref on <${tagName}>`,
+            attr.loc.start,
+            'SAMREY-111',
+            `Template ref attributes cannot be placed on custom component tags (<${tagName}>).`,
+            `Place the ref attribute on a standard HTML element instead.`
+          );
+        }
+      }
       return {
         type: 'Component',
         name: tagName,
@@ -469,6 +505,14 @@ export class TemplateParser {
       if (attr.name === 'when') {
         hasWhen = true;
         whenExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => false');
+      } else if (attr.name === 'ref') {
+        this.recordDiagnostic(
+          'Unsupported template ref on <Show>',
+          attr.loc.start,
+          'SAMREY-111',
+          'Template ref attributes cannot be placed on control flow components (<Show> or <For>).',
+          'Place the ref attribute on a child HTML element instead.'
+        );
       } else if (attr.name === 'fallback') {
         if (attr.isDynamic && attr.expression) {
           fallbackExpr = attr.expression;
@@ -543,6 +587,14 @@ export class TemplateParser {
         eachExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => []');
       } else if (attr.name === 'key') {
         keyExpr = attr.expression || attr.value || undefined;
+      } else if (attr.name === 'ref') {
+        this.recordDiagnostic(
+          'Unsupported template ref on <For>',
+          attr.loc.start,
+          'SAMREY-111',
+          'Template ref attributes cannot be placed on control flow components (<Show> or <For>).',
+          'Place the ref attribute on a child HTML element instead.'
+        );
       } else if (attr.name === 'fallback') {
         if (attr.isDynamic && attr.expression) {
           fallbackExpr = attr.expression;

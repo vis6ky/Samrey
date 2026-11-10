@@ -53,7 +53,7 @@ describe('Samrey AI Integration Suite (@samrey/ai)', () => {
   it('1. Framework Discovery correctly scans the monorepo root', () => {
     const discovery = discoverSamreyProject(rootDir);
     assert.strictEqual(discovery.isSamreyProject, true);
-    assert.strictEqual(discovery.frameworkVersion, '2.0.0');
+    assert.strictEqual(discovery.frameworkVersion, '2.1.0');
     assert.ok(discovery.installedPackages.length >= 11, `Expected >= 11 packages, got ${discovery.installedPackages.length}`);
     const pkgNames = discovery.installedPackages.map(p => p.name);
     assert.ok(pkgNames.includes('@samrey/reactivity'));
@@ -328,7 +328,7 @@ describe('Samrey MCP Server Suite (@samrey/mcp-server)', () => {
       }
     });
     const versionOutput = JSON.parse((versionRes?.result as any).content[0].text);
-    assert.strictEqual(versionOutput.frameworkVersion, '2.0.0');
+    assert.strictEqual(versionOutput.frameworkVersion, '2.1.0');
 
     // Tool: samrey_search_docs
     const searchRes = await mcpServer.handleMessage({

@@ -90,7 +90,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
         assert.equal(manifest.name, `@samrey/${pkg}`);
-        assert.equal(manifest.version, '2.0.0');
+        assert.equal(manifest.version, '2.1.0');
         assert.equal(manifest.license, 'Apache-2.0');
         assert.ok(manifest.repository, `Missing repository in @samrey/${pkg}`);
         assert.ok(manifest.description, `Missing description in @samrey/${pkg}`);
@@ -223,7 +223,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       assert.equal(typeof generateStarterProject, 'function');
       assert.equal(typeof samreyVitePlugin, 'function');
       assert.equal(typeof runSamreyAudit, 'function');
-      assert.equal(CLI_VERSION, '2.0.0');
+      assert.equal(CLI_VERSION, '2.1.0');
     });
   });
 
@@ -270,7 +270,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       // Create isolated consumer package.json
       const consumerManifest = {
         name: 'samrey-phase20-clean-consumer',
-        version: '2.0.0',
+        version: '2.1.0',
         private: true,
         type: 'module',
         dependencies: {} as Record<string, string>,

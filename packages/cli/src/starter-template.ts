@@ -34,19 +34,19 @@ export function generateStarterProject(
   const packageJson = JSON.stringify(
     {
       name: projectName,
-      version: '2.0.0',
+      version: '2.1.0',
       type: 'module',
       scripts,
       dependencies: {
-        '@samrey/compiler': '^2.0.0',
-        '@samrey/reactivity': '^2.0.0',
-        '@samrey/runtime': '^2.0.0',
-        ...(templateType !== 'minimal' ? { '@samrey/router': '^2.0.0' } : {}),
-        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@samrey/ssr': '^2.0.0' } : {}),
-        '@samrey/devtools': '^2.0.0'
+        '@samrey/compiler': '^2.1.0',
+        '@samrey/reactivity': '^2.1.0',
+        '@samrey/runtime': '^2.1.0',
+        ...(templateType !== 'minimal' ? { '@samrey/router': '^2.1.0' } : {}),
+        ...(templateType === 'ssr' || templateType === 'ssg' ? { '@samrey/ssr': '^2.1.0' } : {}),
+        '@samrey/devtools': '^2.1.0'
       },
       devDependencies: {
-        '@samrey/cli': '^2.0.0',
+        '@samrey/cli': '^2.1.0',
         '@types/node': '^20.0.0',
         tsx: '^4.19.0',
         typescript: '^5.0.0',
