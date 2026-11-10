@@ -42,41 +42,114 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
 | :--- | :--- | :--- | :--- |
 | **1. HTML Text Content** | `<div>{userInput}</div>` | Compiled to `node.textContent = value` | Native browser text node assignment. Never invokes HTML parsers or `innerHTML`. |
 | **2. Safe Attributes** | `<input value={name} />` | Compiled to `node.setAttribute(key, value)` | Direct DOM property/attribute mapping. Zero template string interpolation. |
-| **3. URI / URL Attributes** | `<a href={targetUrl}>`, `<iframe src={url}>` | Compiled with `sanitizeUri(value)` wrapper | Whitelist validation: blocks `javascript:`, `vbscript:`, `data:text/html`, and `data:application/javascript`. Only allows `http:`, `https:`, `mailto:`, `tel:`, and relative paths (`/`, `./`, `../`, `#`). |
-| **4. Inline Styles** | `<div style={customStyles}>` | Structured CSS object compiler | Prohibits dynamic raw strings in `style`. Validates CSS properties against known CSSOM identifiers; blocks `expression()`, `url()`, and CSS injection breakouts. |
-| **5. Rich HTML Injection** | `<SafeHtml content={rawHtml} />` | Disallows arbitrary `innerHTML`. Requires explicit `<SafeHtml>` component backed by Trusted Types policy. | Passes string through Sanitizer API (or audited DOMPurify hook) and returns a `TrustedHTML` token. |
+| **3. URI / URL Attributes** | `<a href={targetUrl}>`, `<img src={url}>` | Compiled with `sanitizeUri(value)` wrapper | Whitelist validation: blocks `javascript:`, `vbscript:`, `data:text/html`, and `data:application/javascript`. Only allows `http:`, `https:`, `mailto:`, `tel:`, protocol-relative `//` (for assets), and relative paths (`/`, `./`, `../`, `#`). |
+| **4. Inline Styles** | `<div style={customStyles}>` | Multi-pass CSS sanitizer | Normalizes CSS comments, decodes backslash escape sequences, strips `expression()`, `behavior:`, `-moz-binding:`, `@import`, and validates `url()` targets. |
+| **5. Rich HTML Injection** | `rawHtml(content)` | Requires Trusted Types policy (`samrey#html`) | Passes string through multi-pass `sanitizeHtmlString()`, stripping scripts, dangerous tags, inline event handlers, and malicious URLs. |
+| **6. Component Templates** | `template("...")` | Requires Trusted Types policy (`samrey#template`) | Passes string through `sanitizeTemplateHtml()`, preserving interactive UI elements (`<button ref="...">`, `<input>`, `<form>`, `<textarea>`, `<svg>`) while eliminating executable tags, `on*` attributes, and dangerous schemes. |
+
+### 2.2 URI Sanitization Policies: Resource Loading vs. Navigational Redirects
+
+Samrey enforces two intentionally distinct URI policies depending on operational context:
+
+1. **Resource Loading Context (`sanitizeUri`)**:
+   - Used for HTML asset-loading attributes (`src`, `poster`, `background`, `srcset`, stylesheet `<link>` hrefs).
+   - Allows protocol-relative URLs (e.g. `//cdn.example.com/bundle.js` or `//images.unsplash.com/photo.jpg`) so media assets inherit the host page's active scheme (`http:` or `https:`) without breaking.
+   - Strictly blocks `javascript:`, `vbscript:`, `blob:`, and non-image `data:` URIs.
+
+2. **Navigational & Redirect Context (`sanitizeRedirectUri`)**:
+   - Used for router transitions, OAuth post-login callbacks, and HTTP server redirects.
+   - Strictly rejects protocol-relative URLs (`//evil.com`, `/\evil.com`, `\\\\evil.com`), backslash path bypasses, and cross-origin domains.
+   - Eliminates Open Redirect vulnerabilities by restricting destinations strictly to verified relative paths (`/dashboard`, `./profile`, `#section`).
+
+### 2.3 CSS Multi-Pass Sanitization Pipeline
+
+The `@samrey/security` CSS sanitizer (`sanitizeCssStyle`) protects style bindings through a 4-stage convergence loop:
+
+1. **Comment Normalization**: Strips `/* ... */` comments that attackers use to split sensitive keywords (e.g. `exp/*comment*/ression`).
+2. **Backslash Escape Decoding**: Normalizes CSS hexadecimal escapes (e.g. `\65` -> `e`, `expr\65ssion` -> `expression`) prior to pattern detection.
+3. **Dangerous Property & At-Rule Neutralization**: Strips IE `expression()`, legacy `behavior:`, Firefox `-moz-binding:`, `@import`, `@charset`, and `@namespace`.
+4. **URL Destination Scrubbing**: Parses all `url(...)` declarations, decodes internal escapes, and rewrites dangerous schemes (`javascript:`, `vbscript:`, non-whitelisted `data:`) to `url("about:blank")`.
+
+### 2.4 HTML URL-Bearing Attributes & Compound `srcset` Coverage
+
+URL sanitization extends comprehensively across all HTML5, SVG, and MathML URL-bearing attributes:
+- **Standard Attributes**: `href`, `src`, `action`, `formaction`, `data`, `poster`, `codebase`, `background`, `cite`, `longdesc`, `profile`, `usemap`, `xlink:href`, `xml:base`, `ping`.
+- **Compound Responsive Images (`srcset`)**: Every candidate URL in comma-separated `srcset` lists is individually parsed, validated against malicious schemes, and rewritten to `about:blank` if non-conforming, preserving screen descriptors (e.g. `2x`, `800w`).
 
 ---
 
 ## 3. Trusted Types Architecture
 
-Samrey provides native first-class integration with the W3C Trusted Types specification. When running in a browser that supports Trusted Types (or when using the polyfill), Samrey creates and manages an internal, private Trusted Type Policy:
+Samrey provides native first-class integration with the W3C Trusted Types specification (`window.trustedTypes`). When running in supporting browsers, Samrey registers two sealed policies:
+
+1. **`samrey#html` (Rich Content Policy)**:
+   - Applied when arbitrary HTML is inserted dynamically via `rawHtml()`.
+   - Runs `sanitizeHtmlString()`, stripping scripts, forms, inputs, buttons, dangerous tags, and all event attributes.
+
+2. **`samrey#template` (Component Template Policy)**:
+   - Applied when component templates are instantiated via `template()`.
+   - Runs `sanitizeTemplateHtml()`, ensuring zero pass-through trust-boundary leaks while preserving interactive UI elements (`<button ref="...">`, `<input>`, `<form>`, `<textarea>`, `<svg>`, `ref` attributes).
+   - Eliminates `<script>`, `<object>`, `<embed>`, `<applet>`, `<base>`, `<meta>`, inline `on*` event handlers, and dangerous URL schemes.
 
 ```typescript
 // packages/security/src/trusted-types.ts
 
-let aetherPolicy: TrustedTypePolicy | null = null;
+let cachedPolicy: SamreyTrustedPolicy | null = null;
+let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
 
-export function getSamreyTrustedPolicy(): TrustedTypePolicy {
-  if (aetherPolicy) return aetherPolicy;
+export function getSamreyTrustedPolicy(): SamreyTrustedPolicy {
+  if (cachedPolicy) return cachedPolicy;
 
-  if (typeof window !== 'undefined' && window.trustedTypes) {
-    aetherPolicy = window.trustedTypes.createPolicy('samrey#html', {
-      createHTML: (input: string) => {
-        // Enforce strict AST-based sanitation
-        return sanitizeHtmlString(input);
-      },
-      createScript: () => {
-        // Zero-eval policy: completely blocks dynamic script creation
-        throw new SecurityError('[Samrey Security] Dynamic script creation is prohibited.');
-      },
-      createScriptURL: (url: string) => {
-        return sanitizeScriptUrl(url);
-      }
-    });
+  const tt = typeof window !== 'undefined' && window.trustedTypes;
+  if (tt) {
+    try {
+      cachedPolicy = tt.createPolicy('samrey#html', {
+        createHTML: (input: string) => sanitizeHtmlString(input),
+        createScript: () => {
+          throw new Error('[Samrey Security] Dynamic script creation is prohibited under zero-eval policy.');
+        },
+        createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+      });
+      return cachedPolicy;
+    } catch {}
   }
-  
-  return aetherPolicy ?? fallbackPassthroughPolicy;
+
+  // Programmatic sealed fallback for browsers without native Trusted Types
+  cachedPolicy = {
+    createHTML: (input: string) => sanitizeHtmlString(input),
+    createScript: () => {
+      throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+    },
+    createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+  };
+  return cachedPolicy;
+}
+
+export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
+  if (cachedTemplatePolicy) return cachedTemplatePolicy;
+
+  const tt = typeof window !== 'undefined' && window.trustedTypes;
+  if (tt) {
+    try {
+      cachedTemplatePolicy = tt.createPolicy('samrey#template', {
+        createHTML: (input: string) => sanitizeTemplateHtml(input),
+        createScript: () => {
+          throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+        },
+        createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+      });
+      return cachedTemplatePolicy;
+    } catch {}
+  }
+
+  cachedTemplatePolicy = {
+    createHTML: (input: string) => sanitizeTemplateHtml(input),
+    createScript: () => {
+      throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+    },
+    createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
+  };
+  return cachedTemplatePolicy;
 }
 ```
 
@@ -110,6 +183,7 @@ export function serializeForHydration(data: unknown): string {
 
 * **Prevents `<script>` Tag Breakouts**: `<` and `>` are encoded as `\u003c` and `\u003e`, making HTML parser breakout impossible.
 * **Prevents Line-Terminator Exploits**: `\u2028` (Line Separator) and `\u2029` (Paragraph Separator) are encoded to prevent JS parsing syntax errors.
+* **Script ID Attribute Hardening (EXT-001)**: The script tag's `id` attribute is strictly validated against an alphanumeric identifier pattern (`/^[a-zA-Z0-9_\-:]+$/`) and HTML-attribute escaped (`escapeHtmlAttribute`) to prevent attribute breakout or script termination via malicious custom script IDs.
 * **Prototype Shielding**: Deserialization explicitly rejects `__proto__`, `constructor`, and `prototype` keys during client state restoration.
 
 ---

@@ -45,13 +45,15 @@ export interface DeserializeOptions<T = unknown> {
  * In development, non-JSON types trigger a diagnostic warning; in strict mode ({ strict: true }), an error is thrown.
  */
 export function serializeStateForHydration(state: unknown, options: SerializeOptions = {}): string {
-  const scriptId = options.id || '__SAMREY_STATE__';
+  const rawId = options.id || '__SAMREY_STATE__';
+  // Strictly validate script ID token to prevent attribute breakout or script termination
+  const scriptId = /^[a-zA-Z0-9_\-:]+$/.test(rawId) ? rawId : '__SAMREY_STATE__';
   const cleanState = stripSecrets(state, options);
   const rawJson = JSON.stringify(cleanState);
   const safePayload = escapeForScriptPayload(rawJson);
   const nonceAttr = options.nonce ? ` nonce="${escapeHtmlAttribute(options.nonce)}"` : '';
 
-  return `<script id="${scriptId}" type="application/json"${nonceAttr}>${safePayload}</script>`;
+  return `<script id="${escapeHtmlAttribute(scriptId)}" type="application/json"${nonceAttr}>${safePayload}</script>`;
 }
 
 /**
@@ -73,7 +75,8 @@ export function safeJsonParse<T = unknown>(rawJson: string): T {
  * malformed, or fails schema validation.
  */
 export function deserializeHydrationState<T = unknown>(options: DeserializeOptions<T> = {}): T | null {
-  const scriptId = options.id || '__SAMREY_STATE__';
+  const rawId = options.id || '__SAMREY_STATE__';
+  const scriptId = /^[a-zA-Z0-9_\-:]+$/.test(rawId) ? rawId : '__SAMREY_STATE__';
   const fallback = options.fallback !== undefined ? options.fallback : null;
 
   if (typeof document === 'undefined') {

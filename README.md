@@ -80,17 +80,17 @@ In Samrey, `<For>` preserves DOM elements and owner scopes using keyed identity 
 
 | Package | Version | Description |
 | :--- | :--- | :--- |
-| [`@samrey/reactivity`](./packages/reactivity) | `2.0.0` | Topological push-pull signal graph, computed signals, effects, and Owner scopes |
-| [`@samrey/compiler`](./packages/compiler) | `2.0.0` | Ahead-of-Time AST parser, AIR generator, constant folding & static HTML hoister |
-| [`@samrey/runtime`](./packages/runtime) | `2.0.0` | Template cloning, direct DOM hole bindings, runtime control flow (`Show()`, `For()`) |
-| [`@samrey/security`](./packages/security) | `2.0.0` | W3C Trusted Types, HTML/URI sanitizers, timing-safe CSRF, secret guard |
-| [`@samrey/router`](./packages/router) | `2.0.0` | Reactive client/server router with parameterized segments & redirect security |
-| [`@samrey/http`](./packages/http) | `2.0.0` | Async `createResource`, in-flight request deduplication, fetch client |
-| [`@samrey/forms`](./packages/forms) | `2.0.0` | Standard Schema form engine with reactive validation & ARIA bindings |
-| [`@samrey/ssr`](./packages/ssr) | `2.0.0` | Streaming SSR (`ReadableStream`), SSG generator, Unicode serializer & event replay |
-| [`@samrey/testing`](./packages/testing) | `2.0.0` | Test component mounting harness, signal flushers, assertion helpers |
-| [`@samrey/devtools`](./packages/devtools) | `2.0.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
-| [`@samrey/cli`](./packages/cli) | `2.0.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
+| [`@samrey/reactivity`](./packages/reactivity) | `2.1.0` | Topological push-pull signal graph, computed signals, effects, and Owner scopes |
+| [`@samrey/compiler`](./packages/compiler) | `2.1.0` | Ahead-of-Time AST parser, AIR generator, constant folding & static HTML hoister |
+| [`@samrey/runtime`](./packages/runtime) | `2.1.0` | Template cloning, direct DOM hole bindings, runtime control flow (`Show()`, `For()`) |
+| [`@samrey/security`](./packages/security) | `2.1.0` | W3C Trusted Types, HTML/URI sanitizers, timing-safe CSRF, secret guard |
+| [`@samrey/router`](./packages/router) | `2.1.0` | Reactive client/server router with parameterized segments & redirect security |
+| [`@samrey/http`](./packages/http) | `2.1.0` | Async `createResource`, in-flight request deduplication, fetch client |
+| [`@samrey/forms`](./packages/forms) | `2.1.0` | Standard Schema form engine with reactive validation & ARIA bindings |
+| [`@samrey/ssr`](./packages/ssr) | `2.1.0` | Streaming SSR (`ReadableStream`), SSG generator, Unicode serializer & event replay |
+| [`@samrey/testing`](./packages/testing) | `2.1.0` | Test component mounting harness, signal flushers, assertion helpers |
+| [`@samrey/devtools`](./packages/devtools) | `2.1.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
+| [`@samrey/cli`](./packages/cli) | `2.1.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
 
 ---
 

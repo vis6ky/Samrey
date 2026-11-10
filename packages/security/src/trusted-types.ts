@@ -3,7 +3,7 @@
  * @samrey/security - Trusted Types Policy Provider
  */
 
-import { sanitizeHtmlString, sanitizeUri } from './sanitizer.js';
+import { sanitizeHtmlString, sanitizeTemplateHtml, sanitizeUri } from './sanitizer.js';
 
 export interface SamreyTrustedPolicy {
   createHTML(input: string): string;
@@ -102,7 +102,7 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
 let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
 
 /**
- * Returns or initializes the pass-through Trusted Types policy for developer-authored static HTML templates.
+ * Returns or initializes the strictly sanitized Trusted Types policy for developer-authored static HTML templates (EXT-002).
  */
 export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
   if (cachedTemplatePolicy) return cachedTemplatePolicy;
@@ -112,7 +112,7 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
   if (tt) {
     try {
       cachedTemplatePolicy = tt.createPolicy('samrey#template', {
-        createHTML: (input: string) => input,
+        createHTML: (input: string) => sanitizeTemplateHtml(input),
         createScript: () => {
           throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
         },
@@ -125,7 +125,7 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
   }
 
   cachedTemplatePolicy = {
-    createHTML: (input: string) => input,
+    createHTML: (input: string) => sanitizeTemplateHtml(input),
     createScript: () => {
       throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
     },

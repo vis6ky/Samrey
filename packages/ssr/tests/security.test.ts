@@ -94,4 +94,23 @@ describe('@samrey/ssr - State Security, Secret Guard & Validation', () => {
     const result = deserializeHydrationState({ fallback: { count: 0 } });
     assert.deepEqual(result, { count: 0 });
   });
+
+  it('EXT-001: validates and escapes custom hydration script IDs against attribute breakout', () => {
+    // 1. Malicious script ID with attribute breakout and script injection
+    const breakoutId = '__SAMREY_STATE__" onclick="alert(1)"';
+    const output1 = serializeStateForHydration({ foo: 'bar' }, { id: breakoutId });
+    assert.ok(!output1.includes('onclick="alert(1)"'));
+    assert.ok(output1.startsWith('<script id="__SAMREY_STATE__"'));
+
+    // 2. Malicious script ID attempting script tag termination
+    const tagBreakoutId = '__SAMREY_STATE__"></script><script>alert(2)</script>';
+    const output2 = serializeStateForHydration({ foo: 'bar' }, { id: tagBreakoutId });
+    assert.ok(!output2.includes('<script>alert(2)</script>'));
+    assert.ok(output2.startsWith('<script id="__SAMREY_STATE__"'));
+
+    // 3. Legitimate alphanumeric custom script ID is accepted and escaped
+    const validCustomId = 'my-custom-state_123';
+    const output3 = serializeStateForHydration({ count: 42 }, { id: validCustomId });
+    assert.ok(output3.startsWith('<script id="my-custom-state_123"'));
+  });
 });

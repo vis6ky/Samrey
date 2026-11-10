@@ -17,13 +17,29 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&colon;?/gi, ':');
 }
 
+export interface SanitizeUriOptions {
+  /**
+   * Whether to allow protocol-relative URLs (e.g. `//cdn.example.com/asset.png`).
+   * Protocol-relative URLs are safe for resource/asset loading in HTML elements
+   * (`<img>`, `<video>`, `<audio>`, `<link>`), inheriting the host page protocol.
+   *
+   * For navigational redirects and user-facing links, use `sanitizeRedirectUri()`,
+   * which strictly rejects protocol-relative URLs to prevent Open Redirect attacks.
+   * @default true
+   */
+  allowProtocolRelative?: boolean;
+}
+
 /**
- * Validates and sanitizes a URL or URI string.
+ * Validates and sanitizes a URL or URI string for resource-loading and asset contexts.
  * Blocks dangerous schemes (javascript:, vbscript:, data:text/html, blob:).
  * Decodes URL encodings in scheme to prevent obfuscated javascript: executions.
  * Only allows safe protocols (http:, https:, mailto:, tel:) and relative paths.
+ *
+ * NOTE: For client-side routing or server redirects, use `sanitizeRedirectUri()` instead,
+ * which rejects protocol-relative URLs (`//evil.com`) to prevent open redirect vulnerabilities.
  */
-export function sanitizeUri(rawUri: string | null | undefined): string {
+export function sanitizeUri(rawUri: string | null | undefined, options?: SanitizeUriOptions): string {
   if (!rawUri) return '';
   const trimmed = String(rawUri).trim();
 
@@ -42,6 +58,18 @@ export function sanitizeUri(rawUri: string | null | undefined): string {
 
   if (DANGEROUS_URI_PATTERNS.test(cleanSchemeCheck)) {
     return 'about:blank';
+  }
+
+  // Explicit protocol-relative URL policy enforcement (NEW-003)
+  if (options?.allowProtocolRelative === false) {
+    if (
+      cleanSchemeCheck.startsWith('//') ||
+      cleanSchemeCheck.startsWith('/\\') ||
+      cleanSchemeCheck.startsWith('\\\\') ||
+      cleanSchemeCheck.startsWith('\\/')
+    ) {
+      return 'about:blank';
+    }
   }
 
   if (SAFE_URI_SCHEMES.test(trimmed)) {
@@ -91,21 +119,77 @@ export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback 
 }
 
 /**
+ * Decodes CSS backslash escape sequences (hex escapes like `\65` and literal character escapes).
+ */
+export function decodeCssEscapes(css: string): string {
+  return css.replace(/\\([0-9a-fA-F]{1,6}\s?|[\s\S])/g, (match, p1) => {
+    if (/^[0-9a-fA-F]{1,6}/.test(p1)) {
+      const hex = p1.trim();
+      const code = parseInt(hex, 16);
+      if (code === 0 || (code >= 0xd800 && code <= 0xdfff) || code > 0x10ffff) {
+        return '\uFFFD';
+      }
+      try {
+        return String.fromCodePoint(code);
+      } catch {
+        return '';
+      }
+    }
+    return p1;
+  });
+}
+
+/**
  * Sanitizes inline CSS or style strings against script execution vectors
  * (such as expression(), url(javascript:), behavior:, and @import).
+ * Employs multi-pass normalization, CSS comment stripping, backslash escape decoding,
+ * and comprehensive URL validation (NEW-001).
  */
 export function sanitizeCssStyle(css: unknown): string {
   if (css === null || css === undefined) return '';
-  const str = String(css);
+  let str = String(css);
+  let prev = '';
+  let iterations = 0;
 
-  return str
-    .replace(/expression\s*\(.*?\)/gis, '')
-    .replace(/url\s*\(\s*["']?\s*javascript:[^"')]*["']?\s*\)/gis, 'url("")')
-    .replace(/url\s*\(\s*["']?\s*vbscript:[^"')]*["']?\s*\)/gis, 'url("")')
-    .replace(/url\s*\(\s*["']?\s*data:text\/html[^"')]*["']?\s*\)/gis, 'url("")')
-    .replace(/behavior\s*:[^;}]*/gis, '')
-    .replace(/-moz-binding\s*:[^;}]*/gis, '')
-    .replace(/@import\b[^;}]*;?/gis, '');
+  while (str !== prev && iterations < 5) {
+    prev = str;
+    iterations++;
+
+    // 1. Strip CSS comments (/* ... */) to prevent token splitting bypasses (e.g. exp/* */ression)
+    let normalized = str.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // 2. Decode CSS escapes and HTML entities for keyword detection
+    const decoded = decodeCssEscapes(decodeHtmlEntities(normalized));
+
+    // 3. Remove dangerous properties, functions, and at-rules
+    if (/expression\s*\(|behavior\s*:|-moz-binding\s*:|-webkit-binding\s*:|binding\s*:|@import\b|@charset\b|@namespace\b/i.test(decoded)) {
+      normalized = normalized
+        .replace(/expression\s*\(.*?\)/gis, '')
+        .replace(/behavior\s*:[^;}]*/gis, '')
+        .replace(/-moz-binding\s*:[^;}]*/gis, '')
+        .replace(/-webkit-binding\s*:[^;}]*/gis, '')
+        .replace(/binding\s*:[^;}]*/gis, '')
+        .replace(/@import\b[^;}]*;?/gis, '')
+        .replace(/@charset\b[^;}]*;?/gis, '')
+        .replace(/@namespace\b[^;}]*;?/gis, '');
+    }
+
+    // 4. Sanitize url(...) declarations against javascript:, vbscript:, and unsafe data: schemes
+    normalized = normalized.replace(/url\s*\(\s*(["']?)([\s\S]*?)\1\s*\)/gi, (fullMatch, _quote, rawUrl) => {
+      const cleanUrl = decodeCssEscapes(decodeHtmlEntities(rawUrl)).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
+      if (/^(javascript|vbscript):/i.test(cleanUrl)) {
+        return 'url("")';
+      }
+      if (/^data:/i.test(cleanUrl) && !SAFE_IMAGE_DATA_URI.test(cleanUrl)) {
+        return 'url("")';
+      }
+      return fullMatch;
+    });
+
+    str = normalized;
+  }
+
+  return str;
 }
 
 /**
@@ -388,29 +472,138 @@ export const escapeJsonStringForScript = escapeForScriptPayload;
 
 const SAFE_IMAGE_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=]+$/i;
 
+const URL_ATTRS_PATTERN = /\b(href|src|action|formaction|data|poster|codebase|background|cite|longdesc|profile|usemap|xlink:href|xml:base|ping)\s*=\s*(?:("|\')([\s\S]*?)\2|([^\s>]+))/gis;
+const SRCSET_PATTERN = /\b(srcset)\s*=\s*(?:("|\')([\s\S]*?)\2|([^\s>]+))/gis;
+
+/**
+ * Sanitizes all URL-bearing attributes in HTML strings, including standard attributes
+ * and compound srcset attributes (NEW-002).
+ */
+export function sanitizeHtmlUrlAttributes(html: string): string {
+  let res = html.replace(URL_ATTRS_PATTERN, (match, attr, quote, innerQuoted, unquoted) => {
+    const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
+    const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
+    if (/^(javascript|vbscript):/i.test(decoded)) {
+      return `${attr}="about:blank"`;
+    }
+    if (/^data:/i.test(decoded)) {
+      if (!SAFE_IMAGE_DATA_URI.test(decoded)) {
+        return `${attr}="about:blank"`;
+      }
+    }
+    return match;
+  });
+
+  // Comprehensive srcset handling (NEW-002)
+  res = res.replace(SRCSET_PATTERN, (match, attr, quote, innerQuoted, unquoted) => {
+    const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
+    const parts = rawVal.split(',');
+    const sanitizedParts = parts.map((part: string) => {
+      const trimmedPart = part.trim();
+      const spaceIdx = trimmedPart.search(/\s/);
+      const urlCandidate = spaceIdx === -1 ? trimmedPart : trimmedPart.slice(0, spaceIdx);
+      const descriptor = spaceIdx === -1 ? '' : trimmedPart.slice(spaceIdx);
+
+      const decodedUrl = decodeHtmlEntities(urlCandidate).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
+      if (/^(javascript|vbscript):/i.test(decodedUrl) || (/^data:/i.test(decodedUrl) && !SAFE_IMAGE_DATA_URI.test(decodedUrl))) {
+        return `about:blank${descriptor}`;
+      }
+      return `${urlCandidate}${descriptor}`;
+    });
+    return `${attr}="${sanitizedParts.join(', ')}"`;
+  });
+
+  return res;
+}
+
 /**
  * Strips dangerous HTML tags and attributes for rich text boundaries.
+ * Employs multi-pass convergence to prevent nested tag/attribute bypasses (EXT-003).
  */
 export function sanitizeHtmlString(html: string): string {
   if (!html) return '';
 
-  return html
-    .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*>.*?<\/\1>/gis, '')
-    .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta)\b[^>]*\/?>/gis, '')
-    .replace(/[\s/]+(on[a-z0-9_-]+|formaction|xlink:href|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '')
-    .replace(/(href|src|action)\s*=\s*(["']([^"']*)["']|([^\s>]+))/gis, (match, attr, _quoted, innerQuoted, unquoted) => {
-      const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
-      const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
-      if (/^(javascript|vbscript):/i.test(decoded)) {
-        return `${attr}="about:blank"`;
-      }
-      if (/^data:/i.test(decoded)) {
-        if (!SAFE_IMAGE_DATA_URI.test(decoded)) {
-          return `${attr}="about:blank"`;
-        }
-      }
-      return match;
+  let str = html;
+  let prev = '';
+  let iterations = 0;
+
+  while (str !== prev && iterations < 5) {
+    prev = str;
+    iterations++;
+
+    // 1. Strip dangerous tags and their content
+    str = str
+      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet)\b[^>]*>.*?<\/\1>/gis, '')
+      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet)\b[^>]*\/?>/gis, '')
+      // Neutralize SVG and MathML script/execution payloads
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
+        return match
+          .replace(/<script\b[^>]*>.*?<\/script>/gis, '')
+          .replace(/[\s/]+(on[a-zA-Z0-9_\-]+|xlink:href)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
+      })
+      .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gis, (match) => {
+        return match.replace(/<script\b[^>]*>.*?<\/script>/gis, '');
+      });
+
+    // 2. Strip all inline on* event handlers, formaction, and srcdoc
+    str = str.replace(/[\s/]+(on[a-zA-Z0-9_\-]+|formaction|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
+
+    // 3. Sanitize all URL-bearing attributes and srcset (NEW-002)
+    str = sanitizeHtmlUrlAttributes(str);
+
+    // 4. Sanitize inline style attributes (NEW-001)
+    str = str.replace(/\b(style)\s*=\s*(["'])([\s\S]*?)\2/gis, (_, attr, quote, css) => {
+      return `${attr}=${quote}${sanitizeCssStyle(css)}${quote}`;
     });
+  }
+
+  return str;
+}
+
+/**
+ * Sanitizes template HTML skeletons used by compile-time and runtime template() cloning (EXT-002).
+ * Preserves interactive UI tags (<button ref="...">, <input>, <form>, <textarea>, <svg>, <path>, ref attributes),
+ * while strictly stripping executable tags (<script>, <object>, <embed>, <applet>, <base>, <meta>, <iframe>),
+ * all inline on* event handlers, dangerous schemes (javascript:, vbscript:), and CSS injection in style attributes.
+ */
+export function sanitizeTemplateHtml(html: string): string {
+  if (!html) return '';
+
+  let str = html;
+  let prev = '';
+  let iterations = 0;
+
+  while (str !== prev && iterations < 5) {
+    prev = str;
+    iterations++;
+
+    // 1. Strip strictly dangerous executable tags and their contents
+    str = str
+      .replace(/<(script|object|embed|applet|base|meta|iframe)\b[^>]*>.*?<\/\1>/gis, '')
+      .replace(/<(script|object|embed|applet|base|meta|iframe)\b[^>]*\/?>/gis, '')
+      // Neutralize any scripts inside SVG or MathML
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
+        return match
+          .replace(/<script\b[^>]*>.*?<\/script>/gis, '')
+          .replace(/[\s/]+(on[a-zA-Z0-9_\-]+|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
+      })
+      .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gis, (match) => {
+        return match.replace(/<script\b[^>]*>.*?<\/script>/gis, '');
+      });
+
+    // 2. Strip all inline on* event handlers and srcdoc
+    str = str.replace(/[\s/]+(on[a-zA-Z0-9_\-]+|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
+
+    // 3. Sanitize URL-bearing attributes
+    str = sanitizeHtmlUrlAttributes(str);
+
+    // 4. Sanitize inline style attributes
+    str = str.replace(/\b(style)\s*=\s*(["'])([\s\S]*?)\2/gis, (_, attr, quote, css) => {
+      return `${attr}=${quote}${sanitizeCssStyle(css)}${quote}`;
+    });
+  }
+
+  return str;
 }
 
 export const sanitizeHtml = sanitizeHtmlString;
