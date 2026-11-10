@@ -131,7 +131,11 @@ export function Header(props: {
         onClick: () => {
           props.activeTab.value = item.id;
           if (typeof window !== 'undefined') {
-            window.location.hash = item.id;
+            try {
+              window.location.hash = item.id;
+            } catch {
+              // Ignored in sandboxed iframes
+            }
           }
         }
       },
@@ -163,7 +167,11 @@ export function Header(props: {
             props.activeTab.value = item.id;
             isMobileMenuOpen.value = false;
             if (typeof window !== 'undefined') {
-              window.location.hash = item.id;
+              try {
+                window.location.hash = item.id;
+              } catch {
+                // Ignored in sandboxed iframes
+              }
             }
           }
         },

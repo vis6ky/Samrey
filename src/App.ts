@@ -22,14 +22,18 @@ export function App(): HTMLElement {
   // Initial tab from URL hash if present with legacy redirect support
   const legacyTabs = ['recipes', 'code-help', 'fixer', 'documentation', 'recipes-and-docs', 'help'];
   const getInitialTab = (): string => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '').trim();
-      if (legacyTabs.includes(hash)) {
-        return 'assistant';
+    try {
+      if (typeof window !== 'undefined' && window.location && window.location.hash) {
+        const hash = window.location.hash.replace('#', '').trim();
+        if (legacyTabs.includes(hash)) {
+          return 'assistant';
+        }
+        if (['assistant', 'competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
+          return hash;
+        }
       }
-      if (['assistant', 'competitive', 'architecture', 'task-studio', 'compiler', 'reactivity', 'security', 'adr', 'roadmap', 'docs'].includes(hash)) {
-        return hash;
-      }
+    } catch {
+      // Ignored for sandboxed iframes or opaque origins (e.g. Google AI Studio preview)
     }
     return 'assistant';
   };
@@ -40,21 +44,33 @@ export function App(): HTMLElement {
   // Sync hash changes and redirect legacy routes to the unified assistant
   if (typeof window !== 'undefined') {
     window.addEventListener('hashchange', () => {
-      const hash = window.location.hash.replace('#', '').trim();
-      if (legacyTabs.includes(hash)) {
-        activeTab.value = 'assistant';
-        window.history.replaceState(null, '', '#assistant');
-        return;
-      }
-      if (hash && hash !== activeTab.value) {
-        activeTab.value = hash;
+      try {
+        const hash = (window.location.hash || '').replace('#', '').trim();
+        if (legacyTabs.includes(hash)) {
+          activeTab.value = 'assistant';
+          try {
+            window.history?.replaceState(null, '', '#assistant');
+          } catch {
+            // Ignored in sandboxed iframes
+          }
+          return;
+        }
+        if (hash && hash !== activeTab.value) {
+          activeTab.value = hash;
+        }
+      } catch {
+        // Ignored in sandboxed iframes
       }
     });
 
     effect(() => {
-      const currentTab = activeTab.value;
-      if (window.location.hash !== `#${currentTab}`) {
-        window.history.replaceState(null, '', `#${currentTab}`);
+      try {
+        const currentTab = activeTab.value;
+        if (typeof window !== 'undefined' && window.location && window.location.hash !== `#${currentTab}`) {
+          window.history?.replaceState(null, '', `#${currentTab}`);
+        }
+      } catch {
+        // Ignored for sandboxed iframes or opaque origins
       }
     });
   }

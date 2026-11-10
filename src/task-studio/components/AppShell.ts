@@ -23,9 +23,13 @@ export function AppShell(initialRoute = '/dashboard'): HTMLElement {
   // Determine initial path from window.location if available
   let startPath = initialRoute;
   if (typeof window !== 'undefined' && window.location) {
-    const pathname = window.location.pathname;
-    if (pathname && pathname !== '/' && pathname !== '') {
-      startPath = pathname;
+    try {
+      const pathname = window.location.pathname;
+      if (pathname && pathname !== '/' && pathname !== '') {
+        startPath = pathname;
+      }
+    } catch {
+      // Ignored in sandboxed iframes
     }
   }
 
@@ -47,14 +51,22 @@ export function AppShell(initialRoute = '/dashboard'): HTMLElement {
   function onNavigate(to: string): void {
     router.navigate(to);
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        // Ignored in sandboxed iframes
+      }
     }
   }
 
   // Synchronize browser popstate events
   if (typeof window !== 'undefined') {
     window.addEventListener('popstate', () => {
-      router.navigate(window.location.pathname || '/dashboard');
+      try {
+        router.navigate(window.location.pathname || '/dashboard');
+      } catch {
+        // Ignored in sandboxed iframes
+      }
     });
   }
 

@@ -64,7 +64,11 @@ export function createRouter(routes: RouteRecord[], initialPath?: string): Route
     if (pathSignal.value !== safeTo) {
       pathSignal.value = safeTo;
       if (typeof window !== 'undefined' && window.history) {
-        window.history.pushState(null, '', safeTo);
+        try {
+          window.history.pushState(null, '', safeTo);
+        } catch {
+          // Ignored in sandboxed iframes or opaque origins (Google AI Studio preview)
+        }
       }
     }
   }
@@ -137,10 +141,22 @@ export function useSearchParams() {
 export function createBrowserHistory() {
   return {
     push: (url: string) => {
-      if (typeof window !== 'undefined' && window.history) window.history.pushState(null, '', url);
+      if (typeof window !== 'undefined' && window.history) {
+        try {
+          window.history.pushState(null, '', url);
+        } catch {
+          // Ignored in sandboxed iframes
+        }
+      }
     },
     replace: (url: string) => {
-      if (typeof window !== 'undefined' && window.history) window.history.replaceState(null, '', url);
+      if (typeof window !== 'undefined' && window.history) {
+        try {
+          window.history.replaceState(null, '', url);
+        } catch {
+          // Ignored in sandboxed iframes
+        }
+      }
     },
     listen: (fn: (url: string) => void) => {
       if (typeof window !== 'undefined') {
