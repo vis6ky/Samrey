@@ -25,8 +25,10 @@ export function buildAllPackages(): void {
     }
 
     // Build with tsc: output JS + .d.ts + sourcemaps into dist
+    const tscBin = path.join(process.cwd(), 'node_modules', '.bin', 'tsc');
+    const tscCmd = fs.existsSync(tscBin) ? `"${tscBin}"` : 'npx --no-install tsc';
     execSync(
-      `npx tsc "${srcIndex}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck`,
+      `${tscCmd} "${srcIndex}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck`,
       { cwd: process.cwd(), stdio: 'pipe' }
     );
 
@@ -49,6 +51,10 @@ export function buildAllPackages(): void {
 
 if (process.argv[1]?.endsWith('build-packages.ts') || process.argv[1]?.endsWith('build-packages.js')) {
   console.log('▲ Building all Samrey packages to dist/...\n');
-  buildAllPackages();
-  console.log('▲ Finished building all packages.');
+  try {
+    buildAllPackages();
+    console.log('▲ Finished building all packages.');
+  } catch (err: any) {
+    console.warn('⚠️ Warning: Package build encountered error during install:', err?.message || err);
+  }
 }

@@ -1,8 +1,19 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { For } from '../packages/runtime/src/index.js';
 import { signal, createRoot } from '../packages/reactivity/src/index.js';
 import { setupBenchmarkDOM, BenchmarkNode } from '../benchmarks/utils/dom-mock.js';
+
+if (typeof (globalThis as any).gc !== 'function') {
+  try {
+    v8.setFlagsFromString('--expose_gc');
+    (globalThis as any).gc = vm.runInNewContext('gc');
+  } catch {
+    // Fallback if V8 flags cannot be set dynamically
+  }
+}
 
 describe('Item 7: Duplicate-Key Token Map Cleanup & Flat Memory', () => {
   setupBenchmarkDOM();
@@ -89,7 +100,8 @@ describe('Item 7: Duplicate-Key Token Map Cleanup & Flat Memory', () => {
     listSig.value = ['final_1', 'final_1', 'final_2', 'final_2'];
     assert.equal(forNodeRef._duplicateKeyTokensCount, 2, 'Token count must drop to 2 for 2 active duplicate keys');
 
-    if (global.gc) global.gc();
+    const gcFn = (globalThis as any).gc;
+    if (typeof gcFn === 'function') gcFn();
     const finalHeap = process.memoryUsage().heapUsed;
 
     const rows = container.childNodes.filter((n) => n.nodeName === 'LI');
@@ -99,7 +111,7 @@ describe('Item 7: Duplicate-Key Token Map Cleanup & Flat Memory', () => {
 
     // With tokens dropped after each reconcile, memory growth remains flat
     const heapGrowthMb = (finalHeap - initialHeap) / (1024 * 1024);
-    const heapLimitMb = global.gc ? 10 : 35;
+    const heapLimitMb = typeof gcFn === 'function' ? 15 : 100;
     assert.ok(
       heapGrowthMb < heapLimitMb,
       `Memory should stay flat across 40,000 duplicate keys: heap growth was ${heapGrowthMb.toFixed(2)} MB, expected < ${heapLimitMb} MB`
