@@ -158,3 +158,23 @@ Generates pre-rendered HTML files and XML sitemaps.
 
 ### `hydrate(container: Element, app: () => unknown): HydrationResult`
 Hydrates server-rendered DOM nodes and replays early user interactions.
+
+---
+
+## Compiler Diagnostics & Error Codes
+
+The Samrey compiler (`@samrey/compiler`) provides structured diagnostics with source frames:
+
+| Code | Title | Description |
+|---|---|---|
+| `SAMREY-101` | Unclosed Tag | An HTML opening tag was left unclosed. |
+| `SAMREY-102` | Invalid Expression | Malformed dynamic interpolation syntax. |
+| `SAMREY-103` | Missing Required Directive | A directive is missing a required parameter. |
+| `SAMREY-104` | Unexpected Closing Tag | A closing tag does not match the open element. |
+| `SAMREY-105` | Invalid Attribute Syntax | Malformed attribute declaration. |
+| `SAMREY-106` | Unclosed Comment | HTML comment block was not terminated before EOF. |
+| `SAMREY-107` | Duplicate Attribute | An attribute is declared multiple times on an element. |
+| `SAMREY-108` | Unsupported Template Tag | `<Show>`, `<For>`, or custom component tags used inside string template markup. |
+| `SAMREY-109` | Duplicate Template Reference | The same `ref="..."` identifier was declared multiple times in one template. |
+| `SAMREY-110` | Invalid Reference Identifier | Ref name does not match valid JavaScript identifier rules (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`). |
+| `SAMREY-111` | Unsupported Reference Placement | Ref placed on custom components (`<Widget ref="..." />`) or control-flow primitives (`<Show ref="..." />`, `<For ref="..." />`). |

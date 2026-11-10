@@ -15,10 +15,41 @@ export interface BenchmarkResult {
 
 export function runTemplateRefsBenchmark(): BenchmarkResult[] {
   const results: BenchmarkResult[] = [];
+  const INIT_OPS = 20_000;
   const CLONES = 50_000;
   const ACCESSES = 1_000_000;
 
-  // 1. Template cloning without references (Baseline)
+  // 1. Template initialization without refs
+  {
+    const start = performance.now();
+    for (let i = 0; i < INIT_OPS; i++) {
+      template('<div class="row"><h3>Title</h3><p>Description</p></div>');
+    }
+    const durationMs = performance.now() - start;
+    results.push({
+      category: '1. Template initialization without refs (One-time factory creation)',
+      operations: INIT_OPS,
+      durationMs,
+      opsPerSec: Math.round(INIT_OPS / (durationMs / 1000))
+    });
+  }
+
+  // 2. Template initialization with refs (Descriptor extraction)
+  {
+    const start = performance.now();
+    for (let i = 0; i < INIT_OPS; i++) {
+      template('<div class="row"><h3 ref="title">Title</h3><p ref="desc">Description</p></div>');
+    }
+    const durationMs = performance.now() - start;
+    results.push({
+      category: '2. Template initialization with refs (Descriptor extraction)',
+      operations: INIT_OPS,
+      durationMs,
+      opsPerSec: Math.round(INIT_OPS / (durationMs / 1000))
+    });
+  }
+
+  // 3. Template cloning without references (Baseline clone)
   {
     const tmplPlain = template('<div class="row"><h3>Title</h3><p>Description</p></div>');
     // Warmup
@@ -30,14 +61,14 @@ export function runTemplateRefsBenchmark(): BenchmarkResult[] {
     }
     const durationMs = performance.now() - start;
     results.push({
-      category: '1. Template cloning without references (Baseline)',
+      category: '3. Template cloning without references (Baseline clone)',
       operations: CLONES,
       durationMs,
       opsPerSec: Math.round(CLONES / (durationMs / 1000))
     });
   }
 
-  // 2. Template cloning with references
+  // 4. Template cloning with references (Clone + Path resolution)
   {
     const tmplRefs = template('<div class="row"><h3 ref="title">Title</h3><p ref="desc">Description</p></div>');
     // Warmup
@@ -49,14 +80,14 @@ export function runTemplateRefsBenchmark(): BenchmarkResult[] {
     }
     const durationMs = performance.now() - start;
     results.push({
-      category: '2. Template cloning with references (root.refs)',
+      category: '4. Template cloning with references (Clone + Path resolution)',
       operations: CLONES,
       durationMs,
       opsPerSec: Math.round(CLONES / (durationMs / 1000))
     });
   }
 
-  // 3. Access through root.refs
+  // 5. Direct reference access through root.refs
   {
     const tmpl = template('<div class="card"><h3 ref="heading">Heading</h3><p ref="body">Body</p><button ref="action">Btn</button></div>');
     const root = tmpl.clone();
@@ -74,14 +105,14 @@ export function runTemplateRefsBenchmark(): BenchmarkResult[] {
     }
     const durationMs = performance.now() - start;
     results.push({
-      category: '3. Direct reference access (root.refs.property)',
+      category: '5. Direct reference access (root.refs.property)',
       operations: ACCESSES * 3,
       durationMs,
       opsPerSec: Math.round((ACCESSES * 3) / (durationMs / 1000))
     });
   }
 
-  // 4. Dynamic access through root.ref()
+  // 6. Dynamic access through root.ref()
   {
     const tmpl = template('<div class="card"><h3 ref="heading">Heading</h3><p ref="body">Body</p><button ref="action">Btn</button></div>');
     const root = tmpl.clone();
@@ -99,14 +130,14 @@ export function runTemplateRefsBenchmark(): BenchmarkResult[] {
     }
     const durationMs = performance.now() - start;
     results.push({
-      category: '4. Dynamic reference lookup (root.ref(name))',
+      category: '6. Dynamic reference lookup (root.ref(name))',
       operations: ACCESSES * 3,
       durationMs,
       opsPerSec: Math.round((ACCESSES * 3) / (durationMs / 1000))
     });
   }
 
-  // 5. Multiple clones with disposal
+  // 7. Multiple clones with reference lookup & reactive disposal cycle
   {
     const tmpl = template('<form ref="form"><input ref="input" /><button ref="submit">Go</button></form>');
     const start = performance.now();
@@ -119,7 +150,7 @@ export function runTemplateRefsBenchmark(): BenchmarkResult[] {
     }
     const durationMs = performance.now() - start;
     results.push({
-      category: '5. Clone, reference access & reactive disposal cycle',
+      category: '7. Clone, reference access & reactive disposal cycle',
       operations: CLONES,
       durationMs,
       opsPerSec: Math.round(CLONES / (durationMs / 1000))

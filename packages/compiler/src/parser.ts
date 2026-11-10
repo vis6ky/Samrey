@@ -352,7 +352,7 @@ export class TemplateParser {
           seenAttrs.add(attr.name);
           attributes.push(attr);
 
-          if (attr.name === 'ref') {
+          if (attr.name.toLowerCase() === 'ref') {
             const refName = attr.value ?? attr.expression ?? '';
             if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(refName)) {
               this.recordDiagnostic(
@@ -460,7 +460,7 @@ export class TemplateParser {
 
     if (isComponent) {
       for (const attr of attributes) {
-        if (attr.name === 'ref') {
+        if (attr.name.toLowerCase() === 'ref') {
           this.recordDiagnostic(
             `Unsupported template ref on <${tagName}>`,
             attr.loc.start,
@@ -505,7 +505,7 @@ export class TemplateParser {
       if (attr.name === 'when') {
         hasWhen = true;
         whenExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => false');
-      } else if (attr.name === 'ref') {
+      } else if (attr.name.toLowerCase() === 'ref') {
         this.recordDiagnostic(
           'Unsupported template ref on <Show>',
           attr.loc.start,
@@ -587,7 +587,7 @@ export class TemplateParser {
         eachExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => []');
       } else if (attr.name === 'key') {
         keyExpr = attr.expression || attr.value || undefined;
-      } else if (attr.name === 'ref') {
+      } else if (attr.name.toLowerCase() === 'ref') {
         this.recordDiagnostic(
           'Unsupported template ref on <For>',
           attr.loc.start,

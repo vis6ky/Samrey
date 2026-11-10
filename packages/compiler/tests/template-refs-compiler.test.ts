@@ -82,4 +82,45 @@ describe('Samrey 2.1.0 — Compiler Template References & Diagnostics', () => {
       'Must emit SAMREY-111 for ref on <CustomCard>'
     );
   });
+
+  it('5. Full compileTemplate pipeline authoritatively enforces SAMREY-109, SAMREY-110, SAMREY-111', () => {
+    // Pipeline test for SAMREY-109 (Duplicate)
+    assert.throws(
+      () => compileTemplate('<div><input ref="item" /><button ref="item">Action</button></div>'),
+      (err: any) => err.code === 'SAMREY-109' && err.message.includes('item')
+    );
+
+    // Pipeline test for SAMREY-110 (Invalid Identifier)
+    assert.throws(
+      () => compileTemplate('<div><input ref="bad-ident-123" /></div>'),
+      (err: any) => err.code === 'SAMREY-110' && err.message.includes('bad-ident-123')
+    );
+
+    // Pipeline test for SAMREY-111 (Unsupported Placement)
+    assert.throws(
+      () => compileTemplate('<div><MyWidget ref="widgetRef" /></div>'),
+      (err: any) => err.code === 'SAMREY-111' && err.message.includes('MyWidget')
+    );
+  });
+
+  it('6. Case-insensitive ref attribute detection in compiler (REF=, Ref=)', () => {
+    const src = `
+      <form REF="upperForm">
+        <input Ref="camelInput" />
+        <button ref="lowerBtn">Go</button>
+      </form>
+    `;
+
+    const res = compileTemplate(src);
+    assert.ok(res.templates[0].staticHtml.includes('REF="upperForm"'));
+    assert.ok(res.templates[0].staticHtml.includes('Ref="camelInput"'));
+    assert.ok(res.templates[0].staticHtml.includes('ref="lowerBtn"'));
+
+    // Verify duplicate detection across casings
+    const dupSrc = `<div><input ref="target" /><input REF="target" /></div>`;
+    assert.throws(
+      () => compileTemplate(dupSrc),
+      (err: any) => err.code === 'SAMREY-109'
+    );
+  });
 });

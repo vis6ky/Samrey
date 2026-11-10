@@ -12,22 +12,50 @@ describe('Samrey 2.1.0 — TypeScript Static Reference Inference', () => {
       </form>
     `).clone();
 
-    // Type inference assertions
-    const _form: HTMLFormElement = root.refs.form as any;
-    const _email: HTMLInputElement = root.refs.email as any;
-    const _submit: HTMLButtonElement = root.refs.submit as any;
-    const _message: HTMLParagraphElement = root.refs.message as any;
+    // Type inference assertions (STRICT - no "as any")
+    const _form: HTMLFormElement = root.refs.form;
+    const _email: HTMLInputElement = root.refs.email;
+    const _submit: HTMLButtonElement = root.refs.submit;
+    const _message: HTMLParagraphElement = root.refs.message;
 
     assert.ok(root.refs.form);
     assert.ok(root.refs.email);
     assert.ok(root.refs.submit);
     assert.ok(root.refs.message);
 
-    // Dynamic ref access return type
-    const dynEmail = root.ref('email');
+    // Compile-time negative verification: invalid static reference name is rejected
+    // @ts-expect-error - Property 'nonexistent' does not exist on type
+    const _invalid = root.refs.nonexistent;
+
+    // Dynamic ref access documented return type: HTMLElement | undefined
+    const dynEmail: HTMLInputElement = root.ref('email');
+    const dynLookup: HTMLElement | undefined = root.ref('anything');
+    const dynGeneric: HTMLInputElement | undefined = root.ref<HTMLInputElement>('email');
     const dynUnknown = root.ref('unknown');
+
     assert.strictEqual(dynEmail, root.refs.email);
+    assert.strictEqual(dynGeneric, root.refs.email);
     assert.strictEqual(dynUnknown, undefined);
+  });
+
+  it('verifies inference with whitespace and casing variations in HTML attributes', () => {
+    const root = template(`
+      <form ref = "authForm">
+        <input ref = "user" />
+        <button REF="submitBtn">Submit</button>
+        <p Ref="disclaimer">Terms</p>
+      </form>
+    `).clone();
+
+    const _form: HTMLFormElement = root.refs.authForm;
+    const _user: HTMLInputElement = root.refs.user;
+    const _btn: HTMLButtonElement = root.refs.submitBtn;
+    const _p: HTMLParagraphElement = root.refs.disclaimer;
+
+    assert.ok(root.refs.authForm);
+    assert.ok(root.refs.user);
+    assert.ok(root.refs.submitBtn);
+    assert.ok(root.refs.disclaimer);
   });
 });
 

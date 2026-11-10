@@ -44,11 +44,27 @@ type ProcessTag<S extends string> =
     ? ExtractRefs<Remainder>
     : Record<string, never>;
 
+type CleanRefName<S extends string> =
+  S extends ` ${infer R}` ? CleanRefName<R> :
+  S extends `${infer R} ` ? CleanRefName<R> : S;
+
 type ParseRef<Tag extends string, Attrs extends string> =
   Attrs extends `${string}ref="${infer Name}"${string}`
-    ? { [K in Name]: TagNameToElement<Lowercase<Tag>> }
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
     : Attrs extends `${string}ref='${infer Name}'${string}`
-    ? { [K in Name]: TagNameToElement<Lowercase<Tag>> }
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}ref = "${infer Name}"${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}ref = '${infer Name}'${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}REF="${infer Name}"${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}REF='${infer Name}'${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}Ref="${infer Name}"${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
+    : Attrs extends `${string}Ref='${infer Name}'${string}`
+    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
     : Record<string, never>;
 
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
@@ -77,6 +93,16 @@ interface RefDescriptor {
   path: number[];
 }
 
+function getRefAttr(el: any): string | null {
+  if (typeof el.getAttribute === 'function') {
+    return el.getAttribute('ref') || el.getAttribute('REF') || el.getAttribute('Ref');
+  }
+  if (el.attributes) {
+    return el.attributes.ref || el.attributes.REF || el.attributes.Ref || null;
+  }
+  return null;
+}
+
 function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
   const descriptors: RefDescriptor[] = [];
   const seenRefs = new Set<string>();
@@ -84,12 +110,7 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
   function collectFromNode(node: Node, path: number[]): void {
     if (node.nodeType === 1) {
       const el = node as HTMLElement;
-      let refName: string | null = null;
-      if (typeof el.getAttribute === 'function') {
-        refName = el.getAttribute('ref');
-      } else if ((el as any).attributes && (el as any).attributes.ref) {
-        refName = (el as any).attributes.ref;
-      }
+      const refName = getRefAttr(el);
 
       if (refName) {
         if (!VALID_REF_REGEX.test(refName)) {
@@ -123,12 +144,7 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
     const rootNode = content.firstChild!;
     if (rootNode.nodeType === 1) {
       const el = rootNode as HTMLElement;
-      let refName: string | null = null;
-      if (typeof el.getAttribute === 'function') {
-        refName = el.getAttribute('ref');
-      } else if ((el as any).attributes && (el as any).attributes.ref) {
-        refName = (el as any).attributes.ref;
-      }
+      const refName = getRefAttr(el);
       if (refName) {
         if (!VALID_REF_REGEX.test(refName)) {
           if (typeof process === 'undefined' || process.env.NODE_ENV !== 'production') {
@@ -387,16 +403,16 @@ function patchMultiRootFragment(fragment: Node): Node {
 export function template<S extends string = string>(htmlString: S): TemplateFactory<S> {
   let templateElement: HTMLTemplateElement | null = null;
   let refDescriptors: RefDescriptor[] | null = null;
-  const hasRefAttr = htmlString.includes('ref=');
+  const hasRefAttr = /\bref\s*=/i.test(htmlString);
 
   const createNode = function createNode(): TemplateRoot<S> {
     const trimmed = htmlString.trim();
 
     if (typeof document === 'undefined') {
-      const refs: Record<string, any> = {};
+      const refs: Record<string, any> = Object.create(null);
       const seenRefs = new Set<string>();
       if (hasRefAttr) {
-        const regex = /<([a-zA-Z0-9-]+)[^>]*?\bref=["']([^"']+)["']/g;
+        const regex = /<([a-zA-Z0-9-]+)[^>]*?\bref\s*=\s*["']([^"']+)["']/gi;
         let match: RegExpExecArray | null;
         while ((match = regex.exec(trimmed)) !== null) {
           const tagName = match[1].toUpperCase();
@@ -419,7 +435,7 @@ export function template<S extends string = string>(htmlString: S): TemplateFact
       // Root tag match if single root
       const rootMatch = trimmed.match(/^<([a-zA-Z0-9-]+)[^>]*>/);
       const rootTag = rootMatch ? rootMatch[1].toUpperCase() : 'DIV';
-      const rootRefMatch = rootMatch ? rootMatch[0].match(/\bref=["']([^"']+)["']/) : null;
+      const rootRefMatch = rootMatch ? rootMatch[0].match(/\bref\s*=\s*["']([^"']+)["']/i) : null;
       const rootRefName = rootRefMatch ? rootRefMatch[1] : null;
 
       const mockRoot = createMockElement(rootTag, trimmed);
@@ -471,7 +487,7 @@ export function template<S extends string = string>(htmlString: S): TemplateFact
     const clone = templateElement.content.cloneNode(true);
     const root: any = clone.childNodes.length === 1 ? clone.firstChild! : patchMultiRootFragment(clone);
 
-    const refs: Record<string, any> = {};
+    const refs: Record<string, any> = Object.create(null);
     if (refDescriptors && refDescriptors.length > 0) {
       for (let d = 0; d < refDescriptors.length; d++) {
         const desc = refDescriptors[d];

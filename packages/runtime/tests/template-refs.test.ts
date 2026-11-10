@@ -402,4 +402,225 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
       (globalThis as any).document = origDoc;
     }
   });
+
+  it('14. Inherited property collision defense: unknown names and prototype names consistently return undefined', () => {
+    const root = template(`
+      <div ref="panel">
+        <span ref="label">Label</span>
+      </div>
+    `).clone();
+
+    // Built-in Object.prototype properties must return undefined, not Object.prototype methods
+    assert.strictEqual(root.refs.constructor, undefined, 'root.refs.constructor must be undefined');
+    assert.strictEqual(root.refs.toString, undefined, 'root.refs.toString must be undefined');
+    assert.strictEqual(root.refs.valueOf, undefined, 'root.refs.valueOf must be undefined');
+    assert.strictEqual((root.refs as any).__proto__, undefined, 'root.refs.__proto__ must be undefined');
+
+    assert.strictEqual(root.ref('constructor'), undefined, 'root.ref("constructor") must return undefined');
+    assert.strictEqual(root.ref('toString'), undefined, 'root.ref("toString") must return undefined');
+    assert.strictEqual(root.ref('valueOf'), undefined, 'root.ref("valueOf") must return undefined');
+    assert.strictEqual(root.ref('unknownProp'), undefined, 'root.ref("unknownProp") must return undefined');
+  });
+
+  it('15. Robust discovery of whitespace and casing variations in HTML reference attributes', () => {
+    const root = template(`
+      <form ref = "authForm">
+        <input ref = "user" />
+        <button REF="submitBtn">Submit</button>
+        <p Ref="disclaimer">Terms</p>
+      </form>
+    `).clone();
+
+    const { authForm, user, submitBtn, disclaimer } = root.refs;
+    assert.ok(authForm, 'authForm ref with spaces around = must be discovered');
+    assert.ok(user, 'user ref with spaces around = must be discovered');
+    assert.ok(submitBtn, 'submitBtn with uppercase REF attribute must be discovered');
+    assert.ok(disclaimer, 'disclaimer with mixed-case Ref attribute must be discovered');
+
+    assert.strictEqual(root.ref('user'), user);
+    assert.strictEqual(root.ref('submitBtn'), submitBtn);
+    assert.strictEqual(root.ref('disclaimer'), disclaimer);
+  });
+
+  it('16. Form input access, mutation, and isolation across independent clones', () => {
+    const formTemplate = template(`
+      <form ref="loginForm">
+        <input ref="username" value="" />
+        <input ref="rememberMe" type="checkbox" />
+        <button ref="submit">Login</button>
+      </form>
+    `);
+
+    const clone1 = formTemplate.clone();
+    const clone2 = formTemplate.clone();
+
+    // Verify registries are strictly independent objects
+    assert.notStrictEqual(clone1.refs, clone2.refs, 'Clone 1 and Clone 2 must have independent ref registries');
+    assert.notStrictEqual(clone1.refs.username, clone2.refs.username, 'Clone elements must be distinct');
+
+    // Modify form values on clone1
+    (clone1.refs.username as any).value = 'alice@example.com';
+    (clone1.refs.rememberMe as any).checked = true;
+
+    assert.strictEqual((clone1.refs.username as any).value, 'alice@example.com');
+    assert.strictEqual((clone1.refs.rememberMe as any).checked, true);
+
+    // Verify clone2 is completely isolated and unaffected by clone1 modifications
+    assert.strictEqual((clone2.refs.username as any).value ?? '', '');
+    assert.strictEqual((clone2.refs.rememberMe as any).checked ?? false, false);
+  });
+
+  it('17. Real DOM mock template cloning with full binding and event integration', () => {
+    // Realistic browser element mock
+    class BrowserElement {
+      public nodeType = 1;
+      public tagName: string;
+      public textContent: string = '';
+      public attributes: Record<string, string> = {};
+      public childNodes: BrowserElement[] = [];
+      public parentNode: BrowserElement | null = null;
+      public content?: BrowserElement;
+      public eventListeners: Record<string, Function[]> = {};
+      public value: string = '';
+      public checked: boolean = false;
+
+      constructor(tag: string) {
+        this.tagName = tag.toUpperCase();
+        if (this.tagName === 'TEMPLATE') {
+          this.content = new BrowserElement('#document-fragment');
+        }
+      }
+
+      getAttribute(name: string) {
+        return this.attributes[name.toLowerCase()] ?? null;
+      }
+
+      setAttribute(name: string, value: string) {
+        this.attributes[name.toLowerCase()] = value;
+      }
+
+      removeAttribute(name: string) {
+        delete this.attributes[name.toLowerCase()];
+      }
+
+      hasAttribute(name: string) {
+        return name.toLowerCase() in this.attributes;
+      }
+
+      appendChild(child: BrowserElement) {
+        child.parentNode = this;
+        this.childNodes.push(child);
+        return child;
+      }
+
+      get firstChild() {
+        return this.childNodes[0] ?? null;
+      }
+
+      addEventListener(event: string, fn: Function) {
+        if (!this.eventListeners[event]) this.eventListeners[event] = [];
+        this.eventListeners[event].push(fn);
+      }
+
+      dispatchEvent(event: { type: string }) {
+        const fns = this.eventListeners[event.type] || [];
+        for (const fn of fns) fn(event);
+        return true;
+      }
+
+      cloneNode(deep?: boolean): BrowserElement {
+        const el = new BrowserElement(this.tagName);
+        el.attributes = { ...this.attributes };
+        el.textContent = this.textContent;
+        el.value = this.value;
+        el.checked = this.checked;
+        if (this.content) {
+          el.content = this.content.cloneNode(deep);
+        }
+        if (deep) {
+          el.childNodes = this.childNodes.map((c) => {
+            const childClone = c.cloneNode(true);
+            childClone.parentNode = el;
+            return childClone;
+          });
+        }
+        return el;
+      }
+
+      set innerHTML(_val: string) {
+        // Build nested form hierarchy
+        const form = new BrowserElement('FORM');
+        form.setAttribute('ref', 'userForm');
+
+        const input = new BrowserElement('INPUT');
+        input.setAttribute('ref', 'email');
+        input.value = '';
+        form.appendChild(input);
+
+        const btn = new BrowserElement('BUTTON');
+        btn.setAttribute('ref', 'submitBtn');
+        form.appendChild(btn);
+
+        const p = new BrowserElement('P');
+        p.setAttribute('ref', 'statusMsg');
+        form.appendChild(p);
+
+        if (this.content) {
+          this.content.childNodes = [form];
+        }
+      }
+    }
+
+    const origDoc = (globalThis as any).document;
+    (globalThis as any).document = {
+      createElement(tag: string) {
+        return new BrowserElement(tag);
+      }
+    };
+
+    try {
+      const tmpl = template(`
+        <form ref="userForm">
+          <input ref="email" />
+          <button ref="submitBtn">Submit</button>
+          <p ref="statusMsg"></p>
+        </form>
+      `);
+
+      const root = tmpl.clone();
+      const { userForm, email, submitBtn, statusMsg } = root.refs;
+
+      assert.strictEqual(userForm, root);
+      assert.ok(email);
+      assert.ok(submitBtn);
+      assert.ok(statusMsg);
+
+      // Mutate form values
+      (email as any).value = 'browser-test@samrey.dev';
+      assert.strictEqual((email as any).value, 'browser-test@samrey.dev');
+
+      // Bind text and events
+      const statusSig = signal('Pending');
+      let submitted = false;
+
+      bindText(statusMsg, () => statusSig.value);
+      bindEvent(submitBtn, 'click', () => {
+        submitted = true;
+      });
+
+      assert.strictEqual(statusMsg.textContent, 'Pending');
+      statusSig.value = 'Success';
+      assert.strictEqual(statusMsg.textContent, 'Success');
+
+      (submitBtn as any).dispatchEvent({ type: 'click' });
+      assert.strictEqual(submitted, true, 'Event binding on ref must trigger handler');
+
+      // Clean up refs
+      root.disposeRefs();
+      assert.strictEqual(Object.keys(root.refs).length, 0);
+      assert.strictEqual(root.ref('email'), undefined);
+    } finally {
+      (globalThis as any).document = origDoc;
+    }
+  });
 });
