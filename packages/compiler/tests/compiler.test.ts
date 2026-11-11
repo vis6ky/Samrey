@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   compileTemplate, 
+  generateModuleCode,
   classifyBindingContext, 
   lintA11y, 
   TemplateParser,
@@ -182,5 +183,53 @@ describe('@samrey/compiler', () => {
     assert.ok(htmlMedia.includes('srcset="a.jpg 1x, about:blank 2x"'));
     assert.ok(htmlMedia.includes('color: red;'));
     assert.ok(htmlMedia.includes('poster="about:blank"'));
+  });
+
+  it('expands non-void HTML self-closing tags while preserving void and foreign SVG/MathML self-closing tags', () => {
+    const compiledHtml = compileTemplate('<div><span class="badge" /><strong >ok</strong><img alt="logo" src="/a.png" /></div>');
+    const html = compiledHtml.templates[0].staticHtml;
+    assert.ok(html.includes('<span class="badge"></span><strong>ok</strong>') || html.includes('<span class="badge"></span><strong >ok</strong>'));
+    assert.ok(!html.includes('<span class="badge" />'));
+    assert.ok(html.includes('<img alt="logo" src="/a.png" />'));
+
+    const compiledSvg = compileTemplate('<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" /><path d="M0 0" /></svg>');
+    const svgHtml = compiledSvg.templates[0].staticHtml;
+    assert.ok(svgHtml.includes('<circle cx="5" cy="5" r="4" />'));
+    assert.ok(svgHtml.includes('<path d="M0 0" />'));
+  });
+
+  it('uses token-aware runtime import detection without false positives from substrings, strings, comments, or member calls', () => {
+    const compiledExpr = compileTemplate('<div>{action(1)} {myShow(2)} {waitFor(3)}</div>');
+    const exprImportLine = compiledExpr.generatedCode.split('\n').find((l) => l.startsWith('import ')) || '';
+    assert.ok(exprImportLine.includes('template'));
+    assert.ok(exprImportLine.includes('bindText'));
+    assert.ok(!/\bon\b/.test(exprImportLine), `Must not import "on" for action(1), got: ${exprImportLine}`);
+    assert.ok(!exprImportLine.includes('Show'), `Must not import "Show" for myShow(2), got: ${exprImportLine}`);
+    assert.ok(!exprImportLine.includes('For'), `Must not import "For" for waitFor(3), got: ${exprImportLine}`);
+
+    const directCode = generateModuleCode(
+      [],
+      [
+        'const text = "Show(x) on(a)";',
+        '// bindAttr(root, "x", () => 1)',
+        '/* For({ each: () => [] }) */',
+        'obj.on("custom", () => {});',
+        'action(1);',
+        'const tpl = `prefix ${on(root, "click", handler)} end`;'
+      ].join('\n')
+    );
+    const directImportLine = directCode.split('\n').find((l) => l.startsWith('import ')) || '';
+    assert.ok(/\bon\b/.test(directImportLine), `Should import "on" from template expression interpolation: ${directImportLine}`);
+    assert.ok(!directImportLine.includes('Show'));
+    assert.ok(!directImportLine.includes('For'));
+    assert.ok(!directImportLine.includes('bindAttr'));
+
+    const noHelperDirect = generateModuleCode(
+      [],
+      'const label = "on(1)"; obj.on("ev", fn); action(1); /* bindText(x) */'
+    );
+    const noHelperImportLine = noHelperDirect.split('\n').find((l) => l.startsWith('import ')) || '';
+    assert.ok(!/\bon\b/.test(noHelperImportLine));
+    assert.ok(!noHelperImportLine.includes('bindText'));
   });
 });

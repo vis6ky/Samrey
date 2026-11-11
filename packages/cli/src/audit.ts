@@ -118,19 +118,150 @@ function skipBalancedBraces(source: string, pos: number, end: number): number {
   return end;
 }
 
+const KNOWN_DOM_EVENT_ATTRIBUTES = new Set<string>([
+  'onabort', 'onafterprint', 'onanimationcancel', 'onanimationend', 'onanimationiteration',
+  'onanimationstart', 'onauxclick', 'onbeforeinput', 'onbeforematch', 'onbeforeprint',
+  'onbeforetoggle', 'onbeforeunload', 'onbegin', 'onblur', 'oncancel', 'oncanplay',
+  'oncanplaythrough', 'onchange', 'onclick', 'onclose', 'oncommand',
+  'oncontentvisibilityautostatechange', 'oncontextlost', 'oncontextmenu', 'oncontextrestored',
+  'oncopy', 'oncuechange', 'oncut', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter',
+  'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'ondurationchange', 'onemptied',
+  'onend', 'onended', 'onerror', 'onfocus', 'onfocusin', 'onfocusout', 'onformdata',
+  'onfullscreenchange', 'onfullscreenerror', 'ongotpointercapture', 'onhashchange',
+  'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onlanguagechange',
+  'onload', 'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onlostpointercapture',
+  'onmessage', 'onmessageerror', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove',
+  'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onoffline', 'ononline',
+  'onpagehide', 'onpagereveal', 'onpageshow', 'onpageswap', 'onpaste', 'onpause', 'onplay',
+  'onplaying', 'onpointercancel', 'onpointerdown', 'onpointerenter', 'onpointerleave',
+  'onpointermove', 'onpointerout', 'onpointerover', 'onpointerrawupdate', 'onpointerup',
+  'onpopstate', 'onprogress', 'onratechange', 'onrepeat', 'onreset', 'onresize',
+  'onscroll', 'onscrollend', 'onscrollsnapchange', 'onscrollsnapchanging',
+  'onsecuritypolicyviolation', 'onseeked', 'onseeking', 'onselect', 'onselectionchange',
+  'onselectstart', 'onslotchange', 'onstalled', 'onstorage', 'onsubmit', 'onsuspend',
+  'ontimeupdate', 'ontoggle', 'ontouchcancel', 'ontouchend', 'ontouchmove', 'ontouchstart',
+  'ontransitioncancel', 'ontransitionend', 'ontransitionrun', 'ontransitionstart',
+  'onunhandledrejection', 'onunload', 'onvolumechange', 'onwaiting', 'onwebkitanimationend',
+  'onwebkitanimationiteration', 'onwebkitanimationstart', 'onwebkittransitionend', 'onwheel'
+]);
+
+const REGEX_PRECEDING_KEYWORDS = new Set<string>([
+  'return', 'case', 'throw', 'typeof', 'void', 'delete', 'await', 'else', 'do', 'in', 'of'
+]);
+
+function isScriptLikeFile(filename: string): boolean {
+  return /\.(?:ts|tsx|js|jsx|mts|cts|mjs|cjs)$/i.test(filename);
+}
+
+function isRawHtmlFile(filename: string): boolean {
+  return /\.(?:html?|xhtml)$/i.test(filename);
+}
+
+function trySkipJsLineComment(source: string, pos: number, len: number): number {
+  if (pos > 0 && source[pos - 1] === ':') return -1;
+  let j = pos - 1;
+  while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
+    j--;
+  }
+  if (j < 0 || '\n\r;{}(),='.includes(source[j]!)) {
+    const nl = source.indexOf('\n', pos + 2);
+    return nl === -1 ? len : nl + 1;
+  }
+  return -1;
+}
+
+function trySkipJsRegexLiteral(source: string, pos: number, len: number): number {
+  let j = pos - 1;
+  while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
+    j--;
+  }
+  let canStartRegex = j < 0 || '=([,:?!&|^~;{}\n\r'.includes(source[j]!);
+  if (!canStartRegex && /[a-zA-Z]/.test(source[j]!)) {
+    let wordStart = j;
+    while (wordStart > 0 && /[a-zA-Z0-9_$]/.test(source[wordStart - 1]!)) {
+      wordStart--;
+    }
+    canStartRegex = REGEX_PRECEDING_KEYWORDS.has(source.slice(wordStart, j + 1));
+  }
+  if (!canStartRegex) return -1;
+
+  let k = pos + 1;
+  let inClass = false;
+  while (k < len) {
+    const ch = source[k]!;
+    if (ch === '\n' || ch === '\r') return -1;
+    if (ch === '\\') {
+      k += 2;
+      continue;
+    }
+    if (ch === '[' && !inClass) {
+      inClass = true;
+      k++;
+      continue;
+    }
+    if (ch === ']' && inClass) {
+      inClass = false;
+      k++;
+      continue;
+    }
+    if (ch === '/' && !inClass) {
+      k++;
+      while (k < len && /[a-zA-Z]/.test(source[k]!)) {
+        k++;
+      }
+      return k;
+    }
+    k++;
+  }
+  return -1;
+}
+
 /**
- * Scans HTML/JSX opening tags with balanced brace, quote, and template-literal
- * awareness so nested expressions and `>` inside attributes never split tags.
+ * Scans HTML/JSX opening tags with comment/regex skipping and balanced brace, quote,
+ * and template-literal awareness so comments, regexes, and `>` inside attributes
+ * never split tags or produce false-positive HTML matches.
  */
-function scanOpeningTags(source: string): ScannedOpeningTag[] {
+function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag[] {
   const tags: ScannedOpeningTag[] = [];
   const len = source.length;
   let i = 0;
 
   while (i < len) {
-    const lt = source.indexOf('<', i);
-    if (lt === -1) break;
+    const ch = source[i]!;
 
+    if (ch === '<') {
+      if (source.startsWith('<!--', i)) {
+        const endComment = source.indexOf('-->', i + 4);
+        i = endComment === -1 ? len : endComment + 3;
+        continue;
+      }
+    } else if (scriptLike && ch === '/') {
+      const next = source[i + 1];
+      if (next === '/') {
+        const skipped = trySkipJsLineComment(source, i, len);
+        if (skipped !== -1) {
+          i = skipped;
+          continue;
+        }
+      } else if (next === '*') {
+        const closeBlock = source.indexOf('*/', i + 2);
+        i = closeBlock === -1 ? len : closeBlock + 2;
+        continue;
+      } else {
+        const skippedRegex = trySkipJsRegexLiteral(source, i, len);
+        if (skippedRegex !== -1) {
+          i = skippedRegex;
+          continue;
+        }
+      }
+      i++;
+      continue;
+    } else {
+      i++;
+      continue;
+    }
+
+    const lt = i;
     const firstChar = source[lt + 1];
     if (!firstChar || !/[a-zA-Z]/.test(firstChar)) {
       i = lt + 1;
@@ -259,12 +390,14 @@ function scanOpeningTags(source: string): ScannedOpeningTag[] {
 
 export function auditSource(source: string, filename = 'Component.tsx'): AuditReport {
   const messages: string[] = [];
-  const openingTags = scanOpeningTags(source);
+  const scriptLike = isScriptLikeFile(filename);
+  const rawHtml = isRawHtmlFile(filename);
+  const openingTags = scanOpeningTags(source, scriptLike);
 
   for (const tagInfo of openingTags) {
     const { tag, offset: tagOffset, endOffset, selfClosing, attrs } = tagInfo;
     const tagLine = getLineNumber(source, tagOffset);
-    const parsedAttrs: Record<string, string> = {};
+    const parsedAttrs: Record<string, string> = Object.create(null);
 
     for (const attr of attrs) {
       const { name: attrName, lower: attrLower, value: rawVal, isJsxExpr, offset: attrOffset } = attr;
@@ -274,8 +407,8 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
         parsedAttrs[attrLower] = isJsxExpr ? `{${rawVal}}` : rawVal;
       }
 
-      // Check inline DOM event handlers (allow JSX expression props when explicit `{expr}`, flag string/unquoted handlers)
-      if (attrLower.startsWith('on') && attrLower.length > 2 && !isJsxExpr) {
+      // Check inline DOM event handlers: allow JSX `{expr}` props in JSX/Samrey files, flag raw HTML `{...}` and static/unquoted handlers
+      if (KNOWN_DOM_EVENT_ATTRIBUTES.has(attrLower) && (!isJsxExpr || rawHtml)) {
         messages.push(
           `${filename}:${attrLine}: Inline event handler attribute "${attrName}" detected (violates CSP strict policy).`
         );

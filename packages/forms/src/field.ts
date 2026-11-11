@@ -15,7 +15,7 @@ export interface FieldState<T> {
   isValidating: ReadonlySignal<boolean>;
   aria: ReadonlySignal<AriaBindingAttributes>;
   setValue: (val: T) => void;
-  setTouched: (touched: boolean) => void;
+  setTouched: (touched: boolean, validateOnTouch?: boolean) => void;
   setError: (msg: string | null) => void;
   validate: () => boolean | Promise<boolean>;
 }
@@ -114,9 +114,9 @@ export function createField<T>(
     }
   }
 
-  function setTouched(isTouched: boolean): void {
+  function setTouched(isTouched: boolean, validateOnTouch = true): void {
     touchedSignal.value = isTouched;
-    if (isTouched) {
+    if (isTouched && validateOnTouch) {
       runValidation();
     }
   }
@@ -172,7 +172,6 @@ export function bindField<T>(element: any, field: FieldState<T>): void {
   };
   const onBlur = () => {
     field.setTouched(true);
-    field.validate();
   };
 
   if (typeof element.addEventListener === 'function') {

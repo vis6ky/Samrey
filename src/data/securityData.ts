@@ -9,16 +9,18 @@ export const SECURITY_THREATS: SecurityThreat[] = [
     vulnDescription: 'When server-rendering initial state via raw JSON.stringify(state) inside a <script> tag, user input containing </script> closes the HTML script parser prematurely, executing attacker-controlled JavaScript.',
     frameworkImpact: 'Affects legacy SSR setups and custom server implementations across React/Vue/Svelte without explicit unicode escaping.',
     aetherDefense: 'Mandatory Unicode Escape Serializer (@samrey/ssr). Converts <, >, &, \\u2028, and \\u2029 to safe hexadecimal escape sequences (\\u003c, \\u003e, \\u0026).',
-    aetherCodeSnippet: `// packages/ssr/src/serializer.ts
-const ESCAPE_LOOKUP = {
-  '&': '\\\\u0026',
-  '>': '\\\\u003e',
-  '<': '\\\\u003c',
-  '\\u2028': '\\\\u2028',
-  '\\u2029': '\\\\u2029',
-};
-export function serializeForHydration(data: unknown): string {
-  return JSON.stringify(data).replace(/[&><\\u2028\\u2029]/g, m => ESCAPE_LOOKUP[m]);
+    aetherCodeSnippet: `// packages/security/src/sanitizer.ts + packages/ssr/src/serializer.ts
+export function escapeForScriptPayload(jsonString: string): string {
+  return jsonString
+    .replace(/</g, '\\\\u003c')
+    .replace(/>/g, '\\\\u003e')
+    .replace(/&/g, '\\\\u0026')
+    .replace(/\\u2028/g, '\\\\u2028')
+    .replace(/\\u2029/g, '\\\\u2029');
+}
+export function serializeStateForHydration(state: unknown): string {
+  const safePayload = escapeForScriptPayload(JSON.stringify(stripSecrets(state)));
+  return \`<script id="__SAMREY_STATE__" type="application/json">\${safePayload}</script>\`;
 }`
   },
   {
@@ -46,16 +48,18 @@ export function sanitizeUri(rawUri: string): string {
     samplePayload: `<img src="x" onerror="alert(document.domain)">`,
     vulnDescription: 'Direct assignment of un-sanitized strings to innerHTML, v-html, or dangerouslySetInnerHTML completely bypasses standard template escaping.',
     frameworkImpact: 'Top source of DOM-based XSS across all frontend frameworks.',
-    aetherDefense: 'Disallows raw innerHTML in compiler output. Mandates <SafeHtml> component backed by cryptographically sealed W3C Trusted Types policy (samrey#html).',
+    aetherDefense: 'Disallows raw innerHTML pass-through in compiler output. Requires rawHtml() and template() backed by realm-isolated, fail-closed W3C Trusted Types policies (samrey#html and samrey#template).',
     aetherCodeSnippet: `// packages/security/src/trusted-types.ts
-export function getSamreyTrustedPolicy(): TrustedTypePolicy {
-  if (typeof window !== 'undefined' && window.trustedTypes) {
-    return window.trustedTypes.createPolicy('samrey#html', {
-      createHTML: (input) => sanitizeHtmlWithAst(input),
-      createScript: () => { throw new SecurityError('Dynamic script creation blocked'); }
+export function getSamreyTrustedPolicy(): SamreyTrustedPolicy {
+  const tt = typeof window !== 'undefined' && window.trustedTypes;
+  if (tt) {
+    return tt.createPolicy('samrey#html', {
+      createHTML: (input) => sanitizeHtmlString(input),
+      createScript: () => { throw new Error('Dynamic script creation prohibited'); },
+      createScriptURL: (url) => validateScriptUrl(url)
     });
   }
-  return fallbackAstSanitizerPolicy;
+  return fallbackProgrammaticPolicy;
 }`
   },
   {
@@ -65,32 +69,29 @@ export function getSamreyTrustedPolicy(): TrustedTypePolicy {
     samplePayload: `{"__proto__": {"isAdmin": true, "polluted": true}}`,
     vulnDescription: 'Unsafe deep merging of untrusted JSON payloads into application state modifies Object.prototype, altering global object properties throughout the application runtime.',
     frameworkImpact: 'Common in legacy state management libraries and uncontrolled recursive object assign routines.',
-    aetherDefense: 'Zero Object.prototype dependency. All internal reactive graph registries and store nodes instantiate via Object.create(null) and seal property descriptors.',
-    aetherCodeSnippet: `// packages/reactivity/src/store.ts
-export function createSafeStore<T extends object>(initialData: T): T {
-  const safeTarget = Object.create(null);
-  for (const [key, value] of Object.entries(initialData)) {
+    aetherDefense: 'Prototype-pollution scrubbing and null-prototype containers. Owner contexts and form maps use Object.create(null); safeJsonParse(), scrubPrototypePollution(), and SSR state sanitizers explicitly strip __proto__, constructor, and prototype keys.',
+    aetherCodeSnippet: `// packages/security/src/sanitizer.ts
+export function scrubPrototypePollution<T>(value: T): T {
+  const clean = {};
+  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
-    safeTarget[key] = value;
+    clean[key] = scrubPrototypePollution(val);
   }
-  return Object.seal(safeTarget);
+  return clean as T;
 }`
   },
   {
     id: 'THREAT-05',
-    title: 'Cross-Site Request Forgery (CSRF) on Form Actions',
-    category: 'Form Actions & Authentication',
-    samplePayload: `POST /api/transfer-funds (Triggered from malicious origin evil-bank.com)`,
-    vulnDescription: 'Attacker site submits a hidden form targeting a state-mutating server endpoint, leveraging the user authenticated session cookie.',
-    frameworkImpact: 'Frequent issue in frameworks with server actions that do not enforce strict origin and token checks by default.',
-    aetherDefense: 'Automatic Sec-Fetch-Site origin verification, double-submit CSRF cookie token injection, and build-time action HMAC signatures.',
-    aetherCodeSnippet: `// packages/forms/src/action.ts
-export function verifyActionRequest(req: Request, expectedActionId: string): boolean {
-  const origin = req.headers.get('origin');
-  const secFetchSite = req.headers.get('sec-fetch-site');
-  if (secFetchSite === 'cross-site') return false;
-  const token = req.headers.get('x-samrey-csrf') || getCookieToken(req);
-  return validateCsrfHmac(token, expectedActionId);
+    title: 'Cross-Site Request Forgery (CSRF) Timing & Token Forgery',
+    category: 'Authentication & Anti-CSRF',
+    samplePayload: `POST /api/transfer-funds (Invalid or mismatched CSRF token / timing oracle)`,
+    vulnDescription: 'Predictable CSRF tokens or non-constant-time equality checks enable token prediction or byte-by-byte timing side-channel forgery.',
+    frameworkImpact: 'Applications relying on Math.random() tokens or plain string === comparisons leak signature characters under statistical timing analysis.',
+    aetherDefense: 'CSPRNG token generation (generateCsrfToken()) combined with constant-time comparison (verifyCsrfToken() / timingSafeEqual()) in @samrey/security.',
+    aetherCodeSnippet: `// packages/security/src/csrf.ts
+export function verifyCsrfToken(submitted: string, expected: string): boolean {
+  if (!submitted || !expected) return false;
+  return timingSafeEqual(submitted, expected);
 }`
   }
 ];

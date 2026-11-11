@@ -235,4 +235,101 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
     assert.equal(insertedMarkers.length, 1, 'Control flow comment marker must mount before adopted SSR sibling');
     res.dispose();
   });
+
+  it('escapes </script> payloads in getDelegatedEventScript and cleans up document listeners on replay', () => {
+    const script = getDelegatedEventScript(['</script><script>alert(1)</script>']);
+    assert.ok(!script.includes('</script><script>'));
+    assert.ok(script.includes('\\u003c/script\\u003e'));
+    assert.ok(script.includes('__SAMREY_EVENTS_CLEANUP__'));
+
+    let cleanupCalled = 0;
+    const hadWindow = 'window' in globalThis;
+    const origWindow = (globalThis as any).window;
+    try {
+      (globalThis as any).window = {
+        __SAMREY_EVENTS__: [],
+        __SAMREY_EVENTS_CLEANUP__: () => { cleanupCalled++; }
+      };
+      const count = replayCapturedEvents();
+      assert.equal(count, 0);
+      assert.equal(cleanupCalled, 1, 'Delegated event listeners must be detached even when 0 events queued');
+    } finally {
+      if (hadWindow) (globalThis as any).window = origWindow;
+      else delete (globalThis as any).window;
+    }
+  });
+
+  it('hydrates and splits coalesced SSR Text nodes for adjacent reactive children without clobbering', async () => {
+    const { signal } = await import('@samrey/reactivity');
+    const { el } = await import('@samrey/runtime');
+
+    const greeting = signal('Hello');
+    const target = signal('Alice');
+    let mismatchCalls = 0;
+
+    // Server HTML merges adjacent text into a single Text("HelloAlice") node inside <p>
+    const createMockText = (txt: string): any => {
+      const node: any = {
+        nodeType: 3,
+        nodeName: '#text',
+        textContent: txt,
+        parentNode: null,
+        nextSibling: null,
+        previousSibling: null,
+        cloneNode: () => createMockText(node.textContent)
+      };
+      return node;
+    };
+    const mergedSsrText = createMockText('HelloAlice');
+    const ssrPChildren: any[] = [mergedSsrText];
+    const ssrP: any = {
+      nodeType: 1,
+      tagName: 'P',
+      childNodes: ssrPChildren,
+      insertBefore: (newNode: any, refNode: any) => {
+        const idx = refNode ? ssrPChildren.indexOf(refNode) : -1;
+        if (idx === -1) ssrPChildren.push(newNode);
+        else ssrPChildren.splice(idx, 0, newNode);
+        newNode.parentNode = ssrP;
+        return newNode;
+      },
+      removeChild: (ch: any) => {
+        const i = ssrPChildren.indexOf(ch);
+        if (i !== -1) ssrPChildren.splice(i, 1);
+        return ch;
+      },
+      get textContent() {
+        return ssrPChildren.map((c) => (c.nodeType === 8 ? '' : (c.textContent ?? ''))).join('');
+      }
+    };
+    mergedSsrText.parentNode = ssrP;
+
+    const containerChildren: any[] = [ssrP];
+    const container = {
+      childNodes: containerChildren,
+      replaceChildren: (...nodes: any[]) => {
+        if (nodes.length > 0) {
+          throw new Error('replaceChildren must not run on valid coalesced-text SSR match');
+        }
+        containerChildren.length = 0;
+      }
+    } as unknown as HTMLElement;
+
+    const res = hydrate(
+      () => el('p', null, () => greeting.value, () => target.value) as unknown as Node,
+      container,
+      { onMismatch: () => { mismatchCalls++; } }
+    );
+
+    assert.equal(mismatchCalls, 0);
+    assert.equal(ssrP.textContent, 'HelloAlice');
+
+    greeting.value = 'Hi ';
+    assert.equal(ssrP.textContent, 'Hi Alice');
+
+    target.value = 'Bob';
+    assert.equal(ssrP.textContent, 'Hi Bob');
+
+    res.dispose();
+  });
 });

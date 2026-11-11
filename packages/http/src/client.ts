@@ -26,6 +26,7 @@ async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined>
 
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number;
+  allowCrossOrigin?: boolean;
 }
 
 function mergeHeaders(defaults: Record<string, string>, userHeaders?: HeadersInit): Headers {
@@ -52,16 +53,34 @@ function mergeHeaders(defaults: Record<string, string>, userHeaders?: HeadersIni
 export class HttpClient {
   constructor(private baseUrl = '') {}
 
-  private resolveUrl(path: string): string {
+  private resolveUrl(path: string, allowCrossOrigin = false): string {
+    const trimmedPath = path.trim();
+    if (/^https?:(?!\/\/)/i.test(trimmedPath)) {
+      throw new Error(`[Samrey HTTP] Blocked malformed HTTP URL: "${path}"`);
+    }
+
     let raw: string;
-    if (/^(https?:|\/\/)/i.test(path)) {
-      raw = path;
+    if (trimmedPath.startsWith('//')) {
+      if (this.baseUrl && !allowCrossOrigin) {
+        throw new Error(`[Samrey HTTP] Blocked protocol-relative URL "${path}" when baseUrl is configured`);
+      }
+      raw = trimmedPath;
+    } else if (/^https?:\/\//i.test(trimmedPath)) {
+      if (this.baseUrl && !allowCrossOrigin) {
+        const sentinelBase = 'https://__samrey_http_base__.invalid';
+        const baseUrlObj = new URL(this.baseUrl, sentinelBase);
+        const targetUrlObj = new URL(trimmedPath);
+        if (baseUrlObj.origin !== targetUrlObj.origin) {
+          throw new Error(`[Samrey HTTP] Blocked cross-origin URL "${path}" when baseUrl is configured`);
+        }
+      }
+      raw = trimmedPath;
     } else if (this.baseUrl) {
       const cleanBase = this.baseUrl.replace(/\/+$/, '');
-      const cleanPath = path.startsWith('/') ? path : '/' + path;
+      const cleanPath = trimmedPath.startsWith('/') ? trimmedPath : '/' + trimmedPath;
       raw = `${cleanBase}${cleanPath}`;
     } else {
-      raw = path;
+      raw = trimmedPath;
     }
     const safe = sanitizeUri(raw);
     if (safe === 'about:blank' && raw !== 'about:blank') {
@@ -71,7 +90,7 @@ export class HttpClient {
   }
 
   private async request<T>(path: string, method: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
-    const url = this.resolveUrl(path);
+    const url = this.resolveUrl(path, options.allowCrossOrigin);
 
     const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
     const isBlobOrBuffer = (typeof Blob !== 'undefined' && body instanceof Blob) ||

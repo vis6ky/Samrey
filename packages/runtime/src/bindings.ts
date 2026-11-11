@@ -5,6 +5,7 @@
 
 import { effect, isHydrationCapturing, recordHydrationRetarget } from '@samrey/reactivity';
 import { URL_ATTRIBUTES, SRCSET_ATTRIBUTES, sanitizeUri, sanitizeSrcset, sanitizeCssStyle } from '@samrey/security';
+import { createHeadlessTextNode, createHeadlessCommentNode } from './headless-dom.js';
 
 const DANGEROUS_ATTR_NAMES = new Set([
   'innerhtml',
@@ -23,7 +24,11 @@ export function bindText(node: Node, getter: () => unknown): void {
   if (node && node.nodeType === 8) {
     const textNode = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
       ? document.createTextNode('')
-      : ({ nodeType: 3, nodeName: '#text', textContent: '', parentNode: node.parentNode } as unknown as Node);
+      : (() => {
+          const t = createHeadlessTextNode('');
+          t.parentNode = node.parentNode;
+          return t as unknown as Node;
+        })();
     if (node.parentNode) {
       if (typeof node.parentNode.replaceChild === 'function') {
         node.parentNode.replaceChild(textNode, node);
@@ -60,7 +65,7 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
   let currentNodes: Node[] = [];
   const marker = typeof document !== 'undefined' && typeof document.createComment === 'function'
     ? document.createComment('samrey:dynamic')
-    : ({ nodeType: 8, nodeName: '#comment', parentNode: null } as unknown as Node);
+    : (createHeadlessCommentNode('samrey:dynamic') as unknown as Node);
 
   parent.appendChild(marker);
 
@@ -95,7 +100,7 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
       }
       const t = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
         ? document.createTextNode(String(item))
-        : ({ nodeType: 3, nodeName: '#text', textContent: String(item) } as unknown as Node);
+        : (createHeadlessTextNode(String(item)) as unknown as Node);
       nextNodes.push(t);
     }
     pushNormalizedVal(val);

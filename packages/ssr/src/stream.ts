@@ -3,6 +3,7 @@
  * @samrey/ssr - HTML String & Streaming Renderer
  */
 
+import { createOwner, runWithOwner, Owner } from '@samrey/reactivity';
 import { serializeStateForHydration } from './serializer.js';
 import { getDelegatedEventScript } from './hydration.js';
 import { createSSRContext, runWithSSRContext, resolveSSRContext, SSRContext } from './context.js';
@@ -99,17 +100,44 @@ export async function renderToString(
   const ctx = options.context || createSSRContext(options.state || {});
   let bodyHtml = '';
 
+  const initialHeadTitle = ctx.head.title;
+  const initialMetaLen = ctx.head.meta.length;
+  const initialLinksLen = ctx.head.links.length;
+  const initialScriptsLen = ctx.head.scripts.length;
+
   try {
     if (typeof app === 'function') {
-      // 1. Initial execution to trigger and register all server data loaders
-      runWithSSRContext(ctx, () => app());
+      // 1. Initial pass inside an isolated Owner so effects/resources register and clean up safely
+      const pass1Owner = createOwner(null);
+      let pass1Result: unknown;
+      try {
+        pass1Result = runWithOwner(pass1Owner, () => runWithSSRContext(ctx, () => app()));
+        if (ctx.loaders.size === 0) {
+          bodyHtml = serializeNodeOutput(pass1Result);
+        }
+      } finally {
+        pass1Owner.dispose();
+      }
 
-      // 2. Wait for all registered server-side data loaders to resolve
-      await resolveSSRContext(ctx);
+      if (ctx.loaders.size > 0) {
+        // Restore pre-render head state so Pass 2 does not duplicate head entries collected in Pass 1
+        ctx.head.title = initialHeadTitle;
+        ctx.head.meta.length = initialMetaLen;
+        ctx.head.links.length = initialLinksLen;
+        ctx.head.scripts.length = initialScriptsLen;
 
-      // 3. Render final HTML output now that data is populated in context state
-      const finalPass = runWithSSRContext(ctx, () => app());
-      bodyHtml = serializeNodeOutput(finalPass);
+        // 2. Wait for all registered server-side data loaders to resolve
+        await resolveSSRContext(ctx);
+
+        // 3. Render final HTML output inside a fresh Owner now that data is populated in context state
+        const pass2Owner = createOwner(null);
+        try {
+          const finalPass = runWithOwner(pass2Owner, () => runWithSSRContext(ctx, () => app()));
+          bodyHtml = serializeNodeOutput(finalPass);
+        } finally {
+          pass2Owner.dispose();
+        }
+      }
     } else {
       bodyHtml = String(app);
       await resolveSSRContext(ctx);
@@ -163,25 +191,34 @@ export function renderToStream(
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const ctx = options.context || createSSRContext(options.state || {});
+  let isClosed = false;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+  let activeOwner: Owner | null = null;
+
+  const disposeActiveOwner = () => {
+    if (activeOwner) {
+      const toDispose = activeOwner;
+      activeOwner = null;
+      toDispose.dispose();
+    }
+  };
+
+  const cleanupAbortListener = () => {
+    if (options.abortSignal && onAbort) {
+      options.abortSignal.removeEventListener('abort', onAbort);
+      onAbort = undefined;
+    }
+  };
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
-      let isClosed = false;
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      let onAbort: (() => void) | undefined;
-
-      const cleanupAbortListener = () => {
-        if (options.abortSignal && onAbort) {
-          options.abortSignal.removeEventListener('abort', onAbort);
-          onAbort = undefined;
-        }
-      };
-
       const safeClose = () => {
         if (!isClosed) {
           isClosed = true;
           if (timeoutId !== undefined) clearTimeout(timeoutId);
           cleanupAbortListener();
+          disposeActiveOwner();
           controller.close();
         }
       };
@@ -193,6 +230,7 @@ export function renderToStream(
           cleanupAbortListener();
           ctx.loaders.clear();
           ctx.errors.length = 0;
+          disposeActiveOwner();
           controller.error(err);
         }
       };
@@ -219,18 +257,20 @@ export function renderToStream(
         }
       };
 
-      // 1. Run the app's synchronous shell render first with the SSR context active
+      // 1. Run the app's synchronous shell render first with an active Owner and SSR context
       let shellResult: any = undefined;
       let bodyContent = '';
       let shellThrew = false;
 
       try {
         if (typeof app === 'function') {
-          shellResult = runWithSSRContext(ctx, () => app());
+          activeOwner = createOwner(null);
+          shellResult = runWithOwner(activeOwner, () => runWithSSRContext(ctx, () => app()));
         } else {
           bodyContent = String(app);
         }
       } catch (err) {
+        disposeActiveOwner();
         shellThrew = true;
         const errorObj = err instanceof Error ? err : new Error(String(err));
         ctx.setError(errorObj, 500);
@@ -239,7 +279,10 @@ export function renderToStream(
           : `<div class="samrey-ssr-error" role="alert"><h2>Stream Error</h2><p>${escapeHtmlText(errorObj.message)}</p></div>`;
       }
 
-      if (isClosed) return;
+      if (isClosed) {
+        disposeActiveOwner();
+        return;
+      }
 
       // 2. Head elements (title, meta, links) are now collected from the synchronous shell render
       const title = options.title || ctx.head.title || 'Samrey Application';
@@ -261,14 +304,16 @@ export function renderToStream(
 <body>
   <div id="app">`);
 
-      // 3. If shell succeeded, await server data loaders if any, otherwise stream shell result
+      // 3. If shell succeeded, await server data loaders if any, otherwise serialize shell result
       if (!shellThrew && typeof app === 'function') {
         try {
           if (ctx.loaders.size > 0) {
+            disposeActiveOwner();
             await resolveSSRContext(ctx);
             if (isClosed) return;
 
-            const finalPass = runWithSSRContext(ctx, () => app());
+            activeOwner = createOwner(null);
+            const finalPass = runWithOwner(activeOwner, () => runWithSSRContext(ctx, () => app()));
             bodyContent = serializeNodeOutput(finalPass);
           } else {
             bodyContent = serializeNodeOutput(shellResult);
@@ -279,6 +324,8 @@ export function renderToStream(
           bodyContent = options.errorBoundary
             ? options.errorBoundary(errorObj)
             : `<div class="samrey-ssr-error" role="alert"><h2>Stream Error</h2><p>${escapeHtmlText(errorObj.message)}</p></div>`;
+        } finally {
+          disposeActiveOwner();
         }
       }
 
@@ -301,6 +348,15 @@ export function renderToStream(
       send(`\n</body>\n</html>`);
 
       safeClose();
+    },
+    cancel() {
+      isClosed = true;
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+      cleanupAbortListener();
+      disposeActiveOwner();
     }
   });
 }

@@ -177,4 +177,53 @@ describe('@samrey/http', () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it('blocks protocol-relative and cross-origin URLs when baseUrl is configured unless allowCrossOrigin is set', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchedUrls: string[] = [];
+    globalThis.fetch = (async (u: unknown) => {
+      fetchedUrls.push(String(u));
+      return new Response('{}', { status: 200 });
+    }) as any;
+
+    try {
+      const api = createHttpClient('https://api.example.com');
+      await assert.rejects(() => api.get('//evil.com/leak'), /Blocked protocol-relative URL/);
+      await assert.rejects(() => api.get('https://evil.com/leak'), /Blocked cross-origin URL/);
+      await assert.rejects(() => api.get('https:evil.com'), /Blocked malformed HTTP URL/);
+
+      await api.get('https://trusted.example.com/ok', { allowCrossOrigin: true });
+      assert.deepEqual(fetchedUrls, ['https://trusted.example.com/ok']);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('ignores late resolutions/rejections and blocks subsequent refetch after owner disposal', async () => {
+    let resolvePending!: (v: string) => void;
+    let resRef!: ReturnType<typeof createResource<string>>;
+
+    const dispose = createRoot((d) => {
+      resRef = createResource(
+        async () =>
+          new Promise<string>((resolve) => {
+            resolvePending = resolve;
+          }),
+        { initialValue: 'init' }
+      );
+      return d;
+    });
+
+    assert.equal(resRef.status.value, 'pending');
+    dispose();
+
+    // Even if fetcher ignores abortSignal and resolves late, state must remain untouched
+    resolvePending('late-value');
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(resRef.data.value, 'init');
+    assert.notEqual(resRef.status.value, 'success');
+
+    await assert.rejects(() => resRef.refetch(), { name: 'AbortError' });
+  });
 });

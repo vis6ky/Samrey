@@ -12,9 +12,9 @@ import { execProcess, resolveProjectVite, collectFilesRecursively } from '../exe
 export interface BuildCommandOptions {
   cwd?: string;
   outDir?: string;
-  ssr?: boolean;
-  minify?: boolean;
-  sourcemap?: boolean;
+  ssr?: boolean | string;
+  minify?: boolean | 'esbuild' | 'terser';
+  sourcemap?: boolean | 'inline' | 'hidden';
   dryRun?: boolean;
 }
 
@@ -26,13 +26,24 @@ function formatSize(bytes: number): string {
 export async function runBuildCommand(options: BuildCommandOptions = {}): Promise<CommandResult> {
   const projectRoot = options.cwd || process.cwd();
   const outDir = options.outDir || 'dist';
+  const ssrEntry = typeof options.ssr === 'string'
+    ? options.ssr
+    : options.ssr
+      ? 'src/entry-server.ts'
+      : undefined;
 
   if (options.dryRun) {
     return {
       success: true,
-      message: `  ▲ Samrey Production Build (dry run)\n  ➜ Would build with Vite into ${outDir}`,
+      message: `  ▲ Samrey Production Build (dry run)\n  ➜ Would build with Vite into ${outDir}${ssrEntry ? ` (SSR: ${ssrEntry})` : ''}`,
       exitCode: 0,
-      data: { outDir, dryRun: true }
+      data: {
+        outDir,
+        ssr: ssrEntry ?? false,
+        minify: options.minify,
+        sourcemap: options.sourcemap,
+        dryRun: true
+      }
     };
   }
 
@@ -46,8 +57,16 @@ export async function runBuildCommand(options: BuildCommandOptions = {}): Promis
   }
 
   const buildArgs = [viteBin, 'build', '--outDir', outDir];
-  if (options.ssr) {
-    buildArgs.push('--ssr');
+  if (ssrEntry) {
+    buildArgs.push('--ssr', ssrEntry);
+  }
+  if (options.minify !== undefined) {
+    buildArgs.push('--minify', typeof options.minify === 'string' ? options.minify : String(options.minify));
+  }
+  if (options.sourcemap === true) {
+    buildArgs.push('--sourcemap');
+  } else if (options.sourcemap === false || typeof options.sourcemap === 'string') {
+    buildArgs.push('--sourcemap', String(options.sourcemap));
   }
 
   const execRes = await execProcess(process.execPath, buildArgs, { cwd: projectRoot });

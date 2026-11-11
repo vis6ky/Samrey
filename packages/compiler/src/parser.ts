@@ -42,6 +42,7 @@ const VOID_ELEMENTS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
   'link', 'meta', 'param', 'source', 'track', 'wbr'
 ]);
+const FOREIGN_ELEMENTS = new Set(['svg', 'math']);
 
 // HTML boolean attributes whose presence alone denotes true (as opposed to aria-* or contenteditable)
 const HTML_BOOLEAN_ATTRS = new Set([
@@ -751,10 +752,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   templates: AIRTemplateUnit[];
   bindingsCode: string[];
   diagnostics: string[];
+  usedHelpers?: Set<string>;
 } {
   const templates: AIRTemplateUnit[] = [];
   const bindingsCode: string[] = [];
   const diagnostics: string[] = [];
+  const usedHelpers = new Set<string>();
 
   let templateCounter = 0;
 
@@ -814,7 +817,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
     return normalized;
   }
 
-  function processNodes(rawNodes: ASTNode[], currentPath: number[], isRootLevel = false): string {
+  function processNodes(
+    rawNodes: ASTNode[],
+    currentPath: number[],
+    isRootLevel = false,
+    inForeign = false
+  ): string {
     const nodes = normalizeNodes(rawNodes);
     const htmlParts: string[] = [];
     let childIndex = 0;
@@ -932,18 +940,24 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           }
         }
 
+        const lowerTag = node.tag.toLowerCase();
+        const isForeign = inForeign || FOREIGN_ELEMENTS.has(lowerTag);
+
         if (node.isSelfClosing) {
-          tagOpen += ' />';
-          htmlParts.push(tagOpen);
+          if (VOID_ELEMENTS.has(lowerTag) || isForeign) {
+            tagOpen += ' />';
+            htmlParts.push(tagOpen);
+          } else {
+            htmlParts.push(`${tagOpen}></${node.tag}>`);
+          }
         } else {
           tagOpen += '>';
-          const childrenHtml = processNodes(node.children, nodePath, false);
+          const childrenHtml = processNodes(node.children, nodePath, false, isForeign);
           htmlParts.push(`${tagOpen}${childrenHtml}</${node.tag}>`);
         }
 
-        const lowerTag = node.tag.toLowerCase();
         if (lowerTag === 'img' || lowerTag === 'a' || lowerTag === 'button') {
-          const attrMap: Record<string, string> = {};
+          const attrMap: Record<string, string> = Object.create(null);
           for (const a of node.attributes) {
             if (a.value !== null) attrMap[a.name] = a.value;
             else if (a.expression) attrMap[a.name] = a.expression;
@@ -956,6 +970,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         childIndex++;
       } else if (node.type === 'Component') {
         htmlParts.push('<!-- component-slot -->');
+        usedHelpers.add('createComponent');
         const helper = `createComponent(${node.name}, { ${node.props
           .map((p) => `${p.name}: ${p.expression || JSON.stringify(p.value)}`)
           .join(', ')} })`;
@@ -969,14 +984,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         childIndex++;
       } else if (node.type === 'Show') {
         htmlParts.push('<!-- show-slot -->');
-        const childHtml = processNodes(node.children, [], false);
+        usedHelpers.add('Show');
+        const childHtml = processNodes(node.children, [], false, inForeign);
         const childrenFn = childHtml
           ? `() => template(${JSON.stringify(childHtml)})()`
           : '() => null';
         const fallbackFn = node.fallbackExpression
           ? node.fallbackExpression
           : node.fallback
-            ? `() => template(${JSON.stringify(processNodes(node.fallback, [], false))})()`
+            ? `() => template(${JSON.stringify(processNodes(node.fallback, [], false, inForeign))})()`
             : undefined;
         const helper = fallbackFn
           ? `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, fallback: ${fallbackFn}, children: ${childrenFn} })`
@@ -991,7 +1007,8 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         childIndex++;
       } else if (node.type === 'For') {
         htmlParts.push('<!-- for-slot -->');
-        const childHtml = processNodes(node.children, [], false);
+        usedHelpers.add('For');
+        const childHtml = processNodes(node.children, [], false, inForeign);
         const childrenFn = childHtml
           ? `(_item, _i) => template(${JSON.stringify(childHtml)})()`
           : '(_item, _i) => null';
@@ -1034,21 +1051,27 @@ export function buildAIRFromAST(ast: ASTRootNode): {
     const slot = slots[idx];
     const target = getNodeExpr(slot.path);
     if (slot.type === 'dynamic-text') {
+      usedHelpers.add('bindText');
       bindingsCode.push(`bindText(${target}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-attr') {
+      usedHelpers.add('bindAttr');
       bindingsCode.push(`bindAttr(${target}, ${JSON.stringify(slot.name)}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-class') {
+      usedHelpers.add('bindClass');
       bindingsCode.push(`bindClass(${target}, ${JSON.stringify(slot.className)}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-property') {
+      usedHelpers.add('bindProperty');
       bindingsCode.push(`bindProperty(${target}, ${JSON.stringify(slot.propertyName)}, () => (${slot.expression}));`);
     } else if (slot.type === 'dynamic-event') {
+      usedHelpers.add('on');
       bindingsCode.push(`on(${target}, ${JSON.stringify(slot.eventName)}, ${slot.handlerExpression});`);
     } else if (slot.type === 'control-flow-slot') {
+      usedHelpers.add('bindDynamicChild');
       bindingsCode.push(`bindDynamicChild(${target}.parentNode || root, () => ${slot.helperCode});`);
     }
   }
 
-  return { templates, bindingsCode, diagnostics };
+  return { templates, bindingsCode, diagnostics, usedHelpers };
 }
 
 /**
@@ -1062,10 +1085,10 @@ export function compileTemplate(rawSource: string, options?: ParseOptions): AIRC
     throw errors[0];
   }
 
-  const { templates, bindingsCode, diagnostics: airDiags } = buildAIRFromAST(ast);
+  const { templates, bindingsCode, diagnostics: airDiags, usedHelpers } = buildAIRFromAST(ast);
   diagnostics.push(...airDiags);
   const componentBody = bindingsCode.join('\n  ');
-  const generatedCode = generateModuleCode(templates, componentBody);
+  const generatedCode = generateModuleCode(templates, componentBody, usedHelpers);
 
   return {
     ast,

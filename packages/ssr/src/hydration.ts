@@ -10,12 +10,13 @@ import {
   runWithHydrationCapture,
   HydrationCaptureRegistry
 } from '@samrey/reactivity';
-import { escapeHtmlAttribute } from '@samrey/security';
+import { escapeForScriptPayload, escapeHtmlAttribute } from '@samrey/security';
 import { escapeCssIdentifier } from './css-escape.js';
 
 declare global {
   interface Window {
     __SAMREY_EVENTS__?: Event[];
+    __SAMREY_EVENTS_CLEANUP__?: () => void;
   }
 }
 
@@ -40,16 +41,28 @@ export interface HydrationResult {
  * Captures user interactions during the gap between initial HTML paint and client JS initialization.
  */
 export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown'], nonce?: string): string {
-  const eventsList = JSON.stringify(events);
+  const eventsList = escapeForScriptPayload(JSON.stringify(events));
   const nonceAttr = nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : '';
-  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList};e.forEach(function(t){document.addEventListener(t,function(e){window.__SAMREY_EVENTS__.push(e)},{capture:!0})})}();</script>`;
+  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList},h=function(t){window.__SAMREY_EVENTS__&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){document.addEventListener(t,h,{capture:!0})});window.__SAMREY_EVENTS_CLEANUP__=function(){e.forEach(function(t){document.removeEventListener(t,h,{capture:!0})});delete window.__SAMREY_EVENTS_CLEANUP__}}();</script>`;
 }
 
 /**
  * Replays any user interactions captured by the inline delegator prior to client JS hydration.
  */
 export function replayCapturedEvents(container?: HTMLElement): number {
-  if (typeof window === 'undefined' || !window.__SAMREY_EVENTS__) {
+  if (typeof window === 'undefined') {
+    return 0;
+  }
+
+  if (typeof window.__SAMREY_EVENTS_CLEANUP__ === 'function') {
+    try {
+      window.__SAMREY_EVENTS_CLEANUP__();
+    } catch {
+      // Ignore cleanup errors on mocked globals
+    }
+  }
+
+  if (!window.__SAMREY_EVENTS__) {
     return 0;
   }
 
@@ -184,6 +197,28 @@ function matchNodeTrees(
       return false;
     }
 
+    if (cNode.nodeType === 3) {
+      cIdx++;
+      while (cIdx < clientList.length) {
+        const nextC = clientList[cIdx];
+        if (!nextC || nextC.nodeType === 8 || nextC.nodeType === 3) {
+          cIdx++;
+        } else {
+          break;
+        }
+      }
+      sIdx++;
+      while (sIdx < serverList.length) {
+        const nextS = serverList[sIdx];
+        if (!nextS || nextS.nodeType === 8 || nextS.nodeType === 3) {
+          sIdx++;
+        } else {
+          break;
+        }
+      }
+      continue;
+    }
+
     if (cNode.nodeType === 1) {
       const cTag = cNode.tagName?.toUpperCase();
       const sTag = sNode.tagName?.toUpperCase();
@@ -225,6 +260,28 @@ function retargetNode(clientNode: object, serverNode: unknown, capture: Hydratio
   }
 }
 
+function createHydrationTextNode(content: string, templateNode?: any): any {
+  if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
+    return document.createTextNode(content);
+  }
+  if (templateNode && typeof templateNode.cloneNode === 'function') {
+    const cloned = templateNode.cloneNode(false);
+    cloned.textContent = content;
+    cloned.parentNode = null;
+    return cloned;
+  }
+  return { nodeType: 3, nodeName: '#text', textContent: content, parentNode: null, nextSibling: null, previousSibling: null };
+}
+
+function hasMoreClientTextInRun(clientList: any[], fromIdx: number): boolean {
+  for (let k = fromIdx; k < clientList.length; k++) {
+    const n = clientList[k];
+    if (!n || n.nodeType === 8) continue;
+    return n.nodeType === 3;
+  }
+  return false;
+}
+
 function adoptNodeTrees(
   serverParent: any,
   serverList: any[],
@@ -237,12 +294,15 @@ function adoptNodeTrees(
 
   while (cIdx < clientList.length) {
     const cNode = clientList[cIdx];
-    const sNode = serverList[sIdx];
-
     if (!cNode) {
       cIdx++;
       continue;
     }
+
+    while (sIdx < serverList.length && serverList[sIdx]?.nodeType === 8) {
+      sIdx++;
+    }
+    const sNode = serverList[sIdx];
 
     if (cNode.nodeType === 8) {
       if (serverParent && typeof serverParent.insertBefore === 'function') {
@@ -263,9 +323,7 @@ function adoptNodeTrees(
       capture.retargeters.has(cNode) &&
       (!sNode || sNode.nodeType !== 3)
     ) {
-      const boundTextNode = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
-        ? document.createTextNode('')
-        : cNode;
+      const boundTextNode = createHydrationTextNode('', sNode);
       if (serverParent && typeof serverParent.insertBefore === 'function') {
         serverParent.insertBefore(boundTextNode, sNode ?? null);
       }
@@ -274,11 +332,37 @@ function adoptNodeTrees(
       continue;
     }
 
-    while (sIdx < serverList.length && serverList[sIdx]?.nodeType === 8) {
-      sIdx++;
-    }
-    const matchedServerNode = serverList[sIdx];
+    const matchedServerNode = sNode;
     if (!matchedServerNode) break;
+
+    if (
+      cNode.nodeType === 3 &&
+      matchedServerNode.nodeType === 3 &&
+      hasMoreClientTextInRun(clientList, cIdx + 1)
+    ) {
+      let nextNonCommentServer: any = null;
+      for (let k = sIdx + 1; k < serverList.length; k++) {
+        if (serverList[k]?.nodeType !== 8) {
+          nextNonCommentServer = serverList[k];
+          break;
+        }
+      }
+      const fullText = String(matchedServerNode.textContent ?? '');
+      const splitOffset = Math.min(String(cNode.textContent ?? '').length, fullText.length);
+      if (splitOffset < fullText.length || !nextNonCommentServer || nextNonCommentServer.nodeType !== 3) {
+        let remainderNode: any;
+        if (typeof matchedServerNode.splitText === 'function') {
+          remainderNode = matchedServerNode.splitText(splitOffset);
+        } else {
+          matchedServerNode.textContent = fullText.slice(0, splitOffset);
+          remainderNode = createHydrationTextNode(fullText.slice(splitOffset), matchedServerNode);
+          if (serverParent && typeof serverParent.insertBefore === 'function') {
+            serverParent.insertBefore(remainderNode, matchedServerNode.nextSibling ?? serverList[sIdx + 1] ?? null);
+          }
+        }
+        serverList.splice(sIdx + 1, 0, remainderNode);
+      }
+    }
 
     retargetNode(cNode, matchedServerNode, capture);
 

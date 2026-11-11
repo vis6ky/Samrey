@@ -15,6 +15,31 @@ export interface TrustedTypesOptions {
   allowedScriptOrigins?: string[];
 }
 
+const TRUSTED_TYPES_REALM_CACHE_KEY = Symbol.for('samrey.trustedTypes.realmPolicyCache');
+
+interface RealmPolicyCache {
+  html?: SamreyTrustedPolicy;
+  template?: SamreyTrustedPolicy;
+}
+
+function getRealmPolicyCache(): WeakMap<object, RealmPolicyCache> {
+  const g = globalThis as Record<symbol, unknown>;
+  let cache = g[TRUSTED_TYPES_REALM_CACHE_KEY] as WeakMap<object, RealmPolicyCache> | undefined;
+  if (!cache) {
+    cache = new WeakMap<object, RealmPolicyCache>();
+    g[TRUSTED_TYPES_REALM_CACHE_KEY] = cache;
+  }
+  return cache;
+}
+
+type NativeTrustedTypesFactory = {
+  createPolicy: (name: string, rules: unknown) => SamreyTrustedPolicy;
+  defaultPolicy?: {
+    createHTML?: (input: string) => unknown;
+    createScriptURL?: (url: string) => unknown;
+  };
+};
+
 let cachedPolicy: SamreyTrustedPolicy | null = null;
 let configuredAllowedOrigins: string[] = [];
 
@@ -24,7 +49,12 @@ export function setAllowedScriptOrigins(origins: string[]): void {
 
 export function resetTrustedPolicyForTest(): void {
   cachedPolicy = null;
+  cachedTemplatePolicy = null;
   configuredAllowedOrigins = [];
+  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: NativeTrustedTypesFactory }).trustedTypes;
+  if (tt && typeof tt === 'object') {
+    getRealmPolicyCache().delete(tt);
+  }
 }
 
 function normalizeAllowedOrigin(origin: string): string | null {
@@ -106,9 +136,16 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
   if (cachedPolicy) return cachedPolicy;
 
   // Check if browser Trusted Types API is available
-  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: { createPolicy: (name: string, rules: unknown) => SamreyTrustedPolicy } }).trustedTypes;
+  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: NativeTrustedTypesFactory }).trustedTypes;
 
-  if (tt) {
+  if (tt && typeof tt === 'object') {
+    const realmCache = getRealmPolicyCache();
+    let entry = realmCache.get(tt);
+    if (entry?.html) {
+      cachedPolicy = entry.html;
+      return cachedPolicy;
+    }
+
     try {
       cachedPolicy = tt.createPolicy('samrey#html', {
         createHTML: (input: string) => sanitizeHtmlString(input),
@@ -117,13 +154,32 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
         },
         createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
       });
+      entry = entry || {};
+      entry.html = cachedPolicy;
+      realmCache.set(tt, entry);
       return cachedPolicy;
-    } catch {
-      // Policy may already exist or be locked
+    } catch (err) {
+      const def = tt.defaultPolicy;
+      if (def && typeof def.createHTML === 'function') {
+        cachedPolicy = {
+          createHTML: (input: string) => def.createHTML!(sanitizeHtmlString(input)) as string,
+          createScript: () => {
+            throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+          },
+          createScriptURL: (url: string) => {
+            const safe = validateScriptUrl(url, configuredAllowedOrigins);
+            return typeof def.createScriptURL === 'function' ? (def.createScriptURL(safe) as string) : safe;
+          }
+        };
+        return cachedPolicy;
+      }
+      throw new Error(
+        `[Samrey Security] Trusted Types policy "samrey#html" initialization failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 
-  // Fallback programmatic policy
+  // Fallback programmatic policy when browser Trusted Types API is absent
   cachedPolicy = {
     createHTML: (input: string) => sanitizeHtmlString(input),
     createScript: () => {
@@ -143,9 +199,16 @@ let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
 export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
   if (cachedTemplatePolicy) return cachedTemplatePolicy;
 
-  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: { createPolicy: (name: string, rules: unknown) => SamreyTrustedPolicy } }).trustedTypes;
+  const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: NativeTrustedTypesFactory }).trustedTypes;
 
-  if (tt) {
+  if (tt && typeof tt === 'object') {
+    const realmCache = getRealmPolicyCache();
+    let entry = realmCache.get(tt);
+    if (entry?.template) {
+      cachedTemplatePolicy = entry.template;
+      return cachedTemplatePolicy;
+    }
+
     try {
       cachedTemplatePolicy = tt.createPolicy('samrey#template', {
         createHTML: (input: string) => sanitizeTemplateHtml(input),
@@ -154,9 +217,28 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
         },
         createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
       });
+      entry = entry || {};
+      entry.template = cachedTemplatePolicy;
+      realmCache.set(tt, entry);
       return cachedTemplatePolicy;
-    } catch {
-      // Policy may already exist
+    } catch (err) {
+      const def = tt.defaultPolicy;
+      if (def && typeof def.createHTML === 'function') {
+        cachedTemplatePolicy = {
+          createHTML: (input: string) => def.createHTML!(sanitizeTemplateHtml(input)) as string,
+          createScript: () => {
+            throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+          },
+          createScriptURL: (url: string) => {
+            const safe = validateScriptUrl(url, configuredAllowedOrigins);
+            return typeof def.createScriptURL === 'function' ? (def.createScriptURL(safe) as string) : safe;
+          }
+        };
+        return cachedTemplatePolicy;
+      }
+      throw new Error(
+        `[Samrey Security] Trusted Types policy "samrey#template" initialization failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 

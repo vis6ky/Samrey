@@ -69,7 +69,7 @@ export function createForm<TValues extends Record<string, any>>(
     // 1. Mark fields as touched and run field-level validators
     for (const key of Object.keys(fields) as (keyof TValues)[]) {
       const f = fields[key];
-      f.setTouched(true);
+      f.setTouched(true, false);
       f.setError(null);
       const res = f.validate();
       if (res instanceof Promise) {

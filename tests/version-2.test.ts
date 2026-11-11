@@ -220,5 +220,19 @@ describe('Version 2.1.0 & Registry Consistency Gate', () => {
       !secModel.includes('Automatic Header Injections'),
       'SECURITY_MODEL.md must not claim nonexistent automatic security response header injection in HttpClient'
     );
+    assert.ok(!secModel.includes('url("about:blank")'), 'SECURITY_MODEL.md must accurately document CSS url("") clearing');
+    assert.ok(secModel.includes('url("")'), 'SECURITY_MODEL.md must document CSS url("") clearing');
+    assert.ok(secModel.includes('WeakMap'), 'SECURITY_MODEL.md must document realm-isolated Trusted Types cache');
+
+    const secMd = fs.readFileSync(path.join(rootDir, 'docs/SECURITY.md'), 'utf8');
+    assert.ok(secMd.includes('sanitizeUri()'), 'docs/SECURITY.md must cite sanitizeUri()');
+    assert.ok(secMd.includes('escapeForScriptPayload()'), 'docs/SECURITY.md must cite escapeForScriptPayload()');
+    assert.ok(secMd.includes('serializeStateForHydration()'), 'docs/SECURITY.md must cite serializeStateForHydration()');
+
+    const searchIndexSrc = fs.readFileSync(path.join(rootDir, 'src/data/searchIndex.ts'), 'utf8');
+    assert.ok(!searchIndexSrc.includes('AetherError'), 'searchIndex.ts must not list nonexistent AetherError');
+    assert.ok(!searchIndexSrc.includes('createTrustedTypePolicy'), 'searchIndex.ts must not list nonexistent createTrustedTypePolicy');
+    assert.ok(!searchIndexSrc.includes('<Show when='), 'searchIndex.ts must not recommend SAMREY-108 <Show> tag syntax');
+    assert.ok(!searchIndexSrc.includes('<For each='), 'searchIndex.ts must not recommend SAMREY-108 <For> tag syntax');
   });
 });

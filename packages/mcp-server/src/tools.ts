@@ -50,6 +50,7 @@ function validateArtifactName(name: string): string | null {
 
 const ALLOWED_DIR_PREFIXES = ['src/', 'examples/', 'tests/'];
 const FORBIDDEN_FILE_PATTERNS = [
+  /(^|\/)\.[^/]+(\/|$)/i,
   /(^|\/)package\.json$/i,
   /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i,
   /(^|\/)\.git(\/|$)/i,
@@ -67,27 +68,37 @@ function validateTargetPath(
   if (typeof targetPath !== 'string') {
     return { valid: false, error: 'Target path must be a string.' };
   }
-  const cleanRel = targetPath.replace(/\\/g, '/').replace(/^\.\//, '');
-
-  for (const pattern of FORBIDDEN_FILE_PATTERNS) {
-    if (pattern.test(cleanRel)) {
-      return { valid: false, error: `Refusing to write to protected file: "${targetPath}".` };
-    }
-  }
-
-  const isAllowedPrefix = ALLOWED_DIR_PREFIXES.some((prefix) => cleanRel.startsWith(prefix));
-  if (!isAllowedPrefix) {
-    return {
-      valid: false,
-      error: `Target path "${targetPath}" must be located within one of the allowed directories: src/, examples/, tests/.`
-    };
-  }
 
   let resolved: string;
   try {
     resolved = resolveSafePath(root, targetPath);
   } catch (err: any) {
     return { valid: false, error: err?.message || String(err) };
+  }
+
+  const resolvedRoot = path.resolve(root);
+  const realRoot = (() => {
+    try {
+      return fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
+    } catch {
+      return resolvedRoot;
+    }
+  })();
+
+  const normalizedRel = path.relative(realRoot, resolved).replace(/\\/g, '/');
+
+  for (const pattern of FORBIDDEN_FILE_PATTERNS) {
+    if (pattern.test(normalizedRel)) {
+      return { valid: false, error: `Refusing to write to protected file: "${targetPath}".` };
+    }
+  }
+
+  const isAllowedPrefix = ALLOWED_DIR_PREFIXES.some((prefix) => normalizedRel.startsWith(prefix));
+  if (!isAllowedPrefix) {
+    return {
+      valid: false,
+      error: `Target path "${targetPath}" must be located within one of the allowed directories: src/, examples/, tests/.`
+    };
   }
 
   if (fs.existsSync(resolved) && overwrite !== true) {

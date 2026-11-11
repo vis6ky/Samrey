@@ -30,6 +30,7 @@ export function effect(fn: () => void | (() => void)): () => void {
 
       if (hasRun) {
         let hasComputeds = false;
+        let anyChanged = false;
         for (const source of this.sources) {
           const maybeSub = source as unknown as Partial<Subscriber>;
           if (typeof maybeSub.update === 'function') {
@@ -38,20 +39,15 @@ export function effect(fn: () => void | (() => void)): () => void {
               maybeSub.update();
             }
           }
+          if (source.version !== sourceVersions.get(source)) {
+            anyChanged = true;
+            break;
+          }
         }
 
-        if (hasComputeds) {
-          let anyChanged = false;
-          for (const source of this.sources) {
-            if (source.version !== sourceVersions.get(source)) {
-              anyChanged = true;
-              break;
-            }
-          }
-          if (!anyChanged) {
-            this.isDirty = false;
-            return;
-          }
+        if (hasComputeds && !anyChanged) {
+          this.isDirty = false;
+          return;
         }
       }
 

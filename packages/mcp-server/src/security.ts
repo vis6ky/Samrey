@@ -276,16 +276,54 @@ export function safeWriteFile(
   const resolvedRoot = path.resolve(projectRoot);
   const realRoot = fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
 
-  const parentDir = path.dirname(filePath);
-  if (!fs.existsSync(parentDir)) {
-    fs.mkdirSync(parentDir, { recursive: true });
+  const absTarget = path.isAbsolute(filePath)
+    ? path.resolve(filePath)
+    : path.resolve(resolvedRoot, filePath);
+
+  const relFromResolved = path.relative(resolvedRoot, absTarget);
+  const relFromReal = path.relative(realRoot, absTarget);
+  const inResolvedRoot = !relFromResolved.startsWith('..') && !path.isAbsolute(relFromResolved);
+  const inRealRoot = !relFromReal.startsWith('..') && !path.isAbsolute(relFromReal);
+
+  if (!inResolvedRoot && !inRealRoot) {
+    throw new Error(`Security Exception: Target "${filePath}" escapes project root boundary "${realRoot}".`);
+  }
+
+  const normalizedRelTarget = inRealRoot ? relFromReal : relFromResolved;
+  const parentRelFromRoot = path.dirname(normalizedRelTarget);
+
+  // Walk existing ancestors before creating directories so symlinks cannot hijack mkdirSync
+  const candidateParentDir = path.dirname(absTarget);
+  let existingAncestor = candidateParentDir;
+  while (!fs.existsSync(existingAncestor)) {
+    const up = path.dirname(existingAncestor);
+    if (up === existingAncestor) break;
+    existingAncestor = up;
+  }
+
+  const realAncestor = fs.realpathSync.native
+    ? fs.realpathSync.native(existingAncestor)
+    : fs.realpathSync(existingAncestor);
+  const ancestorRel = path.relative(realRoot, realAncestor);
+  if (ancestorRel.startsWith('..') || path.isAbsolute(ancestorRel)) {
+    throw new Error(`Security Exception: Ancestor directory "${existingAncestor}" escapes project root boundary "${realRoot}".`);
+  }
+
+  // Ensure every existing segment under realRoot leading to parentDir is inside root and not an escaping symlink
+  const safeParentDir = parentRelFromRoot === '.'
+    ? realRoot
+    : resolveSafePath(realRoot, parentRelFromRoot);
+  const safeTargetPath = path.join(safeParentDir, path.basename(absTarget));
+
+  if (!fs.existsSync(safeParentDir)) {
+    fs.mkdirSync(safeParentDir, { recursive: true });
   }
 
   // 1. Verify parent directory with O_DIRECTORY | O_NOFOLLOW if practical
   const dirFlags = (fs.constants.O_RDONLY || 0) | (fs.constants.O_DIRECTORY || 0) | (fs.constants.O_NOFOLLOW || 0);
   let parentFd: number | null = null;
   try {
-    parentFd = fs.openSync(parentDir, dirFlags);
+    parentFd = fs.openSync(safeParentDir, dirFlags);
   } catch (err: any) {
     throw new Error(`Security Exception: Cannot open parent directory securely (${err.message}).`);
   } finally {
@@ -295,7 +333,7 @@ export function safeWriteFile(
   }
 
   // 2. Re-run realpath check on parent directory immediately before opening
-  const realParent = fs.realpathSync.native ? fs.realpathSync.native(parentDir) : fs.realpathSync(parentDir);
+  const realParent = fs.realpathSync.native ? fs.realpathSync.native(safeParentDir) : fs.realpathSync(safeParentDir);
   const parentRel = path.relative(realRoot, realParent);
   if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
     throw new Error(`Security Exception: Parent directory escapes project root boundary "${realRoot}".`);
@@ -304,7 +342,7 @@ export function safeWriteFile(
   // 3. Check destination file
   let destStat: fs.Stats | null = null;
   try {
-    destStat = fs.lstatSync(filePath);
+    destStat = fs.lstatSync(safeTargetPath);
   } catch (err: any) {
     if (err.code !== 'ENOENT') throw err;
   }
@@ -323,7 +361,7 @@ export function safeWriteFile(
     ? fs.constants.O_WRONLY | fs.constants.O_TRUNC | (fs.constants.O_NOFOLLOW || 0)
     : fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0);
 
-  const fd = fs.openSync(filePath, fileFlags);
+  const fd = fs.openSync(safeTargetPath, fileFlags);
   try {
     fs.writeFileSync(fd, content, 'utf8');
   } finally {

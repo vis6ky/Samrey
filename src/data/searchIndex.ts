@@ -36,35 +36,37 @@ export const REPOSITORY_DOC_CHUNKS: DocChunk[] = [
     category: 'general',
     headings: ['Architectural Principles', '@samrey/reactivity', '@samrey/runtime', '@samrey/compiler', '@samrey/security', '@samrey/router', '@samrey/forms', '@samrey/http', '@samrey/ssr', '@samrey/testing', '@samrey/devtools', '@samrey/cli'],
     keywords: ['public api', 'api reference', 'contract', 'exports', 'interfaces', 'types', 'packages', 'reactivity', 'runtime', 'security', 'compiler', 'router', 'forms', 'http', 'ssr', 'testing', 'devtools', 'cli'],
-    apis: ['signal', 'computed', 'effect', 'batch', 'untrack', 'createStore', 'produce', 'reconcile', 'createMemo', 'createRoot', 'getOwner', 'runWithOwner', 'onCleanup', 'createContext', 'useContext', 'el', 'svg', 'fragment', 'mount', 'hydrate', 'Show', 'For', 'Switch', 'Match', 'Dynamic', 'ErrorBoundary', 'compile', 'parse', 'transform', 'sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'escapeJsonState', 'safeJsonParse', 'generateCsrfToken', 'validateCsrfToken', 'createRouter', 'useParams', 'useLocation', 'useNavigate', 'Link', 'createForm', 'createField', 'bindField', 'HttpClient', 'createHttpClient', 'createResource', 'resource', 'renderToString', 'renderToStream', 'testHarness', 'fireEvent'],
+    apis: ['signal', 'computed', 'effect', 'batch', 'untrack', 'createStore', 'produce', 'reconcile', 'createMemo', 'createRoot', 'getOwner', 'runWithOwner', 'onCleanup', 'createContext', 'useContext', 'el', 'svg', 'fragment', 'mount', 'hydrate', 'template', 'bindText', 'bindAttr', 'bindClass', 'on', 'Show', 'For', 'Switch', 'Match', 'Dynamic', 'ErrorBoundary', 'compileTemplate', 'parseTemplate', 'generateModuleCode', 'buildAIRFromAST', 'lintA11y', 'sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'sanitizeRedirectUri', 'sanitizeCssStyle', 'escapeForScriptPayload', 'getSamreyTrustedPolicy', 'getSamreyTemplateTrustedPolicy', 'safeJsonParse', 'generateCsrfToken', 'verifyCsrfToken', 'createRouter', 'RouterOutlet', 'useParams', 'useLocation', 'useNavigate', 'Link', 'createForm', 'createField', 'bindField', 'validateSchema', 'HttpClient', 'createHttpClient', 'createResource', 'renderToString', 'renderToStream', 'serializeStateForHydration', 'escapeJsonState', 'renderTest', 'fireEvent', 'flushReactivity', 'initDevTools', 'getGraphSnapshot', 'runCLI', 'generateStarterProject'],
     errorCodes: [],
-    summary: 'Authoritative Public API contract for all 11 packages in Samrey v1.0.0. Details every public function, type interface, and usage target.',
+    summary: 'Authoritative Public API contract for all 13 packages in Samrey v2.1.0. Details every public function, type interface, and usage target.',
     content: `# Samrey Framework — Public API Authoritative Reference
-Contract for all 11 packages comprising the Samrey Framework:
+Contract for all 13 packages comprising the Samrey Framework:
 1. @samrey/reactivity: signal, computed, effect, batch, untrack, createStore, produce, reconcile, createMemo, createRoot, getOwner, runWithOwner, onCleanup, createContext, useContext.
-2. @samrey/runtime: el, svg, fragment, mount, hydrate, Show, For, Switch, Match, Dynamic, ErrorBoundary.
-3. @samrey/compiler: compile, parse, transform, generateStaticTemplate, optimizeAst.
-4. @samrey/security: sanitizeHtml, sanitizeUri, sanitizeUrl, escapeJsonState, safeJsonParse, generateCsrfToken, validateCsrfToken, createTrustedTypePolicy.
-5. @samrey/router: createRouter, useParams, useLocation, useNavigate, Link, Router, Route.
-6. @samrey/forms: createForm, createField, bindField, validateStandardSchema.
-7. @samrey/http: HttpClient, createHttpClient, createResource, resource.
-8. @samrey/ssr: renderToString, renderToStream, hydrate, createSSRContext, stripSecrets.
-9. @samrey/testing: testHarness, createTestHarness, fireEvent, renderIntoDocument.
-10. @samrey/devtools: createDevToolsBridge, inspectSignalGraph, timeTravelState.
-11. @samrey/cli: create, dev, build, preview, test, audit, analyze, generate.`,
+2. @samrey/runtime: template, bindText, bindAttr, bindClass, on, el, svg, fragment, mount, hydrate, Show, For, Switch, Match, Dynamic, ErrorBoundary, rawHtml.
+3. @samrey/compiler: compileTemplate, parseTemplate, generateModuleCode, buildAIRFromAST, hoistTemplates, lintA11y, evaluateConstantExpression.
+4. @samrey/security: sanitizeHtmlString (sanitizeHtml), sanitizeUri (sanitizeUrl), sanitizeRedirectUri, sanitizeCssStyle, escapeForScriptPayload, safeJsonParse, generateCsrfToken, verifyCsrfToken, getSamreyTrustedPolicy, getSamreyTemplateTrustedPolicy.
+5. @samrey/router: createRouter, Router, Route, RouterOutlet, Link, useRouter, useParams, useLocation, useNavigate, useSearchParams.
+6. @samrey/forms: createForm, createField, bindField, validateSchema, computeAriaAttributes, getAccessibleFieldProps.
+7. @samrey/http: HttpClient, createHttpClient, createResource, RequestCache.
+8. @samrey/ssr: renderToString, renderToStream, serializeStateForHydration (escapeJsonState), hydrateFromSSR, generateStaticSite, createSSRContext, stripSecrets.
+9. @samrey/testing: renderTest, renderTestComponent, fireEvent, flushReactivity, waitFor, waitForNextUpdate, cleanupAllTestContainers.
+10. @samrey/devtools: initDevTools, SamreyDevToolsBridge, GraphInspector, getGraphSnapshot, ComponentInspector, PerformanceInspector.
+11. @samrey/cli: runCLI, generateStarterProject, samreyVitePlugin, auditSource (create, dev, build, preview, test, audit, analyze, generate).
+12. @samrey/ai: validateSamreyCode, diagnoseCompilerError, searchDocs, analyzeProject, generateAgentsMd.
+13. @samrey/mcp-server: SamreyMcpServer, MCP_TOOLS, MCP_RESOURCES, handleToolCall.`,
     docUrl: '#architecture'
   },
 
   // 2. ERROR_CODES.md
   {
     id: 'doc-error-codes',
-    title: 'Deterministic Error Codes Reference (AETH-xxx)',
+    title: 'Deterministic Error Codes Reference (SAMREY-xxx / AETH-xxx)',
     sourcePath: 'docs/ERROR_CODES.md',
     category: 'errors',
-    headings: ['CLI & Tooling (AETH-001 - AETH-099)', 'Compiler & Parsing (AETH-101 - AETH-199)', 'Security & A11y (AETH-201 - AETH-299)', 'Reactivity & Runtime (AETH-301 - AETH-399)', 'Router & Navigation (AETH-401 - AETH-499)', 'Forms & Validation (AETH-501 - AETH-599)', 'HTTP & Data Fetching (AETH-601 - AETH-699)', 'SSR & Hydration (AETH-701 - AETH-799)', 'DevTools & Testing (AETH-801 - AETH-899)'],
-    keywords: ['error codes', 'aeth', 'diagnostics', 'troubleshooting', 'error handling', 'aeth-101', 'aeth-201', 'aeth-301', 'aeth-401', 'aeth-501', 'aeth-601', 'aeth-701', 'aeth-801', 'recovery', 'stack trace'],
-    apis: ['AetherError', 'formatErrorMessage'],
-    errorCodes: ['AETH-001', 'AETH-002', 'AETH-003', 'AETH-004', 'AETH-005', 'AETH-101', 'AETH-102', 'AETH-103', 'AETH-104', 'AETH-105', 'AETH-106', 'AETH-201', 'AETH-202', 'AETH-203', 'AETH-204', 'AETH-205', 'AETH-301', 'AETH-302', 'AETH-303', 'AETH-304', 'AETH-305', 'AETH-306', 'AETH-401', 'AETH-402', 'AETH-403', 'AETH-404', 'AETH-501', 'AETH-502', 'AETH-503', 'AETH-504', 'AETH-601', 'AETH-602', 'AETH-603', 'AETH-604', 'AETH-701', 'AETH-702', 'AETH-703', 'AETH-704', 'AETH-705', 'AETH-801', 'AETH-802', 'AETH-803'],
+    headings: ['CLI & Tooling (SAMREY-001 - SAMREY-099)', 'Compiler & Parsing (SAMREY-101 - SAMREY-199)', 'Security & A11y (SAMREY-201 - SAMREY-299)', 'Reactivity & Runtime (SAMREY-301 - SAMREY-399)', 'Router & Navigation (SAMREY-401 - SAMREY-499)', 'Forms & Validation (SAMREY-501 - SAMREY-599)', 'HTTP & Data Fetching (SAMREY-601 - SAMREY-699)', 'SSR & Hydration (SAMREY-701 - SAMREY-799)', 'DevTools & Testing (SAMREY-801 - SAMREY-899)'],
+    keywords: ['error codes', 'samrey', 'aeth', 'diagnostics', 'troubleshooting', 'error handling', 'samrey-101', 'samrey-108', 'aeth-101', 'aeth-201', 'aeth-301', 'aeth-401', 'aeth-501', 'aeth-601', 'aeth-701', 'aeth-801', 'recovery', 'stack trace'],
+    apis: ['SamreyCompilerError', 'formatSamreyDiagnostic', 'ERROR_REGISTRY'],
+    errorCodes: ['SAMREY-101', 'SAMREY-108', 'SAMREY-109', 'SAMREY-110', 'SAMREY-111', 'AETH-001', 'AETH-002', 'AETH-003', 'AETH-004', 'AETH-005', 'AETH-101', 'AETH-102', 'AETH-103', 'AETH-104', 'AETH-105', 'AETH-106', 'AETH-201', 'AETH-202', 'AETH-203', 'AETH-204', 'AETH-205', 'AETH-301', 'AETH-302', 'AETH-303', 'AETH-304', 'AETH-305', 'AETH-306', 'AETH-401', 'AETH-402', 'AETH-403', 'AETH-404', 'AETH-501', 'AETH-502', 'AETH-503', 'AETH-504', 'AETH-601', 'AETH-602', 'AETH-603', 'AETH-604', 'AETH-701', 'AETH-702', 'AETH-703', 'AETH-704', 'AETH-705', 'AETH-801', 'AETH-802', 'AETH-803'],
     summary: 'Complete diagnostic error code catalog from AETH-001 to AETH-899 with exact root-cause analysis and recovery suggestions.',
     content: `# Samrey Error Codes Catalog (AETH-xxx)
 - AETH-101: Template Syntax Error. Unclosed tag or invalid JSX/template expression. Fix: ensure matching tags.
@@ -205,16 +207,17 @@ Samrey completely avoids Virtual DOM reconciliation.
     category: 'security',
     headings: ['Executive Summary & Security Principles', 'Context-Aware Sanitization Pipeline', 'Trusted Types Enforcement', 'Zero-eval Guarantee', 'CSRF Protection', 'Prototype Pollution Defense'],
     keywords: ['security', 'xss', 'sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'trusted types', 'zero eval', 'csrf', 'prototype pollution', 'safeJsonParse', 'escapeJsonState', 'csp', 'defense in depth'],
-    apis: ['sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'escapeJsonState', 'safeJsonParse', 'generateCsrfToken', 'validateCsrfToken', 'createTrustedTypePolicy'],
+    apis: ['sanitizeHtml', 'sanitizeHtmlString', 'sanitizeUri', 'sanitizeUrl', 'sanitizeRedirectUri', 'sanitizeCssStyle', 'escapeForScriptPayload', 'serializeStateForHydration', 'escapeJsonState', 'safeJsonParse', 'generateCsrfToken', 'verifyCsrfToken', 'getSamreyTrustedPolicy', 'getSamreyTemplateTrustedPolicy'],
     errorCodes: ['AETH-201', 'AETH-202', 'AETH-203', 'AETH-204', 'AETH-205', 'AETH-502'],
     summary: 'Zero-trust architecture with context-aware sanitization (HTML, attributes, URIs, CSS), W3C Trusted Types, zero-eval runtime, timing-safe CSRF tokens, and prototype pollution scrubbing.',
     content: `# Security Architecture (@samrey/security)
 - Zero-eval runtime: No eval() or new Function(). Full CSP script-src 'self' compatibility.
-- sanitizeHtml(dirtyHtml): Parses and strips malicious script tags, iframes, and inline onerror/onload handlers.
-- sanitizeUri(url): Blocks javascript:, vbscript:, data:text/html schemes, returning safe fallback.
+- sanitizeHtmlString(dirtyHtml) / sanitizeHtml(): Parses and strips malicious script tags, iframes, and inline onerror/onload handlers.
+- sanitizeUri(url): Blocks javascript:, vbscript:, data:text/html schemes, returning 'about:blank'. Use sanitizeRedirectUri(url) for redirects.
+- getSamreyTrustedPolicy() / getSamreyTemplateTrustedPolicy(): Registers samrey#html and samrey#template W3C Trusted Types policies.
 - safeJsonParse(json): Deeply cleanses __proto__, constructor, and prototype overrides.
-- CSRF Protection: generateCsrfToken() and timing-safe validateCsrfToken().
-- escapeJsonState(data): Unicode-escapes SSR state payloads.`,
+- CSRF Protection: generateCsrfToken() and timing-safe verifyCsrfToken().
+- serializeStateForHydration() / escapeForScriptPayload(): Unicode-escapes SSR state payloads.`,
     docUrl: '#security'
   },
 
@@ -229,13 +232,13 @@ Samrey completely avoids Virtual DOM reconciliation.
     apis: ['signal', 'computed', 'effect', 'Show', 'For', 'onCleanup'],
     errorCodes: [],
     summary: 'Step-by-step guidance for migrating applications from React, SolidJS, and Svelte to Samrey, including mental model shifts and exact API equivalence tables.',
-    content: `# Migrating to Samrey v1.0.0
+    content: `# Migrating to Samrey v2.1.0
 Mental Model: Components run ONCE. State updates directly mutate DOM nodes without re-running component functions.
 - React useState(0) -> Samrey signal(0)
 - React useMemo(() => ...) -> Samrey computed(() => ...)
 - React useEffect(() => ...) -> Samrey effect(() => ...)
-- React {isOpen ? <Modal /> : null} -> Samrey <Show when={() => isOpen.value}><Modal /></Show>
-- React {items.map(...)} -> Samrey <For each={() => items.value} key={i => i.id}>{i => ...}</For>
+- React {isOpen ? <Modal /> : null} -> Samrey Show({ when: () => isOpen.value, children: () => Modal() })
+- React {items.map(...)} -> Samrey For({ each: () => items.value, key: i => i.id, children: (item) => ... })
 - React useEffect cleanup -> Samrey onCleanup(() => ...)`,
     docUrl: '#docs'
   },
@@ -272,14 +275,14 @@ Available scripts:
     sourcePath: 'docs/TESTING_AND_TOOLING.md',
     category: 'testing',
     headings: ['Headless Test Harness', 'Simulating User Events', 'Reactive Assertions', 'Testing Components & Stores'],
-    keywords: ['testing', 'test harness', 'testHarness', 'createTestHarness', 'fireEvent', 'assertions', 'unit tests', 'integration tests', 'mock dom'],
-    apis: ['testHarness', 'createTestHarness', 'fireEvent', 'renderIntoDocument'],
+    keywords: ['testing', 'renderTest', 'renderTestComponent', 'fireEvent', 'flushReactivity', 'waitFor', 'assertions', 'unit tests', 'integration tests', 'mock dom'],
+    apis: ['renderTest', 'renderTestComponent', 'fireEvent', 'flushReactivity', 'waitFor', 'cleanupAllTestContainers'],
     errorCodes: ['AETH-801', 'AETH-802', 'AETH-803'],
     summary: 'Headless reactive test harness for asserting signal updates, simulated user events (click, input, submit), and component lifecycle validation without heavy browser runners.',
     content: `# Testing Samrey Applications (@samrey/testing)
-- createTestHarness(): Creates an isolated DOM environment with reactive root and automatic cleanup.
-- fireEvent: Simulates click, input, change, submit, and keyboard events on native DOM nodes.
-- Synchronous testing: Because Samrey reactivity is synchronous and glitch-free, assertions run immediately after state mutations or simulated events without arbitrary waitFor delays.`,
+- renderTest(component): Mounts a component into an isolated container with reactive root cleanup.
+- fireEvent(target, eventName): Simulates click, input, change, submit, and keyboard events on DOM nodes.
+- flushReactivity(): Flushes pending microtask reactivity updates cleanly in async tests.`,
     docUrl: '#docs'
   },
 

@@ -69,6 +69,19 @@ function findAuditFiles(dir: string, baseDir = dir, userIgnores: string[] = []):
 }
 
 export async function runAuditCommand(options: AuditCommandOptions = {}): Promise<CommandResult> {
+  if (options.fix) {
+    return {
+      success: false,
+      message: '[Samrey Audit Error] Automatic "--fix" is not supported because remediating inline scripts, URIs, and alt text safely requires semantic review.',
+      exitCode: 1,
+      data: {
+        filesScanned: 0,
+        violationsCount: 0,
+        messages: ['Automatic --fix is not supported.']
+      }
+    };
+  }
+
   const projectRoot = options.cwd || process.cwd();
   const userIgnores = options.ignore || [];
 

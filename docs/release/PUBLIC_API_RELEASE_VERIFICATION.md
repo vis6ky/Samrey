@@ -15,7 +15,7 @@
 | `@samrey/runtime` | 18 | 45 | 0 | **PASS** |
 | `@samrey/security` | 10 | 39 | 0 | **PASS** |
 | `@samrey/compiler` | 9 | 19 | 0 | **PASS** |
-| `@samrey/router` | 14 | 17 | 0 | **PASS** |
+| `@samrey/router` | 14 | 18 | 0 | **PASS** |
 | `@samrey/http` | 4 | 8 | 0 | **PASS** |
 | `@samrey/forms` | 4 | 7 | 0 | **PASS** |
 | `@samrey/ssr` | 9 | 23 | 0 | **PASS** |

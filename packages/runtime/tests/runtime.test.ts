@@ -8,6 +8,8 @@ import {
   el,
   Show,
   For,
+  Switch,
+  Match,
   ErrorBoundary,
   Dynamic,
   Suspense,
@@ -726,6 +728,80 @@ describe('@samrey/runtime', () => {
         '<div><span>Fallback-1</span><span>Fallback-2</span><span>Fallback-3</span><footer>End</footer></div>',
         'Reactive transition back to empty <For> fallback must preserve forward node order'
       );
+    });
+
+    it('For updates lazy index() getters invoked after list reordering', () => {
+      const items = signal([
+        { id: 'a', label: 'A' },
+        { id: 'b', label: 'B' },
+        { id: 'c', label: 'C' }
+      ]);
+      const lazyReaders = new Map<string, () => number>();
+
+      const container = el('div', null,
+        For({
+          each: items,
+          key: (item) => item.id,
+          children: (item, index) => {
+            lazyReaders.set(item.id, index);
+            return el('span', null, item.label);
+          }
+        })
+      );
+      void container;
+
+      // Reorder before any index() call has been made
+      items.value = [
+        { id: 'c', label: 'C' },
+        { id: 'a', label: 'A' },
+        { id: 'b', label: 'B' }
+      ];
+
+      assert.equal(lazyReaders.get('c')!(), 0);
+      assert.equal(lazyReaders.get('a')!(), 1);
+      assert.equal(lazyReaders.get('b')!(), 2);
+
+      // Reorder again after index signals have been lazily instantiated
+      items.value = [
+        { id: 'b', label: 'B' },
+        { id: 'c', label: 'C' },
+        { id: 'a', label: 'A' }
+      ];
+      assert.equal(lazyReaders.get('b')!(), 0);
+      assert.equal(lazyReaders.get('c')!(), 1);
+      assert.equal(lazyReaders.get('a')!(), 2);
+    });
+
+    it('Switch skips redundant re-renders on unkeyed Match cases when when stays truthy', () => {
+      const count = signal(1);
+      let branchMounts = 0;
+      let cleanups = 0;
+
+      const root = el('div', null,
+        Switch({
+          children: [
+            Match({
+              when: () => count.value,
+              children: () => {
+                branchMounts++;
+                onCleanup(() => cleanups++);
+                return el('p', null, () => `Count:${count.value}`);
+              }
+            })
+          ]
+        })
+      ) as any;
+
+      assert.equal(branchMounts, 1);
+      assert.equal(cleanups, 0);
+      assert.equal(root.outerHTML, '<div><p>Count:1</p></div>');
+
+      // Truthy -> different truthy number must update inner signal without tearing down unkeyed Match branch
+      count.value = 2;
+      count.value = 3;
+      assert.equal(branchMounts, 1, 'Unkeyed Match must not remount across truthy value updates');
+      assert.equal(cleanups, 0);
+      assert.equal(root.outerHTML, '<div><p>Count:3</p></div>');
     });
   });
 });

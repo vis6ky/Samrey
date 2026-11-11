@@ -200,6 +200,7 @@ ${generatedPages
 </urlset>`;
 
     if (writeFiles) {
+      await fs.mkdir(outDir, { recursive: true });
       await fs.writeFile(path.join(outDir, 'sitemap.xml'), sitemapXml, 'utf8');
     }
   }

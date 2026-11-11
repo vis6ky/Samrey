@@ -245,6 +245,25 @@ export const count = signal(0);
     if (incBtn && typeof incBtn.click === 'function') {
       incBtn.click();
     }
+
+    // Top-level loop calling helper closure must not reset step budget
+    const nopLoopRes = executeSamreyCode('function nop() {} for (let i = 0; i < 250000; i++) { nop(); } el("div")');
+    assert.equal(nopLoopRes.success, false, 'Top-level loop with helper calls must hit execution step limit');
+
+    // Host intrinsics cannot have static properties mutated from inside sandbox
+    const intrinsicMutationRes = executeSamreyCode('Error.prepareStackTrace = () => "pwned"; el("div")');
+    assert.equal(intrinsicMutationRes.success, false, 'Must block host Error intrinsic mutation');
+
+    // Named async function expression binds its own name cleanly, and benign prototype words in comments/idents work
+    const benignAsyncRes = executeSamreyCode(`
+      // Safe comment mentioning prototype
+      export function SafeDemo() {
+        const prototypeLabel = 'ok';
+        const fn = async function selfNamed(n) { return typeof selfNamed === 'function' ? n : -1; };
+        return el('div', { 'data-fn': typeof fn }, prototypeLabel);
+      }
+    `);
+    assert.equal(benignAsyncRes.success, true, benignAsyncRes.error);
   });
 
 });

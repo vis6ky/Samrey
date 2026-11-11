@@ -412,6 +412,24 @@ function isDeclBoundaryBefore(str: string, idx: number): boolean {
   return i < 0 || str[i] === ';' || str[i] === '{' || str[i] === '}';
 }
 
+const CSS_AT_RULE_STICKY_RE = /@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/iy;
+const CSS_BAD_PROP_STICKY_RE = /(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/iy;
+const CSS_EXPR_STICKY_RE = /expression\s*\(/iy;
+const CSS_PROGID_STICKY_RE = /progid\s*:/iy;
+const CSS_URL_STICKY_RE = /url\s*\(/iy;
+const CSS_IMAGE_SET_STICKY_RE = /(?:-webkit-)?image-set\s*\(/iy;
+
+function matchStickyAt(re: RegExp, str: string, index: number): RegExpExecArray | null {
+  re.lastIndex = index;
+  return re.exec(str);
+}
+
+function escapeStyleCloseInCss(css: string): string {
+  return css
+    .replace(/<\s*\/\s*style\b/gi, '\\3c /style')
+    .replace(/<!--/g, '\\3c !--');
+}
+
 function sanitizeNormalizedCss(str: string): string {
   let out = '';
   let quote: string | null = null;
@@ -436,40 +454,34 @@ function sanitizeNormalizedCss(str: string): string {
     }
 
     if (ch === '@' && isIdentBoundaryBefore(str, i)) {
-      const atMatch = /^@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/i.exec(str.slice(i));
-      if (atMatch) {
+      if (matchStickyAt(CSS_AT_RULE_STICKY_RE, str, i)) {
         i = findDeclarationEnd(str, i) + 1;
         continue;
       }
     }
 
     if (isDeclBoundaryBefore(str, i)) {
-      const propMatch = /^(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/i.exec(str.slice(i));
-      if (propMatch) {
+      if (matchStickyAt(CSS_BAD_PROP_STICKY_RE, str, i)) {
         i = findDeclarationEnd(str, i) + 1;
         continue;
       }
     }
 
     if (isIdentBoundaryBefore(str, i)) {
-      const exprMatch = /^(?:expression|progid\s*:)/i.exec(str.slice(i));
+      const exprMatch = matchStickyAt(CSS_EXPR_STICKY_RE, str, i);
       if (exprMatch) {
-        if (exprMatch[0].toLowerCase().startsWith('expression')) {
-          const afterKw = str.slice(i + 'expression'.length);
-          const wsMatch = /^\s*\(/.exec(afterKw);
-          if (wsMatch) {
-            const openIdx = i + 'expression'.length + wsMatch[0].length - 1;
-            i = findMatchingParen(str, openIdx) + 1;
-            continue;
-          }
-        } else {
-          const end = findDeclarationEnd(str, i);
-          i = str[end] === ';' ? end : end + 1;
-          continue;
-        }
+        const openIdx = i + exprMatch[0].length - 1;
+        i = findMatchingParen(str, openIdx) + 1;
+        continue;
       }
 
-      const urlMatch = /^url\s*\(/i.exec(str.slice(i));
+      if (matchStickyAt(CSS_PROGID_STICKY_RE, str, i)) {
+        const end = findDeclarationEnd(str, i);
+        i = str[end] === ';' ? end : end + 1;
+        continue;
+      }
+
+      const urlMatch = matchStickyAt(CSS_URL_STICKY_RE, str, i);
       if (urlMatch) {
         const openIdx = i + urlMatch[0].length - 1;
         const closeIdx = findMatchingParen(str, openIdx);
@@ -479,7 +491,7 @@ function sanitizeNormalizedCss(str: string): string {
         continue;
       }
 
-      const imgSetMatch = /^(?:-webkit-)?image-set\s*\(/i.exec(str.slice(i));
+      const imgSetMatch = matchStickyAt(CSS_IMAGE_SET_STICKY_RE, str, i);
       if (imgSetMatch) {
         const openIdx = i + imgSetMatch[0].length - 1;
         const closeIdx = findMatchingParen(str, openIdx);
@@ -498,7 +510,7 @@ function sanitizeNormalizedCss(str: string): string {
     i++;
   }
 
-  return out;
+  return escapeStyleCloseInCss(out);
 }
 
 /**
@@ -1301,7 +1313,8 @@ function sanitizeHtmlWithTokenizer(
       continue;
     }
 
-    if (!parsed.selfClosing && (lowerTag === 'svg' || lowerTag === 'math')) {
+    const isForeignRoot = lowerTag === 'svg' || lowerTag === 'math';
+    if (!parsed.selfClosing && isForeignRoot) {
       foreignStack.push(lowerTag);
     }
 
@@ -1320,7 +1333,7 @@ function sanitizeHtmlWithTokenizer(
       continue;
     }
 
-    out += `<${parsed.tagName}${serializedAttrs}${parsed.selfClosing && inForeign ? ' />' : '>'}`;
+    out += `<${parsed.tagName}${serializedAttrs}${parsed.selfClosing && (inForeign || isForeignRoot) ? ' />' : '>'}`;
   }
 
   return out;

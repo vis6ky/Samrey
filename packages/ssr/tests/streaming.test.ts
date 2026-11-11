@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStream, renderToString } from '../src/index.js';
+import { onCleanup } from '@samrey/reactivity';
 
 describe('@samrey/ssr - Streaming HTML Renderer', () => {
   it('streams complete HTML document chunks via ReadableStream', async () => {
@@ -87,5 +88,26 @@ describe('@samrey/ssr - Streaming HTML Renderer', () => {
     assert.ok(!streamed.includes('alert("xss")'));
     assert.ok(!streamed.includes('http-equiv="refresh"'));
     assert.ok(streamed.includes('<meta name="theme-color" content="#0f172a">'));
+  });
+
+  it('disposes stream SSR owners on completion and on reader cancellation', async () => {
+    let completedDisposals = 0;
+    const stream = renderToStream(() => {
+      onCleanup(() => completedDisposals++);
+      return '<p>Done</p>';
+    });
+    const reader = stream.getReader();
+    while (!(await reader.read()).done) {
+      // consume stream
+    }
+    assert.equal(completedDisposals, 1);
+
+    let cancelledDisposals = 0;
+    const cancelStream = renderToStream(() => {
+      onCleanup(() => cancelledDisposals++);
+      return '<p>Will cancel</p>';
+    });
+    await cancelStream.getReader().cancel('aborted');
+    assert.equal(cancelledDisposals, 1);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderToString, createSSRContext } from '../src/index.js';
+import { renderToString, createSSRContext, createServerData } from '../src/index.js';
+import { onCleanup } from '@samrey/reactivity';
 
 describe('@samrey/ssr - Server Side Rendering', () => {
   it('renders safe static HTML document with title, head metadata, and hydration scripts', async () => {
@@ -80,5 +81,40 @@ describe('@samrey/ssr - Server Side Rendering', () => {
     const htmlFor = await renderToString(forApp);
     assert.ok(!htmlFor.includes('[object Object]'), 'For must not contain [object Object]');
     assert.ok(htmlFor.includes('<li>alpha</li><li>beta</li><li>gamma</li>'));
+  });
+
+  it('deduplicates ctx.head.meta across 2-pass loader SSR, runs single pass without loaders, and disposes owners', async () => {
+    const ctx = createSSRContext();
+    ctx.addMeta({ name: 'existing', content: 'keep' });
+
+    let passCount = 0;
+    let disposedCount = 0;
+
+    const htmlWithLoader = await renderToString(
+      () => {
+        passCount++;
+        onCleanup(() => disposedCount++);
+        ctx.addMeta({ name: 'description', content: 'Async page' });
+        const [item] = createServerData('item', async () => 'loaded-ok');
+        return `<main>${item() ?? 'pending'}</main>`;
+      },
+      { context: ctx }
+    );
+
+    assert.equal(passCount, 2);
+    assert.equal(disposedCount, 2, 'Both Pass 1 and Pass 2 owners must dispose');
+    assert.equal(htmlWithLoader.match(/name="description"/g)?.length, 1, 'Must emit description meta tag only once');
+    assert.equal(htmlWithLoader.match(/name="existing"/g)?.length, 1, 'Pre-populated context meta must be preserved');
+    assert.ok(htmlWithLoader.includes('<main>loaded-ok</main>'));
+
+    let staticPassCount = 0;
+    let staticDisposed = 0;
+    await renderToString(() => {
+      staticPassCount++;
+      onCleanup(() => staticDisposed++);
+      return '<p>Static</p>';
+    });
+    assert.equal(staticPassCount, 1, 'Static SSR without loaders must only execute app() once');
+    assert.equal(staticDisposed, 1, 'Single-pass SSR owner must dispose after serialization');
   });
 });

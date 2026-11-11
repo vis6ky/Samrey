@@ -131,10 +131,67 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
     }
 
     case 'build': {
-      const ssr = args.includes('--ssr');
-      const outDirIdx = args.indexOf('--outDir');
-      const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? args[outDirIdx + 1] : 'dist';
-      return runBuildCommand({ cwd, ssr, outDir, dryRun });
+      let ssr: boolean | string = false;
+      let minify: boolean | 'esbuild' | 'terser' | undefined;
+      let sourcemap: boolean | 'inline' | 'hidden' | undefined;
+      let outDir = 'dist';
+
+      for (let i = 1; i < args.length; i++) {
+        const arg = args[i]!;
+        if (arg === '--ssr') {
+          const next = args[i + 1];
+          if (next && !next.startsWith('-')) {
+            ssr = next;
+            i++;
+          } else {
+            ssr = true;
+          }
+        } else if (arg.startsWith('--ssr=')) {
+          ssr = arg.slice('--ssr='.length) || true;
+        } else if (arg === '--outDir' && args[i + 1]) {
+          outDir = args[i + 1]!;
+          i++;
+        } else if (arg.startsWith('--outDir=')) {
+          outDir = arg.slice('--outDir='.length) || 'dist';
+        } else if (arg === '--no-minify') {
+          minify = false;
+        } else if (arg === '--minify') {
+          const next = args[i + 1];
+          if (next === 'false') {
+            minify = false;
+            i++;
+          } else if (next === 'esbuild' || next === 'terser' || next === 'true') {
+            minify = next === 'true' ? true : next;
+            i++;
+          } else {
+            minify = true;
+          }
+        } else if (arg.startsWith('--minify=')) {
+          const val = arg.slice('--minify='.length);
+          if (val === 'false') minify = false;
+          else if (val === 'esbuild' || val === 'terser') minify = val;
+          else if (val === 'true') minify = true;
+        } else if (arg === '--sourcemap') {
+          const next = args[i + 1];
+          if (next === 'inline' || next === 'hidden') {
+            sourcemap = next;
+            i++;
+          } else if (next === 'false') {
+            sourcemap = false;
+            i++;
+          } else {
+            sourcemap = true;
+            if (next === 'true') i++;
+          }
+        } else if (arg.startsWith('--sourcemap=')) {
+          const val = arg.slice('--sourcemap='.length);
+          if (val === 'inline' || val === 'hidden') sourcemap = val;
+          else if (val === 'false') sourcemap = false;
+          else sourcemap = true;
+        }
+      }
+
+      return runBuildCommand({ cwd, ssr, minify, sourcemap, outDir, dryRun });
     }
 
     case 'preview': {

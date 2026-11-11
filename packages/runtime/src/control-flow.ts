@@ -415,6 +415,7 @@ interface KeyedEntry<T> {
   item: T;
   nodes: Node[];
   owner: Owner;
+  currentIndex: number;
   indexSignal?: Signal<number>;
 }
 
@@ -582,6 +583,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
 
       let entry = cache.get(rowKey);
       if (entry) {
+        entry.currentIndex = i;
         if (entry.indexSignal) {
           entry.indexSignal.value = i;
         }
@@ -593,10 +595,11 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       } else {
         const owner = createOwner(outerOwner);
         let idxSig: Signal<number> | undefined;
+        let createdEntry: KeyedEntry<T> | undefined;
         const getIndex = () => {
           if (!idxSig) {
-            idxSig = signal(i);
-            if (entry) entry.indexSignal = idxSig;
+            idxSig = signal(createdEntry ? createdEntry.currentIndex : i);
+            if (createdEntry) createdEntry.indexSignal = idxSig;
           }
           return idxSig.value;
         };
@@ -610,19 +613,21 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
         });
 
         const nodes = normalizeNodes(rendered);
-        const createdEntry: KeyedEntry<T> = {
+        createdEntry = {
           key: rowKey,
           item,
           nodes,
           owner,
+          currentIndex: i,
           indexSignal: idxSig
         };
-        registerHydrationNodes(createdEntry.nodes, (nodeIdx, adopted) => {
-          if (nodeIdx < createdEntry.nodes.length) {
-            createdEntry.nodes[nodeIdx] = adopted;
+        const resolvedEntry = createdEntry;
+        registerHydrationNodes(resolvedEntry.nodes, (nodeIdx, adopted) => {
+          if (nodeIdx < resolvedEntry.nodes.length) {
+            resolvedEntry.nodes[nodeIdx] = adopted;
           }
         });
-        entry = createdEntry;
+        entry = resolvedEntry;
       }
 
       newCache.set(rowKey, entry);
@@ -886,14 +891,15 @@ export function Switch(props: SwitchProps): Node {
     const hasMatch = matchedCase !== null;
 
     if (prevMatched !== null) {
-      if (hasMatch) {
-        if (prevMatched && prevMatch === matchedCase && Object.is(prevVal, matchedVal)) {
-          return;
+      if (hasMatch && matchedCase) {
+        if (prevMatched && prevMatch === matchedCase) {
+          const isKeyedCase = typeof matchedCase.children === 'function' && matchedCase.children.length > 0;
+          if (!isKeyedCase || Object.is(prevVal, matchedVal)) {
+            return;
+          }
         }
-      } else {
-        if (!prevMatched) {
-          return;
-        }
+      } else if (!hasMatch && !prevMatched) {
+        return;
       }
     }
 

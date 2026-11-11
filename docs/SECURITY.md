@@ -17,13 +17,14 @@
 
 ## 2. Built-in Security Architecture
 
-Samrey features a defense-in-depth security model implemented natively in `@samrey/security`:
+Samrey features a defense-in-depth security model implemented natively in `@samrey/security` and `@samrey/ssr`:
 
-- **HTML & SVG Sanitization:** `sanitizeHtml()` contextually parses and strips malicious `<script>`, `<iframe>`, `onerror`, `onload`, and custom inline handlers.
-- **URI Sanitization:** `sanitizeUrl()` blocks `javascript:`, `data:text/html`, and `vbscript:` schemes, returning `about:blank` for unsafe targets.
-- **Unicode-Safe SSR State Escaping:** `escapeJsonState()` sanitizes `</script>` breakouts and HTML entities when serializing state into `<script>` hydration tags.
-- **Prototype Pollution Defense:** `safeJsonParse()` strips `__proto__`, `constructor`, and `prototype` overrides.
-- **CSRF Token Handling:** Native cryptographic token generation and timing-safe validation.
+- **HTML, SVG & Template Sanitization:** `sanitizeHtmlString()` (alias `sanitizeHtml()`) and `sanitizeTemplateHtml()` parse and strip malicious `<script>`, `<iframe>`, `onerror`, `onload`, and inline event handlers.
+- **URI & Redirect Sanitization:** `sanitizeUri()` (alias `sanitizeUrl()`) blocks `javascript:`, `vbscript:`, and unsafe `data:` schemes (returning `'about:blank'` for unsafe targets); `sanitizeRedirectUri()` strictly enforces relative-path redirects to block Open Redirects (`//evil.com`).
+- **Trusted Types Policies:** `getSamreyTrustedPolicy()` (`samrey#html`) and `getSamreyTemplateTrustedPolicy()` (`samrey#template`) enforce realm-isolated, fail-closed Trusted Types policies with programmatic sanitizer fallbacks.
+- **Unicode-Safe SSR State Escaping:** `escapeForScriptPayload()` (`@samrey/security`) and `serializeStateForHydration()` (`@samrey/ssr`, alias `escapeJsonState()`) escape `<`, `>`, `&`, `\u2028`, and `\u2029` when embedding JSON payloads into `<script>` hydration tags.
+- **Prototype Pollution Defense:** `safeJsonParse()` and `scrubPrototypePollution()` strip `__proto__`, `constructor`, and `prototype` keys.
+- **CSRF Token Handling:** `generateCsrfToken()` and timing-safe `verifyCsrfToken()` (aliases `createCsrfToken()` / `validateCsrfToken()`).
 
 ---
 

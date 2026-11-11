@@ -19,7 +19,6 @@ import {
   VALID_ATTR_NAME_RE,
   HTML_BOOLEAN_ATTRS,
   sanitizeStaticAttribute,
-  appendHeadlessChildTo,
   createHeadlessElement,
   createHeadlessFragment,
   createHeadlessTextNode
@@ -54,7 +53,7 @@ export function appendChildren(parent: Node, children: ChildValue[]): void {
       if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
         parent.appendChild(document.createTextNode(String(child)));
       } else {
-        parent.appendChild({ nodeType: 3, nodeName: '#text', textContent: String(child) } as unknown as Node);
+        parent.appendChild(createHeadlessTextNode(String(child)) as unknown as Node);
       }
     }
   }
@@ -68,37 +67,61 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   if (typeof document === 'undefined') {
     const attributes: Record<string, string> = {};
     const eventListeners: Record<string, Function[]> = {};
+    let deferredBindings: Array<[string, unknown]> | null = null;
 
     if (attrs) {
       for (const [k, v] of Object.entries(attrs)) {
         if (v === undefined || v === null) continue;
         if (!VALID_ATTR_NAME_RE.test(k)) continue;
         const lk = k.toLowerCase();
-        if (lk === '__proto__' || DANGEROUS_ATTR_NAMES.has(lk)) continue;
+        if (lk === '__proto__' || lk === 'constructor' || lk === 'prototype' || DANGEROUS_ATTR_NAMES.has(lk)) continue;
         if (lk.startsWith('on')) {
           if (typeof v === 'function') {
             const evt = lk.slice(2);
             eventListeners[evt] = eventListeners[evt] || [];
             eventListeners[evt].push(v);
+          } else {
+            console.warn(`[Samrey Security Warning] Refusing to bind inline event attribute "${k}".`);
           }
           continue;
         }
-        const resolvedV = typeof v === 'function' ? (v as () => unknown)() : v;
-        if (resolvedV === undefined || resolvedV === null || resolvedV === false) continue;
-        if (resolvedV === true) {
-          attributes[k] = HTML_BOOLEAN_ATTRS.has(lk) ? '' : 'true';
+        if (k.startsWith('class:') || typeof v === 'function') {
+          if (!deferredBindings) deferredBindings = [];
+          deferredBindings.push([k, v]);
           continue;
         }
-        const safeV = sanitizeStaticAttribute(k, resolvedV);
+        if (v === false) continue;
+        const attrName = k === 'className' ? 'class' : k;
+        if (v === true) {
+          attributes[attrName] = HTML_BOOLEAN_ATTRS.has(lk) ? '' : 'true';
+          continue;
+        }
+        const safeV = sanitizeStaticAttribute(attrName, v);
         if (safeV !== null) {
-          attributes[k] = safeV;
+          attributes[attrName] = safeV;
         }
       }
     }
 
     const mockElem = createHeadlessElement(tagName, attributes, eventListeners);
-    for (const c of children) {
-      appendHeadlessChildTo(mockElem, c);
+    if (deferredBindings) {
+      for (let i = 0; i < deferredBindings.length; i++) {
+        const [k, v] = deferredBindings[i]!;
+        if (k.startsWith('class:')) {
+          const clsName = k.slice(6);
+          if (typeof v === 'function') {
+            bindClass(mockElem as unknown as Element, clsName, v as () => boolean);
+          } else if (v) {
+            mockElem.classList.add(clsName);
+          }
+        } else {
+          const targetAttr = k === 'className' ? 'class' : k;
+          bindAttr(mockElem as unknown as Element, targetAttr, v as () => unknown);
+        }
+      }
+    }
+    if (children.length > 0) {
+      appendChildren(mockElem as unknown as Node, children);
     }
     return mockElem as unknown as HTMLElementTagNameMap[K];
   }
@@ -130,7 +153,12 @@ export function svgEl(
 
 export function text(content: string | number | (() => unknown)): Node {
   if (typeof document === 'undefined') {
-    return createHeadlessTextNode(typeof content === 'function' ? '' : String(content)) as unknown as Node;
+    if (typeof content === 'function') {
+      const node = createHeadlessTextNode('') as unknown as Node;
+      bindText(node, content);
+      return node;
+    }
+    return createHeadlessTextNode(String(content)) as unknown as Node;
   }
 
   if (typeof content === 'function') {
@@ -147,8 +175,8 @@ export const fragment = frag;
 export function frag(...children: ChildValue[]): DocumentFragment {
   if (typeof document === 'undefined') {
     const mockFrag = createHeadlessFragment();
-    for (const c of children) {
-      appendHeadlessChildTo(mockFrag, c);
+    if (children.length > 0) {
+      appendChildren(mockFrag as unknown as Node, children);
     }
     return mockFrag as unknown as DocumentFragment;
   }
@@ -163,18 +191,30 @@ export function rawHtml(html: string | (() => string)): Node {
     return TrustedTypesPolicy.createHTML(str);
   };
   if (typeof document === 'undefined') {
-    const val = typeof html === 'function' ? html() : html;
-    return { nodeType: 1, nodeName: 'SPAN', innerHTML: sanitize(val || '') } as unknown as Node;
+    const span = createHeadlessElement('span');
+    if (typeof html === 'function') {
+      let prev: string | null = null;
+      effect(() => {
+        const val = html() || '';
+        if (val !== prev) {
+          prev = val;
+          span.innerHTML = val;
+        }
+      });
+    } else {
+      span.innerHTML = html || '';
+    }
+    return span as unknown as Node;
   }
 
   const span = document.createElement('span');
   if (typeof html === 'function') {
-    let prev = '';
+    let prev: string | null = null;
     effect(() => {
-      const val = html();
+      const val = html() || '';
       if (val !== prev) {
         prev = val;
-        span.innerHTML = sanitize(val || '') as unknown as string;
+        span.innerHTML = sanitize(val) as unknown as string;
       }
     });
   } else {

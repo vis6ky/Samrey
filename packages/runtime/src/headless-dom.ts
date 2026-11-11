@@ -230,6 +230,19 @@ export function serializeHeadlessInnerHTML(childNodes: any[]): string {
   }).join('');
 }
 
+/** Concatenates descendant text content while excluding Comment (8), PI (7), and DocumentType (10) nodes per DOM spec. */
+export function serializeHeadlessTextContent(childNodes: any[]): string {
+  let out = '';
+  for (let i = 0; i < childNodes.length; i++) {
+    const ch = childNodes[i];
+    if (!ch || ch.nodeType === 8 || ch.nodeType === 7 || ch.nodeType === 10) continue;
+    if (ch.textContent !== undefined && ch.textContent !== null) {
+      out += ch.textContent;
+    }
+  }
+  return out;
+}
+
 export function setHeadlessTextContent(container: any, childNodes: any[], val: string): void {
   detachHeadlessNodes(childNodes, container);
   childNodes.length = 0;
@@ -575,7 +588,7 @@ export function createHeadlessElement(
       return `<${tag}${attrStr}>${this.innerHTML}</${tag}>`;
     },
     get textContent() {
-      return childNodes.map((ch: any) => ch.textContent ?? '').join('');
+      return serializeHeadlessTextContent(childNodes);
     },
     set textContent(val: string) {
       setHeadlessTextContent(mockElem, childNodes, val);
@@ -616,7 +629,7 @@ export function createHeadlessFragment(): any {
       return this.innerHTML;
     },
     get textContent() {
-      return childNodes.map((ch: any) => ch.textContent ?? '').join('');
+      return serializeHeadlessTextContent(childNodes);
     },
     set textContent(val: string) {
       setHeadlessTextContent(mockFrag, childNodes, val);

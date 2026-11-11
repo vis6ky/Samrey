@@ -642,9 +642,8 @@ function maskNonCodeRegions(source: string): { masked: string; literals: string[
   return { masked, literals };
 }
 
-function stripStringsAndComments(source: string): string {
+function stripStringsAndCommentsWithBracketCheck(source: string): { codeOnly: string; blockedBracketProp: boolean } {
   const { masked, literals } = maskNonCodeRegions(source);
-  // Extract code inside template literal `${...}` expressions so hidden `${document.cookie}` cannot evade checks
   const extraExprs: string[] = [];
   for (const lit of literals) {
     if (lit.startsWith('`')) {
@@ -657,7 +656,11 @@ function stripStringsAndComments(source: string): string {
         if (lit[j] === '$' && lit[j + 1] === '{') {
           const closeBrace = findMatchingDelimiter(lit, j + 1, '{', '}');
           if (closeBrace === -1) break;
-          extraExprs.push(stripStringsAndComments(lit.slice(j + 2, closeBrace)));
+          const inner = stripStringsAndCommentsWithBracketCheck(lit.slice(j + 2, closeBrace));
+          if (inner.blockedBracketProp) {
+            return { codeOnly: '', blockedBracketProp: true };
+          }
+          extraExprs.push(inner.codeOnly);
           j = closeBrace + 1;
           continue;
         }
@@ -665,15 +668,33 @@ function stripStringsAndComments(source: string): string {
       }
     }
   }
-  return masked + (extraExprs.length > 0 ? '\n' + extraExprs.join('\n') : '');
+  const combined = masked + (extraExprs.length > 0 ? '\n' + extraExprs.join('\n') : '');
+  const bracketTokenRe = /\[\s*\u0000TSLIT_(\d+)\u0000\s*\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = bracketTokenRe.exec(combined)) !== null) {
+    const rawLit = literals[Number(match[1])];
+    if (rawLit && (rawLit.startsWith("'") || rawLit.startsWith('"') || rawLit.startsWith('`'))) {
+      const inner = rawLit.slice(1, -1);
+      if (inner === 'constructor' || inner === '__proto__' || inner === 'prototype') {
+        return { codeOnly: combined, blockedBracketProp: true };
+      }
+    }
+  }
+  return { codeOnly: combined, blockedBracketProp: false };
+}
+
+function stripStringsAndComments(source: string): string {
+  return stripStringsAndCommentsWithBracketCheck(source).codeOnly;
 }
 
 export function validateSandboxCodeSafety(source: string): string | null {
-  if (/\.constructor\b|\.__proto__\b|\bprototype\b|\[['"`]?(?:constructor|__proto__|prototype)['"`]?\]/.test(source)) {
+  const { codeOnly, blockedBracketProp } = stripStringsAndCommentsWithBracketCheck(source);
+  if (
+    blockedBracketProp ||
+    /\.(?:constructor|__proto__|prototype)\b|\[\s*(?:constructor|__proto__|prototype)\s*\]/.test(codeOnly)
+  ) {
     return 'Blocked prototype/constructor chain access inside sandbox.';
   }
-
-  const codeOnly = stripStringsAndComments(source);
   const blockedPatterns: Array<[RegExp, string]> = [
     [/\beval\b/, 'Dynamic eval() execution is prohibited in the Samrey sandbox.'],
     [/\bnew\s+Function\b|\bFunction\s*\(/, 'Dynamic Function() construction is prohibited in the Samrey sandbox.'],

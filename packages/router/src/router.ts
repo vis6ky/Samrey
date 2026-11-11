@@ -3,7 +3,7 @@
  * @samrey/router - Router State Manager
  */
 
-import { signal, computed, effect, createOwner, runWithOwner, onCleanup, Owner, ReadonlySignal } from '@samrey/reactivity';
+import { signal, computed, effect, createOwner, getOwner, runWithOwner, onCleanup, createContext, useContext, Owner, ReadonlySignal } from '@samrey/reactivity';
 import { sanitizeRedirectUri } from '@samrey/security';
 import { el, text } from '@samrey/runtime';
 import { RouteRecord, RouterInstance } from './types.js';
@@ -25,6 +25,20 @@ function resolvePath(to: string, current: string): string {
   } catch {
     return trimmed.startsWith('/') ? trimmed : '/' + trimmed;
   }
+}
+
+export const RouterContext = createContext<RouterInstance | null>(null);
+
+let activeRouterInstance: RouterInstance | null = null;
+
+function attachRouterToOwner(owner: Owner | null, router: RouterInstance): void {
+  if (!owner) return;
+  let ctx = owner.context;
+  if (!ctx) {
+    ctx = Object.create(null) as Record<string | symbol, unknown>;
+    owner.context = ctx;
+  }
+  ctx[RouterContext.id] = router;
 }
 
 export function createRouter(routes: RouteRecord[], initialPath?: string): RouterInstance {
@@ -71,24 +85,39 @@ export function createRouter(routes: RouteRecord[], initialPath?: string): Route
     }
   }
 
-  return {
+  const owner = getOwner();
+  const instance: RouterInstance = {
     currentPath: computed(() => pathSignal.value),
     currentParams: activeParams,
     navigate,
     match: (p: string) => matchRoutes(routes, p),
-    destroy: () => cleanupPopState?.()
+    destroy: () => {
+      cleanupPopState?.();
+      if (activeRouterInstance === instance) {
+        activeRouterInstance = null;
+      }
+    }
   };
-}
 
-let activeRouterInstance: RouterInstance | null = null;
+  attachRouterToOwner(owner, instance);
+  if (!owner) {
+    activeRouterInstance = instance;
+  }
+
+  return instance;
+}
 
 export function setRouterInstance(router: RouterInstance | null): void {
   activeRouterInstance = router;
 }
 
 export function useRouter(): RouterInstance {
+  const contextual = useContext(RouterContext);
+  if (contextual) {
+    return contextual;
+  }
   if (!activeRouterInstance) {
-    activeRouterInstance = createRouter([{ path: '/', component: () => ({}) }]);
+    activeRouterInstance = createRouter([]);
   }
   return activeRouterInstance;
 }
@@ -280,21 +309,31 @@ export function Router(props: { routes?: RouteRecord[]; children?: any; initialP
     routes = childRoutes;
   }
 
-  activeRouterInstance = createRouter(routes, props.initialPath);
+  const parentOwner = getOwner();
+  const routerOwner = parentOwner ? createOwner(parentOwner) : null;
+  const routerInstance = routerOwner
+    ? runWithOwner(routerOwner, () => createRouter(routes, props.initialPath))
+    : createRouter(routes, props.initialPath);
+
+  if (!parentOwner) {
+    activeRouterInstance = routerInstance;
+  }
+
+  const runScoped = <T>(fn: () => T): T => (routerOwner ? runWithOwner(routerOwner, fn) : fn());
 
   if (typeof props.children === 'function') {
-    return props.children(activeRouterInstance);
+    return runScoped(() => props.children(routerInstance));
   }
 
   if (childRoutes.length > 0 && childRoutes.length === childrenArr.length) {
-    return RouterOutlet();
+    return runScoped(() => RouterOutlet());
   }
 
   if (props.children !== undefined) {
     return props.children;
   }
 
-  return RouterOutlet();
+  return runScoped(() => RouterOutlet());
 }
 
 export interface LinkProps {

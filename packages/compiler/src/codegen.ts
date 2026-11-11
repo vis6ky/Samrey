@@ -13,11 +13,150 @@ export function hoistTemplates(templateUnits: AIRTemplateUnit[]): string {
   return hoistedDeclarations.join('\n');
 }
 
+const RUNTIME_HELPERS = new Set<string>([
+  'bindText',
+  'bindAttr',
+  'bindAttribute',
+  'bindClass',
+  'bindProperty',
+  'bindStyle',
+  'on',
+  'bindDynamicChild',
+  'createComponent',
+  'Show',
+  'For'
+]);
+
+function skipQuotedString(source: string, pos: number, quote: string): number {
+  pos++;
+  while (pos < source.length) {
+    const ch = source.charCodeAt(pos);
+    if (ch === 92) {
+      pos += 2;
+      continue;
+    }
+    pos++;
+    if (source[pos - 1] === quote) break;
+  }
+  return pos;
+}
+
+function isIdentStart(code: number): boolean {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95 || code === 36;
+}
+
+function isIdentPart(code: number): boolean {
+  return isIdentStart(code) || (code >= 48 && code <= 57);
+}
+
+function detectRuntimeHelpers(source: string): Set<string> {
+  const found = new Set<string>();
+  const len = source.length;
+  const templateBraceDepths: number[] = [];
+  let inTemplateText = false;
+  let i = 0;
+
+  while (i < len) {
+    if (inTemplateText) {
+      const code = source.charCodeAt(i);
+      if (code === 92) {
+        i += 2;
+        continue;
+      }
+      if (code === 96) {
+        inTemplateText = false;
+        i++;
+        continue;
+      }
+      if (code === 36 && source.charCodeAt(i + 1) === 123) {
+        templateBraceDepths.push(1);
+        inTemplateText = false;
+        i += 2;
+        continue;
+      }
+      i++;
+      continue;
+    }
+
+    const code = source.charCodeAt(i);
+    if (code <= 32) {
+      i++;
+      continue;
+    }
+    if (code === 34 || code === 39) {
+      i = skipQuotedString(source, i, source[i]!);
+      continue;
+    }
+    if (code === 96) {
+      inTemplateText = true;
+      i++;
+      continue;
+    }
+    if (code === 47) {
+      const next = source.charCodeAt(i + 1);
+      if (next === 47) {
+        const nl = source.indexOf('\n', i + 2);
+        i = nl === -1 ? len : nl + 1;
+        continue;
+      }
+      if (next === 42) {
+        const close = source.indexOf('*/', i + 2);
+        i = close === -1 ? len : close + 2;
+        continue;
+      }
+    }
+    if (templateBraceDepths.length > 0) {
+      if (code === 123) {
+        templateBraceDepths[templateBraceDepths.length - 1]++;
+        i++;
+        continue;
+      }
+      if (code === 125) {
+        const top = --templateBraceDepths[templateBraceDepths.length - 1]!;
+        if (top === 0) {
+          templateBraceDepths.pop();
+          inTemplateText = true;
+        }
+        i++;
+        continue;
+      }
+    }
+    if (isIdentStart(code)) {
+      const start = i;
+      i++;
+      while (i < len && isIdentPart(source.charCodeAt(i))) {
+        i++;
+      }
+      const ident = source.slice(start, i);
+      if (RUNTIME_HELPERS.has(ident)) {
+        let prev = start - 1;
+        while (prev >= 0 && source.charCodeAt(prev) <= 32) prev--;
+        if (prev < 0 || source.charCodeAt(prev) !== 46) {
+          let next = i;
+          while (next < len && source.charCodeAt(next) <= 32) next++;
+          if (next < len && source.charCodeAt(next) === 40) {
+            found.add(ident);
+          }
+        }
+      }
+      continue;
+    }
+
+    i++;
+  }
+
+  return found;
+}
+
 /**
  * Generates an ES module with tree-shakable runtime imports.
  * Only imports the runtime helpers that are actually used in the generated component body.
  */
-export function generateModuleCode(templates: AIRTemplateUnit[], componentBody: string): string {
+export function generateModuleCode(
+  templates: AIRTemplateUnit[],
+  componentBody: string,
+  explicitImports?: Iterable<string>
+): string {
   const hoisted = hoistTemplates(templates);
 
   const neededImports = new Set<string>();
@@ -25,38 +164,10 @@ export function generateModuleCode(templates: AIRTemplateUnit[], componentBody: 
   if (templates.length > 0) {
     neededImports.add('template');
   }
-  if (componentBody.includes('bindText(')) {
-    neededImports.add('bindText');
-  }
-  if (componentBody.includes('bindAttr(')) {
-    neededImports.add('bindAttr');
-  }
-  if (componentBody.includes('bindAttribute(')) {
-    neededImports.add('bindAttribute');
-  }
-  if (componentBody.includes('bindClass(')) {
-    neededImports.add('bindClass');
-  }
-  if (componentBody.includes('bindProperty(')) {
-    neededImports.add('bindProperty');
-  }
-  if (componentBody.includes('bindStyle(')) {
-    neededImports.add('bindStyle');
-  }
-  if (componentBody.includes('on(')) {
-    neededImports.add('on');
-  }
-  if (componentBody.includes('bindDynamicChild(')) {
-    neededImports.add('bindDynamicChild');
-  }
-  if (componentBody.includes('createComponent(')) {
-    neededImports.add('createComponent');
-  }
-  if (componentBody.includes('Show(')) {
-    neededImports.add('Show');
-  }
-  if (componentBody.includes('For(')) {
-    neededImports.add('For');
+
+  const detectedHelpers = explicitImports ?? detectRuntimeHelpers(componentBody);
+  for (const helper of detectedHelpers) {
+    neededImports.add(helper);
   }
 
   // Ensure minimum valid import if empty

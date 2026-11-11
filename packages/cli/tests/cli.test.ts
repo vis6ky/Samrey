@@ -291,6 +291,21 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       // 8. F-10: Symlink escape protection and HTTP method allowlisting (GET/HEAD only)
       const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-dev-outside-'));
       try {
+        fs.writeFileSync(path.join(tmpRoot, '.env'), 'SECRET=topsecret');
+        fs.mkdirSync(path.join(tmpRoot, '.git'), { recursive: true });
+        fs.writeFileSync(path.join(tmpRoot, '.git', 'config'), '[core]');
+        fs.mkdirSync(path.join(tmpRoot, 'real-sub'), { recursive: true });
+        fs.writeFileSync(path.join(tmpRoot, 'real-sub', 'index.html'), '<h1>Internal Dir</h1>');
+        fs.symlinkSync(path.join(tmpRoot, 'real-sub'), path.join(tmpRoot, 'alias-sub'));
+
+        const dotEnvResp = await invoke('/.env');
+        assert.equal(dotEnvResp.status, 403);
+        const dotGitResp = await invoke('/.git/config');
+        assert.equal(dotGitResp.status, 403);
+        const internalSymlinkDir = await invoke('/alias-sub');
+        assert.equal(internalSymlinkDir.status, 200);
+        assert.ok(internalSymlinkDir.body.includes('Internal Dir'));
+
         const secretFile = path.join(outsideDir, 'secret.txt');
         fs.writeFileSync(secretFile, 'TOP_SECRET');
         fs.symlinkSync(secretFile, path.join(tmpRoot, 'leak.txt'));
@@ -362,5 +377,64 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.ok(report.messages.some((m) => m.includes('Inline <script> tag without src')));
     assert.ok(report.messages.some((m) => m.includes('Insecure "javascript:" URI in <script src>')));
     assert.equal(report.violationsCount, 4, `Expected 4 violations, got ${report.violationsCount}: ${report.messages.join('\n')}`);
+  });
+
+  it('Batch 3: skips comments/regexes, avoids benign on* false positives, and flags raw HTML onclick={...} in auditSource', async () => {
+    const { auditSource } = await import('../src/audit.js');
+
+    const safeTs = [
+      '// <script>alert(1)</script>',
+      '/* <img src="/missing-alt.png"> */',
+      'const re = /<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi;',
+      '<!-- <script>inline()</script> -->',
+      'export const card = `<img src="/ok.png" alt="ok" online="true" once="1" onboard="step1" only="true" __proto__="ignored" />`;'
+    ].join('\n');
+    const cleanReport = auditSource(safeTs, 'Validator.ts');
+    assert.equal(cleanReport.violationsCount, 0, `Expected 0 violations, got:\n${cleanReport.messages.join('\n')}`);
+
+    const htmlWithBraceHandler = '<button onclick={alert(1)}>Run</button><body ononline="sync()"></body>';
+    const htmlReport = auditSource(htmlWithBraceHandler, 'index.html');
+    assert.equal(htmlReport.violationsCount, 2, `Expected 2 violations in index.html, got:\n${htmlReport.messages.join('\n')}`);
+  });
+
+  it('Batch 3: forwards build flags, rejects unsupported audit --fix, and emits valid SSR server & SSG API in starters', async () => {
+    const { runCLI, generateStarterProject } = await import('../src/index.js');
+
+    const ssrDefaultRes = await runCLI(['build', '--ssr', '--dry-run']);
+    assert.equal(ssrDefaultRes.success, true);
+    assert.equal((ssrDefaultRes.data as any).ssr, 'src/entry-server.ts');
+
+    const customBuildRes = await runCLI([
+      'build',
+      '--ssr',
+      'src/custom-ssr.ts',
+      '--no-minify',
+      '--sourcemap',
+      'inline',
+      '--outDir',
+      'dist/server',
+      '--dry-run'
+    ]);
+    assert.equal(customBuildRes.success, true);
+    assert.equal((customBuildRes.data as any).ssr, 'src/custom-ssr.ts');
+    assert.equal((customBuildRes.data as any).minify, false);
+    assert.equal((customBuildRes.data as any).sourcemap, 'inline');
+    assert.equal((customBuildRes.data as any).outDir, 'dist/server');
+
+    const fixRes = await runCLI(['audit', '--fix']);
+    assert.equal(fixRes.success, false);
+    assert.equal(fixRes.exitCode, 1);
+    assert.ok(fixRes.message.includes('--fix'));
+
+    const ssrFiles = generateStarterProject('demo-ssr', { template: 'ssr' });
+    const ssrPkg = JSON.parse(ssrFiles['package.json']);
+    assert.equal(ssrPkg.scripts.start, 'node server.js');
+    assert.ok('server.js' in ssrFiles, 'SSR starter must include server.js referenced by scripts.start');
+    assert.ok(ssrPkg.scripts.build.includes('--ssr src/entry-server.ts'));
+
+    const ssgFiles = generateStarterProject('demo-ssg', { template: 'ssg' });
+    assert.ok('ssg-build.ts' in ssgFiles);
+    assert.ok(!ssgFiles['ssg-build.ts'].includes('renderRoute:'), 'SSG starter must not use invalid renderRoute API');
+    assert.ok(ssgFiles['ssg-build.ts'].includes('generateStaticSite(\n    ['), 'SSG starter must pass StaticRouteConfig[] array');
   });
 });

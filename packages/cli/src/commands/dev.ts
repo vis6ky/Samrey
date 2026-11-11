@@ -118,7 +118,12 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
     }
 
     const slashNormalized = reqPath.replace(/\\/g, '/');
-    if (slashNormalized.split('/').some((seg) => seg === '..')) {
+    const pathSegments = slashNormalized.split('/');
+    if (
+      pathSegments.some(
+        (seg) => seg === '..' || (seg.startsWith('.') && seg !== '.' && seg !== '.well-known')
+      )
+    ) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('403 Forbidden');
       return;
@@ -150,7 +155,16 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
       return;
     }
 
-    if (targetLstat && targetLstat.isDirectory()) {
+    let targetStat: fs.Stats | null = null;
+    if (targetLstat) {
+      try {
+        targetStat = targetLstat.isSymbolicLink() ? fs.statSync(filePath) : targetLstat;
+      } catch {
+        targetStat = null;
+      }
+    }
+
+    if (targetStat && targetStat.isDirectory()) {
       filePath = path.join(filePath, 'index.html');
       if (!isLexicallyWithinRoot(filePath)) {
         res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -164,12 +178,14 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
           res.end('403 Forbidden');
           return;
         }
+        targetStat = targetLstat.isSymbolicLink() ? fs.statSync(filePath) : targetLstat;
       } catch {
         targetLstat = null;
+        targetStat = null;
       }
     }
 
-    if (!targetLstat) {
+    if (!targetStat) {
       const reqExt = path.extname(reqPath).toLowerCase();
       if (reqExt && reqExt !== '.html') {
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -190,12 +206,14 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
           res.end('403 Forbidden');
           return;
         }
+        targetStat = targetLstat.isSymbolicLink() ? fs.statSync(filePath) : targetLstat;
       } catch {
         targetLstat = null;
+        targetStat = null;
       }
     }
 
-    if (targetLstat && targetLstat.isFile() && isRealPathWithinRoot(filePath)) {
+    if (targetStat && targetStat.isFile() && isRealPathWithinRoot(filePath)) {
       const ext = path.extname(filePath).toLowerCase();
 
       if (ext === '.samrey') {

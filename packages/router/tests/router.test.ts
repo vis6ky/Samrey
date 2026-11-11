@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { onCleanup } from '@samrey/reactivity';
-import { matchPath, createRouter, matchRoutes, Router, Route, useNavigate, Link, createLink } from '../src/index.js';
+import { onCleanup, createRoot } from '@samrey/reactivity';
+import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, useLocation, Link, createLink, setRouterInstance } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -225,5 +225,50 @@ describe('@samrey/router', () => {
         delete (globalThis as any).window;
       }
     }
+  });
+
+  it('wires top-level createRouter() to Link/RouterOutlet and isolates RouterContext per owner', async () => {
+    setRouterInstance(null);
+    const router = createRouter([
+      { path: '/', component: () => 'Home View' },
+      { path: '/dash', component: () => 'Dash View' }
+    ], '/');
+
+    const link = Link({ href: '/dash', children: 'Dash' }) as any;
+    const outlet = RouterOutlet() as any;
+    assert.ok(outlet.outerHTML.includes('Home View'));
+
+    link.dispatchEvent({ type: 'click', button: 0, preventDefault: () => {} });
+    assert.equal(router.currentPath.value, '/dash');
+    assert.ok(outlet.outerHTML.includes('Dash View'));
+    router.destroy?.();
+
+    // Scoped owners keep independent RouterContext instances across concurrent async boundaries
+    const observed: string[] = [];
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        createRoot(async (dispose) => {
+          createRouter([{ path: '/a', component: () => 'RouteA' }], '/a');
+          const loc = useLocation();
+          await new Promise((r) => setTimeout(r, 15));
+          observed.push(`A:${loc.value}`);
+          dispose();
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        createRoot(async (dispose) => {
+          createRouter([{ path: '/b', component: () => 'RouteB' }], '/b');
+          const loc = useLocation();
+          await new Promise((r) => setTimeout(r, 5));
+          observed.push(`B:${loc.value}`);
+          dispose();
+          resolve();
+        });
+      })
+    ]);
+
+    assert.ok(observed.includes('A:/a'));
+    assert.ok(observed.includes('B:/b'));
   });
 });

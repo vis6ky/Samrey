@@ -11,7 +11,8 @@ import * as os from 'node:os';
 import {
   resolveSafePath,
   executeSafeCommand,
-  redactSecrets
+  redactSecrets,
+  safeWriteFile
 } from '../src/security.js';
 import { handleToolCall, ToolContext } from '../src/tools.js';
 import { SamreyMcpServer } from '../src/server.js';
@@ -189,7 +190,10 @@ describe('MCP Server Security & Hardening', () => {
         'vite.config.ts',
         'tsconfig.json',
         'node_modules/malicious/index.js',
-        'root-script.js'
+        'root-script.js',
+        'src/../.env',
+        'src/.env',
+        'src/../outside.ts'
       ];
 
       for (const targetPath of forbiddenTargets) {
@@ -199,7 +203,16 @@ describe('MCP Server Security & Hardening', () => {
           ctx
         );
         assert.equal(res.isError, true, `Should refuse forbidden target: "${targetPath}"`);
+        assert.equal(fs.existsSync(path.join(tempRoot, '.env')), false, 'Must never create root .env');
       }
+
+      // Ensure safeWriteFile validates symlinked ancestors BEFORE creating missing subdirectories outside root
+      const symlinkDir = path.join(tempRoot, 'src', 'symdir');
+      try { fs.unlinkSync(symlinkDir); } catch {}
+      fs.symlinkSync(outsideDir, symlinkDir);
+      const nestedOutsideTarget = path.join(symlinkDir, 'new-subdir', 'leak.ts');
+      assert.throws(() => safeWriteFile(nestedOutsideTarget, 'leak', tempRoot));
+      assert.equal(fs.existsSync(path.join(outsideDir, 'new-subdir')), false, 'Must not mkdirSync inside escaping symlink');
     });
 
     it('rejects dangling symlink pointing to missing file outside the root', async () => {

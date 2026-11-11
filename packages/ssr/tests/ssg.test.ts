@@ -1,6 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateStaticSite, StaticRouteConfig } from '../src/index.js';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 describe('@samrey/ssr - Static Site Generation (SSG)', () => {
   it('generates static HTML pages for fixed and dynamic routes', async () => {
@@ -62,5 +65,23 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
     assert.ok(result.sitemapXml);
     assert.ok(result.sitemapXml?.includes('https://samrey.dev/search?q=a&amp;b=&lt;tag&gt;'));
     assert.ok(!result.sitemapXml?.includes('<tag></loc>'));
+  });
+
+  it('creates outDir cleanly before writing sitemap.xml even when routes list is empty', async () => {
+    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'samrey-ssg-empty-'));
+    const nestedOut = path.join(tmpBase, 'dist', 'static');
+    try {
+      const res = await generateStaticSite([], {
+        outDir: nestedOut,
+        writeFiles: true,
+        generateSitemap: true,
+        baseUrl: 'https://samrey.dev'
+      });
+      assert.equal(res.totalPages, 0);
+      const written = await fs.readFile(path.join(nestedOut, 'sitemap.xml'), 'utf8');
+      assert.ok(written.includes('<urlset'));
+    } finally {
+      await fs.rm(tmpBase, { recursive: true, force: true });
+    }
   });
 });

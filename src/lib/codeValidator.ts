@@ -29,46 +29,112 @@ export interface CodeValidationResult {
 
 export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
   '@samrey/reactivity': [
-    'signal', 'computed', 'effect', 'batch', 'untrack', 'createRoot',
-    'createContext', 'useContext', 'createStore', 'produce', 'reconcile',
-    'onCleanup', 'getOwner', 'runWithOwner', 'isSignal', 'Signal', 'ReadonlySignal', 'Store', 'createMemo'
+    'PROXIED', 'SuspenseTrackerContext', 'batch', 'cancelPendingEffect', 'computed',
+    'createContext', 'createMemo', 'createOwner', 'createRoot', 'createStore', 'effect',
+    'getActiveSubscriber', 'getGlobalClock', 'getGlobalErrorHandler', 'getOwner',
+    'handleError', 'incrementClock', 'isHydrationCapturing', 'isStore', 'onCleanup',
+    'onError', 'produce', 'queueEffect', 'reconcile', 'recordHydrationRetarget',
+    'runWithHydrationCapture', 'runWithOwner', 'setActiveSubscriber',
+    'setGlobalErrorHandler', 'setOwner', 'signal', 'trackDependency', 'untrack',
+    'useContext',
+    // Type exports allowed in `import type`
+    'Signal', 'ReadonlySignal', 'Store', 'Owner', 'Context'
   ],
   '@samrey/runtime': [
-    'el', 'text', 'svg', 'fragment', 'Show', 'For', 'Switch', 'Match', 'ErrorBoundary',
-    'Suspense', 'Dynamic', 'mount', 'hydrate', 'onMount', 'onCleanup', 'onError',
-    'createComponent', 'deriveAriaAttributes'
+    'Dynamic', 'ErrorBoundary', 'For', 'Match', 'Portal', 'Show', 'Suspense', 'Switch',
+    'appendChildren', 'bindAttr', 'bindAttribute', 'bindClass', 'bindDynamicChild',
+    'bindEvent', 'bindProperty', 'bindStyle', 'bindText', 'clearDevDiagnosticHistory',
+    'computeIsDev', 'createComponent', 'el', 'emitDevDiagnostic', 'frag', 'fragment',
+    'getDevDiagnosticHistory', 'hydrate', 'isDev', 'mount', 'on', 'onCleanup',
+    'onDevDiagnostic', 'onError', 'onMount', 'rawHtml', 'reportDuplicateKey',
+    'reportHydrationMismatch', 'reportReactiveGraphWarning', 'reportResourceError',
+    'reportRouterError', 'reportStaleItemWarning', 'reportUnnecessaryUpdate',
+    'svg', 'svgEl', 'template', 'text'
   ],
   '@samrey/router': [
-    'createRouter', 'Router', 'Route', 'Link', 'useRouter', 'useParams',
-    'useNavigate', 'useLocation', 'RouterView', 'createMemoryHistory', 'createBrowserHistory'
+    'Link', 'Route', 'Router', 'RouterContext', 'RouterOutlet', 'createBrowserHistory',
+    'createLink', 'createMemoryHistory', 'createRouter', 'matchPath', 'matchRoute',
+    'matchRoutes', 'setRouterInstance', 'useLocation', 'useNavigate', 'useParams',
+    'useRouter', 'useSearchParams',
+    // Type exports
+    'RouteConfig', 'RouterOptions', 'RouteMatch', 'NavigateOptions', 'RouteParams'
   ],
   '@samrey/forms': [
-    'createForm', 'createField', 'standardSchemaValidator', 'deriveAriaAttributes',
-    'bindField', 'validateField', 'validateForm'
+    'bindField', 'computeAriaAttributes', 'createField', 'createForm',
+    'getAccessibleFieldProps', 'validateSchema', 'validators',
+    // Type exports
+    'FormConfig', 'FieldConfig', 'ValidationResult', 'FieldState', 'FormState'
   ],
   '@samrey/http': [
-    'createHttpClient', 'resource', 'createCache', 'fetchResource', 'HttpClient', 'createResource'
+    'HttpClient', 'HttpError', 'RequestCache', 'createHttpCache', 'createHttpClient',
+    'createResource', 'defaultRequestCache', 'httpClient'
   ],
   '@samrey/security': [
-    'sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'escapeHtmlText', 'escapeHtmlAttribute',
-    'createCsrfToken', 'validateCsrfToken', 'stripSecrets', 'safeJsonParse', 'escapeJsonState', 'generateCsrfToken'
+    'DANGEROUS_HTML_TAGS', 'DANGEROUS_TEMPLATE_TAGS', 'SAFE_IMAGE_DATA_URI',
+    'SRCSET_ATTRIBUTES', 'TrustedTypesPolicy', 'URL_ATTRIBUTES', 'createCsrfToken',
+    'decodeCssEscapes', 'decodeHtmlEntities', 'escapeForScriptPayload',
+    'escapeHtmlAttribute', 'escapeHtmlText', 'escapeJsonStringForScript',
+    'generateCsrfToken', 'getSamreyTemplateTrustedPolicy', 'getSamreyTrustedPolicy',
+    'isSafeUrl', 'isSensitiveKey', 'resetTrustedPolicyForTest', 'safeJsonParse',
+    'safeJsonStringify', 'sanitizeAttribute', 'sanitizeCssStyle', 'sanitizeHeadTags',
+    'sanitizeHtml', 'sanitizeHtmlString', 'sanitizeHtmlUrlAttributes',
+    'sanitizeRedirectUri', 'sanitizeSrcset', 'sanitizeTemplateHtml', 'sanitizeUri',
+    'sanitizeUrl', 'scrubPrototypePollution', 'setAllowedScriptOrigins', 'stripSecrets',
+    'stripSensitiveState', 'timingSafeEqual', 'validateCsrfToken', 'verifyCsrfToken'
   ],
   '@samrey/ssr': [
-    'renderToString', 'renderToStream', 'serializeState', 'hydrateState',
-    'createSsrContext', 'renderToPipeableStream'
+    'createSSRContext', 'createServerData', 'deserializeHydrationState', 'escapeHtml',
+    'escapeJsonState', 'generatePreHydrationScript', 'generateStaticSite',
+    'getDelegatedEventScript', 'getSSRContext', 'hydrate', 'hydrateFromSSR',
+    'invalidateClientDataCache', 'isSensitiveKey', 'renderToStream', 'renderToString',
+    'replayCapturedEvents', 'resolveSSRContext', 'runWithSSRContext', 'safeJsonParse',
+    'sanitizeSsrState', 'serializeState', 'serializeStateForHydration', 'stripSecrets'
   ],
   '@samrey/testing': [
-    'renderTest', 'renderTestComponent', 'fireEvent', 'waitFor', 'flushReactivity',
-    'createMockResource', 'waitForNextUpdate', 'cleanupAllTestContainers', 'testHarness'
+    'cleanupAllTestContainers', 'createMockResource', 'fireEvent', 'flushReactivity',
+    'mount', 'renderTest', 'renderTestComponent', 'waitFor', 'waitForNextUpdate'
   ],
   '@samrey/devtools': [
-    'initDevTools', 'ReactiveGraphInspector', 'PerfInspector', 'SamreyDevToolsBridge'
+    'ComponentInspector', 'DevToolsBridge', 'FormInspector', 'GraphInspector',
+    'NetworkInspector', 'OwnerInspector', 'PerfInspector', 'PerformanceInspector',
+    'ReactiveGraphInspector', 'RouterInspector', 'SamreyDevToolsBridge', 'computeIsDev',
+    'defaultComponentInspector', 'defaultFormInspector', 'defaultGraphInspector',
+    'defaultNetworkInspector', 'defaultOwnerInspector', 'defaultPerformanceInspector',
+    'defaultRouterInspector', 'getGraphSnapshot', 'initDevTools', 'initDevtools',
+    'isDevToolsActive', 'isSensitiveKey', 'samreyDevToolsBridge', 'sanitizePayload'
   ],
   '@samrey/compiler': [
-    'compile', 'compileToRuntime', 'transformTsx', 'parseTemplate', 'buildAIR', 'generateCode'
+    'ERROR_REGISTRY', 'SamreyCompilerError', 'TemplateParser', 'buildAIR',
+    'buildAIRFromAST', 'classifyBindingContext', 'classifySecurityNode',
+    'compileTemplate', 'evaluateConstantExpression', 'findUnsupportedTemplateTags',
+    'formatSamreyDiagnostic', 'generateCode', 'generateModuleCode',
+    'generateSourceFrame', 'hoistTemplates', 'isStaticSubtree', 'lintA11y',
+    'lintAccessibility', 'parseTemplate'
   ],
   '@samrey/cli': [
-    'runCli', 'createProject', 'buildProject'
+    'CLI_VERSION', 'HELP_TEXT', 'auditSource', 'createLineSourceMap',
+    'createNativeDevHandler', 'generateStarterProject', 'runAnalyzeCommand',
+    'runAuditCommand', 'runBuildCommand', 'runCLI', 'runCreateCommand', 'runDevCommand',
+    'runGenerateCommand', 'runPreviewCommand', 'runSamreyAudit', 'runTestCommand',
+    'samreyPlugin', 'samreyVitePlugin', 'scaffoldArtifact', 'validateProjectName'
+  ],
+  '@samrey/ai': [
+    'ALL_OFFICIAL_PACKAGES', 'COMPATIBILITY_TASKS', 'DEFAULT_AI_CONFIG',
+    'DEFAULT_SECURITY_POLICY', 'KNOWN_TYPE_EXPORTS', 'MockDOMNode',
+    'OFFICIAL_PACKAGE_EXPORTS', 'SAMREY_API_REGISTRY', 'SAMREY_DOC_SECTIONS',
+    'SAMREY_EXAMPLES', 'SAMREY_SKILLS', 'analyzeProject', 'createAiConfig',
+    'diagnoseCompilerError', 'diagnoseError', 'discoverSamreyProject', 'ensureMockDom',
+    'generateAgentsMd', 'generateClaudeMd', 'generateCopilotInstructions',
+    'generateCursorMdc', 'generateGeminiMd', 'getApiReference',
+    'getAuthoritativeInstructionContent', 'getBestPractices', 'getDocumentation',
+    'getExampleById', 'getExamples', 'getExamplesByQuery', 'installSkills',
+    'runCompatibilitySuite', 'searchDocs', 'stripComments', 'tokenizeCode',
+    'validateSamreyCode', 'verifyStdioHandshake', 'writeAllInstructions'
+  ],
+  '@samrey/mcp-server': [
+    'MCP_ERROR_CODES', 'MCP_PROMPTS', 'MCP_RESOURCES', 'MCP_TOOLS', 'SamreyMcpServer',
+    'executeSafeCommand', 'getPromptMessages', 'handleToolCall', 'readResource',
+    'redactSecrets', 'resolveSafePath', 'safeWriteFile'
   ]
 };
 

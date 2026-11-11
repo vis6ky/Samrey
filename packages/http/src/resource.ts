@@ -40,8 +40,15 @@ export function createResource<T, S = unknown>(
   let activeSeq = 0;
   let activeController: AbortController | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let disposed = false;
 
   function load(explicitSource?: S): Promise<T> {
+    if (disposed) {
+      const abortErr = new Error('[Samrey HTTP] Resource has been disposed.');
+      abortErr.name = 'AbortError';
+      return Promise.reject(abortErr);
+    }
+
     const seq = ++activeSeq;
     if (activeController) {
       activeController.abort();
@@ -69,13 +76,13 @@ export function createResource<T, S = unknown>(
       try {
         const sourceVal = explicitSource !== undefined ? explicitSource : (source ? source() : (undefined as unknown as S));
         const result = await fetcher(sourceVal, { abortSignal: controller.signal });
-        if (seq === activeSeq) {
+        if (!disposed && seq === activeSeq) {
           data.value = result;
           status.value = 'success';
         }
         return result;
       } catch (err: any) {
-        if (seq === activeSeq) {
+        if (!disposed && seq === activeSeq) {
           if (err?.name !== 'AbortError') {
             error.value = err instanceof Error ? err : new Error(String(err));
             status.value = 'error';
@@ -111,6 +118,8 @@ export function createResource<T, S = unknown>(
   }
 
   onCleanup(() => {
+    disposed = true;
+    activeSeq++;
     if (timeoutId !== undefined) {
       clearTimeout(timeoutId);
       timeoutId = undefined;

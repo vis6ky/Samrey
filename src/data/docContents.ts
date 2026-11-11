@@ -96,15 +96,15 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
 * **HTML Text Content**: Compiled to node.textContent = value. Native browser text node assignment. Never invokes HTML parsers or innerHTML.
 * **Safe Attributes**: Compiled to node.setAttribute(key, value). Direct DOM property/attribute mapping. Zero template string interpolation.
 * **URI / URL Attributes**: Compiled with sanitizeUri(value) wrapper. Whitelist validation: blocks javascript:, vbscript:, data:text/html, and data:application/javascript. Only allows http:, https:, mailto:, tel:, and relative paths.
-* **Inline Styles**: Structured CSS object compiler. Prohibits dynamic raw strings in style. Validates CSS properties against known CSSOM identifiers; blocks expression(), url(), and CSS injection breakouts.
-* **Rich HTML Injection**: Disallows arbitrary innerHTML. Requires explicit <SafeHtml> component backed by Trusted Types policy.
+* **Inline Styles**: Multi-pass CSS style sanitizer (sanitizeCssStyle) decoding backslash escapes, stripping comments/expression()/behavior/@import, and clearing unsafe url(...) declarations to url("").
+* **Rich HTML & Templates**: Disallows arbitrary raw innerHTML pass-through; rawHtml() enforces samrey#html and template() enforces samrey#template Trusted Types policies (with programmatic sanitizer fallbacks).
 `
   },
   {
     id: 'architecture',
     title: 'Architecture Specification',
     filename: 'docs/ARCHITECTURE.md',
-    summary: 'Complete technical specification of all 12 monorepo packages, compiler pipeline, reactive graph, and runtime engine.',
+    summary: 'Complete technical specification of all 13 monorepo packages, compiler pipeline, reactive graph, and runtime engine.',
     content: `# Architectural Specification: Samrey Frontend Framework
 
 **Document**: docs/ARCHITECTURE.md  
@@ -129,19 +129,21 @@ Samrey is a high-performance, TypeScript-native frontend framework designed to p
 
 ## 2. Monorepo Topology & Package Architecture
 
-Samrey is organized as an acyclic, modular monorepo containing 12 cohesive packages:
+Samrey is organized as an acyclic, modular monorepo containing 13 cohesive packages:
 
 * packages/compiler (AOT Parser, IR Generator, Optimizer & Code Generator)
 * packages/runtime (Component Lifecycle, Template Cloning, DOM Hydrator & Mount Engine)
 * packages/reactivity (Signal Graph: Signal, Computed, Effect, Batch, Scope, Owner)
-* packages/router (Type-Safe File & Code Router, Layouts, Streaming Loaders & Guards)
-* packages/http (Type-Safe HTTP Client, Resource Caching, Retry & Abort Controller)
+* packages/router (Type-Safe Router, Nested Layouts, Guards & Owner Contexts)
+* packages/http (Type-Safe HTTP Client, Same-Origin Enforcement, Resource Signals & Abort Control)
 * packages/forms (Standard-Schema Form Engine + Auto-ARIA)
-* packages/ssr (Streaming HTML Generator, Out-of-Order HTML Swaps & Serializer)
-* packages/security (Trusted Types, Contextual Sanitizer, CSRF Tokens & CSP Nonces)
+* packages/ssr (Streaming HTML Generator, Out-of-Order Swaps, SSG & Serializer)
+* packages/security (Trusted Types, Contextual Sanitizer, CSRF Tokens & Prototype Shielding)
 * packages/testing (Headless Reactive Test Harness, Mock Renderer & DOM Assertions)
-* packages/cli (Zero-config bundler plugins, Scaffolder & Typegen)
-* packages/devtools (Reactive Graph Visualizer, State Inspector & Time-Travel Bridge)
+* packages/cli (Vite Transform Plugin, Starter Templates, Security/A11y Audit & Analyzer)
+* packages/devtools (Reactive Graph Visualizer, State Inspector & Telemetry Bridge)
+* packages/ai (Universal AI Documentation Search, Code Validator & Agent Integration)
+* packages/mcp-server (Model Context Protocol Server & Path-Hardened Workspace Tools)
 `
   },
   {

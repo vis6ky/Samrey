@@ -292,4 +292,44 @@ describe('@samrey/forms', () => {
     assert.equal(ok, true);
     assert.deepEqual(submitted, { username: 'alice' });
   });
+
+  it('invokes field validators only once on blur and on form.submit()', async () => {
+    let blurValidatorCalls = 0;
+    const f = createField('name', '', (val) => {
+      blurValidatorCalls++;
+      return val ? null : 'Required';
+    });
+
+    const listeners: Record<string, Function[]> = {};
+    const mockInput = {
+      type: 'text',
+      value: '',
+      addEventListener: (evt: string, fn: Function) => {
+        listeners[evt] = listeners[evt] || [];
+        listeners[evt].push(fn);
+      },
+      removeEventListener: () => {}
+    };
+    bindField(mockInput, f);
+
+    assert.equal(blurValidatorCalls, 0);
+    for (const fn of listeners['blur'] || []) fn();
+    assert.equal(blurValidatorCalls, 1, 'onBlur must invoke validator exactly once');
+    assert.equal(f.error.value, 'Required');
+
+    let submitValidatorCalls = 0;
+    const form = createForm({
+      initialValues: { email: 'bad' },
+      validators: {
+        email: (v) => {
+          submitValidatorCalls++;
+          return v.includes('@') ? null : 'Invalid';
+        }
+      },
+      onSubmit: () => {}
+    });
+    const ok = await form.submit();
+    assert.equal(ok, false);
+    assert.equal(submitValidatorCalls, 1, 'form.submit() must invoke each field validator exactly once');
+  });
 });

@@ -68,7 +68,7 @@ The `@samrey/security` CSS sanitizer (`sanitizeCssStyle`) protects style binding
 1. **Comment Normalization**: Strips `/* ... */` comments that attackers use to split sensitive keywords (e.g. `exp/*comment*/ression`).
 2. **Backslash Escape Decoding**: Normalizes CSS hexadecimal escapes (e.g. `\65` -> `e`, `expr\65ssion` -> `expression`) prior to pattern detection.
 3. **Dangerous Property & At-Rule Neutralization**: Strips IE `expression()`, legacy `behavior:`, Firefox `-moz-binding:`, `@import`, `@charset`, and `@namespace`.
-4. **URL Destination Scrubbing**: Parses all `url(...)` declarations, decodes internal escapes, and rewrites dangerous schemes (`javascript:`, `vbscript:`, non-whitelisted `data:`) to `url("about:blank")`.
+4. **URL Destination Scrubbing**: Parses all `url(...)` declarations, decodes internal escapes, and rewrites dangerous schemes (`javascript:`, `vbscript:`, non-whitelisted `data:`) to `url("")` (while HTML URL attributes rewrite unsafe targets to `about:blank`).
 
 ### 2.4 HTML URL-Bearing Attributes & Compound `srcset` Coverage
 
@@ -94,8 +94,7 @@ Samrey provides native first-class integration with the W3C Trusted Types specif
 ```typescript
 // packages/security/src/trusted-types.ts
 
-let cachedPolicy: SamreyTrustedPolicy | null = null;
-let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
+const realmPolicyCache = new WeakMap<object, RealmPolicyCache>();
 
 export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTrustedPolicy {
   if (options?.allowedScriptOrigins) {
@@ -105,6 +104,11 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
 
   const tt = typeof window !== 'undefined' && window.trustedTypes;
   if (tt) {
+    const cache = getRealmPolicyCache(tt);
+    if (cache.html) {
+      cachedPolicy = cache.html;
+      return cachedPolicy;
+    }
     try {
       cachedPolicy = tt.createPolicy('samrey#html', {
         createHTML: (input: string) => sanitizeHtmlString(input),
@@ -113,8 +117,15 @@ export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTru
         },
         createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
       });
+      cache.html = cachedPolicy;
       return cachedPolicy;
-    } catch {}
+    } catch (err) {
+      // Fail closed when host CSP/Trusted Types blocks creation; recover only if already cached on duplicate error.
+      if (isDuplicatePolicyError(err) && cache.html) {
+        return cache.html;
+      }
+      throw err;
+    }
   }
 
   // Programmatic fallback for browsers/environments without native Trusted Types
@@ -133,6 +144,11 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
 
   const tt = typeof window !== 'undefined' && window.trustedTypes;
   if (tt) {
+    const cache = getRealmPolicyCache(tt);
+    if (cache.template) {
+      cachedTemplatePolicy = cache.template;
+      return cachedTemplatePolicy;
+    }
     try {
       cachedTemplatePolicy = tt.createPolicy('samrey#template', {
         createHTML: (input: string) => sanitizeTemplateHtml(input),
@@ -141,8 +157,14 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
         },
         createScriptURL: (url: string) => validateScriptUrl(url, configuredAllowedOrigins)
       });
+      cache.template = cachedTemplatePolicy;
       return cachedTemplatePolicy;
-    } catch {}
+    } catch (err) {
+      if (isDuplicatePolicyError(err) && cache.template) {
+        return cache.template;
+      }
+      throw err;
+    }
   }
 
   cachedTemplatePolicy = {
@@ -190,7 +212,7 @@ export function serializeStateForHydration(state: unknown, options: SerializeOpt
 * **Prevents `<script>` Tag Breakouts**: `<`, `>`, and `&` are encoded as `\u003c`, `\u003e`, and `\u0026`, making HTML parser breakout impossible.
 * **Prevents Line-Terminator Exploits**: `\u2028` (Line Separator) and `\u2029` (Paragraph Separator) are encoded to prevent JS parsing syntax errors.
 * **Script ID Attribute Hardening (EXT-001)**: The script tag's `id` attribute is strictly validated against `/^[a-zA-Z0-9_\-:]+$/` and HTML-attribute escaped (`escapeHtmlAttribute`), and `deserializeHydrationState()` escapes selectors with `escapeCssIdentifier()` and verifies `SCRIPT` element identity.
-* **SSR Head & Asset Hardening**: Custom `options.headTags` markup passed to `renderToString` / `renderToStream` is sanitized by `sanitizeHeadTags()` (allowing only `<meta>`, `<link>`, `<base>` without unsafe handlers/URLs), and `options.clientScript`, `options.clientStyles`, and `nonce` attributes are URI-sanitized and HTML-attribute escaped.
+* **SSR Head & Asset Hardening**: Custom `options.headTags` markup passed to `renderToString` / `renderToStream` is sanitized by `sanitizeHeadTags()` (allowing only `<meta>`, `<link>`, `<base>` without unsafe handlers/URLs), `getDelegatedEventScript()` escapes event metadata payloads via `escapeForScriptPayload()` and exposes `__SAMREY_EVENTS_CLEANUP__` listener teardown, and `options.clientScript`, `options.clientStyles`, and `nonce` attributes are URI-sanitized and HTML-attribute escaped.
 * **Prototype Shielding**: `safeJsonParse()` explicitly rejects `__proto__`, `constructor`, and `prototype` keys during client state restoration.
 
 ---
@@ -210,7 +232,7 @@ Samrey cleanly separates client form state management (`@samrey/forms`) from ser
 
 The `@samrey/http` `HttpClient` enforces client-side request/response safety around the platform `fetch()` API:
 
-* **Request URI Validation**: All URLs are validated with `sanitizeUri()` before `fetch()` is invoked, throwing an error for blocked protocols (`javascript:`, `vbscript:`, unsafe `data:`).
+* **Request URI & Origin Validation**: All URLs are validated with `sanitizeUri()` before `fetch()` is invoked, throwing an error for blocked protocols (`javascript:`, `vbscript:`, unsafe `data:`), and enforcing same-origin request boundaries by default unless `allowCrossOrigin` (or a configured `baseUrl`) is explicitly opted in.
 * **Prototype-Pollution-Safe Payload Decoding**: JSON responses are decoded with `safeJsonParse()` (for text payloads) or scrubbed via `scrubPrototypePollution()` (for `res.json()`), stripping `__proto__`, `constructor`, and `prototype` keys.
 * **Abort & Timeout Enforcement**: Supports configurable `timeoutMs` via `AbortController` chained cleanly with caller-provided `AbortSignal` instances.
 * **Server & Shell Responsibilities**: HTTP response security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`), `<script>`/`<link>` Subresource Integrity (`integrity`) attributes, and CORS/cookie `credentials` policies must be configured on the HTTP server or SSR document shell rather than inside `HttpClient`.

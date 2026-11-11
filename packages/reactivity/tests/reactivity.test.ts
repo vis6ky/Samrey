@@ -337,4 +337,46 @@ describe('@samrey/reactivity', () => {
       }
     }
   });
+
+  it('skips downstream computed re-evaluation when upstream computed outputs remain equal', () => {
+    const raw = signal(1);
+    let clampedEvals = 0;
+    let downstreamEvals = 0;
+    let effectRuns = 0;
+
+    const clamped = computed(() => {
+      clampedEvals++;
+      return Math.max(raw.value, 5);
+    });
+    const doubled = computed(() => {
+      downstreamEvals++;
+      return clamped.value * 2;
+    });
+
+    createRoot(() => {
+      effect(() => {
+        effectRuns++;
+        void doubled.value;
+      });
+    });
+
+    assert.equal(doubled.value, 10);
+    assert.equal(clampedEvals, 1);
+    assert.equal(downstreamEvals, 1);
+    assert.equal(effectRuns, 1);
+
+    // raw 1 -> 2 still clamps to 5: clamped re-evaluates, but doubled and effect must NOT re-run
+    raw.value = 2;
+    assert.equal(doubled.value, 10);
+    assert.equal(clampedEvals, 2);
+    assert.equal(downstreamEvals, 1);
+    assert.equal(effectRuns, 1);
+
+    // raw 2 -> 7 changes clamped to 7: doubled and effect must re-run once
+    raw.value = 7;
+    assert.equal(doubled.value, 14);
+    assert.equal(clampedEvals, 3);
+    assert.equal(downstreamEvals, 2);
+    assert.equal(effectRuns, 2);
+  });
 });

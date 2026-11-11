@@ -5,7 +5,9 @@
 
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { el, rawHtml, frag, svgEl } from '../src/dom.js';
+import { signal, createRoot } from '@samrey/reactivity';
+import { el, rawHtml, frag, svgEl, text } from '../src/dom.js';
+import { createHeadlessCommentNode, createHeadlessFragment } from '../src/headless-dom.js';
 
 describe('Headless el() and SSR HTML serialization', () => {
   it('escapes text content containing < > & " in outerHTML', () => {
@@ -156,5 +158,62 @@ describe('Headless el() and SSR HTML serialization', () => {
     assert.ok(html.includes('data-safe="ok"'));
     assert.ok(html.includes('color: green'));
     assert.ok(html.includes('<strong>Safe</strong>'));
+  });
+
+  it('supports reactive attributes, class:* toggles, children, text(fn), and rawHtml(fn) in headless mode', () => {
+    const active = signal(false);
+    const label = signal('init');
+    const htmlFrag = signal('<em>one</em>');
+
+    let node!: any;
+    let txtNode!: any;
+    let rawNode!: any;
+
+    const dispose = createRoot((d) => {
+      node = el(
+        'div',
+        {
+          className: 'box',
+          'class:active': () => active.value,
+          'data-state': () => label.value
+        },
+        () => `Child:${label.value}`
+      );
+      txtNode = text(() => `Text:${label.value}`);
+      rawNode = rawHtml(() => htmlFrag.value);
+      return d;
+    });
+
+    assert.equal(node.getAttribute('class'), 'box');
+    assert.equal(node.getAttribute('data-state'), 'init');
+    assert.ok(node.outerHTML.includes('Child:init'));
+    assert.equal(txtNode.textContent, 'Text:init');
+    assert.ok(rawNode.outerHTML.includes('<em>one</em>'));
+
+    active.value = true;
+    label.value = 'next';
+    htmlFrag.value = '<b>two</b>';
+
+    assert.equal(node.getAttribute('class'), 'box active');
+    assert.equal(node.getAttribute('data-state'), 'next');
+    assert.ok(node.outerHTML.includes('Child:next'));
+    assert.equal(txtNode.textContent, 'Text:next');
+    assert.ok(rawNode.outerHTML.includes('<b>two</b>'));
+    dispose();
+  });
+
+  it('excludes Comment nodes from headless Element and DocumentFragment textContent per DOM spec', () => {
+    const comment = createHeadlessCommentNode('samrey:dynamic');
+    assert.equal(comment.textContent, 'samrey:dynamic');
+
+    const host = el('span', null, 'Visible') as any;
+    host.appendChild(comment);
+    assert.equal(host.textContent, 'Visible');
+
+    const docFrag = createHeadlessFragment();
+    docFrag.appendChild(el('em', null, 'A'));
+    docFrag.appendChild(createHeadlessCommentNode('hidden-marker'));
+    docFrag.appendChild(text('B'));
+    assert.equal(docFrag.textContent, 'AB');
   });
 });

@@ -406,4 +406,62 @@ describe('@samrey/security', () => {
     assert.ok(headClean.includes('<base href="/app/">'));
     assert.ok(headClean.includes('<meta name="ok" content="1">'));
   });
+
+  it('EXT-002 / EXT-003 / NEW-001: hardens Trusted Types realm reuse, root self-closing <svg />, and quoted </style> CSS', () => {
+    // EXT-003: root <svg /> and <math /> preserve self-closing marker so following siblings are not swallowed
+    assert.equal(sanitizeHtmlString('<svg /><p>hi</p>'), '<svg /><p>hi</p>');
+    assert.equal(sanitizeHtmlString('<math /><p>next</p>'), '<math /><p>next</p>');
+
+    // NEW-001: neutralize </style> and <!-- inside CSS style output
+    const cssBreakout = sanitizeCssStyle('content: "</style><script>alert(1)</script>"; /* <!-- */ color: red;');
+    assert.ok(!cssBreakout.toLowerCase().includes('</style'));
+    assert.ok(cssBreakout.includes('\\3c /style'));
+
+    // EXT-002: native Trusted Types realm reuse + fail-closed collision without defaultPolicy
+    const hadWindow = 'window' in globalThis;
+    const origWindow = (globalThis as any).window;
+    try {
+      let policyCreateCount = 0;
+      const fakePolicy = {
+        createHTML: (s: string) => ({ __trustedHtml: sanitizeHtmlString(s) }),
+        createScript: () => '',
+        createScriptURL: (u: string) => u
+      };
+      const fakeFactory = {
+        createPolicy: (name: string) => {
+          policyCreateCount++;
+          if (name === 'samrey#html' && policyCreateCount > 1) {
+            throw new TypeError('Policy already exists');
+          }
+          return fakePolicy;
+        }
+      };
+
+      (globalThis as any).window = { trustedTypes: fakeFactory };
+      resetTrustedPolicyForTest();
+      const first = getSamreyTrustedPolicy();
+      assert.equal(typeof first.createHTML('<b>ok</b>'), 'object');
+
+      // Collision without defaultPolicy must fail closed rather than downgrade to plain string
+      resetTrustedPolicyForTest();
+      assert.throws(() => getSamreyTrustedPolicy(), /Trusted Types policy "samrey#html" initialization failed/);
+
+      // Collision with defaultPolicy delegates only AFTER Samrey sanitization
+      (globalThis as any).window = {
+        trustedTypes: {
+          createPolicy: () => { throw new TypeError('Policy already exists'); },
+          defaultPolicy: {
+            createHTML: (safe: string) => ({ __wrappedDefault: safe })
+          }
+        }
+      };
+      resetTrustedPolicyForTest();
+      const wrapped = getSamreyTrustedPolicy().createHTML('<b>ok</b><script>alert(1)</script>') as any;
+      assert.equal(wrapped.__wrappedDefault, '<b>ok</b>');
+    } finally {
+      resetTrustedPolicyForTest();
+      if (hadWindow) (globalThis as any).window = origWindow;
+      else delete (globalThis as any).window;
+    }
+  });
 });

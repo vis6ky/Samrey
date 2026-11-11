@@ -53,6 +53,24 @@ const SAFE_CONSTRUCTORS = new Set<unknown>([
   typeof URLSearchParams !== 'undefined' ? URLSearchParams : undefined
 ].filter((v) => v !== undefined));
 
+const IMMUTABLE_HOST_OBJECTS = new Set<unknown>([
+  ...SAFE_CONSTRUCTORS,
+  Math,
+  JSON,
+  Object,
+  Number,
+  String,
+  Boolean,
+  Object.prototype,
+  Array.prototype,
+  Function.prototype,
+  Error.prototype,
+  TypeError.prototype,
+  RangeError.prototype
+]);
+
+const SANDBOX_CLOSURE_FUNCTIONS = new WeakSet<Function>();
+
 function createSafeObjectNamespace() {
   return Object.freeze({
     keys: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)),
@@ -76,8 +94,14 @@ function createSafeObjectNamespace() {
       return out;
     },
     assign: (target: Record<string, unknown>, ...sources: Array<Record<string, unknown> | null | undefined>) => {
-      if (!target || typeof target !== 'object') {
+      if (!target || (typeof target !== 'object' && typeof target !== 'function')) {
         throw new TypeError('[Sandbox] Object.assign target must be an object.');
+      }
+      if (
+        IMMUTABLE_HOST_OBJECTS.has(target) ||
+        (typeof target === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(target))
+      ) {
+        throw new TypeError('[Sandbox Security] Cannot mutate built-in or host objects.');
       }
       for (const src of sources) {
         if (!src || typeof src !== 'object') continue;
@@ -1511,6 +1535,12 @@ function writeSafeProp(obj: unknown, keyRaw: unknown, value: unknown): unknown {
     throw new TypeError(`Cannot set property '${String(keyRaw)}' of ${String(obj)}`);
   }
   const key = assertSafePropertyKey(keyRaw);
+  if (
+    IMMUTABLE_HOST_OBJECTS.has(obj) ||
+    (typeof obj === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(obj))
+  ) {
+    throw new TypeError(`[Sandbox Security] Mutating host or intrinsic property "${key}" is prohibited.`);
+  }
   assertSafeValue(value);
   (obj as Record<string, unknown>)[key] = value;
   return value;
@@ -1563,6 +1593,16 @@ function applyCompoundOp(op: string, cur: any, right: any): unknown {
 class SandboxEvaluator {
   private readonly budget: ExecBudget = { steps: 0, depth: 0 };
 
+  /** Runs a top-level evaluation inside an elevated depth frame so closures share the step budget. */
+  runWithDepthFrame<T>(fn: () => T): T {
+    this.budget.depth++;
+    try {
+      return fn();
+    } finally {
+      this.budget.depth--;
+    }
+  }
+
   hoistStatements(stmts: StmtNode[], env: Env): void {
     for (const stmt of stmts) {
       if (stmt.kind === 'FunctionDecl') {
@@ -1608,7 +1648,7 @@ class SandboxEvaluator {
   ): (...args: unknown[]) => unknown {
     const evaluator = this;
     if (isAsync) {
-      return async function (this: unknown, ...args: unknown[]) {
+      const asyncFn = async function (this: unknown, ...args: unknown[]) {
         const resetBudget = evaluator.budget.depth === 0;
         if (resetBudget) evaluator.budget.steps = 0;
         if (evaluator.budget.depth >= MAX_CALL_DEPTH) {
@@ -1617,7 +1657,7 @@ class SandboxEvaluator {
         evaluator.budget.depth++;
         try {
           const callEnv = new Env(closureEnv, true);
-          if (fnName) callEnv.define(fnName, 'const', undefined); // allow recursive lookup
+          if (fnName) callEnv.define(fnName, 'const', asyncFn); // allow recursive lookup
           if (!isArrow) callEnv.define('this', 'const', this);
           for (let idx = 0; idx < params.length; idx++) {
             const param = params[idx];
@@ -1641,6 +1681,8 @@ class SandboxEvaluator {
           evaluator.budget.depth--;
         }
       };
+      SANDBOX_CLOSURE_FUNCTIONS.add(asyncFn);
+      return asyncFn;
     }
 
     const syncFn = function (this: unknown, ...args: unknown[]) {
@@ -1676,6 +1718,7 @@ class SandboxEvaluator {
         evaluator.budget.depth--;
       }
     };
+    SANDBOX_CLOSURE_FUNCTIONS.add(syncFn);
     return syncFn;
   }
 
@@ -2490,28 +2533,31 @@ export function evaluateSandboxedProgram(
   }
 
   const evaluator = new SandboxEvaluator();
-  evaluator.hoistStatements(ast, rootEnv);
-  const sig = evaluator.execStmtListSync(ast, rootEnv);
+  // Keep depth >= 1 across initial program + entry component evaluation so closures cannot reset step budget
+  return evaluator.runWithDepthFrame(() => {
+    evaluator.hoistStatements(ast, rootEnv);
+    const sig = evaluator.execStmtListSync(ast, rootEnv);
 
-  if (sig.type === 'return') {
-    assertSafeValue(sig.value);
-    return sig.value;
-  }
-
-  const detectedPrimary = ast.find(
-    (s): s is Extract<StmtNode, { kind: 'FunctionDecl' }> => s.kind === 'FunctionDecl'
-  )?.name;
-  const primaryName = componentNames[0] ?? detectedPrimary;
-  if (primaryName) {
-    const slot = rootEnv.lookup(primaryName);
-    if (slot && typeof slot.value === 'function') {
-      const res = (slot.value as () => unknown)();
-      assertSafeValue(res);
-      return res;
+    if (sig.type === 'return') {
+      assertSafeValue(sig.value);
+      return sig.value;
     }
-  }
 
-  const finalVal = sig.type === 'normal' ? sig.value : null;
-  assertSafeValue(finalVal);
-  return finalVal;
+    const detectedPrimary = ast.find(
+      (s): s is Extract<StmtNode, { kind: 'FunctionDecl' }> => s.kind === 'FunctionDecl'
+    )?.name;
+    const primaryName = componentNames[0] ?? detectedPrimary;
+    if (primaryName) {
+      const slot = rootEnv.lookup(primaryName);
+      if (slot && typeof slot.value === 'function') {
+        const res = (slot.value as () => unknown)();
+        assertSafeValue(res);
+        return res;
+      }
+    }
+
+    const finalVal = sig.type === 'normal' ? sig.value : null;
+    assertSafeValue(finalVal);
+    return finalVal;
+  });
 }
