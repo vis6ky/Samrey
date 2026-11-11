@@ -224,11 +224,26 @@ export const count = signal(0);
       'window.location = "https://evil.com"',
       'fetch("https://evil.com")',
       'setTimeout("alert(1)", 0)',
-      'el("div", null, `${document.cookie}`)'
+      'el("div", null, `${document.cookie}`)',
+      'const k = "const" + "ructor"; ({})[k]',
+      '[][ "flat" ][ "const" + "ructor" ]("return process")()',
+      'const { ["const" + "ructor"]: c } = {}; el("div", null, String(c))',
+      'const f = async () => {}; f["const" + "ructor"]',
+      'const o = {}; o["__pro" + "to__"] = { polluted: true }; el("div")',
+      'while (true) {} el("div", null, "never")'
     ];
     for (const payload of maliciousSnippets) {
       const res = executeSamreyCode(payload);
       assert.equal(res.success, false, `Must reject unsafe sandbox payload: ${payload}`);
+    }
+
+    // Verify interactive closures returned by the AST sandbox still execute reactively
+    const counterRes = executeSamreyCode(PLAYGROUND_PRESETS[0].code);
+    assert.equal(counterRes.success, true);
+    const incBtn = ((counterRes.node as any)?.querySelectorAll?.('button') ?? [])
+      .find((b: any) => String(b.textContent || '').includes('+'));
+    if (incBtn && typeof incBtn.click === 'function') {
+      incBtn.click();
     }
   });
 

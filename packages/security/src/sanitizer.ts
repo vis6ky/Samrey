@@ -237,6 +237,28 @@ export function decodeCssEscapes(css: string): string {
   });
 }
 
+/**
+ * Advances past one character or escape sequence inside a CSS quoted string token.
+ * Per CSS Syntax Level 3, backslash escapes (including \r\n line continuation) stay
+ * within the string, while unescaped newlines (\n, \r, \f) produce a <bad-string-token>
+ * and terminate quote state.
+ */
+function stepCssQuotedChar(
+  str: string,
+  index: number,
+  quote: string
+): { consumed: string; nextIndex: number; quoteClosed: boolean } {
+  const ch = str[index];
+  if (ch === '\\' && index + 1 < str.length) {
+    const len = str[index + 1] === '\r' && str[index + 2] === '\n' ? 3 : 2;
+    return { consumed: str.slice(index, index + len), nextIndex: index + len, quoteClosed: false };
+  }
+  if (ch === quote || ch === '\n' || ch === '\r' || ch === '\f') {
+    return { consumed: ch, nextIndex: index + 1, quoteClosed: true };
+  }
+  return { consumed: ch, nextIndex: index + 1, quoteClosed: false };
+}
+
 function stripCssCommentsOutsideStrings(css: string): string {
   let out = '';
   let quote: string | null = null;
@@ -245,14 +267,10 @@ function stripCssCommentsOutsideStrings(css: string): string {
   while (i < css.length) {
     const ch = css[i];
     if (quote) {
-      out += ch;
-      if (ch === '\\' && i + 1 < css.length) {
-        out += css[i + 1];
-        i += 2;
-        continue;
-      }
-      if (ch === quote) quote = null;
-      i++;
+      const step = stepCssQuotedChar(css, i, quote);
+      out += step.consumed;
+      if (step.quoteClosed) quote = null;
+      i = step.nextIndex;
       continue;
     }
 
@@ -285,14 +303,10 @@ function decodeCssEscapesOutsideStrings(css: string): string {
   while (i < css.length) {
     const ch = css[i];
     if (quote) {
-      out += ch;
-      if (ch === '\\' && i + 1 < css.length) {
-        out += css[i + 1];
-        i += 2;
-        continue;
-      }
-      if (ch === quote) quote = null;
-      i++;
+      const step = stepCssQuotedChar(css, i, quote);
+      out += step.consumed;
+      if (step.quoteClosed) quote = null;
+      i = step.nextIndex;
       continue;
     }
 
@@ -327,11 +341,9 @@ function findMatchingParen(str: string, openParenIdx: number): number {
   for (let i = openParenIdx; i < str.length; i++) {
     const ch = str[i];
     if (quote) {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === quote) quote = null;
+      const step = stepCssQuotedChar(str, i, quote);
+      if (step.quoteClosed) quote = null;
+      i = step.nextIndex - 1;
       continue;
     }
     if (ch === '"' || ch === "'") {
@@ -355,11 +367,9 @@ function findDeclarationEnd(str: string, startIdx: number): number {
   for (let i = startIdx; i < str.length; i++) {
     const ch = str[i];
     if (quote) {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === quote) quote = null;
+      const step = stepCssQuotedChar(str, i, quote);
+      if (step.quoteClosed) quote = null;
+      i = step.nextIndex - 1;
       continue;
     }
     if (ch === '"' || ch === "'") {
@@ -411,14 +421,10 @@ function sanitizeNormalizedCss(str: string): string {
     const ch = str[i];
 
     if (quote) {
-      out += ch;
-      if (ch === '\\' && i + 1 < str.length) {
-        out += str[i + 1];
-        i += 2;
-        continue;
-      }
-      if (ch === quote) quote = null;
-      i++;
+      const step = stepCssQuotedChar(str, i, quote);
+      out += step.consumed;
+      if (step.quoteClosed) quote = null;
+      i = step.nextIndex;
       continue;
     }
 
@@ -901,6 +907,7 @@ export const DANGEROUS_TEMPLATE_TAGS: ReadonlySet<string> = new Set([
 const RAWTEXT_STRIP_TAGS: ReadonlySet<string> = new Set([
   'script',
   'style',
+  'title',
   'xmp',
   'noembed',
   'noframes',
@@ -1046,7 +1053,6 @@ function parseOpenTag(html: string, startLt: number): ParsedTagResult | null {
       } else {
         const valStart = i;
         while (i < len && !/[\s>]/.test(html[i])) {
-          if (html[i] === '/' && html[i + 1] === '>') break;
           i++;
         }
         attrValue = html.slice(valStart, i);
@@ -1304,11 +1310,12 @@ function sanitizeHtmlWithTokenizer(
       preserveAllFormAttrs: options.preserveAllFormAttrs
     });
 
-    if (lowerTag === 'textarea' && !parsed.selfClosing) {
+    if (lowerTag === 'textarea' && (!parsed.selfClosing || !inForeign)) {
       const closeEnd = findRawtextClose(html, i, 'textarea');
       const closeTagIdx = html.slice(i, closeEnd).toLowerCase().lastIndexOf('</textarea');
       const innerRaw = closeTagIdx === -1 ? html.slice(i, closeEnd) : html.slice(i, i + closeTagIdx);
-      out += `<${parsed.tagName}${serializedAttrs}>${escapeHtmlText(innerRaw)}</textarea>`;
+      const safeTextareaText = innerRaw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      out += `<${parsed.tagName}${serializedAttrs}>${safeTextareaText}</textarea>`;
       i = closeEnd;
       continue;
     }
@@ -1461,13 +1468,20 @@ export function sanitizeHeadTags(headHtml: string): string {
     if (!ALLOWED_SSR_HEAD_TAGS.has(lowerTag)) {
       if (lowerTag === 'plaintext') break;
       if (!VOID_HTML_TAGS.has(lowerTag)) {
-        if (RAWTEXT_STRIP_TAGS.has(lowerTag)) {
+        if (RAWTEXT_STRIP_TAGS.has(lowerTag) || lowerTag === 'textarea') {
           i = findRawtextClose(html, i, lowerTag);
         } else {
           i = findStrippedElementEnd(html, i, lowerTag);
         }
       }
       continue;
+    }
+
+    if (lowerTag === 'base') {
+      const hrefAttr = parsed.attrs.find((a) => a.name.toLowerCase() === 'href');
+      if (hrefAttr && sanitizeRedirectUri(hrefAttr.value, '__SAMREY_BLOCKED__') === '__SAMREY_BLOCKED__') {
+        continue;
+      }
     }
 
     if (lowerTag === 'meta') {

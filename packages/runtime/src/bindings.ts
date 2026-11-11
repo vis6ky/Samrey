@@ -75,29 +75,30 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
     }
 
     // Normalize val into Node[]
-    let nextNodes: Node[] = [];
-    if (val === null || val === undefined || val === false || val === true) {
-      nextNodes = [];
-    } else if (Array.isArray(val)) {
-      for (const item of val) {
-        if (item === null || item === undefined || item === false || item === true) continue;
-        if (typeof item === 'object' && item !== null && 'nodeType' in item) {
-          nextNodes.push(item as Node);
-        } else {
-          const t = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
-            ? document.createTextNode(String(item))
-            : ({ nodeType: 3, nodeName: '#text', textContent: String(item) } as unknown as Node);
-          nextNodes.push(t);
-        }
+    const nextNodes: Node[] = [];
+    function pushNormalizedVal(item: unknown): void {
+      if (item === null || item === undefined || item === false || item === true) return;
+      if (Array.isArray(item)) {
+        for (const sub of item) pushNormalizedVal(sub);
+        return;
       }
-    } else if (typeof val === 'object' && val !== null && 'nodeType' in (val as any)) {
-      nextNodes = [val as Node];
-    } else {
+      if (typeof item === 'object' && item !== null && 'nodeType' in (item as any)) {
+        const node = item as any;
+        if (node.nodeType === 11 && node.childNodes) {
+          for (const ch of Array.from(node.childNodes as Node[])) {
+            nextNodes.push(ch);
+          }
+          return;
+        }
+        nextNodes.push(node as Node);
+        return;
+      }
       const t = typeof document !== 'undefined' && typeof document.createTextNode === 'function'
-        ? document.createTextNode(String(val))
-        : ({ nodeType: 3, nodeName: '#text', textContent: String(val) } as unknown as Node);
-      nextNodes = [t];
+        ? document.createTextNode(String(item))
+        : ({ nodeType: 3, nodeName: '#text', textContent: String(item) } as unknown as Node);
+      nextNodes.push(t);
     }
+    pushNormalizedVal(val);
 
     if (p) {
       for (const oldNode of currentNodes) {
@@ -110,6 +111,17 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
       }
     }
     currentNodes = nextNodes;
+
+    if (isHydrationCapturing() && currentNodes.length > 0) {
+      for (let i = 0; i < currentNodes.length; i++) {
+        const idx = i;
+        recordHydrationRetarget(currentNodes[idx] as object, (adopted: Node) => {
+          if (idx < currentNodes.length) {
+            currentNodes[idx] = adopted;
+          }
+        });
+      }
+    }
   });
 }
 

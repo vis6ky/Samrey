@@ -73,7 +73,34 @@ async function transpileTypeScriptModule(filePath: string, source: string, isTsx
 
 export function createNativeDevHandler(absoluteRoot: string): http.RequestListener {
   const resolvedRoot = path.resolve(absoluteRoot);
+  const realRoot = (() => {
+    try {
+      return fs.realpathSync(resolvedRoot);
+    } catch {
+      return resolvedRoot;
+    }
+  })();
+
+  const isLexicallyWithinRoot = (candidate: string): boolean =>
+    candidate === resolvedRoot || candidate.startsWith(resolvedRoot + path.sep);
+
+  const isRealPathWithinRoot = (candidate: string): boolean => {
+    try {
+      const realCandidate = fs.realpathSync(candidate);
+      return realCandidate === realRoot || realCandidate.startsWith(realRoot + path.sep);
+    } catch {
+      return false;
+    }
+  };
+
   return async (req, res) => {
+    const method = (req.method || 'GET').toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') {
+      res.writeHead(405, { Allow: 'GET, HEAD', 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('405 Method Not Allowed');
+      return;
+    }
+
     const rawPath = (req.url || '/').split(/[?#]/)[0] || '/';
     let reqPath: string;
     try {
@@ -104,21 +131,45 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
     const relativeTarget = cleanPath.replace(/^\/+/, '');
     let filePath = path.resolve(resolvedRoot, relativeTarget);
 
-    if (
-      !filePath.startsWith(resolvedRoot + path.sep) &&
-      filePath !== path.join(resolvedRoot, 'index.html') &&
-      filePath !== resolvedRoot
-    ) {
+    if (!isLexicallyWithinRoot(filePath)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('403 Forbidden');
       return;
     }
 
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
-      filePath = path.join(filePath, 'index.html');
+    // Reject symlinks escaping the dev server root before directory/stat fallback
+    let targetLstat: fs.Stats | null = null;
+    try {
+      targetLstat = fs.lstatSync(filePath);
+    } catch {
+      targetLstat = null;
+    }
+    if (targetLstat && !isRealPathWithinRoot(filePath)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('403 Forbidden');
+      return;
     }
 
-    if (!fs.existsSync(filePath)) {
+    if (targetLstat && targetLstat.isDirectory()) {
+      filePath = path.join(filePath, 'index.html');
+      if (!isLexicallyWithinRoot(filePath)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('403 Forbidden');
+        return;
+      }
+      try {
+        targetLstat = fs.lstatSync(filePath);
+        if (!isRealPathWithinRoot(filePath)) {
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('403 Forbidden');
+          return;
+        }
+      } catch {
+        targetLstat = null;
+      }
+    }
+
+    if (!targetLstat) {
       const reqExt = path.extname(reqPath).toLowerCase();
       if (reqExt && reqExt !== '.html') {
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -127,9 +178,24 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
       }
       // SPA Fallback to index.html only for extensionless client-side routes
       filePath = path.join(resolvedRoot, 'index.html');
+      if (!isLexicallyWithinRoot(filePath)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('403 Forbidden');
+        return;
+      }
+      try {
+        targetLstat = fs.lstatSync(filePath);
+        if (!isRealPathWithinRoot(filePath)) {
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('403 Forbidden');
+          return;
+        }
+      } catch {
+        targetLstat = null;
+      }
     }
 
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    if (targetLstat && targetLstat.isFile() && isRealPathWithinRoot(filePath)) {
       const ext = path.extname(filePath).toLowerCase();
 
       if (ext === '.samrey') {
@@ -137,10 +203,10 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
           const source = fs.readFileSync(filePath, 'utf-8');
           const compiled = compileTemplate(source, { filename: filePath });
           res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
-          res.end(compiled.generatedCode);
+          res.end(method === 'HEAD' ? undefined : compiled.generatedCode);
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end(`[Samrey Compile Error] ${err?.message || err}`);
+          res.end(method === 'HEAD' ? undefined : `[Samrey Compile Error] ${err?.message || err}`);
         }
         return;
       }
@@ -150,20 +216,24 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
           const source = fs.readFileSync(filePath, 'utf-8');
           const transpiled = await transpileTypeScriptModule(filePath, source, ext === '.tsx');
           res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
-          res.end(transpiled);
+          res.end(method === 'HEAD' ? undefined : transpiled);
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end(`[Samrey Dev Error] ${err?.message || err}`);
+          res.end(method === 'HEAD' ? undefined : `[Samrey Dev Error] ${err?.message || err}`);
         }
         return;
       }
 
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       res.writeHead(200, { 'Content-Type': contentType });
+      if (method === 'HEAD') {
+        res.end();
+        return;
+      }
       fs.createReadStream(filePath).pipe(res);
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('404 Not Found');
+      res.end(method === 'HEAD' ? undefined : '404 Not Found');
     }
   };
 }

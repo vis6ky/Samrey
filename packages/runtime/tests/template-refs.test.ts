@@ -736,4 +736,31 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
       (globalThis as any).document = origDoc;
     }
   });
+
+  it('18. F-13: Headless template() parses live DOM hierarchy, ignores comments, supports rEf casing, and reflects reactive bindings in outerHTML', () => {
+    const count = signal(7);
+    const view = template(
+      '<div ref="box" class="card">Count: <span ref="num">0</span><!-- <span ref="commentedOut">X</span> --><button rEf="actionBtn">Go</button></div>'
+    );
+
+    const clone1 = view.clone();
+    const clone2 = view.clone();
+
+    assert.strictEqual(clone1.refs.box, clone1);
+    assert.strictEqual(clone1.ref('commentedOut'), undefined, 'Commented ref must not be extracted');
+    assert.ok(clone1.refs.actionBtn, 'Case-insensitive rEf attribute must resolve in headless mode');
+    assert.strictEqual((clone1 as any).querySelector('span'), clone1.refs.num, 'Ref must be actual live child inside DOM tree');
+    assert.strictEqual((clone1 as any).querySelector('button'), clone1.refs.actionBtn);
+
+    bindText(clone1.refs.num, () => count.value);
+    assert.ok((clone1 as any).outerHTML.includes('<span ref="num">7</span>'), `Expected live updated outerHTML, got ${(clone1 as any).outerHTML}`);
+    count.value = 42;
+    assert.ok((clone1 as any).outerHTML.includes('<span ref="num">42</span>'), `Expected reactive outerHTML update, got ${(clone1 as any).outerHTML}`);
+    assert.ok((clone2 as any).outerHTML.includes('<span ref="num">0</span>'), 'Second clone must remain independent');
+
+    const multi = template('<header ref="hdr" class="top">H</header><main ref="body"><p ref="p">Init</p></main>').clone();
+    assert.strictEqual((multi as any).querySelector('.top'), multi.refs.hdr);
+    bindText(multi.refs.p, () => 'Updated');
+    assert.ok((multi as any).outerHTML.includes('<p ref="p">Updated</p>'));
+  });
 });

@@ -57,6 +57,19 @@ const GIT_ALLOWED_READ_ONLY_SUBCOMMANDS = new Set([
   'show'
 ]);
 
+const GIT_BRANCH_ALLOWED_READ_ONLY_FLAGS = new Set([
+  '--show-current',
+  '-a',
+  '--all',
+  '-r',
+  '--remotes',
+  '--list',
+  '-v',
+  '-vv',
+  '--verbose',
+  '--no-color'
+]);
+
 const NPM_ALLOWED_RUN_SCRIPTS = new Set(['build', 'typecheck']);
 
 export function redactSecrets(text: string): string {
@@ -392,6 +405,11 @@ export function executeSafeCommand(
             new Error(`Security Exception: Prohibited npm run script "${script || ''}". Allowed scripts: build, typecheck.`)
           );
         }
+        if (args.length !== 2) {
+          return reject(
+            new Error(`Security Exception: Prohibited extra arguments for "npm run ${script}".`)
+          );
+        }
       } else {
         return reject(
           new Error(`Security Exception: Prohibited npm subcommand "${sub}". Allowed: test, run build, run typecheck.`)
@@ -406,6 +424,15 @@ export function executeSafeCommand(
         return reject(
           new Error(`Security Exception: Prohibited git subcommand "${sub}". Only read-only subcommands are allowed: status, log, diff, rev-parse, branch, describe, show.`)
         );
+      }
+      if (sub === 'branch') {
+        for (const arg of args.slice(1)) {
+          if (!GIT_BRANCH_ALLOWED_READ_ONLY_FLAGS.has(arg)) {
+            return reject(
+              new Error(`Security Exception: Prohibited git branch argument "${arg}". Only read-only branch queries (--show-current, --list, -a, --all, -r, --remotes, -v, -vv, --verbose) are allowed.`)
+            );
+          }
+        }
       }
     } else if (cmd === 'node') {
       // "node: drop it from the allowlist unless a tool needs it; if needed, allow only node --test <path inside root>."

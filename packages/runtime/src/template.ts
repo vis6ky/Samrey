@@ -5,9 +5,14 @@
 
 import { TrustedTypesPolicy } from '@samrey/security';
 import { getOwner, onCleanup } from '@samrey/reactivity';
+import { parseHtmlToHeadlessFragment } from './headless-dom.js';
 
 export type TagNameToElement<T extends string> =
-  T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
+  T extends keyof HTMLElementTagNameMap
+    ? HTMLElementTagNameMap[T]
+    : T extends keyof SVGElementTagNameMap
+      ? SVGElementTagNameMap[T]
+      : HTMLElement;
 
 type Whitespace = ' ' | '\t' | '\n' | '\r';
 
@@ -129,7 +134,7 @@ export type TemplateRefs<S extends string = string> =
 export type TemplateRoot<S extends string = string> = (HTMLElement | DocumentFragment) & {
   refs: TemplateRefs<S>;
   ref<K extends keyof TemplateRefs<S>>(name: K): TemplateRefs<S>[K];
-  ref<E extends HTMLElement = HTMLElement>(name: string): E | undefined;
+  ref<E extends Element = HTMLElement>(name: string): E | undefined;
   disposeRefs(): void;
 };
 
@@ -147,10 +152,24 @@ interface RefDescriptor {
 
 function getRefAttr(el: any): string | null {
   if (typeof el.getAttribute === 'function') {
-    return el.getAttribute('ref') || el.getAttribute('REF') || el.getAttribute('Ref');
+    const direct = el.getAttribute('ref') || el.getAttribute('REF') || el.getAttribute('Ref');
+    if (direct) return direct;
   }
   if (el.attributes) {
-    return el.attributes.ref || el.attributes.REF || el.attributes.Ref || null;
+    if (typeof el.attributes.length === 'number') {
+      for (let i = 0; i < el.attributes.length; i++) {
+        const attr = el.attributes[i];
+        if (attr && typeof attr.name === 'string' && attr.name.toLowerCase() === 'ref') {
+          return attr.value || null;
+        }
+      }
+    } else {
+      for (const [key, value] of Object.entries(el.attributes)) {
+        if (key.toLowerCase() === 'ref' && typeof value === 'string' && value.length > 0) {
+          return value;
+        }
+      }
+    }
   }
   return null;
 }
@@ -221,63 +240,6 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
   }
 
   return descriptors;
-}
-
-function createMockElement(tagName = 'DIV', html = ''): any {
-  const listeners: Record<string, Function[]> = {};
-  const attrs: Record<string, string> = {};
-  const classes = new Set<string>();
-
-  return {
-    nodeType: 1,
-    tagName: tagName.toUpperCase(),
-    nodeName: tagName.toUpperCase(),
-    textContent: '',
-    outerHTML: html,
-    innerHTML: html,
-    childNodes: [],
-    firstChild: null,
-    nextSibling: null,
-    parentNode: null,
-    setAttribute: (name: string, val: string) => {
-      attrs[name] = val;
-    },
-    getAttribute: (name: string) => attrs[name] ?? null,
-    removeAttribute: (name: string) => {
-      delete attrs[name];
-    },
-    hasAttribute: (name: string) => name in attrs,
-    classList: {
-      add: (...tokens: string[]) => tokens.forEach((t) => classes.add(t)),
-      remove: (...tokens: string[]) => tokens.forEach((t) => classes.delete(t)),
-      toggle: (token: string, force?: boolean) => {
-        if (force === true) { classes.add(token); return true; }
-        if (force === false) { classes.delete(token); return false; }
-        if (classes.has(token)) { classes.delete(token); return false; }
-        classes.add(token); return true;
-      },
-      contains: (token: string) => classes.has(token)
-    },
-    style: {},
-    addEventListener: (type: string, handler: Function) => {
-      if (!listeners[type]) listeners[type] = [];
-      listeners[type].push(handler);
-    },
-    removeEventListener: (type: string, handler: Function) => {
-      if (listeners[type]) {
-        listeners[type] = listeners[type].filter((h) => h !== handler);
-      }
-    },
-    dispatchEvent: (event: any) => {
-      const type = event?.type;
-      if (listeners[type]) {
-        listeners[type].forEach((h) => h(event));
-      }
-      return true;
-    },
-    querySelector: () => null,
-    querySelectorAll: () => []
-  };
 }
 
 function patchMultiRootFragment(fragment: Node): Node {
@@ -454,95 +416,40 @@ function patchMultiRootFragment(fragment: Node): Node {
  */
 export function template<S extends string = string>(htmlString: S): TemplateFactory<S> {
   let templateElement: HTMLTemplateElement | null = null;
-  let refDescriptors: RefDescriptor[] | null = null;
+  let browserRefDescriptors: RefDescriptor[] | null = null;
+  let headlessFragment: DocumentFragment | null = null;
+  let headlessRefDescriptors: RefDescriptor[] | null = null;
   const hasRefAttr = /(?:^|[\s/])ref\s*=/i.test(htmlString);
 
   const createNode = function createNode(): TemplateRoot<S> {
     const trimmed = htmlString.trim();
+    let clone: DocumentFragment;
+    let activeDescriptors: RefDescriptor[];
 
     if (typeof document === 'undefined') {
-      const refs: Record<string, any> = Object.create(null);
-      const seenRefs = new Set<string>();
-      if (hasRefAttr) {
-        const regex = /<([a-zA-Z0-9-]+)[^>]*?(?:^|[\s/])ref\s*=\s*["']([^"']+)["']/gi;
-        let match: RegExpExecArray | null;
-        while ((match = regex.exec(trimmed)) !== null) {
-          const tagName = match[1].toUpperCase();
-          const refName = match[2];
-          if (!VALID_REF_REGEX.test(refName)) {
-            if (typeof process === 'undefined' || process.env.NODE_ENV !== 'production') {
-              console.warn(`[Samrey Warning] Invalid template ref identifier "${refName}".`);
-            }
-          }
-          if (seenRefs.has(refName)) {
-            if (typeof process === 'undefined' || process.env.NODE_ENV !== 'production') {
-              console.warn(`[Samrey Warning] Duplicate template ref "${refName}" detected in template.`);
-            }
-          }
-          seenRefs.add(refName);
-          refs[refName] = createMockElement(tagName, '');
-        }
+      if (!headlessFragment) {
+        const safeHtml = String(TrustedTypesPolicy.createTemplateHTML(trimmed) ?? '');
+        headlessFragment = parseHtmlToHeadlessFragment(safeHtml) as DocumentFragment;
+        headlessRefDescriptors = hasRefAttr ? extractRefDescriptors(headlessFragment) : [];
       }
-
-      // Root tag match if single root
-      const rootMatch = trimmed.match(/^<([a-zA-Z0-9-]+)[^>]*>/);
-      const rootTag = rootMatch ? rootMatch[1].toUpperCase() : 'DIV';
-      const rootRefMatch = rootMatch ? rootMatch[0].match(/(?:^|[\s/])ref\s*=\s*["']([^"']+)["']/i) : null;
-      const rootRefName = rootRefMatch ? rootRefMatch[1] : null;
-
-      const mockRoot = createMockElement(rootTag, trimmed);
-      if (rootRefName && refs[rootRefName]) {
-        refs[rootRefName] = mockRoot;
+      clone = headlessFragment.cloneNode(true) as DocumentFragment;
+      activeDescriptors = headlessRefDescriptors || [];
+    } else {
+      if (!templateElement) {
+        templateElement = document.createElement('template');
+        templateElement.innerHTML = TrustedTypesPolicy.createTemplateHTML(trimmed) as unknown as string;
+        browserRefDescriptors = hasRefAttr ? extractRefDescriptors(templateElement.content) : [];
       }
-
-      Object.defineProperty(mockRoot, 'refs', {
-        value: refs,
-        writable: false,
-        enumerable: true,
-        configurable: true
-      });
-      Object.defineProperty(mockRoot, 'ref', {
-        value: function ref(name: string) {
-          return refs[name];
-        },
-        writable: false,
-        enumerable: true,
-        configurable: true
-      });
-      Object.defineProperty(mockRoot, 'disposeRefs', {
-        value: function disposeRefs() {
-          for (const k of Object.keys(refs)) {
-            delete refs[k];
-          }
-        },
-        writable: false,
-        enumerable: false,
-        configurable: true
-      });
-
-      const activeOwner = getOwner();
-      if (activeOwner) {
-        onCleanup(() => {
-          mockRoot.disposeRefs();
-        });
-      }
-
-      return mockRoot as unknown as TemplateRoot<S>;
+      clone = templateElement.content.cloneNode(true) as DocumentFragment;
+      activeDescriptors = browserRefDescriptors || [];
     }
 
-    if (!templateElement) {
-      templateElement = document.createElement('template');
-      templateElement.innerHTML = TrustedTypesPolicy.createTemplateHTML(trimmed) as unknown as string;
-      refDescriptors = hasRefAttr ? extractRefDescriptors(templateElement.content) : [];
-    }
-
-    const clone = templateElement.content.cloneNode(true);
     const root: any = clone.childNodes.length === 1 ? clone.firstChild! : patchMultiRootFragment(clone);
 
     const refs: Record<string, any> = Object.create(null);
-    if (refDescriptors && refDescriptors.length > 0) {
-      for (let d = 0; d < refDescriptors.length; d++) {
-        const desc = refDescriptors[d];
+    if (activeDescriptors.length > 0) {
+      for (let d = 0; d < activeDescriptors.length; d++) {
+        const desc = activeDescriptors[d];
         let curr: any = root;
         const path = desc.path;
         for (let p = 0; p < path.length; p++) {

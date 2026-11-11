@@ -691,5 +691,41 @@ describe('@samrey/runtime', () => {
       bindAttr(img, 'aria-expanded', () => true);
       assert.equal(img.getAttribute('aria-expanded'), 'true');
     });
+
+    it('F-08: For preserves multi-node fallback sibling order on initial empty mount and reactive empty transition', () => {
+      const items = signal<string[]>([]);
+      const container = el('div', null,
+        For({
+          each: items,
+          key: (item) => item,
+          fallback: () => [
+            el('span', null, 'Fallback-1'),
+            el('span', null, 'Fallback-2'),
+            el('span', null, 'Fallback-3')
+          ],
+          children: (item) => el('p', null, item)
+        }),
+        el('footer', null, 'End')
+      ) as any;
+
+      assert.equal(
+        container.outerHTML,
+        '<div><span>Fallback-1</span><span>Fallback-2</span><span>Fallback-3</span><footer>End</footer></div>',
+        'Initial empty <For> fallback must preserve forward node order before trailing siblings'
+      );
+
+      items.value = ['Row-A', 'Row-B'];
+      assert.equal(
+        container.outerHTML,
+        '<div><p>Row-A</p><p>Row-B</p><footer>End</footer></div>'
+      );
+
+      items.value = [];
+      assert.equal(
+        container.outerHTML,
+        '<div><span>Fallback-1</span><span>Fallback-2</span><span>Fallback-3</span><footer>End</footer></div>',
+        'Reactive transition back to empty <For> fallback must preserve forward node order'
+      );
+    });
   });
 });

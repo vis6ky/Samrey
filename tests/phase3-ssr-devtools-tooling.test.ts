@@ -359,5 +359,270 @@ describe('Phase 3 - 3.6: samreyVitePlugin Glob Support & Error Handling', () => 
   });
 });
 
+describe('Phase 3 - 3.7: F-06 Non-Destructive Control-Flow & Dynamic Hydration', () => {
+  it('hydrates nested Show, For, Switch, bindDynamicChild, and root Show cleanly in headless mode without orphaned SSR nodes', async () => {
+    const { signal } = await import('../packages/reactivity/src/index.js');
+    const { el, Show, For, Switch, Match, bindDynamicChild, on } = await import('../packages/runtime/src/index.js');
+    const { hydrate } = await import('../packages/ssr/src/index.js');
+
+    const visible = signal(true);
+    const items = signal(['A', 'B']);
+    const mode = signal<'edit' | 'view'>('edit');
+    const badge = signal('LIVE');
+    let clicks = 0;
+
+    // Pre-existing SSR DOM container
+    const ssrBanner = el('div', { id: 'banner' }, 'Banner');
+    const ssrItemA = el('li', null, 'A');
+    const ssrItemB = el('li', null, 'B');
+    const ssrMode = el('em', null, 'Editing');
+    const ssrDynTextWrapper = el('span', null, 'LIVE');
+    const container = el(
+      'div',
+      null,
+      el(
+        'section',
+        null,
+        ssrBanner,
+        el('ul', null, ssrItemA, ssrItemB),
+        ssrMode,
+        ssrDynTextWrapper
+      )
+    ) as unknown as HTMLElement;
+
+    let mismatchCount = 0;
+    const result = hydrate(
+      () =>
+        el(
+          'section',
+          null,
+          Show({
+            when: visible,
+            fallback: () => el('div', { id: 'hidden-banner' }, 'Hidden'),
+            children: () => {
+              const btn = el('div', { id: 'banner' }, 'Banner');
+              on(btn, 'click', () => { clicks++; });
+              return btn;
+            }
+          }),
+          el(
+            'ul',
+            null,
+            For({
+              each: items,
+              key: (x) => x,
+              fallback: () => [el('li', null, 'Empty-1'), el('li', null, 'Empty-2')],
+              children: (x) => el('li', null, x)
+            })
+          ),
+          Switch({
+            children: [
+              Match({ when: () => mode.value === 'edit', children: () => el('em', null, 'Editing') }),
+              Match({ when: () => mode.value === 'view', children: () => el('strong', null, 'Viewing') })
+            ]
+          }),
+          ((() => {
+            const dynSpan = el('span', null);
+            bindDynamicChild(dynSpan, () => badge.value);
+            return dynSpan;
+          })())
+        ),
+      container,
+      { onMismatch: () => { mismatchCount++; } }
+    );
+
+    // Non-destructive match check
+    assert.equal(mismatchCount, 0, 'Headless control-flow tree must match SSR container cleanly');
+    const hydratedSection = (container as any).childNodes[0];
+    assert.equal(hydratedSection.querySelector('#banner'), ssrBanner, 'Original SSR banner must be adopted in place');
+    const ul = hydratedSection.querySelector('ul');
+    assert.ok(ul.childNodes.includes(ssrItemA), 'Original SSR item A must be adopted');
+    assert.ok(ul.childNodes.includes(ssrItemB), 'Original SSR item B must be adopted');
+
+    // Event handler retargeted onto SSR banner
+    ssrBanner.click();
+    assert.equal(clicks, 1, 'Click on hydrated SSR node must trigger client handler');
+
+    // Dynamic text binding inside hydrated section updates adopted SSR text node in place
+    badge.value = 'UPDATED';
+    assert.equal(ssrDynTextWrapper.textContent, 'UPDATED', 'Adopted bindDynamicChild text must update SSR node in place');
+
+    // Toggle Show off -> removes SSR banner without leaving orphan
+    visible.value = false;
+    assert.equal((ssrBanner as any).parentNode, null, 'Old SSR banner must not remain orphaned when Show toggles off');
+    assert.ok((container as any).innerHTML.includes('Hidden'));
+    assert.ok(!(container as any).innerHTML.includes('id="banner"'));
+
+    // Toggle For to empty -> multi-node fallback order preserved & SSR items removed
+    items.value = [];
+    assert.equal((ssrItemA as any).parentNode, null, 'Old SSR list items must be removed on empty transition');
+    assert.equal(ul.outerHTML, '<ul><li>Empty-1</li><li>Empty-2</li></ul>');
+
+    // Repopulate For after empty fallback
+    items.value = ['C'];
+    assert.equal(ul.outerHTML, '<ul><li>C</li></ul>');
+
+    // Switch branch toggles & removes SSR <em> without leaving orphan
+    mode.value = 'view';
+    assert.equal((ssrMode as any).parentNode, null, 'Old SSR Switch branch must be removed');
+    assert.ok((container as any).innerHTML.includes('<strong>Viewing</strong>'));
+
+    // Test bindDynamicChild element swap & SSR node cleanup directly
+    const dynHostSsrSpan = el('span', null, 'Initial');
+    const dynContainer = el('section', null, el('div', null, dynHostSsrSpan)) as unknown as HTMLElement;
+    const dynState = signal<'text' | 'elem'>('text');
+    let dynMismatch = 0;
+    const dynHydration = hydrate(
+      () => {
+        const host = el('div', null);
+        bindDynamicChild(host, () =>
+          dynState.value === 'text' ? el('span', null, 'Initial') : el('b', null, 'Swapped')
+        );
+        return host;
+      },
+      dynContainer,
+      { onMismatch: () => { dynMismatch++; } }
+    );
+    assert.equal(dynMismatch, 0);
+    dynState.value = 'elem';
+    assert.equal((dynHostSsrSpan as any).parentNode, null, 'bindDynamicChild must remove adopted SSR node cleanly');
+    assert.ok((dynContainer as any).innerHTML.includes('<b>Swapped</b>'));
+    assert.ok(!(dynContainer as any).innerHTML.includes('Initial'));
+
+    // Test root Show in headless mode (returns detached marker directly)
+    const rootShowFlag = signal(true);
+    const rootShowSsr = el('p', { id: 'root-show' }, 'Root SSR');
+    const rootShowContainer = el('div', null, rootShowSsr) as unknown as HTMLElement;
+    let rootShowMismatch = 0;
+    const rootShowHydration = hydrate(
+      () =>
+        Show({
+          when: rootShowFlag,
+          fallback: () => el('p', null, 'Root Fallback'),
+          children: () => el('p', { id: 'root-show' }, 'Root SSR')
+        }),
+      rootShowContainer,
+      { onMismatch: () => { rootShowMismatch++; } }
+    );
+    assert.equal(rootShowMismatch, 0, 'Headless root Show must match SSR without mismatch');
+    rootShowFlag.value = false;
+    assert.equal((rootShowSsr as any).parentNode, null, 'Headless root Show must remove adopted SSR node on toggle');
+    assert.ok((rootShowContainer as any).innerHTML.includes('Root Fallback'));
+
+    rootShowHydration.dispose();
+    dynHydration.dispose();
+    result.dispose();
+  });
+
+  it('hydrates root <Show> returning a browser DocumentFragment without mismatch or orphaned SSR nodes', async () => {
+    const { signal } = await import('../packages/reactivity/src/index.js');
+    const { el, Show } = await import('../packages/runtime/src/index.js');
+    const { hydrate } = await import('../packages/ssr/src/index.js');
+
+    class FakeDomNode {
+      public nodeType: number;
+      public tagName: string;
+      public nodeName: string;
+      public textContent = '';
+      public childNodes: FakeDomNode[] = [];
+      public parentNode: FakeDomNode | null = null;
+      constructor(nodeType: number, tagOrName: string, text = '') {
+        this.nodeType = nodeType;
+        this.tagName = nodeType === 1 ? tagOrName.toUpperCase() : '';
+        this.nodeName = nodeType === 1 ? this.tagName : tagOrName;
+        this.textContent = text;
+      }
+      get firstChild() { return this.childNodes[0] ?? null; }
+      get nextSibling(): FakeDomNode | null {
+        if (!this.parentNode) return null;
+        const idx = this.parentNode.childNodes.indexOf(this);
+        return idx !== -1 && idx + 1 < this.parentNode.childNodes.length ? this.parentNode.childNodes[idx + 1] : null;
+      }
+      removeChild(child: FakeDomNode) {
+        const idx = this.childNodes.indexOf(child);
+        if (idx !== -1) {
+          this.childNodes.splice(idx, 1);
+          child.parentNode = null;
+        }
+        return child;
+      }
+      insertBefore(node: FakeDomNode, refNode: FakeDomNode | null) {
+        if (node.nodeType === 11) {
+          for (const ch of [...node.childNodes]) this.insertBefore(ch, refNode);
+          node.childNodes = [];
+          return node;
+        }
+        if (node.parentNode) node.parentNode.removeChild(node);
+        const idx = refNode ? this.childNodes.indexOf(refNode) : -1;
+        if (idx !== -1) this.childNodes.splice(idx, 0, node);
+        else this.childNodes.push(node);
+        node.parentNode = this;
+        return node;
+      }
+      appendChild(node: FakeDomNode) {
+        return this.insertBefore(node, null);
+      }
+      replaceChildren(...nodes: FakeDomNode[]) {
+        for (const c of [...this.childNodes]) this.removeChild(c);
+        for (const n of nodes) this.appendChild(n);
+      }
+    }
+
+    const origDoc = (globalThis as any).document;
+    (globalThis as any).document = {
+      createElement: (tag: string) => new FakeDomNode(1, tag),
+      createTextNode: (txt: string) => new FakeDomNode(3, '#text', txt),
+      createComment: (txt: string) => new FakeDomNode(8, '#comment', txt),
+      createDocumentFragment: () => new FakeDomNode(11, '#document-fragment')
+    };
+
+    try {
+      const shown = signal(true);
+      const container = new FakeDomNode(1, 'DIV');
+      const ssrChild = new FakeDomNode(1, 'P');
+      ssrChild.appendChild(new FakeDomNode(3, '#text', 'Hello SSR'));
+      container.appendChild(ssrChild);
+
+      let mismatch = false;
+      const h = hydrate(
+        () =>
+          Show({
+            when: shown,
+            fallback: () => el('span', null, 'Off'),
+            children: () => el('p', null, 'Hello SSR')
+          }),
+        container as unknown as HTMLElement,
+        { onMismatch: () => { mismatch = true; } }
+      );
+
+      assert.equal(mismatch, false, 'Root Show DocumentFragment must hydrate without mismatch');
+      assert.equal(container.childNodes.some((n) => n === ssrChild), true, 'SSR <p> must be preserved in container');
+
+      shown.value = false;
+      assert.equal(ssrChild.parentNode, null, 'Adopted SSR <p> must be removed cleanly when root Show toggles false');
+      assert.equal(
+        container.childNodes.some((n) => n.tagName === 'SPAN' && n.firstChild?.textContent === 'Off'),
+        true,
+        'Fallback <span>Off</span> must mount after marker'
+      );
+
+      shown.value = true;
+      assert.equal(
+        container.childNodes.some((n) => n.tagName === 'P' && n.firstChild?.textContent === 'Hello SSR'),
+        true
+      );
+      assert.equal(
+        container.childNodes.some((n) => n.tagName === 'SPAN'),
+        false
+      );
+
+      h.dispose();
+    } finally {
+      if (origDoc) (globalThis as any).document = origDoc;
+      else delete (globalThis as any).document;
+    }
+  });
+});
+
 
 

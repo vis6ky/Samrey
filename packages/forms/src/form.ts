@@ -45,10 +45,12 @@ export function createForm<TValues extends Record<string, any>>(
 
   function reset(): void {
     formErrorSignal.value = null;
-    for (const key of Object.keys(config.initialValues) as (keyof TValues)[]) {
-      fields[key].setValue(config.initialValues[key]);
-      fields[key].setTouched(false);
-      fields[key].setError(null);
+    for (const key of Object.keys(fields) as (keyof TValues)[]) {
+      const field = fields[key];
+      if (!field) continue;
+      field.setValue(config.initialValues[key]);
+      field.setTouched(false);
+      field.setError(null);
     }
   }
 

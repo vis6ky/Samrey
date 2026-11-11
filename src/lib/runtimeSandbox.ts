@@ -14,6 +14,8 @@ import * as Security from '@samrey/security';
 import * as Http from '@samrey/http';
 import { icon } from './icons.js';
 
+import { evaluateSandboxedProgram } from './sandboxInterpreter.js';
+
 export interface SandboxLog {
   time: string;
   text: string;
@@ -808,46 +810,14 @@ export function executeSamreyCode(
       }
     };
 
-    // Find component functions defined in code
-    const funcNames: string[] = [];
-    const funcRegex = /function\s+([A-Za-z0-9_$]+)\s*\(/g;
-    let match;
-    while ((match = funcRegex.exec(cleanCode)) !== null) {
-      funcNames.push(match[1]);
-    }
+    log('[Runtime] Executing component entry function via zero-eval AST sandbox...', 'info');
 
-    // Determine target execution expression (always strict mode to prevent implicit global this leakage)
-    let wrappedCode: string;
-    if (funcNames.length > 0) {
-      const primaryFunc = funcNames[0];
-      wrappedCode = `
-        'use strict';
-        ${cleanCode}
-        if (typeof ${primaryFunc} === 'function') {
-          return ${primaryFunc}();
-        }
-        return null;
-      `;
-    } else {
-      wrappedCode = `
-        'use strict';
-        ${cleanCode}
-      `;
-    }
-
-    // Build factory
-    const scopeKeys = Object.keys(scope);
-    const scopeValues = Object.values(scope);
-    const runner = new Function(...scopeKeys, wrappedCode);
-
-    log('[Runtime] Executing component entry function with zero Virtual DOM overhead...', 'info');
-
-    // Run inside reactive owner
+    // Run inside reactive owner via zero-Function AST interpreter
     const owner = Reactivity.createOwner();
     let renderedResult: any = null;
 
     Reactivity.runWithOwner(owner, () => {
-      renderedResult = runner(...scopeValues);
+      renderedResult = evaluateSandboxedProgram(cleanCode, scope, []);
     });
 
     if (renderedResult && typeof renderedResult === 'object' && ('nodeType' in renderedResult || renderedResult instanceof Node)) {

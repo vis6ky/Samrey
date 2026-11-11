@@ -287,8 +287,80 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       assert.match(String(transpiledTs.headers['content-type']), /text\/javascript/);
       assert.ok(!transpiledTs.body.includes(': number'), 'TypeScript type annotation must be stripped');
       assert.ok(transpiledTs.body.includes('42'));
+
+      // 8. F-10: Symlink escape protection and HTTP method allowlisting (GET/HEAD only)
+      const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-dev-outside-'));
+      try {
+        const secretFile = path.join(outsideDir, 'secret.txt');
+        fs.writeFileSync(secretFile, 'TOP_SECRET');
+        fs.symlinkSync(secretFile, path.join(tmpRoot, 'leak.txt'));
+
+        const symlinkResp = await invoke('/leak.txt');
+        assert.equal(symlinkResp.status, 403);
+        assert.ok(!symlinkResp.body.includes('TOP_SECRET'));
+
+        const postResp = await new Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }>((resolve, reject) => {
+          const chunks: Buffer[] = [];
+          const headers: Record<string, string | string[] | undefined> = {};
+          let status = 200;
+          const res = new Writable({
+            write(chunk, _enc, cb) { chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))); cb(); }
+          }) as any;
+          res.writeHead = (code: number, hdrs: Record<string, string | string[]> = {}) => {
+            status = code;
+            for (const [k, v] of Object.entries(hdrs)) headers[k.toLowerCase()] = v;
+            return res;
+          };
+          res.on('finish', () => resolve({ status, headers, body: Buffer.concat(chunks).toString('utf-8') }));
+          Promise.resolve(handler({ url: '/mod.ts', method: 'POST' } as any, res)).catch(reject);
+        });
+        assert.equal(postResp.status, 405);
+        assert.equal(postResp.headers['allow'], 'GET, HEAD');
+
+        const headResp = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+          const chunks: Buffer[] = [];
+          let status = 200;
+          const res = new Writable({
+            write(chunk, _enc, cb) { chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))); cb(); }
+          }) as any;
+          res.writeHead = (code: number) => { status = code; return res; };
+          res.on('finish', () => resolve({ status, body: Buffer.concat(chunks).toString('utf-8') }));
+          Promise.resolve(handler({ url: '/hello%20world.txt', method: 'HEAD' } as any, res)).catch(reject);
+        });
+        assert.equal(headResp.status, 200);
+        assert.equal(headResp.body, '');
+      } finally {
+        fs.rmSync(outsideDir, { recursive: true, force: true });
+      }
     } finally {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
+  });
+
+  it('F-09: handles nested JSX braces, template literals, and > inside attributes accurately in auditSource', async () => {
+    const { auditSource } = await import('../src/audit.js');
+
+    // Nested braces + comparisons inside JSX expressions must not split opening tag or hide subsequent onclick
+    const nestedSource = `
+      export function ActionBar() {
+        return (
+          <div>
+            <button onClick={() => { const cfg = { valid: 2 > 1 }; save(cfg); }} onclick="alert(1)">Save</button>
+            <button onClick={() => { return \`value > 0\`; }}>Safe</button>
+            <a title={count > 1 ? 'many' : 'one'} href="javascript:alert(1)">Link</a>
+            <script title=">">alert(1)</script>
+            <script title=">" src="javascript:alert(2)"></script>
+          </div>
+        );
+      }
+    `;
+
+    const report = auditSource(nestedSource, 'ActionBar.tsx');
+    assert.ok(report.messages.some((m) => m.includes('Inline event handler attribute "onclick"')));
+    assert.ok(!report.messages.some((m) => m.includes('"onClick"')));
+    assert.ok(report.messages.some((m) => m.includes('javascript:') && m.includes('"href"')));
+    assert.ok(report.messages.some((m) => m.includes('Inline <script> tag without src')));
+    assert.ok(report.messages.some((m) => m.includes('Insecure "javascript:" URI in <script src>')));
+    assert.equal(report.violationsCount, 4, `Expected 4 violations, got ${report.violationsCount}: ${report.messages.join('\n')}`);
   });
 });

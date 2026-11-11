@@ -6,7 +6,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022%20LTS-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-130%20passed%20%2F%200%20failed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-736%2B%20passed%20%2F%200%20failed-brightgreen.svg)]()
 [![Zero-eval](https://img.shields.io/badge/Security-Zero--Eval%20%2F%20CSP%20Strict-purple.svg)]()
 
 ---
@@ -40,7 +40,7 @@ npm install @samrey/reactivity @samrey/runtime @samrey/compiler
 
 ```typescript
 import { signal, computed } from '@samrey/reactivity';
-import { template, bindText, bindEvent } from '@samrey/runtime';
+import { template, bindText, on } from '@samrey/runtime';
 
 function Counter() {
   const count = signal(0);
@@ -59,7 +59,7 @@ function Counter() {
 
   bindText(countVal, () => count.value);
   bindText(doubleVal, () => double.value);
-  bindEvent(btn, 'click', () => count.value++);
+  on(btn, 'click', () => count.value++);
 
   return root;
 }
@@ -71,7 +71,7 @@ document.getElementById('app')?.appendChild(Counter());
 
 In Samrey, `<For>` preserves DOM elements and owner scopes using keyed identity reconciliation. Row render functions execute **once** upon mounting; when a row's key matches, the existing DOM row is reused.
 
-- **Wrong**: Passing a new object reference under an existing key (`todos.value = [{ id: 1, text: 'New' }]`) leaves the row displaying initial data and emits a dev warning (`AETH-502`).
+- **Wrong**: Passing a new object reference under an existing key (`todos.value = [{ id: 1, text: 'New' }]`) leaves the row displaying initial data and emits a dev warning (`SAMREY-502`).
 - **Correct**: Use fine-grained signals inside item properties (`{ id: 1, text: signal('New') }`) for surgical DOM updates, or provide a key that changes when data changes (`key: (item) => `${item.id}:${item.updatedAt}``).
 
 ---
@@ -90,6 +90,8 @@ In Samrey, `<For>` preserves DOM elements and owner scopes using keyed identity 
 | [`@samrey/ssr`](./packages/ssr) | `2.1.0` | Streaming SSR (`ReadableStream`), SSG generator, Unicode serializer & event replay |
 | [`@samrey/testing`](./packages/testing) | `2.1.0` | Test component mounting harness, signal flushers, assertion helpers |
 | [`@samrey/devtools`](./packages/devtools) | `2.1.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
+| [`@samrey/ai`](./packages/ai) | `2.1.0` | AI workflow integration, structured diagnostics, documentation & example engine |
+| [`@samrey/mcp-server`](./packages/mcp-server) | `2.1.0` | Model Context Protocol (MCP) server exposing Samrey tools & code validators |
 | [`@samrey/cli`](./packages/cli) | `2.1.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
 
 ---
@@ -139,7 +141,7 @@ Comprehensive architecture, guides, and API references are located in the [`docs
 
 ## Verification & Testing
 
-To run the complete test suite (130 unit, integration, adversarial security, fuzzing, and example tests):
+To run the complete test suite (unit, integration, adversarial security, fuzzing, and example tests across 736+ cases):
 
 ```bash
 npm test

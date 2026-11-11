@@ -24,8 +24,8 @@ const PACKAGES = [
   'cli'
 ];
 
-describe('Version 2.0.0 & Registry Consistency Gate', () => {
-  it('1. Verifies root package.json has version 2.0.0', () => {
+describe('Version 2.1.0 & Registry Consistency Gate', () => {
+  it('1. Verifies root package.json has version 2.1.0', () => {
     const rootManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
     assert.strictEqual(
       rootManifest.version,
@@ -34,7 +34,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     );
   });
 
-  it('2. Verifies all 11 package manifests have version 2.0.0', () => {
+  it('2. Verifies all 13 package manifests have version 2.1.0', () => {
     for (const pkg of PACKAGES) {
       const pPath = path.join(rootDir, 'packages', pkg, 'package.json');
       assert.ok(fs.existsSync(pPath), `packages/${pkg}/package.json must exist`);
@@ -47,7 +47,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     }
   });
 
-  it('3. Verifies all internal @samrey/* dependency ranges are ^2.0.0', () => {
+  it('3. Verifies all internal @samrey/* dependency ranges are ^2.1.0', () => {
     for (const pkg of PACKAGES) {
       const pPath = path.join(rootDir, 'packages', pkg, 'package.json');
       const manifest = JSON.parse(fs.readFileSync(pPath, 'utf8'));
@@ -68,7 +68,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     }
   });
 
-  it('4. Verifies starter template packages in CLI use ^2.0.0', () => {
+  it('4. Verifies starter template packages in CLI use ^2.1.0', () => {
     const starterTs = fs.readFileSync(path.join(rootDir, 'packages/cli/src/starter-template.ts'), 'utf8');
     assert.ok(
       starterTs.includes(`'@samrey/compiler': '${TARGET_RANGE}'`),
@@ -120,7 +120,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     }
   });
 
-  it('6. Verifies documentation and metadata files are synchronized to 2.0.0', () => {
+  it('6. Verifies documentation and metadata files are synchronized to 2.1.0', () => {
     // 1. SECURITY.md
     const secContent = fs.readFileSync(path.join(rootDir, 'SECURITY.md'), 'utf8');
     assert.ok(
@@ -141,10 +141,11 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
 
     // 4. README.md
     const readmeContent = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
-    assert.ok(
-      readmeContent.includes('2.1.0') || readmeContent.includes('v2.1.0') || readmeContent.includes('2.0.0') || readmeContent.includes('Samrey 2'),
-      'README.md must reference 2.1.0 or Samrey 2'
-    );
+    assert.ok(readmeContent.includes('2.1.0'), 'README.md must reference 2.1.0');
+    assert.ok(!readmeContent.includes('| `2.0.0` |'), 'README.md package table must not retain 2.0.0');
+    assert.ok(readmeContent.includes('SAMREY-502'), 'README.md must use SAMREY-502 diagnostic code');
+    assert.ok(!readmeContent.includes('AETH-502'), 'README.md must not reference legacy AETH-502 code');
+    assert.ok(!readmeContent.includes('130 unit'), 'README.md must not state stale 130 test count');
 
     // 5. CHANGELOG.md has 2.1.0 and 2.0.0
     const changelogContent = fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8');
@@ -162,7 +163,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     );
   });
 
-  it('7. Verifies example apps are updated to 2.0.0 and ^2.0.0', () => {
+  it('7. Verifies example apps are updated to 2.1.0 and ^2.1.0', () => {
     const examples = ['project-manager', 'ssg', 'ssr', 'task-details-app'];
     for (const ex of examples) {
       const pPath = path.join(rootDir, 'examples', ex, 'package.json');
@@ -177,7 +178,7 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
     }
   });
 
-  it('8. Verifies no tracked package.json or source code mentions old version outside CHANGELOG history', () => {
+  it('8. Verifies no tracked package.json or source code mentions old versions outside CHANGELOG history', () => {
     // Check all package manifests and root manifest
     const manifests = [
       path.join(rootDir, 'package.json'),
@@ -193,6 +194,31 @@ describe('Version 2.0.0 & Registry Consistency Gate', () => {
       assert.ok(!raw.includes('^1.0.0'), `${mPath} must not contain "^1.0.0"`);
       assert.ok(!raw.includes('^1.0.1'), `${mPath} must not contain "^1.0.1"`);
       assert.ok(!raw.includes('^1.0.0-rc.1'), `${mPath} must not contain "^1.0.0-rc.1"`);
+      assert.ok(!raw.includes('"2.0.0"'), `${mPath} must not retain "2.0.0"`);
+      assert.ok(!raw.includes('"^2.0.0"'), `${mPath} must not retain "^2.0.0"`);
     }
+  });
+
+  it('9. F-05 & F-14: verifies runtime diagnostics use SAMREY-* codes and security docs match real exports', () => {
+    const diagSrc = fs.readFileSync(path.join(rootDir, 'packages/runtime/src/diagnostics.ts'), 'utf8');
+    assert.ok(!diagSrc.includes('AETH-'), 'packages/runtime/src/diagnostics.ts must emit SAMREY-* codes rather than AETH-*');
+
+    const secReadme = fs.readFileSync(path.join(rootDir, 'packages/security/README.md'), 'utf8');
+    assert.ok(
+      !secReadme.includes("createCsrfToken('super-secret-key')"),
+      'packages/security/README.md must not depict createCsrfToken accepting a symmetric signing secret'
+    );
+    assert.ok(
+      !secReadme.includes('&lt;script&gt;alert(1)&lt;/script&gt;<p>Safe content</p>'),
+      'packages/security/README.md must accurately document strip behavior of sanitizeHtmlString'
+    );
+
+    const secModel = fs.readFileSync(path.join(rootDir, 'docs/SECURITY_MODEL.md'), 'utf8');
+    assert.ok(secModel.includes('serializeStateForHydration'), 'SECURITY_MODEL.md must reference real serializeStateForHydration function');
+    assert.ok(!secModel.includes('serializeForHydration'), 'SECURITY_MODEL.md must not reference nonexistent serializeForHydration');
+    assert.ok(
+      !secModel.includes('Automatic Header Injections'),
+      'SECURITY_MODEL.md must not claim nonexistent automatic security response header injection in HttpClient'
+    );
   });
 });

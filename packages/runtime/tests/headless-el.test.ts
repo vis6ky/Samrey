@@ -127,4 +127,34 @@ describe('Headless el() and SSR HTML serialization', () => {
     (parent as any).replaceChild(fragment, replacement);
     assert.equal((parent as any).outerHTML, '<div><span>First</span><em>Part A</em><em>Part B</em></div>');
   });
+
+  it('F-03: enforces attribute validation, URL/CSS sanitization, and Trusted Types innerHTML in headless mode', () => {
+    const node = el('div', {
+      'id" onclick="alert(1)': 'bad',
+      __proto__: 'polluted',
+      srcdoc: '<script>alert(1)</script>',
+      onclick: 'alert(1)',
+      href: 'javascript:alert(1)',
+      style: 'color: red; width: expression(alert(1))',
+      'data-safe': 'ok'
+    }) as any;
+
+    node.setAttribute('onclick', 'alert(2)');
+    node.setAttribute('srcdoc', '<script>alert(2)</script>');
+    node.setAttribute('bad"key', 'x');
+    node.setAttribute('src', 'javascript:alert(3)');
+    node.setAttribute('style', 'background: url("javascript:alert(4)"); color: green');
+    node.innerHTML = '<strong>Safe</strong><script>alert(5)</script>';
+
+    const html = node.outerHTML;
+    assert.ok(!html.includes('onclick'));
+    assert.ok(!html.includes('srcdoc'));
+    assert.ok(!html.includes('javascript:'));
+    assert.ok(!html.includes('expression('));
+    assert.ok(!html.includes('<script>'));
+    assert.ok(!html.includes('bad"key'));
+    assert.ok(html.includes('data-safe="ok"'));
+    assert.ok(html.includes('color: green'));
+    assert.ok(html.includes('<strong>Safe</strong>'));
+  });
 });

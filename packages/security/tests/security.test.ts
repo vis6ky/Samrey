@@ -12,8 +12,10 @@ import {
   generateCsrfToken,
   verifyCsrfToken,
   getSamreyTrustedPolicy,
+  resetTrustedPolicyForTest,
   getSamreyTemplateTrustedPolicy,
   sanitizeTemplateHtml,
+  sanitizeHeadTags,
   decodeCssEscapes
 } from '../src/index.js';
 
@@ -340,5 +342,68 @@ describe('@samrey/security', () => {
     const cleanImgSet = sanitizeCssStyle(imgSet);
     assert.ok(!cleanImgSet.includes('javascript:'));
     assert.ok(cleanImgSet.includes('https://cdn.example.com/a.png'));
+  });
+
+  it('F-01: validates script URLs against uppercase, whitespace, backslash, and scheme-colon bypasses', () => {
+    resetTrustedPolicyForTest();
+    const policy = getSamreyTrustedPolicy({ allowedScriptOrigins: ['https://cdn.samrey.dev'] });
+
+    for (const bypassUrl of [
+      'HTTPS://evil.com/hack.js',
+      '  https://evil.com/hack.js',
+      '\t//evil.com/hack.js',
+      '/\\evil.com/hack.js',
+      '\\evil.com/hack.js',
+      '\\\\evil.com/hack.js',
+      'https:evil.com/hack.js',
+      'https://__samrey_self__.invalid/hack.js',
+      'about:blank',
+      ''
+    ]) {
+      assert.throws(() => policy.createScriptURL(bypassUrl), /Security|Invalid|blocked/i, `Must block ${bypassUrl}`);
+    }
+
+    assert.equal(policy.createScriptURL('HTTPS://CDN.SAMREY.DEV:443/sdk.js'), 'HTTPS://CDN.SAMREY.DEV:443/sdk.js');
+    assert.equal(policy.createScriptURL('/assets/app.js'), '/assets/app.js');
+    resetTrustedPolicyForTest();
+  });
+
+  it('F-02: terminates CSS string quotes on unescaped newlines while preserving escaped line continuations', () => {
+    for (const payload of [
+      'color: "foo\n; width: expression(alert(1))',
+      'background: "foo\n url(javascript:alert(1))',
+      'background: "foo\r url(javascript:alert(1))',
+      'color: "foo\f; behavior: url(evil.htc)'
+    ]) {
+      const cleaned = sanitizeCssStyle(payload);
+      assert.ok(!cleaned.includes('expression('), `Must neutralize expression in ${payload}`);
+      assert.ok(!cleaned.includes('javascript:'), `Must neutralize javascript: in ${payload}`);
+      assert.ok(!cleaned.includes('behavior:'), `Must neutralize behavior: in ${payload}`);
+    }
+
+    const safeCont = sanitizeCssStyle('content: "a\\\nb"; color: blue');
+    assert.ok(safeCont.includes('color: blue'));
+    const safeCrlfCont = sanitizeCssStyle('content: "a\\\r\nb"; color: green');
+    assert.ok(safeCrlfCont.includes('color: green'));
+  });
+
+  it('F-12: handles RCDATA title/textarea tags, unquoted attribute slashes, and external base tags safely', () => {
+    const titleMxss = sanitizeHtmlString('<title><p title="</title><img src=x onerror=alert(1)>"></title>');
+    assert.ok(!titleMxss.includes('onerror'));
+
+    const unquotedSlash = sanitizeHtmlString('<a href=https://example.com/>Link</a>');
+    assert.ok(unquotedSlash.includes('href="https://example.com/"'));
+
+    const textareaSlash = sanitizeTemplateHtml('<textarea/><div title="</textarea><img src=x onerror=alert(1)>">');
+    assert.ok(!textareaSlash.includes('onerror'));
+    assert.ok(!textareaSlash.includes('&amp;amp;'));
+
+    const headClean = sanitizeHeadTags(
+      '<title><meta name="evil"></title><base href="https://evil.com/"><base href="/app/"><meta name="ok" content="1">'
+    );
+    assert.ok(!headClean.includes('evil.com'));
+    assert.ok(!headClean.includes('name="evil"'));
+    assert.ok(headClean.includes('<base href="/app/">'));
+    assert.ok(headClean.includes('<meta name="ok" content="1">'));
   });
 });

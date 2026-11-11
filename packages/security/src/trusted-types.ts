@@ -27,31 +27,67 @@ export function resetTrustedPolicyForTest(): void {
   configuredAllowedOrigins = [];
 }
 
+function normalizeAllowedOrigin(origin: string): string | null {
+  if (typeof origin !== 'string' || !origin.trim() || origin.trim() === '*') {
+    return null;
+  }
+  try {
+    const parsed = new URL(origin.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
 function validateScriptUrl(url: string, allowedOrigins: string[]): string {
-  const safe = sanitizeUri(url);
-  if (safe === 'about:blank' && url !== 'about:blank') {
-    throw new Error(`[Samrey Security] Insecure script URL blocked: ${url}`);
+  if (typeof url !== 'string' || !url.trim()) {
+    throw new Error(`[Samrey Security] Invalid or empty script URL: ${String(url)}`);
   }
 
-  // Same-origin or relative check
-  const isRelative = !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//');
-  if (isRelative) {
-    return safe;
+  const safe = sanitizeUri(url).trim();
+  if (!safe || safe === 'about:blank') {
+    throw new Error(`[Samrey Security] Insecure script URL blocked: ${url}`);
   }
 
   const currentOrigin = (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null')
     ? window.location.origin
     : '';
+  const sentinelBase = currentOrigin || 'https://__samrey_self__.invalid';
 
   try {
-    const parsed = new URL(url, currentOrigin || 'http://localhost');
-    if (currentOrigin && parsed.origin === currentOrigin) {
+    // Reject scheme-colon confusion and leading backslashes before relative URL resolution
+    const normalizedInput = safe.replace(/\\/g, '/');
+    if (safe.startsWith('\\') || /^[a-z][a-z0-9+.-]*:(?!\/\/)/i.test(normalizedInput)) {
+      throw new Error(`[Samrey Security] Malformed script URL scheme or path blocked: ${url}`);
+    }
+    const parsed = new URL(safe, sentinelBase);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error(`[Samrey Security] Unsupported script URL protocol: ${parsed.protocol}`);
+    }
+
+    // Same-origin or true path-relative URL (not protocol-relative //, /\, \\, \/ or cross-origin)
+    const usedSentinelHost = !currentOrigin && parsed.origin === sentinelBase && !safe.toLowerCase().includes('__samrey_self__.invalid');
+    const isSameCurrentOrigin = Boolean(currentOrigin && parsed.origin === currentOrigin);
+    if (
+      (isSameCurrentOrigin || usedSentinelHost) &&
+      !normalizedInput.startsWith('//')
+    ) {
       return safe;
     }
-    if (allowedOrigins.includes(parsed.origin)) {
+
+    const normalizedOrigins = new Set(
+      allowedOrigins.map(normalizeAllowedOrigin).filter((o): o is string => o !== null)
+    );
+    if (normalizedOrigins.has(parsed.origin)) {
       return safe;
     }
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('[Samrey Security]')) {
+      throw err;
+    }
     throw new Error(`[Samrey Security] Invalid script URL: ${url}`);
   }
 

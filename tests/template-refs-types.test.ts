@@ -57,5 +57,24 @@ describe('Samrey 2.1.0 — TypeScript Static Reference Inference', () => {
     assert.ok(root.refs.submitBtn);
     assert.ok(root.refs.disclaimer);
   });
+
+  it('infers SVG element subtypes from SVGElementTagNameMap cleanly (F-13)', () => {
+    const root = template(`
+      <svg ref="icon" viewBox="0 0 24 24">
+        <path ref="line" d="M0 0L24 24" />
+        <circle ref="dot" cx="12" cy="12" r="4" />
+      </svg>
+    `).clone();
+
+    const _svg: SVGSVGElement = root.refs.icon;
+    const _path: SVGPathElement = root.refs.line;
+    const _circle: SVGCircleElement = root.refs.dot;
+    const _byMethod = root.ref<SVGPathElement>('line');
+
+    assert.ok(_svg);
+    assert.ok(_path);
+    assert.ok(_circle);
+    assert.strictEqual(_byMethod, _path);
+  });
 });
 

@@ -104,7 +104,7 @@ export function emitDevDiagnostic(diagnostic: Omit<DevDiagnostic, 'timestamp'>):
 export function reportDuplicateKey(key: unknown, componentName?: string): void {
   if (!isDev) return;
 
-  const msg = `[AETH-501] Duplicate key "${String(key)}" detected in list reconciliation${componentName ? ` inside <${componentName}>` : ''}. Duplicate keys cause unpredictable DOM node reuse and state corruption.`;
+  const msg = `[SAMREY-501] Duplicate key "${String(key)}" detected in list reconciliation${componentName ? ` inside <${componentName}>` : ''}. Duplicate keys cause unpredictable DOM node reuse and state corruption.`;
   
   if (typeof console !== 'undefined' && typeof console.warn === 'function') {
     console.warn(msg);
@@ -112,7 +112,7 @@ export function reportDuplicateKey(key: unknown, componentName?: string): void {
 
   emitDevDiagnostic({
     type: 'duplicate-key',
-    code: 'AETH-501',
+    code: 'SAMREY-501',
     message: msg,
     details: { key, componentName }
   });
@@ -124,7 +124,7 @@ export function reportDuplicateKey(key: unknown, componentName?: string): void {
 export function reportStaleItemWarning(key: unknown, componentName?: string): void {
   if (!isDev) return;
 
-  const msg = `[Samrey Dev] Item changed under existing key "${String(key)}" in <For>${componentName ? ` inside <${componentName}>` : ''}, but the row was reused without re-rendering. Children receive the initial item object at mount time. To reflect updates, either: 1) Use fine-grained signals or reactive store properties inside the item, or 2) Use a key that changes when the item data changes.`;
+  const msg = `[SAMREY-502] Item changed under existing key "${String(key)}" in <For>${componentName ? ` inside <${componentName}>` : ''}, but the row was reused without re-rendering. Children receive the initial item object at mount time. To reflect updates, either: 1) Use fine-grained signals or reactive store properties inside the item, or 2) Use a key that changes when the item data changes.`;
 
   if (typeof console !== 'undefined' && typeof console.warn === 'function') {
     console.warn(msg);
@@ -132,7 +132,7 @@ export function reportStaleItemWarning(key: unknown, componentName?: string): vo
 
   emitDevDiagnostic({
     type: 'unnecessary-update',
-    code: 'AETH-502',
+    code: 'SAMREY-502',
     message: msg,
     details: { key, componentName }
   });
@@ -144,7 +144,7 @@ export function reportStaleItemWarning(key: unknown, componentName?: string): vo
 export function reportHydrationMismatch(expected: string, actual: string, selectorOrTag?: string): void {
   if (!isDev) return;
 
-  const msg = `[AETH-401] Hydration Mismatch: Client expected "${expected}" but DOM server rendered "${actual}"${selectorOrTag ? ` at <${selectorOrTag}>` : ''}. The DOM was re-rendered from scratch, discarding SSR benefits.`;
+  const msg = `[SAMREY-401] Hydration Mismatch: Client expected "${expected}" but DOM server rendered "${actual}"${selectorOrTag ? ` at <${selectorOrTag}>` : ''}. The DOM was re-rendered from scratch, discarding SSR benefits.`;
 
   if (typeof console !== 'undefined' && typeof console.error === 'function') {
     console.error(msg);
@@ -152,7 +152,7 @@ export function reportHydrationMismatch(expected: string, actual: string, select
 
   emitDevDiagnostic({
     type: 'hydration-mismatch',
-    code: 'AETH-401',
+    code: 'SAMREY-401',
     message: msg,
     details: { expected, actual, selectorOrTag }
   });
@@ -164,14 +164,14 @@ export function reportHydrationMismatch(expected: string, actual: string, select
 export function reportReactiveGraphWarning(message: string, details?: Record<string, unknown>): void {
   if (!isDev) return;
 
-  const msg = `[AETH-301] Reactive Graph Warning: ${message}`;
+  const msg = `[SAMREY-301] Reactive Graph Warning: ${message}`;
   if (typeof console !== 'undefined' && typeof console.warn === 'function') {
     console.warn(msg);
   }
 
   emitDevDiagnostic({
     type: 'reactive-graph',
-    code: 'AETH-301',
+    code: 'SAMREY-301',
     message: msg,
     details
   });
@@ -183,14 +183,14 @@ export function reportReactiveGraphWarning(message: string, details?: Record<str
 export function reportUnnecessaryUpdate(signalName: string, value: unknown): void {
   if (!isDev) return;
 
-  const msg = `[Samrey Dev] Signal "${signalName}" was updated with an identical value: ${JSON.stringify(value)}. Consider using strict equality checking or untrack().`;
+  const msg = `[SAMREY-302] Signal "${signalName}" was updated with an identical value: ${JSON.stringify(value)}. Consider using strict equality checking or untrack().`;
   if (typeof console !== 'undefined' && typeof console.debug === 'function') {
     console.debug(msg);
   }
 
   emitDevDiagnostic({
     type: 'unnecessary-update',
-    code: 'AETH-302',
+    code: 'SAMREY-302',
     message: msg,
     details: { signalName, value }
   });
@@ -209,7 +209,7 @@ export function reportRouterError(path: string, reason: string): void {
 
   emitDevDiagnostic({
     type: 'router-error',
-    code: 'AETH-ROUTER-404',
+    code: 'SAMREY-ROUTER-404',
     message: msg,
     details: { path, reason }
   });
@@ -228,7 +228,7 @@ export function reportResourceError(resourceName: string, error: unknown): void 
 
   emitDevDiagnostic({
     type: 'resource-error',
-    code: 'AETH-RES-ERR',
+    code: 'SAMREY-RES-ERR',
     message: msg,
     details: { resourceName, error: String(error) }
   });

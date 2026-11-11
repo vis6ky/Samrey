@@ -98,13 +98,53 @@ export function replayCapturedEvents(container?: HTMLElement): number {
   return count;
 }
 
+const HEADLESS_CHILDREN_SYMBOL = Symbol.for('samrey.headlessChildren');
+const HYDRATING_MARKER_SYMBOL = Symbol.for('samrey.hydratingMarker');
+
+function flattenClientNodes(input: unknown, expandHeadlessMarkers = true): any[] {
+  const out: any[] = [];
+  const seen = new Set<object>();
+  function visit(node: unknown): void {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    const n = node as any;
+    if (typeof n === 'object') {
+      if (seen.has(n)) return;
+      seen.add(n);
+    }
+    if (n.nodeType === 11 && n.childNodes) {
+      for (const child of Array.from(n.childNodes)) {
+        visit(child);
+      }
+      return;
+    }
+    out.push(n);
+    if (
+      expandHeadlessMarkers &&
+      n.nodeType === 8 &&
+      !n.parentNode &&
+      Array.isArray(n[HEADLESS_CHILDREN_SYMBOL])
+    ) {
+      for (const hChild of n[HEADLESS_CHILDREN_SYMBOL]) {
+        visit(hChild);
+      }
+    }
+  }
+  visit(input);
+  return out;
+}
+
 function matchNodeTrees(
   serverList: any[],
-  clientList: any[],
+  clientRawList: any[],
   parentForError: Node,
   capture: HydrationCaptureRegistry,
   onMismatch?: HydrateOptions['onMismatch']
 ): boolean {
+  const clientList = flattenClientNodes(clientRawList, true);
   let sIdx = 0;
   let cIdx = 0;
 
@@ -113,6 +153,10 @@ function matchNodeTrees(
     if (!cNode || cNode.nodeType === 8) {
       cIdx++;
       continue;
+    }
+
+    while (sIdx < serverList.length && serverList[sIdx]?.nodeType === 8) {
+      sIdx++;
     }
 
     const sNode = serverList[sIdx];
@@ -129,11 +173,6 @@ function matchNodeTrees(
     if (!sNode) {
       onMismatch?.(cNode.tagName?.toUpperCase() || `NodeType: ${cNode.nodeType}`, 'missing', parentForError);
       return false;
-    }
-
-    if (sNode.nodeType === 8) {
-      sIdx++;
-      continue;
     }
 
     if (cNode.nodeType !== sNode.nodeType) {
@@ -189,9 +228,10 @@ function retargetNode(clientNode: object, serverNode: unknown, capture: Hydratio
 function adoptNodeTrees(
   serverParent: any,
   serverList: any[],
-  clientList: any[],
+  clientRawList: any[],
   capture: HydrationCaptureRegistry
 ): void {
+  const clientList = flattenClientNodes(clientRawList, true);
   let sIdx = 0;
   let cIdx = 0;
 
@@ -206,7 +246,12 @@ function adoptNodeTrees(
 
     if (cNode.nodeType === 8) {
       if (serverParent && typeof serverParent.insertBefore === 'function') {
-        serverParent.insertBefore(cNode, sNode ?? null);
+        (cNode as any)[HYDRATING_MARKER_SYMBOL] = true;
+        try {
+          serverParent.insertBefore(cNode, sNode ?? null);
+        } finally {
+          delete (cNode as any)[HYDRATING_MARKER_SYMBOL];
+        }
       }
       cIdx++;
       continue;
@@ -278,7 +323,8 @@ export function hydrate(
 
       // Instantiate component tree while recording retargetable runtime bindings & events
       const { result: clientNodeOrNodes, capture } = runWithHydrationCapture(() => componentFn());
-      const clientNodes = Array.isArray(clientNodeOrNodes) ? clientNodeOrNodes : [clientNodeOrNodes];
+      const clientNodes = flattenClientNodes(clientNodeOrNodes, true);
+      const mountNodes = flattenClientNodes(clientNodeOrNodes, false);
 
       if (isSsrPresent) {
         const matches = matchNodeTrees(existingChildren, clientNodes, container, capture, options.onMismatch);
@@ -286,7 +332,7 @@ export function hydrate(
         if (!matches) {
           if (repairMismatch) {
             console.warn('[Samrey Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
-            container.replaceChildren(...clientNodes);
+            container.replaceChildren(...mountNodes);
           }
         } else {
           // Non-destructive in-place hydration: keep SSR DOM nodes alive and migrate reactivity & events onto them
@@ -294,7 +340,7 @@ export function hydrate(
         }
       } else {
         // Direct mount if server HTML was empty
-        container.replaceChildren(...clientNodes);
+        container.replaceChildren(...mountNodes);
       }
 
       // Replay all events captured before hydration finished, targeting container elements

@@ -9,9 +9,11 @@ import {
   createOwner,
   getOwner,
   handleError,
+  isHydrationCapturing,
   onCleanup,
   onError,
   Owner,
+  recordHydrationRetarget,
   runWithOwner,
   signal,
   Signal,
@@ -31,11 +33,98 @@ export interface ShowProps<T> {
   children: ((item: NonNullable<T>) => Node | Node[] | null | undefined) | Node | Node[];
 }
 
+const HEADLESS_CHILDREN_SYMBOL = Symbol.for('samrey.headlessChildren');
+const HYDRATING_MARKER_SYMBOL = Symbol.for('samrey.hydratingMarker');
+
+/**
+ * Inserts a list of nodes immediately after a control-flow comment marker while
+ * preserving sibling order.
+ */
+function insertNodesAfterMarker(
+  parent: any,
+  marker: Node,
+  nodes: Node[],
+  skipExisting = false
+): void {
+  const next = marker.nextSibling;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (skipExisting && node.parentNode === parent) continue;
+    parent.insertBefore(node, next);
+  }
+}
+
+/**
+ * Removes each attached node in a list from its current DOM parent.
+ */
+function detachNodes(nodes: Node[]): void {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const node = nodes[i];
+    if (node.parentNode) {
+      node.parentNode.removeChild(node);
+    }
+  }
+}
+
+/**
+ * Registers hydration node retargeters for control-flow node arrays when
+ * executing inside runWithHydrationCapture().
+ */
+function registerHydrationNodes(
+  nodes: Node[],
+  replaceAt: (index: number, adopted: Node) => void
+): void {
+  if (!isHydrationCapturing() || nodes.length === 0) return;
+  for (let i = 0; i < nodes.length; i++) {
+    const idx = i;
+    recordHydrationRetarget(nodes[idx] as object, (adopted: Node) => {
+      replaceAt(idx, adopted);
+    });
+  }
+}
+
+/**
+ * Defines reactive headless outerHTML serialization and hydration child introspection
+ * on a detached control-flow marker, and returns a DocumentFragment on initial browser mount.
+ */
+function finalizeControlFlowResult(
+  marker: Node,
+  getNodes: () => Node[]
+): Node {
+  if (typeof document === 'undefined') {
+    Object.defineProperty(marker, 'outerHTML', {
+      get() {
+        return getNodes()
+          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
+          .join('');
+      },
+      configurable: true
+    });
+    return marker;
+  }
+
+  const nodes = getNodes();
+  if (!marker.parentNode && nodes.length > 0 && typeof document.createDocumentFragment === 'function') {
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(marker);
+    for (const node of nodes) {
+      fragment.appendChild(node);
+    }
+    return fragment;
+  }
+
+  return marker;
+}
+
 /**
  * Creates a comment marker safely in browser, JSDOM, or synthetic mock environments.
  * Intercepts parentNode assignment to ensure child DOM fragments mount synchronously.
  */
-function createControlFlowMarker(name: string, onParentAttached?: (parent: any) => void): Node {
+function createControlFlowMarker(
+  name: string,
+  onParentAttached?: (parent: any) => void,
+  getHeadlessChildren?: () => Node[]
+): Node {
   if (typeof document !== 'undefined' && typeof document.createComment === 'function') {
     return document.createComment(name);
   }
@@ -51,6 +140,7 @@ function createControlFlowMarker(name: string, onParentAttached?: (parent: any) 
   };
 
   let _parent: any = null;
+  let _nextSibling: any = null;
   try {
     Object.defineProperty(marker, 'parentNode', {
       get() {
@@ -58,12 +148,34 @@ function createControlFlowMarker(name: string, onParentAttached?: (parent: any) 
       },
       set(newParent: any) {
         _parent = newParent;
-        if (newParent && onParentAttached) {
+        if (newParent && onParentAttached && !(marker as any)[HYDRATING_MARKER_SYMBOL]) {
           onParentAttached(newParent);
         }
       },
       configurable: true
     });
+    Object.defineProperty(marker, 'nextSibling', {
+      get() {
+        if (_parent && Array.isArray(_parent.childNodes)) {
+          const idx = _parent.childNodes.indexOf(marker);
+          if (idx !== -1) {
+            return idx + 1 < _parent.childNodes.length ? _parent.childNodes[idx + 1] : null;
+          }
+        }
+        return _nextSibling;
+      },
+      set(next: any) {
+        _nextSibling = next;
+      },
+      configurable: true
+    });
+    if (getHeadlessChildren) {
+      Object.defineProperty(marker, HEADLESS_CHILDREN_SYMBOL, {
+        get: getHeadlessChildren,
+        configurable: true,
+        enumerable: false
+      });
+    }
   } catch {
     // In environments where DOM comment properties cannot be redefined
   }
@@ -72,7 +184,7 @@ function createControlFlowMarker(name: string, onParentAttached?: (parent: any) 
 }
 
 /**
- * Normalizes a return value (single Node, Node array, or primitive) into Node[].
+ * Normalizes a return value (single Node, DocumentFragment, Node array, or primitive) into Node[].
  */
 function normalizeNodes(val: unknown): Node[] {
   if (!val) return [];
@@ -83,7 +195,12 @@ function normalizeNodes(val: unknown): Node[] {
       if (Array.isArray(v)) {
         res.push(...normalizeNodes(v));
       } else if (v && typeof v === 'object' && 'nodeType' in v) {
-        res.push(v as Node);
+        const node = v as any;
+        if (node.nodeType === 11 && node.childNodes) {
+          res.push(...Array.from(node.childNodes as Node[]));
+        } else {
+          res.push(node as Node);
+        }
       } else if (typeof v === 'string' || typeof v === 'number') {
         if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
           res.push(document.createTextNode(String(v)));
@@ -95,7 +212,11 @@ function normalizeNodes(val: unknown): Node[] {
     return res;
   }
   if (typeof val === 'object' && val !== null && 'nodeType' in (val as any)) {
-    return [val as Node];
+    const node = val as any;
+    if (node.nodeType === 11 && node.childNodes) {
+      return Array.from(node.childNodes as Node[]);
+    }
+    return [node as Node];
   }
   if (typeof val === 'string' || typeof val === 'number') {
     if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
@@ -134,33 +255,21 @@ export function Show<T>(props: ShowProps<T>): Node {
 
   const isKeyed = typeof props.children === 'function' && props.children.length > 0;
 
-  const marker = createControlFlowMarker('samrey:show', (parent) => {
-    if (currentNodes.length > 0) {
-      const next = marker.nextSibling;
-      for (const node of currentNodes) {
-        if (node.parentNode !== parent) {
-          parent.insertBefore(node, next);
-        }
-      }
-    }
-  });
+  const marker = createControlFlowMarker(
+    'samrey:show',
+    (parent) => insertNodesAfterMarker(parent, marker, currentNodes, true),
+    () => currentNodes
+  );
 
   function removeNodes(): void {
-    for (const node of currentNodes) {
-      if (node.parentNode) {
-        node.parentNode.removeChild(node);
-      }
-    }
+    detachNodes(currentNodes);
     currentNodes = [];
   }
 
   function insertNodes(nodes: Node[]): void {
     const parent = marker.parentNode;
     if (parent) {
-      const nextSibling = marker.nextSibling;
-      for (const node of nodes) {
-        parent.insertBefore(node, nextSibling);
-      }
+      insertNodesAfterMarker(parent, marker, nodes);
     }
   }
 
@@ -213,6 +322,11 @@ export function Show<T>(props: ShowProps<T>): Node {
 
       const nodes = normalizeNodes(rendered);
       currentNodes = nodes;
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(nodes);
     } else if (props.fallback) {
       currentOwner = createOwner(outerOwner);
@@ -228,6 +342,11 @@ export function Show<T>(props: ShowProps<T>): Node {
 
       const nodes = normalizeNodes(fallbackRendered);
       currentNodes = nodes;
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(nodes);
     }
   });
@@ -240,27 +359,7 @@ export function Show<T>(props: ShowProps<T>): Node {
     removeNodes();
   });
 
-  if (typeof document === 'undefined') {
-    Object.defineProperty(marker, 'outerHTML', {
-      get() {
-        return currentNodes
-          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
-          .join('');
-      },
-      configurable: true
-    });
-  }
-
-  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(marker);
-    for (const node of currentNodes) {
-      fragment.appendChild(node);
-    }
-    return fragment;
-  }
-
-  return marker;
+  return finalizeControlFlowResult(marker, () => currentNodes);
 }
 
 export interface ForProps<T, K = unknown> {
@@ -350,43 +449,43 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     return token;
   }
 
-  const marker = createControlFlowMarker('samrey:for', (parent) => {
-    if (fallbackNodes.length > 0) {
-      for (const node of fallbackNodes) {
-        if (node.parentNode !== parent) {
-          parent.insertBefore(node, marker.nextSibling);
-        }
-      }
-    } else if (currentEntries.length > 0) {
-      const frag = typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function'
-        ? document.createDocumentFragment()
-        : null;
+  const marker = createControlFlowMarker(
+    'samrey:for',
+    (parent) => {
+      if (fallbackNodes.length > 0) {
+        insertNodesAfterMarker(parent, marker, fallbackNodes, true);
+      } else if (currentEntries.length > 0) {
+        const frag = typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function'
+          ? document.createDocumentFragment()
+          : null;
 
-      if (frag) {
-        for (const entry of currentEntries) {
-          for (const node of entry.nodes) {
-            if (node.parentNode !== parent) {
-              frag.appendChild(node);
+        if (frag) {
+          for (const entry of currentEntries) {
+            for (const node of entry.nodes) {
+              if (node.parentNode !== parent) {
+                frag.appendChild(node);
+              }
             }
           }
-        }
-        if (frag.childNodes.length > 0) {
-          parent.insertBefore(frag, marker.nextSibling);
-        }
-      } else {
-        let next = marker.nextSibling;
-        for (const entry of currentEntries) {
-          for (const node of entry.nodes) {
-            if (node.parentNode !== parent) {
-              parent.insertBefore(node, next);
-            } else {
-              next = node.nextSibling;
+          if (frag.childNodes.length > 0) {
+            parent.insertBefore(frag, marker.nextSibling);
+          }
+        } else {
+          let next = marker.nextSibling;
+          for (const entry of currentEntries) {
+            for (const node of entry.nodes) {
+              if (node.parentNode !== parent) {
+                parent.insertBefore(node, next);
+              } else {
+                next = node.nextSibling;
+              }
             }
           }
         }
       }
-    }
-  });
+    },
+    () => fallbackNodes.length > 0 ? fallbackNodes : currentEntries.flatMap((e) => e.nodes)
+  );
 
   Object.defineProperty(marker, '_duplicateKeyTokensCount', {
     get: () => (duplicateKeyTokens ? duplicateKeyTokens.size : 0),
@@ -399,11 +498,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
       fallbackOwner.dispose();
       fallbackOwner = null;
     }
-    for (const node of fallbackNodes) {
-      if (node.parentNode) {
-        node.parentNode.removeChild(node);
-      }
-    }
+    detachNodes(fallbackNodes);
     fallbackNodes = [];
   }
 
@@ -422,11 +517,14 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
     });
 
     fallbackNodes = normalizeNodes(rendered);
+    registerHydrationNodes(fallbackNodes, (idx, adopted) => {
+      if (idx < fallbackNodes.length) {
+        fallbackNodes[idx] = adopted;
+      }
+    });
     const parent = marker.parentNode;
     if (parent) {
-      for (const node of fallbackNodes) {
-        parent.insertBefore(node, marker.nextSibling);
-      }
+      insertNodesAfterMarker(parent, marker, fallbackNodes);
     }
   }
 
@@ -512,13 +610,19 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
         });
 
         const nodes = normalizeNodes(rendered);
-        entry = {
+        const createdEntry: KeyedEntry<T> = {
           key: rowKey,
           item,
           nodes,
           owner,
           indexSignal: idxSig
         };
+        registerHydrationNodes(createdEntry.nodes, (nodeIdx, adopted) => {
+          if (nodeIdx < createdEntry.nodes.length) {
+            createdEntry.nodes[nodeIdx] = adopted;
+          }
+        });
+        entry = createdEntry;
       }
 
       newCache.set(rowKey, entry);
@@ -739,33 +843,21 @@ export function Switch(props: SwitchProps): Node {
   let prevVal: unknown = undefined;
   let prevMatched: boolean | null = null;
 
-  const marker = createControlFlowMarker('samrey:switch', (parent) => {
-    if (currentNodes.length > 0) {
-      const next = marker.nextSibling;
-      for (const node of currentNodes) {
-        if (node.parentNode !== parent) {
-          parent.insertBefore(node, next);
-        }
-      }
-    }
-  });
+  const marker = createControlFlowMarker(
+    'samrey:switch',
+    (parent) => insertNodesAfterMarker(parent, marker, currentNodes, true),
+    () => currentNodes
+  );
 
   function removeNodes(): void {
-    for (const node of currentNodes) {
-      if (node.parentNode) {
-        node.parentNode.removeChild(node);
-      }
-    }
+    detachNodes(currentNodes);
     currentNodes = [];
   }
 
   function insertNodes(nodes: Node[]): void {
     const parent = marker.parentNode;
     if (parent) {
-      const nextSibling = marker.nextSibling;
-      for (const node of nodes) {
-        parent.insertBefore(node, nextSibling);
-      }
+      insertNodesAfterMarker(parent, marker, nodes);
     }
   }
 
@@ -832,6 +924,11 @@ export function Switch(props: SwitchProps): Node {
 
       const nodes = normalizeNodes(rendered);
       currentNodes = nodes;
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(nodes);
     } else if (props.fallback) {
       currentOwner = createOwner(outerOwner);
@@ -847,6 +944,11 @@ export function Switch(props: SwitchProps): Node {
 
       const nodes = normalizeNodes(fallbackRendered);
       currentNodes = nodes;
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(nodes);
     }
   });
@@ -859,46 +961,12 @@ export function Switch(props: SwitchProps): Node {
     removeNodes();
   });
 
-  if (typeof document === 'undefined') {
-    Object.defineProperty(marker, 'outerHTML', {
-      get() {
-        return currentNodes
-          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
-          .join('');
-      },
-      configurable: true
-    });
-  }
-
-  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(marker);
-    for (const node of currentNodes) {
-      fragment.appendChild(node);
-    }
-    return fragment;
-  }
-
-  return marker;
+  return finalizeControlFlowResult(marker, () => currentNodes);
 }
 
 export interface ErrorBoundaryProps {
   fallback: (error: Error, reset: () => void) => Node | Node[] | null | undefined;
   children: () => Node | Node[] | null | undefined;
-}
-
-function unpackFragmentOrNodes(val: unknown): Node[] {
-  const list = normalizeNodes(val);
-  const out: Node[] = [];
-  for (let i = 0; i < list.length; i++) {
-    const n = list[i] as any;
-    if (n && n.nodeType === 11 && Array.isArray(n.childNodes)) {
-      out.push(...Array.from(n.childNodes as Node[]));
-    } else if (n) {
-      out.push(n as Node);
-    }
-  }
-  return out;
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps): Node {
@@ -918,32 +986,21 @@ export function ErrorBoundary(props: ErrorBoundaryProps): Node {
     });
   };
 
-  const marker = createControlFlowMarker('samrey:error-boundary', (parent) => {
-    if (currentNodes.length > 0) {
-      const next = marker.nextSibling;
-      for (const node of currentNodes) {
-        if (node.parentNode !== parent) {
-          parent.insertBefore(node, next);
-        }
-      }
-    }
-  });
+  const marker = createControlFlowMarker(
+    'samrey:error-boundary',
+    (parent) => insertNodesAfterMarker(parent, marker, currentNodes, true),
+    () => currentNodes
+  );
 
   function removeNodes(): void {
-    for (const node of currentNodes) {
-      if (node.parentNode) {
-        node.parentNode.removeChild(node);
-      }
-    }
+    detachNodes(currentNodes);
     currentNodes = [];
   }
 
   function insertNodes(nodes: Node[]): void {
     const parent = marker.parentNode;
-    if (!parent) return;
-    const next = marker.nextSibling;
-    for (const node of nodes) {
-      parent.insertBefore(node, next);
+    if (parent) {
+      insertNodesAfterMarker(parent, marker, nodes);
     }
   }
 
@@ -966,6 +1023,11 @@ export function ErrorBoundary(props: ErrorBoundaryProps): Node {
         });
       });
       currentNodes = normalizeNodes(rendered);
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(currentNodes);
       return;
     }
@@ -1006,11 +1068,21 @@ export function ErrorBoundary(props: ErrorBoundaryProps): Node {
         });
       });
       currentNodes = normalizeNodes(fallbackRendered);
+      registerHydrationNodes(currentNodes, (idx, adopted) => {
+        if (idx < currentNodes.length) {
+          currentNodes[idx] = adopted;
+        }
+      });
       insertNodes(currentNodes);
       return;
     }
 
     currentNodes = normalizeNodes(rendered);
+    registerHydrationNodes(currentNodes, (idx, adopted) => {
+      if (idx < currentNodes.length) {
+        currentNodes[idx] = adopted;
+      }
+    });
     insertNodes(currentNodes);
   });
 
@@ -1022,27 +1094,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): Node {
     removeNodes();
   });
 
-  if (typeof document === 'undefined') {
-    Object.defineProperty(marker, 'outerHTML', {
-      get() {
-        return currentNodes
-          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
-          .join('');
-      },
-      configurable: true
-    });
-  }
-
-  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(marker);
-    for (const node of currentNodes) {
-      fragment.appendChild(node);
-    }
-    return fragment;
-  }
-
-  return marker;
+  return finalizeControlFlowResult(marker, () => currentNodes);
 }
 
 export interface DynamicProps {
@@ -1130,11 +1182,11 @@ export function Suspense(props: SuspenseProps): Node {
         if (res instanceof Promise) {
           tracker.track(
             res.then((resolved) => {
-              resolvedNodes = unpackFragmentOrNodes(resolved);
+              resolvedNodes = normalizeNodes(resolved);
             })
           );
         } else {
-          resolvedNodes = unpackFragmentOrNodes(res);
+          resolvedNodes = normalizeNodes(res);
         }
       }
     });

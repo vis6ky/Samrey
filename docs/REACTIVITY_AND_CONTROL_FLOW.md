@@ -152,7 +152,7 @@ const listNode = For({
 In Samrey, the `key` function (`key={(item) => item.id}`) defines the persistent identity of each row. The reconciliation algorithm uses keys to preserve DOM elements, component owners, and local state across list reorders, insertions, and removals via Longest Increasing Subsequence (LIS) optimization.
 
 **What happens when an item changes under the same key:**
-Because `<For>` reuses existing DOM rows when their key matches, the child render function (`children: (item, index) => ...`) runs **once** at row creation and is **not** re-invoked on existing keys. If a new object reference is provided under an already mounted key, the row is reused without re-rendering, leaving the row displaying its initial data and emitting a development warning (`AETH-502`).
+Because `<For>` reuses existing DOM rows when their key matches, the child render function (`children: (item, index) => ...`) runs **once** at row creation and is **not** re-invoked on existing keys. If a new object reference is provided under an already mounted key, the row is reused without re-rendering, leaving the row displaying its initial data and emitting a development warning (`SAMREY-502`).
 
 **Wrong Pattern (Row Stays Stale):**
 ```typescript

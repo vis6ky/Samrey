@@ -186,4 +186,53 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
       }
     }
   });
+
+  it('F-06: flattens client DocumentFragment trees during non-destructive SSR matching and adoption', async () => {
+    const { recordHydrationRetarget } = await import('@samrey/reactivity');
+    let retargetedServerNode: unknown = null;
+    let mismatched = false;
+
+    const serverSpan = { nodeType: 1, tagName: 'SPAN', childNodes: [{ nodeType: 3, textContent: 'SSR' }] };
+    const serverChildNodes: any[] = [serverSpan];
+    const insertedMarkers: any[] = [];
+    const serverContainer = {
+      nodeType: 1,
+      childNodes: serverChildNodes,
+      insertBefore(node: any, refNode: any) {
+        insertedMarkers.push({ node, refNode });
+        const idx = serverChildNodes.indexOf(refNode);
+        if (idx !== -1) serverChildNodes.splice(idx, 0, node);
+        else serverChildNodes.push(node);
+        return node;
+      },
+      replaceChildren(...nodes: unknown[]) {
+        if (nodes.length > 0) {
+          throw new Error('replaceChildren must not run with replacement nodes when flattened fragment matches SSR');
+        }
+        serverChildNodes.length = 0;
+      }
+    } as unknown as HTMLElement;
+
+    const res = hydrate(
+      () => {
+        const marker = { nodeType: 8, nodeName: '#comment', nodeValue: 'samrey:show', parentNode: null };
+        const clientSpan = { nodeType: 1, tagName: 'SPAN', childNodes: [{ nodeType: 3, textContent: 'SSR' }] };
+        recordHydrationRetarget(clientSpan, (adopted) => {
+          retargetedServerNode = adopted;
+        });
+        return {
+          nodeType: 11,
+          nodeName: '#document-fragment',
+          childNodes: [marker, clientSpan]
+        } as unknown as Node;
+      },
+      serverContainer,
+      { onMismatch: () => { mismatched = true; } }
+    );
+
+    assert.equal(mismatched, false, 'Flattened DocumentFragment must match SSR DOM without mismatch');
+    assert.equal(retargetedServerNode, serverSpan, 'Client element inside DocumentFragment must retarget to SSR node');
+    assert.equal(insertedMarkers.length, 1, 'Control flow comment marker must mount before adopted SSR sibling');
+    res.dispose();
+  });
 });

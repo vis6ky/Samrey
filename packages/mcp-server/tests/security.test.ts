@@ -573,6 +573,36 @@ describe('MCP Server Security & Hardening', () => {
         () => executeSafeCommand('npm', ['run', 'build'], tempRoot)
       );
     });
+
+    it('F-11: rejects extra args after npm run and mutating git branch invocations', async () => {
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['run', 'build', '--', '--exec', 'whoami'], tempRoot),
+        /prohibited|extra arguments/i
+      );
+
+      await assert.rejects(
+        () => executeSafeCommand('npm', ['run', 'typecheck', '--prefix', outsideDir], tempRoot),
+        /prohibited|extra arguments/i
+      );
+
+      for (const branchArgs of [
+        ['branch', 'new-evil-branch'],
+        ['branch', '-D', 'main'],
+        ['branch', '-d', 'main'],
+        ['branch', '-m', 'main', 'hijacked'],
+        ['branch', '-l', 'new-reflog-branch'],
+        ['branch', '--edit-description']
+      ]) {
+        await assert.rejects(
+          () => executeSafeCommand('git', branchArgs, tempRoot),
+          /prohibited/i,
+          `Must reject mutating git branch args: ${branchArgs.join(' ')}`
+        );
+      }
+
+      const showCurrent = await executeSafeCommand('git', ['branch', '--show-current'], tempRoot);
+      assert.equal(typeof showCurrent.exitCode, 'number');
+    });
   });
 
   // =========================================================================

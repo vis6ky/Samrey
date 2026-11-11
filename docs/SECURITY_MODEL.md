@@ -12,10 +12,10 @@ Samrey is engineered from the ground up on the principle of **Zero-Trust Input a
 
 ### Core Security Tenets
 1. **Zero-`eval` Core Runtime Guarantee**: No `eval()`, `new Function()`, or dynamic string-to-code execution in any `@samrey/*` framework package. Full compatibility with strict Content Security Policy (`script-src 'self'`). *(Note: the interactive browser playground in the repository documentation app (`src/lib/runtimeSandbox.ts`) evaluates user-edited snippets inside a token/AST-validated `'use strict'` sandbox with shadowed globals, isolated from core `@samrey/*` packages.)*
-2. **Context-Aware Compile-Time Sanitization**: Dynamic values are automatically classified by insertion context (HTML body, attribute value, URI, CSS property, or script payload) and encoded using context-specific sanitizers.
-3. **Mandatory Trusted Types Enforcement**: Direct integration with the W3C Trusted Types API (`window.trustedTypes`). Dynamic DOM assignments use cryptographically sealed policies.
-4. **Resumable SSR Injection Immunity**: State serialized during SSR is encoded using Unicode escape sequences to prevent script-tag breakouts (`</script>`), CDATA boundary attacks, and JSON prototype hijacking.
-5. **Hermetic Memory & Prototype Pollution Defense**: Internal reactive subscriber registries and metadata dictionaries use `Object.create(null)` with frozen prototype descriptors.
+2. **Context-Aware Compile-Time & Runtime Sanitization**: Dynamic values are classified by insertion context (HTML body, attribute value, URI, CSS style, or script JSON payload) and normalized/escaped using context-specific utilities.
+3. **Trusted Types Integration with Programmatic Sanitizer Fallback**: Registers the W3C Trusted Types policies `samrey#html` and `samrey#template` when `window.trustedTypes` is available in supporting browsers, and enforces an equivalent programmatic `SamreyTrustedPolicy` wrapper running the same sanitizers in non-supporting browsers and SSR/headless runtimes. Template cloning (`template()`), `rawHtml()`, dangerous attribute sinks (`innerHTML`, `outerHTML`, `srcdoc` in `el()`/`bindAttr()`), and script URLs (`validateScriptUrl`) route through these policies, while standard SSR string output uses context-appropriate HTML/attribute/JSON escaping.
+4. **Resumable SSR Injection Immunity**: State serialized during SSR is scrubbed for secret keys and encoded using Unicode escape sequences to prevent script-tag breakouts (`</script>`), line-separator syntax breaks, and `script` `id`/`nonce` attribute injection.
+5. **Prototype Pollution Defense**: JSON deserializers (`safeJsonParse`), deep object scrubbers (`scrubPrototypePollution`), owner contexts (`Object.create(null)`), and form field maps (`Object.create(null)`) explicitly strip or skip `__proto__`, `constructor`, and `prototype` keys.
 
 ---
 
@@ -97,7 +97,10 @@ Samrey provides native first-class integration with the W3C Trusted Types specif
 let cachedPolicy: SamreyTrustedPolicy | null = null;
 let cachedTemplatePolicy: SamreyTrustedPolicy | null = null;
 
-export function getSamreyTrustedPolicy(): SamreyTrustedPolicy {
+export function getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTrustedPolicy {
+  if (options?.allowedScriptOrigins) {
+    configuredAllowedOrigins = [...options.allowedScriptOrigins];
+  }
   if (cachedPolicy) return cachedPolicy;
 
   const tt = typeof window !== 'undefined' && window.trustedTypes;
@@ -114,7 +117,7 @@ export function getSamreyTrustedPolicy(): SamreyTrustedPolicy {
     } catch {}
   }
 
-  // Programmatic sealed fallback for browsers without native Trusted Types
+  // Programmatic fallback for browsers/environments without native Trusted Types
   cachedPolicy = {
     createHTML: (input: string) => sanitizeHtmlString(input),
     createScript: () => {
@@ -160,65 +163,57 @@ export function getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy {
 A critical vulnerability in SSR applications is **Hydration Script Injection**. When state is serialized to a `<script>` tag for client hydration, user input containing `</script><script>maliciousCode()</script>` can prematurely close the script tag and execute arbitrary JavaScript.
 
 ### Samrey Serialization Protocol
-Samrey uses a dedicated **Safe JSON Serializer** for all SSR state transfers (`window.__SAMREY_STATE__`):
+Samrey uses **`serializeStateForHydration`** (`@samrey/ssr`) composed with **`escapeForScriptPayload`** (`@samrey/security`) for all SSR state transfers (`<script id="__SAMREY_STATE__" type="application/json">`):
 
 ```typescript
+// packages/security/src/sanitizer.ts
+export function escapeForScriptPayload(jsonString: string): string {
+  return jsonString
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 // packages/ssr/src/serializer.ts
-
-const ESCAPE_LOOKUP: Record<string, string> = {
-  '&': '\\u0026',
-  '>': '\\u003e',
-  '<': '\\u003c',
-  '\u2028': '\\u2028',
-  '\u2029': '\\u2029',
-};
-
-const ESCAPE_REGEX = /[&><\u2028\u2029]/g;
-
-export function serializeForHydration(data: unknown): string {
-  const json = JSON.stringify(data);
-  return json.replace(ESCAPE_REGEX, (match) => ESCAPE_LOOKUP[match]);
+export function serializeStateForHydration(state: unknown, options: SerializeOptions = {}): string {
+  const rawId = options.id || '__SAMREY_STATE__';
+  const scriptId = /^[a-zA-Z0-9_\-:]+$/.test(rawId) ? rawId : '__SAMREY_STATE__';
+  const cleanState = stripSecrets(state, options);
+  const safePayload = escapeForScriptPayload(JSON.stringify(cleanState));
+  const nonceAttr = options.nonce ? ` nonce="${escapeHtmlAttribute(options.nonce)}"` : '';
+  return `<script id="${escapeHtmlAttribute(scriptId)}" type="application/json"${nonceAttr}>${safePayload}</script>`;
 }
 ```
 
-* **Prevents `<script>` Tag Breakouts**: `<` and `>` are encoded as `\u003c` and `\u003e`, making HTML parser breakout impossible.
+* **Prevents `<script>` Tag Breakouts**: `<`, `>`, and `&` are encoded as `\u003c`, `\u003e`, and `\u0026`, making HTML parser breakout impossible.
 * **Prevents Line-Terminator Exploits**: `\u2028` (Line Separator) and `\u2029` (Paragraph Separator) are encoded to prevent JS parsing syntax errors.
-* **Script ID Attribute Hardening (EXT-001)**: The script tag's `id` attribute is strictly validated against an alphanumeric identifier pattern (`/^[a-zA-Z0-9_\-:]+$/`) and HTML-attribute escaped (`escapeHtmlAttribute`) to prevent attribute breakout or script termination via malicious custom script IDs.
+* **Script ID Attribute Hardening (EXT-001)**: The script tag's `id` attribute is strictly validated against `/^[a-zA-Z0-9_\-:]+$/` and HTML-attribute escaped (`escapeHtmlAttribute`), and `deserializeHydrationState()` escapes selectors with `escapeCssIdentifier()` and verifies `SCRIPT` element identity.
 * **SSR Head & Asset Hardening**: Custom `options.headTags` markup passed to `renderToString` / `renderToStream` is sanitized by `sanitizeHeadTags()` (allowing only `<meta>`, `<link>`, `<base>` without unsafe handlers/URLs), and `options.clientScript`, `options.clientStyles`, and `nonce` attributes are URI-sanitized and HTML-attribute escaped.
-* **Prototype Shielding**: Deserialization explicitly rejects `__proto__`, `constructor`, and `prototype` keys during client state restoration.
+* **Prototype Shielding**: `safeJsonParse()` explicitly rejects `__proto__`, `constructor`, and `prototype` keys during client state restoration.
 
 ---
 
-## 5. Form & CSRF Defense Architecture
+## 5. Form Safety & Anti-CSRF Primitives
 
-Samrey's built-in `@samrey/forms` and `@samrey/http` packages enforce CSRF protection without requiring third-party middleware:
+Samrey cleanly separates client form state management (`@samrey/forms`) from server/session anti-CSRF verification primitives (`@samrey/security`):
 
-```
-[Form Submission / Action] ──> [Cryptographic Origin / Referer Check]
-                                      │
-                                      ▼
-                      [Extract Double-Submit Cookie / Header Token]
-                                      │
-                                      ▼
-                      [Validate Action-Specific Hash Signature]
-                                      │
-                                      ▼
-                      [Execute Server Action Function]
-```
-
-1. **Origin & SameSite Verification**: Form actions automatically verify the `Origin` and `Sec-Fetch-Site` request headers against the application host.
-2. **Action-Specific Anti-Tamper Signatures**: Server action endpoints are cryptographically signed at build time with an HMAC token derived from the action signature, preventing blind endpoint execution.
-3. **Double-Submit Token Integration**: Form submissions automatically bind CSRF tokens into hidden field state without manual developer intervention.
+1. **Form Field Isolation (`@samrey/forms`)**: `createForm()` stores fields in an `Object.create(null)` map, explicitly skips `__proto__`, `constructor`, and `prototype` keys during initialization and `reset()`, and runs Standard Schema (`~standard`) plus field-level validators before invoking `onSubmit`.
+2. **CSPRNG CSRF Tokens (`@samrey/security`)**: `generateCsrfToken()` (alias `createCsrfToken()`) generates URL-safe random tokens from `crypto.getRandomValues` (falling back to `node:crypto` on Node.js runtimes lacking Web Crypto).
+3. **Constant-Time Verification (`@samrey/security`)**: `verifyCsrfToken(submittedToken, expectedToken)` (alias `validateCsrfToken`) compares the request token against the session's expected token via `timingSafeEqual()` to prevent timing side channels.
+4. **Application / Server Responsibilities**: Double-submit cookie transport, hidden input/header binding, `Origin`/`Sec-Fetch-Site` validation, and token expiration/signing are implemented at the application HTTP handler or server middleware layer using `@samrey/security` primitives; `@samrey/forms` does not inject hidden CSRF fields or inspect HTTP request headers automatically.
 
 ---
 
-## 6. HTTP & Network Security Policies
+## 6. HTTP Client Security (`@samrey/http`)
 
-The `@samrey/http` client enforces enterprise security policies by default:
+The `@samrey/http` `HttpClient` enforces client-side request/response safety around the platform `fetch()` API:
 
-* **Automatic Header Injections**: Configurable default headers for `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `X-Frame-Options: DENY`.
-* **Subresource Integrity (SRI) Support**: Automatic generation and verification of SRI hashes for code-split lazy chunks.
-* **Credential Isolation**: Cross-origin requests strip sensitive authorization headers by default unless explicitly configured via an audited `credentials: 'include'` policy.
+* **Request URI Validation**: All URLs are validated with `sanitizeUri()` before `fetch()` is invoked, throwing an error for blocked protocols (`javascript:`, `vbscript:`, unsafe `data:`).
+* **Prototype-Pollution-Safe Payload Decoding**: JSON responses are decoded with `safeJsonParse()` (for text payloads) or scrubbed via `scrubPrototypePollution()` (for `res.json()`), stripping `__proto__`, `constructor`, and `prototype` keys.
+* **Abort & Timeout Enforcement**: Supports configurable `timeoutMs` via `AbortController` chained cleanly with caller-provided `AbortSignal` instances.
+* **Server & Shell Responsibilities**: HTTP response security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`), `<script>`/`<link>` Subresource Integrity (`integrity`) attributes, and CORS/cookie `credentials` policies must be configured on the HTTP server or SSR document shell rather than inside `HttpClient`.
 
 ---
 
@@ -226,10 +221,10 @@ The `@samrey/http` client enforces enterprise security policies by default:
 
 | Threat Vector | Common Framework Vulnerability | Samrey Architectural Countermeasure | Classification |
 | :--- | :--- | :--- | :--- |
-| **DOM-based XSS via `innerHTML`** | Accidental use of `v-html` or `dangerouslySetInnerHTML` | No raw `innerHTML` pass-through in compiler output; explicit `rawHtml()` runs `TrustedTypesPolicy.createHTML()` / `sanitizeHtmlString()` | **[Category A Defense]** |
-| **Script Tag Breakout during SSR** | Raw `JSON.stringify(state)` embedded in HTML template | Mandatory Unicode escaping of `<, >, &, \u2028, \u2029` | **[Category A Defense]** |
-| **`javascript:` URL Injection** | `<a href={userUrl}>` executes code if URL is unsanitized | Compiler emits `sanitizeUri()` guard verifying whitelist protocols | **[Category A Defense]** |
-| **Prototype Pollution** | Deep merge in state stores polluting `Object.prototype` | Internal storage uses `Object.create(null)` + frozen object descriptors | **[Category A Defense]** |
-| **CSP Bypass via `unsafe-eval`** | Runtime template compilation or expression evaluation | 100% AOT compilation; zero `eval()` or `new Function()` in runtime | **[Category A Defense]** |
-| **CSRF in Form Actions** | Unprotected POST actions accepting arbitrary cross-origin form submits | Automatic `Sec-Fetch-Site` validation + action HMAC tokens | **[Category A Defense]** |
-| **Accessibility Degradation** | Missing ARIA attributes causing screen reader failure | Compile-time A11y linter + auto-derived ARIA bindings in form controls | **[Category E/B Defense]** |
+| **DOM-based XSS via `innerHTML`** | Accidental use of `v-html` or `dangerouslySetInnerHTML` | No raw `innerHTML` pass-through in compiler output; `rawHtml()` runs `TrustedTypesPolicy.createHTML()` / `sanitizeHtmlString()` | **[Category A Defense]** |
+| **Script Tag Breakout during SSR** | Raw `JSON.stringify(state)` embedded in HTML template | Mandatory Unicode escaping of `<, >, &, \u2028, \u2029` via `serializeStateForHydration()` + `escapeForScriptPayload()` | **[Category A Defense]** |
+| **`javascript:` URL Injection** | `<a href={userUrl}>` executes code if URL is unsanitized | `sanitizeUri()` for assets/links, `sanitizeSrcset()` for `srcset`, and `sanitizeRedirectUri()` for navigation/redirects | **[Category A Defense]** |
+| **Prototype Pollution** | Deep merge or JSON parse polluting `Object.prototype` | `safeJsonParse()`, `scrubPrototypePollution()`, `Object.create(null)` maps, and key filtering across SSR & forms | **[Category A Defense]** |
+| **CSP Bypass via `unsafe-eval`** | Runtime template compilation or expression evaluation | AOT compilation; zero `eval()` or `new Function()` in all `@samrey/*` framework packages | **[Category A Defense]** |
+| **Cross-Site Request Forgery (CSRF)** | Non-constant-time token checks or weak `Math.random()` tokens | CSPRNG tokens (`generateCsrfToken()`) and `timingSafeEqual()` verification (`verifyCsrfToken()`) in `@samrey/security` (wired by server handlers) | **[Category A Defense]** |
+| **Accessibility Degradation** | Missing ARIA attributes causing screen reader failure | Compile-time A11y linter + `cli audit` scanner + ARIA state helpers (`getAriaProps`) in `@samrey/forms` | **[Category E/B Defense]** |

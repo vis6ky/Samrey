@@ -260,4 +260,36 @@ describe('@samrey/forms', () => {
     assert.equal(field.error.value, null);
     assert.equal(field.isValidating.value, false);
   });
+
+  it('F-07: safely skips __proto__/constructor/prototype keys during createForm and reset()', async () => {
+    const initialValues = JSON.parse('{"__proto__":"polluted","constructor":"ctor","prototype":"proto","username":"alice"}') as Record<string, string>;
+    let submitted: Record<string, string> | null = null;
+
+    const form = createForm({
+      initialValues,
+      onSubmit: (values) => {
+        submitted = { ...values };
+      }
+    });
+
+    assert.equal(form.fields.username.value.value, 'alice');
+    assert.equal('constructor' in form.fields, false);
+    assert.equal('prototype' in form.fields, false);
+
+    form.fields.username.setValue('bob');
+    form.fields.username.setError('Temporary');
+    form.fields.username.setTouched(true);
+
+    assert.doesNotThrow(() => {
+      form.reset();
+    }, 'form.reset() must not throw TypeError when initialValues contains skipped prototype keys');
+
+    assert.equal(form.fields.username.value.value, 'alice');
+    assert.equal(form.fields.username.error.value, null);
+    assert.equal(form.fields.username.touched.value, false);
+
+    const ok = await form.submit();
+    assert.equal(ok, true);
+    assert.deepEqual(submitted, { username: 'alice' });
+  });
 });
