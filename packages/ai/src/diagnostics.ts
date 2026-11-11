@@ -3,7 +3,7 @@
  * @samrey/ai - Diagnostic & Error Repair Engine
  */
 
-import { ERROR_REGISTRY, SamreyErrorCode, ErrorDefinition } from '@samrey/compiler';
+import { ERROR_REGISTRY, SamreyErrorCode } from '@samrey/compiler';
 
 export interface DiagnosticDiagnosis {
   code?: string;
@@ -65,7 +65,7 @@ export function diagnoseError(errorMessage: string, sourceCode?: string): Diagno
   };
 }
 
-function generateQuickFix(code: string, sourceCode?: string, errorMsg?: string): string | undefined {
+function generateQuickFix(code: string, _sourceCode?: string, errorMsg?: string): string | undefined {
   if (code === 'SAMREY-108') {
     // Show / For as template tag
     return `// In Samrey, Show and For are component functions, NOT template markup.\n// Replace <Show when={...}>...</Show> with:\nShow({\n  when: () => condition.value,\n  children: () => ActiveContent(),\n  fallback: () => FallbackContent()\n});`;

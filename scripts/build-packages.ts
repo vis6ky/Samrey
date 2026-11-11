@@ -28,7 +28,7 @@ export function buildAllPackages(): void {
     const tscBin = path.join(process.cwd(), 'node_modules', '.bin', 'tsc');
     const tscCmd = fs.existsSync(tscBin) ? `"${tscBin}"` : 'npx --no-install tsc';
     execSync(
-      `${tscCmd} "${srcIndex}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck`,
+      `${tscCmd} "${srcIndex}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --strict --noUnusedLocals --noUnusedParameters --skipLibCheck`,
       { cwd: process.cwd(), stdio: 'pipe' }
     );
 
@@ -55,6 +55,7 @@ if (process.argv[1]?.endsWith('build-packages.ts') || process.argv[1]?.endsWith(
     buildAllPackages();
     console.log('▲ Finished building all packages.');
   } catch (err: any) {
-    console.warn('⚠️ Warning: Package build encountered error during install:', err?.message || err);
+    console.error('❌ Package build failed:', err?.stdout?.toString?.() || err?.message || err);
+    process.exit(1);
   }
 }

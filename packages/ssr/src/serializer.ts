@@ -5,6 +5,7 @@
 
 import { escapeForScriptPayload, escapeHtmlAttribute } from '@samrey/security';
 import { stripSecrets, SecretGuardOptions } from './secret-guard.js';
+import { escapeCssIdentifier } from './css-escape.js';
 
 export interface SerializeOptions extends SecretGuardOptions {
   /**
@@ -86,9 +87,7 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
   let script: Element | null = null;
   if (typeof document.querySelector === 'function') {
     try {
-      const selector = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-        ? `script[type="application/json"]#${CSS.escape(scriptId)}`
-        : `script[type="application/json"][id="${escapeHtmlAttribute(scriptId)}"]`;
+      const selector = `script[type="application/json"]#${escapeCssIdentifier(scriptId)}`;
       script = document.querySelector(selector);
     } catch {
       script = typeof document.getElementById === 'function' ? document.getElementById(scriptId) : null;

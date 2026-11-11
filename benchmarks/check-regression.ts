@@ -447,22 +447,27 @@ async function runRegressionGateCompare(
   const runs = Math.max(5, options.runs ?? 9);
   const rawWorktree = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-bench-wt-'));
   const tempWorktree = fs.realpathSync(rawWorktree);
+  let usedGitWorktree = false;
 
   const cleanupWorktree = () => {
-    try {
-      execFileSync('git', ['worktree', 'remove', '--force', tempWorktree], { stdio: ['ignore', 'pipe', 'pipe'] });
-    } catch (e: any) {
-      console.error('Worktree remove error:', e?.message, e?.stderr?.toString());
+    if (usedGitWorktree) {
+      try {
+        execFileSync('git', ['worktree', 'remove', '--force', tempWorktree], { stdio: ['ignore', 'pipe', 'pipe'] });
+      } catch (e: any) {
+        console.error('Worktree remove error:', e?.message, e?.stderr?.toString());
+      }
     }
     try {
       if (fs.existsSync(tempWorktree)) {
         fs.rmSync(tempWorktree, { recursive: true, force: true });
       }
     } catch {}
-    try {
-      execFileSync('git', ['worktree', 'prune'], { stdio: ['ignore', 'pipe', 'pipe'] });
-    } catch (e: any) {
-      console.error('Worktree prune error:', e?.message, e?.stderr?.toString());
+    if (usedGitWorktree) {
+      try {
+        execFileSync('git', ['worktree', 'prune'], { stdio: ['ignore', 'pipe', 'pipe'] });
+      } catch (e: any) {
+        console.error('Worktree prune error:', e?.message, e?.stderr?.toString());
+      }
     }
   };
 
@@ -495,9 +500,27 @@ async function runRegressionGateCompare(
 
   try {
     console.log(`📦 Setting up git worktree at "${tempWorktree}" for base ref '${compareRef}' (${resolvedRef.slice(0, 8)})...`);
-    execFileSync('git', ['worktree', 'add', '--detach', tempWorktree, resolvedRef], {
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
+    try {
+      execFileSync('git', ['worktree', 'add', '--detach', tempWorktree, resolvedRef], {
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+      usedGitWorktree = true;
+    } catch (wtErr: any) {
+      // Fallback when `.git/worktrees` cannot be written (e.g. read-only / sandboxed .git)
+      const archiveBuf = execFileSync('git', ['archive', '--format=tar', resolvedRef], {
+        maxBuffer: 256 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+      const untar = spawnSync('tar', ['-xf', '-', '-C', tempWorktree], {
+        input: archiveBuf,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      if (untar.status !== 0) {
+        throw new Error(
+          `git worktree add failed (${wtErr?.message || wtErr}) and git archive extraction failed (${untar.stderr?.toString() || untar.status})`
+        );
+      }
+    }
 
     const hostNodeModules = path.join(process.cwd(), 'node_modules');
     const wtNodeModules = path.join(tempWorktree, 'node_modules');

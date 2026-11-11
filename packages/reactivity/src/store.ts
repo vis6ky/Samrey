@@ -4,6 +4,7 @@
  */
 
 import { signal } from './signal.js';
+import { Signal } from './types.js';
 import { incrementClock } from './batch.js';
 
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -25,7 +26,7 @@ export function createStore<T extends object>(initialObject: T): T {
   if (!initialObject || typeof initialObject !== 'object') return initialObject;
   if ((initialObject as any)[PROXIED]) return initialObject;
 
-  const signalMap = new Map<string | symbol, ReturnType<typeof signal>>();
+  const signalMap = new Map<string | symbol, Signal<any>>();
   const childStores = new Map<string | symbol, any>();
   const iterationSignal = signal(0);
 
@@ -62,7 +63,7 @@ export function createStore<T extends object>(initialObject: T): T {
 
       return currentVal;
     },
-    set(target, prop, val, receiver) {
+    set(target, prop, val) {
       if (PROTOTYPE_POLLUTION_KEYS.has(String(prop))) {
         return true;
       }

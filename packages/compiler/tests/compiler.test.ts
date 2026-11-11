@@ -4,7 +4,6 @@ import {
   compileTemplate, 
   classifyBindingContext, 
   lintA11y, 
-  hoistTemplates,
   TemplateParser,
   SamreyCompilerError
 } from '../src/index.js';
@@ -160,5 +159,28 @@ describe('@samrey/compiler', () => {
     if (div.children[0].type === 'Interpolation') {
       assert.equal(div.children[0].expression, 'items.map((x) => ({ id: x.id, val: `item-${x.val}` }))');
     }
+  });
+
+  it('classifies extended URL attributes, emits aria-hidden="true", and sanitizes static style/srcset/poster', () => {
+    for (const urlAttr of ['poster', 'srcset', 'imagesrcset', 'ping', 'cite', 'background', 'usemap']) {
+      assert.equal(classifyBindingContext('attr', urlAttr), 'uri-attr', `expected uri-attr for ${urlAttr}`);
+    }
+
+    const compiledAria = compileTemplate('<div aria-hidden={true} aria-expanded={true} hidden={true}></div>');
+    const htmlAria = compiledAria.templates[0].staticHtml;
+    assert.ok(htmlAria.includes('aria-hidden="true"'));
+    assert.ok(htmlAria.includes('aria-expanded="true"'));
+    assert.ok(htmlAria.includes(' hidden>') && !htmlAria.includes(' hidden="true"'));
+
+    const compiledMedia = compileTemplate(
+      '<img alt="Preview" srcset="a.jpg 1x, javascript:alert(1) 2x" style="width: expr\\65ssion(alert(1)); color: red;" /><video poster={"javascript:alert(1)"}></video>'
+    );
+    const htmlMedia = compiledMedia.templates[0].staticHtml;
+    assert.ok(!htmlMedia.includes('javascript:'));
+    assert.ok(!htmlMedia.includes('expression'));
+    assert.ok(!htmlMedia.includes('alert(1)'));
+    assert.ok(htmlMedia.includes('srcset="a.jpg 1x, about:blank 2x"'));
+    assert.ok(htmlMedia.includes('color: red;'));
+    assert.ok(htmlMedia.includes('poster="about:blank"'));
   });
 });

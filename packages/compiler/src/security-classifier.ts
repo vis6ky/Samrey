@@ -3,6 +3,7 @@
  * @samrey/compiler - Contextual Security Classifier
  */
 
+import { URL_ATTRIBUTES, SRCSET_ATTRIBUTES } from '@samrey/security';
 import { SecurityContext } from './air.js';
 
 export function classifyBindingContext(targetType: 'text' | 'attr', attrName?: string): SecurityContext {
@@ -12,7 +13,7 @@ export function classifyBindingContext(targetType: 'text' | 'attr', attrName?: s
 
   if (attrName) {
     const lower = attrName.toLowerCase();
-    if (lower === 'href' || lower === 'src' || lower === 'action' || lower === 'formaction') {
+    if (URL_ATTRIBUTES.has(lower) || SRCSET_ATTRIBUTES.has(lower)) {
       return 'uri-attr';
     }
     if (lower === 'style') {

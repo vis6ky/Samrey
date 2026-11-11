@@ -11,7 +11,7 @@
 Samrey is engineered from the ground up on the principle of **Zero-Trust Input and Security-by-Default**. Unlike legacy frameworks where security is treated as a runtime add-on or delegated to developer discipline, Samrey integrates contextual security boundaries directly into the **Compiler Pipeline**, **Reactivity Engine**, **Hydration Serializer**, and **HTTP Client**.
 
 ### Core Security Tenets
-1. **Zero-`eval` Runtime Guarantee**: No `eval()`, `new Function()`, or dynamic string-to-code execution in any core package. Full compatibility with the strictest Content Security Policy (`script-src 'self'`).
+1. **Zero-`eval` Core Runtime Guarantee**: No `eval()`, `new Function()`, or dynamic string-to-code execution in any `@samrey/*` framework package. Full compatibility with strict Content Security Policy (`script-src 'self'`). *(Note: the interactive browser playground in the repository documentation app (`src/lib/runtimeSandbox.ts`) evaluates user-edited snippets inside a token/AST-validated `'use strict'` sandbox with shadowed globals, isolated from core `@samrey/*` packages.)*
 2. **Context-Aware Compile-Time Sanitization**: Dynamic values are automatically classified by insertion context (HTML body, attribute value, URI, CSS property, or script payload) and encoded using context-specific sanitizers.
 3. **Mandatory Trusted Types Enforcement**: Direct integration with the W3C Trusted Types API (`window.trustedTypes`). Dynamic DOM assignments use cryptographically sealed policies.
 4. **Resumable SSR Injection Immunity**: State serialized during SSR is encoded using Unicode escape sequences to prevent script-tag breakouts (`</script>`), CDATA boundary attacks, and JSON prototype hijacking.
@@ -184,6 +184,7 @@ export function serializeForHydration(data: unknown): string {
 * **Prevents `<script>` Tag Breakouts**: `<` and `>` are encoded as `\u003c` and `\u003e`, making HTML parser breakout impossible.
 * **Prevents Line-Terminator Exploits**: `\u2028` (Line Separator) and `\u2029` (Paragraph Separator) are encoded to prevent JS parsing syntax errors.
 * **Script ID Attribute Hardening (EXT-001)**: The script tag's `id` attribute is strictly validated against an alphanumeric identifier pattern (`/^[a-zA-Z0-9_\-:]+$/`) and HTML-attribute escaped (`escapeHtmlAttribute`) to prevent attribute breakout or script termination via malicious custom script IDs.
+* **SSR Head & Asset Hardening**: Custom `options.headTags` markup passed to `renderToString` / `renderToStream` is sanitized by `sanitizeHeadTags()` (allowing only `<meta>`, `<link>`, `<base>` without unsafe handlers/URLs), and `options.clientScript`, `options.clientStyles`, and `nonce` attributes are URI-sanitized and HTML-attribute escaped.
 * **Prototype Shielding**: Deserialization explicitly rejects `__proto__`, `constructor`, and `prototype` keys during client state restoration.
 
 ---
@@ -225,7 +226,7 @@ The `@samrey/http` client enforces enterprise security policies by default:
 
 | Threat Vector | Common Framework Vulnerability | Samrey Architectural Countermeasure | Classification |
 | :--- | :--- | :--- | :--- |
-| **DOM-based XSS via `innerHTML`** | Accidental use of `v-html` or `dangerouslySetInnerHTML` | No direct `innerHTML` access in compiler output; requires `<SafeHtml>` + Trusted Types | **[Category A Defense]** |
+| **DOM-based XSS via `innerHTML`** | Accidental use of `v-html` or `dangerouslySetInnerHTML` | No raw `innerHTML` pass-through in compiler output; explicit `rawHtml()` runs `TrustedTypesPolicy.createHTML()` / `sanitizeHtmlString()` | **[Category A Defense]** |
 | **Script Tag Breakout during SSR** | Raw `JSON.stringify(state)` embedded in HTML template | Mandatory Unicode escaping of `<, >, &, \u2028, \u2029` | **[Category A Defense]** |
 | **`javascript:` URL Injection** | `<a href={userUrl}>` executes code if URL is unsanitized | Compiler emits `sanitizeUri()` guard verifying whitelist protocols | **[Category A Defense]** |
 | **Prototype Pollution** | Deep merge in state stores polluting `Object.prototype` | Internal storage uses `Object.create(null)` + frozen object descriptors | **[Category A Defense]** |

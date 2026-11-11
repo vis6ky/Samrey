@@ -14,12 +14,24 @@ if (root) {
   } catch (err: unknown) {
     console.error('[Samrey] Failed to mount root application:', err);
     const errMessage = err instanceof Error ? err.stack || err.message : String(err);
-    root.innerHTML = `
-      <div style="padding: 32px; font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; color: #9f1239;">
-        <h2 style="margin-top: 0; font-size: 1.25rem;">Application Initialization Notice</h2>
-        <p style="font-size: 0.875rem; color: #4b5563;">An error occurred while mounting the component tree:</p>
-        <pre style="background: #ffffff; padding: 12px; border-radius: 6px; font-size: 0.75rem; overflow-x: auto; color: #b91c1c;">${errMessage}</pre>
-      </div>
-    `;
+    const box = document.createElement('div');
+    box.setAttribute(
+      'style',
+      'padding: 32px; font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; color: #9f1239;'
+    );
+    const heading = document.createElement('h2');
+    heading.setAttribute('style', 'margin-top: 0; font-size: 1.25rem;');
+    heading.textContent = 'Application Initialization Notice';
+    const desc = document.createElement('p');
+    desc.setAttribute('style', 'font-size: 0.875rem; color: #4b5563;');
+    desc.textContent = 'An error occurred while mounting the component tree:';
+    const pre = document.createElement('pre');
+    pre.setAttribute(
+      'style',
+      'background: #ffffff; padding: 12px; border-radius: 6px; font-size: 0.75rem; overflow-x: auto; color: #b91c1c;'
+    );
+    pre.textContent = errMessage;
+    box.append(heading, desc, pre);
+    root.replaceChildren(box);
   }
 }

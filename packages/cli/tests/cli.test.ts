@@ -177,4 +177,118 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.equal(genResult.exitCode, 0);
     assert.ok(genResult.message.includes('Button.ts'));
   });
+
+  it('produces a valid v3 source map object from the Vite plugin transform (Bug 12d)', async () => {
+    const { samreyVitePlugin } = await import('../src/vite-plugin.js');
+    const plugin = samreyVitePlugin();
+    const res = plugin.transform('<div class="card">Hello</div>\n<span>World</span>', '/src/Card.samrey');
+    assert.ok(res);
+    assert.ok(res.map && typeof res.map === 'object', 'transform must emit a source map object');
+    assert.equal(res.map.version, 3);
+    assert.deepEqual(res.map.sources, ['/src/Card.samrey']);
+    assert.ok(typeof res.map.mappings === 'string' && res.map.mappings.length > 0);
+  });
+
+  it('audits extended URL attributes, srcset, entity obfuscation, unquoted handlers, and <a> a11y without false positives on JSX expressions (Bug 7a)', async () => {
+    const { auditSource } = await import('../src/audit.js');
+    const badHtml = [
+      '<img src="/ok.jpg" data-alt="not-alt">',
+      '<a>Missing href and label</a>',
+      '<video poster="javascript:alert(1)"></video>',
+      '<button type="submit" formaction="vbscript:msgbox(1)">Go</button>',
+      '<svg><a href="/safe" xlink:href="data:text/html,xss">x</a></svg>',
+      '<a href="java&#x09;script:alert(1)">tab-obfuscated</a>',
+      '<img alt="ok" srcset="/good.png 1x, javascript:alert(2) 2x">',
+      '<div onclick=alert(3)>unquoted</div>'
+    ].join('\n');
+
+    const report = auditSource(badHtml, 'Unsafe.samrey');
+    assert.equal(report.violationsCount, 8, `Expected 8 violations, got ${report.violationsCount}: ${report.messages.join('\n')}`);
+
+    const cleanJsx = [
+      'export function SafeCard(url: string, handler: () => void) {',
+      '  return `<img src="/ok.png" alt="ok" /><a href="/about">About</a><a href={url} onClick={handler}>Dynamic</a>`;',
+      '}'
+    ].join('\n');
+    const cleanReport = auditSource(cleanJsx, 'SafeCard.tsx');
+    assert.equal(cleanReport.violationsCount, 0, `Expected 0 violations, got ${cleanReport.messages.join('\n')}`);
+  });
+
+  it('handles native dev fallback URL decoding, 404 for missing assets, 403 traversal, and .samrey/.ts transpilation (Bug 16)', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const { Writable } = await import('node:stream');
+    const { createNativeDevHandler } = await import('../src/commands/dev.js');
+
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-dev-fallback-'));
+    try {
+      fs.writeFileSync(path.join(tmpRoot, 'index.html'), '<html><body>SPA Shell</body></html>');
+      fs.writeFileSync(path.join(tmpRoot, 'hello world.txt'), 'decoded-space-ok');
+      fs.writeFileSync(path.join(tmpRoot, 'View.samrey'), '<div class="v">Hi</div>');
+      fs.writeFileSync(path.join(tmpRoot, 'mod.ts'), 'export const answer: number = 42;');
+
+      const handler = createNativeDevHandler(tmpRoot);
+      const invoke = (url: string): Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }> =>
+        new Promise((resolve, reject) => {
+          const chunks: Buffer[] = [];
+          const headers: Record<string, string | string[] | undefined> = {};
+          let status = 200;
+          const res = new Writable({
+            write(chunk, _enc, cb) {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+              cb();
+            }
+          }) as any;
+          res.writeHead = (code: number, hdrs: Record<string, string | string[]> = {}) => {
+            status = code;
+            for (const [k, v] of Object.entries(hdrs)) {
+              headers[k.toLowerCase()] = v;
+            }
+            return res;
+          };
+          res.on('finish', () => {
+            resolve({ status, headers, body: Buffer.concat(chunks).toString('utf-8') });
+          });
+          Promise.resolve(handler({ url } as any, res)).catch(reject);
+        });
+
+      // 1. URI decoding
+      const decoded = await invoke('/hello%20world.txt');
+      assert.equal(decoded.status, 200);
+      assert.equal(decoded.body, 'decoded-space-ok');
+
+      // 2. Malformed percent encoding -> 400
+      const malformed = await invoke('/%E0%A4%A');
+      assert.equal(malformed.status, 400);
+
+      // 3. Traversal -> 403
+      const traversal = await invoke('/../../etc/passwd');
+      assert.equal(traversal.status, 403);
+
+      // 4. Missing asset extension -> 404 (not index.html)
+      const missingJs = await invoke('/missing.js');
+      assert.equal(missingJs.status, 404);
+
+      // 5. Extensionless client route -> SPA index.html
+      const spaRoute = await invoke('/dashboard/settings');
+      assert.equal(spaRoute.status, 200);
+      assert.ok(spaRoute.body.includes('SPA Shell'));
+
+      // 6. .samrey compilation to JS
+      const compiledSamrey = await invoke('/View.samrey');
+      assert.equal(compiledSamrey.status, 200);
+      assert.match(String(compiledSamrey.headers['content-type']), /text\/javascript/);
+      assert.ok(compiledSamrey.body.includes('template('));
+
+      // 7. .ts transpilation stripping type annotations
+      const transpiledTs = await invoke('/mod.ts');
+      assert.equal(transpiledTs.status, 200);
+      assert.match(String(transpiledTs.headers['content-type']), /text\/javascript/);
+      assert.ok(!transpiledTs.body.includes(': number'), 'TypeScript type annotation must be stripped');
+      assert.ok(transpiledTs.body.includes('42'));
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
 });

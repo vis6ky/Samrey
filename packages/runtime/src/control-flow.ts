@@ -3,10 +3,26 @@
  * @samrey/runtime - Reactive Control Flow Primitives (<Show>, <For>)
  */
 
-import { effect, createOwner, getOwner, onCleanup, onError, Owner, runWithOwner, signal, Signal, untrack, isStore } from '@samrey/reactivity';
+import {
+  batch,
+  effect,
+  createOwner,
+  getOwner,
+  handleError,
+  onCleanup,
+  onError,
+  Owner,
+  runWithOwner,
+  signal,
+  Signal,
+  SuspenseTracker,
+  SuspenseTrackerContext,
+  untrack,
+  isStore
+} from '@samrey/reactivity';
 import { reportDuplicateKey, reportStaleItemWarning, isDev } from './diagnostics.js';
 import { el, text } from './dom.js';
-import { escapeHtmlText } from '@samrey/security';
+import { DANGEROUS_TEMPLATE_TAGS, escapeHtmlText } from '@samrey/security';
 import { createComponent } from './component.js';
 
 export interface ShowProps<T> {
@@ -871,32 +887,162 @@ export interface ErrorBoundaryProps {
   children: () => Node | Node[] | null | undefined;
 }
 
+function unpackFragmentOrNodes(val: unknown): Node[] {
+  const list = normalizeNodes(val);
+  const out: Node[] = [];
+  for (let i = 0; i < list.length; i++) {
+    const n = list[i] as any;
+    if (n && n.nodeType === 11 && Array.isArray(n.childNodes)) {
+      out.push(...Array.from(n.childNodes as Node[]));
+    } else if (n) {
+      out.push(n as Node);
+    }
+  }
+  return out;
+}
+
 export function ErrorBoundary(props: ErrorBoundaryProps): Node {
+  const outerOwner = getOwner();
   const errorSignal = signal<Error | null>(null);
+  const retryTick = signal(0);
+  let currentOwner: Owner | null = null;
+  let currentNodes: Node[] = [];
+
+  const toError = (err: unknown): Error =>
+    err instanceof Error ? err : new Error(String(err));
 
   const reset = () => {
-    errorSignal.value = null;
+    batch(() => {
+      errorSignal.value = null;
+      retryTick.update((n) => n + 1);
+    });
   };
 
-  return Show({
-    when: () => errorSignal.value,
-    fallback: () => {
-      onError((err: unknown) => {
-        const errorObj = err instanceof Error ? err : new Error(String(err));
-        errorSignal.value = errorObj;
-      });
-      try {
-        return props.children();
-      } catch (err: any) {
-        const errorObj = err instanceof Error ? err : new Error(String(err));
-        errorSignal.value = errorObj;
-        return props.fallback(errorObj, reset);
+  const marker = createControlFlowMarker('samrey:error-boundary', (parent) => {
+    if (currentNodes.length > 0) {
+      const next = marker.nextSibling;
+      for (const node of currentNodes) {
+        if (node.parentNode !== parent) {
+          parent.insertBefore(node, next);
+        }
       }
-    },
-    children: (err: Error) => {
-      return props.fallback(err, reset);
     }
   });
+
+  function removeNodes(): void {
+    for (const node of currentNodes) {
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    }
+    currentNodes = [];
+  }
+
+  function insertNodes(nodes: Node[]): void {
+    const parent = marker.parentNode;
+    if (!parent) return;
+    const next = marker.nextSibling;
+    for (const node of nodes) {
+      parent.insertBefore(node, next);
+    }
+  }
+
+  effect(() => {
+    const err = errorSignal.value;
+    void retryTick.value;
+
+    if (currentOwner) {
+      currentOwner.dispose();
+      currentOwner = null;
+    }
+    removeNodes();
+
+    if (err !== null) {
+      currentOwner = createOwner(outerOwner);
+      let rendered: unknown = null;
+      untrack(() => {
+        runWithOwner(currentOwner!, () => {
+          rendered = props.fallback(err, reset);
+        });
+      });
+      currentNodes = normalizeNodes(rendered);
+      insertNodes(currentNodes);
+      return;
+    }
+
+    currentOwner = createOwner(outerOwner);
+    let syncErr: Error | null = null;
+    let isRendering = true;
+    let rendered: unknown = null;
+
+    untrack(() => {
+      runWithOwner(currentOwner!, () => {
+        onError((caught: unknown) => {
+          const errorObj = toError(caught);
+          if (isRendering) {
+            syncErr = errorObj;
+          } else {
+            errorSignal.value = errorObj;
+          }
+        });
+        try {
+          rendered = props.children();
+        } catch (caught) {
+          syncErr = toError(caught);
+        } finally {
+          isRendering = false;
+        }
+      });
+    });
+
+    if (syncErr !== null) {
+      currentOwner.dispose();
+      currentOwner = createOwner(outerOwner);
+      let fallbackRendered: unknown = null;
+      const errForFallback = syncErr;
+      untrack(() => {
+        runWithOwner(currentOwner!, () => {
+          fallbackRendered = props.fallback(errForFallback, reset);
+        });
+      });
+      currentNodes = normalizeNodes(fallbackRendered);
+      insertNodes(currentNodes);
+      return;
+    }
+
+    currentNodes = normalizeNodes(rendered);
+    insertNodes(currentNodes);
+  });
+
+  onCleanup(() => {
+    if (currentOwner) {
+      currentOwner.dispose();
+      currentOwner = null;
+    }
+    removeNodes();
+  });
+
+  if (typeof document === 'undefined') {
+    Object.defineProperty(marker, 'outerHTML', {
+      get() {
+        return currentNodes
+          .map((n: any) => n.outerHTML ?? (n.textContent ? escapeHtmlText(n.textContent) : ''))
+          .join('');
+      },
+      configurable: true
+    });
+  }
+
+  if (!marker.parentNode && currentNodes.length > 0 && typeof document !== 'undefined' && typeof document.createDocumentFragment === 'function') {
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(marker);
+    for (const node of currentNodes) {
+      fragment.appendChild(node);
+    }
+    return fragment;
+  }
+
+  return marker;
 }
 
 export interface DynamicProps {
@@ -907,7 +1053,15 @@ export interface DynamicProps {
 export function Dynamic(props: DynamicProps): Node | Node[] {
   const { component, children, ...rest } = props;
   if (typeof component === 'string') {
-    return (children ? [el(component as any, rest, children)] : [el(component as any, rest)]) as unknown as Node;
+    const trimmedTag = component.trim();
+    const lowerTag = trimmedTag.toLowerCase();
+    if (!/^[a-zA-Z][a-zA-Z0-9-]*$/.test(trimmedTag) || DANGEROUS_TEMPLATE_TAGS.has(lowerTag)) {
+      if (isDev) {
+        console.warn(`[Samrey Security Warning] Refusing to dynamically render dangerous or invalid HTML tag "${component}".`);
+      }
+      return text('');
+    }
+    return children !== undefined ? el(trimmedTag as any, rest, children) : el(trimmedTag as any, rest);
   }
   return createComponent(component, { ...rest, children });
 }
@@ -940,32 +1094,56 @@ export function Portal(props: PortalProps): Node {
 
 export interface SuspenseProps {
   fallback: () => Node | Node[] | null | undefined;
-  children: () => Node | Node[] | null | undefined;
+  children: () => Node | Node[] | Promise<Node | Node[] | null | undefined> | null | undefined;
 }
 
 export function Suspense(props: SuspenseProps): Node {
-  const isPending = signal(false);
-  const content = signal<Node | Node[] | null>(null);
+  const outerOwner = getOwner();
+  const suspenseOwner = createOwner(outerOwner);
+  const pendingCount = signal(0);
+  let resolvedNodes: Node[] = [];
 
-  try {
-    const res = props.children();
-    if (res instanceof Promise) {
-      isPending.value = true;
-      res.then((resolved) => {
-        content.value = resolved as any;
-        isPending.value = false;
-      }).catch(() => {
-        isPending.value = false;
-      });
-      return Show({
-        when: () => !isPending.value,
-        fallback: props.fallback,
-        children: () => content.value || text('')
-      });
+  const tracker: SuspenseTracker = {
+    track(promise: Promise<unknown>): void {
+      pendingCount.update((c) => c + 1);
+      promise.then(
+        () => {
+          pendingCount.update((c) => Math.max(0, c - 1));
+        },
+        (err) => {
+          pendingCount.update((c) => Math.max(0, c - 1));
+          handleError(err, suspenseOwner);
+        }
+      );
     }
-    return (res || text('')) as Node;
-  } catch (e) {
-    return (props.fallback() || text('')) as Node;
-  }
+  };
+
+  onCleanup(() => {
+    suspenseOwner.dispose();
+  });
+
+  runWithOwner(suspenseOwner, () => {
+    SuspenseTrackerContext.Provider({
+      value: tracker,
+      children: () => {
+        const res = props.children();
+        if (res instanceof Promise) {
+          tracker.track(
+            res.then((resolved) => {
+              resolvedNodes = unpackFragmentOrNodes(resolved);
+            })
+          );
+        } else {
+          resolvedNodes = unpackFragmentOrNodes(res);
+        }
+      }
+    });
+  });
+
+  return Show({
+    when: () => pendingCount.value === 0,
+    fallback: props.fallback,
+    children: () => resolvedNodes
+  });
 }
 

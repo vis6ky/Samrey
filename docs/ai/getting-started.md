@@ -34,8 +34,8 @@ Output:
 =====================================================
 🔍 Samrey AI Doctor — Environment & Project Inspection
 =====================================================
-Project:           my-app (v2.0.0)
-Samrey Version:    2.0.0 (Valid Samrey Project)
+Project:           my-app (v2.1.0)
+Samrey Version:    2.1.0 (Valid Samrey Project)
 Health Score:      100/100
 Components Found:  12
 Routes Found:      4

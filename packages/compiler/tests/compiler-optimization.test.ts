@@ -5,7 +5,6 @@ import {
   TemplateParser,
   evaluateConstantExpression,
   isStaticSubtree,
-  buildAIRFromAST,
   generateModuleCode
 } from '../src/index.js';
 

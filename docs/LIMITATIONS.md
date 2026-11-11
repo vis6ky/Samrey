@@ -1,9 +1,9 @@
 # Samrey Framework — Known Limitations & Constraints
 
-**Version: 2.0.0**  
-*Last Updated: August 20, 2026*
+**Version: 2.1.0**  
+*Last Updated: November 10, 2026*
 
-This document provides a transparent overview of architectural trade-offs, intentional constraints, and known limitations in Samrey `2.0.0`.
+This document provides a transparent overview of architectural trade-offs, intentional constraints, and known limitations in Samrey `2.1.0`.
 
 ---
 

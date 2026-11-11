@@ -31,14 +31,14 @@ Unlike traditional Virtual DOM frameworks that reconstruct an entire synthetic t
 When components use `createServerData(key, loader)`, data is fetched concurrently during the server render pass. The resolved values are embedded into a secure, Unicode-escaped `<script id="__SAMREY_STATE__">` tag. On boot, client signals synchronously read the cached state with **zero additional client-side network roundtrips**.
 
 ### Zero-Overhead Inline Event Delegator
-To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Samrey injects a ~200-byte capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__SAMREY_EVENTS__` and immediately replayed to the hydrated DOM nodes upon `hydrate()`.
+To eliminate the "uncanny valley" (where the page is visible but unresponsive before JavaScript bundles finish downloading), Samrey injects a compact capture delegator in `<head>`. Any clicks, form submissions, or inputs prior to bundle completion are captured in `window.__SAMREY_EVENTS__` and replayed onto hydrated DOM nodes using CSS-escaped `id` selectors (`escapeCssIdentifier()`) upon `hydrate()`.
 
 ---
 
 ## 2. Server-Side Rendering (SSR)
 
 ### `renderToString`
-Renders an application component tree to a full, valid HTML document:
+Renders an application component tree to a full, valid HTML document (`options.headTags` is filtered via `sanitizeHeadTags()`, while `title`, `clientScript`, `clientStyles`, and `nonce`/`scriptNonce` are escaped and URI-sanitized):
 
 ```typescript
 import { renderToString, createSSRContext } from '@samrey/ssr';
@@ -52,7 +52,7 @@ const html = await renderToString(App, {
 ```
 
 ### `renderToStream`
-Streams HTML chunks incrementally using web-standard `ReadableStream<Uint8Array>`:
+Streams HTML chunks incrementally using web-standard `ReadableStream<Uint8Array>`, with automatic `abortSignal` listener detachment, `timeoutMs` timer cleanup, and loader clearing on abort/error:
 
 ```typescript
 import { renderToStream } from '@samrey/ssr';
@@ -71,7 +71,7 @@ return new Response(stream, {
 
 ## 3. Static Site Generation (SSG)
 
-Samrey's `generateStaticSite` engine compiles route manifests into pre-rendered static `.html` files, dynamic parameterized paths, and automated XML sitemaps:
+Samrey's `generateStaticSite` engine compiles route manifests into pre-rendered static `.html` files, dynamic parameterized paths, and automated XML sitemaps (`baseUrl` validated with `sanitizeUri(..., { allowProtocolRelative: false })` and sitemap `<loc>` URLs escaped via `escapeHtmlText`):
 
 ```typescript
 import { generateStaticSite, StaticRouteConfig } from '@samrey/ssr';
@@ -110,8 +110,8 @@ Server state frequently contains sensitive environment variables or database obj
 
 In strict mode (`strict: true`), any attempt to serialize sensitive fields will immediately abort serialization and throw a `SecurityViolation` error.
 
-### Script Breakout XSS Defenses
-The state serializer prevents HTML parser breakouts (`</script>`, `<!--`, CDATA, line separators) by replacing `<` with `\u003c`, `>` with `\u003e`, `&` with `\u0026`, and Unicode paragraph/line separators `\u2028` and `\u2029`.
+### Script Breakout & ID XSS Defenses
+The state serializer (`serializeStateForHydration`) validates custom script `id` values against `/^[a-zA-Z0-9_\-:]+$/` (defaulting to `__SAMREY_STATE__`) and attribute-escapes them with `escapeHtmlAttribute()`. Payload JSON prevents HTML parser breakouts (`</script>`, `<!--`, CDATA, line separators) by replacing `<` with `\u003c`, `>` with `\u003e`, `&` with `\u0026`, and Unicode paragraph/line separators `\u2028` and `\u2029`.
 
 ### Prototype Pollution Defense & State Validation
 During client hydration, `safeJsonParse` revives data while scrubbing `__proto__`, `constructor`, and `prototype` vectors. Schema validators verify structure before mounting.
@@ -120,12 +120,14 @@ During client hydration, `safeJsonParse` revives data while scrubbing `__proto__
 
 ## 5. Client Hydration Engine
 
+`hydrate(componentFn, container, options?)` runs component setup inside a `HydrationCaptureRegistry` scope, compares existing SSR nodes with client nodes (`matchNodeTrees`), and non-destructively adopts matching server DOM nodes (`adoptNodeTrees`) by retargeting reactive bindings and event listeners in-place. When a structural mismatch occurs, `repairMismatch` (default `true`) triggers `onMismatch` and repairs `container` in-place before replaying captured early interactions.
+
 ```typescript
 import { hydrate, deserializeHydrationState } from '@samrey/ssr';
 import { App } from './app.js';
 
 const state = deserializeHydrationState();
-const container = document.getElementById('app');
+const container = document.getElementById('app')!;
 
 const { dispose, replayedEventsCount } = hydrate(App, container, {
   repairMismatch: true,

@@ -1,6 +1,6 @@
 # Samrey Framework — Error Codes Reference
 
-> **Samrey v2.0.0 Standard Diagnostic Error System**
+> **Samrey v2.1.0 Standard Diagnostic Error System**
 
 Samrey features a centralized, deterministic error model with structured codes (`AETH-xxx`). Every error emitted by Samrey provides:
 1. **Stable Error Code**: Machine-readable identifier with category prefix.

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createResource, RequestCache, createHttpClient } from '../src/index.js';
-import { signal } from '@samrey/reactivity';
+import { createRoot, signal, SuspenseTrackerContext } from '@samrey/reactivity';
 
 describe('@samrey/http', () => {
   it('handles createResource state transitions and data loading', async () => {
@@ -54,7 +54,7 @@ describe('@samrey/http', () => {
     assert.equal(stats.error.value, null);
 
     // Functional updater works on optimistic value
-    mutate((prev) => ({ count: (prev?.count ?? 0) + 1 }));
+    mutate((prev: { count: number } | undefined) => ({ count: (prev?.count ?? 0) + 1 }));
     assert.deepEqual(stats.data.value, { count: 100 });
 
     // Resolving the older in-flight fetch must NOT overwrite the optimistic mutation
@@ -96,5 +96,85 @@ describe('@samrey/http', () => {
     const clientNoBase = createHttpClient();
     assert.equal((clientNoBase as any).resolveUrl('/local/api'), '/local/api');
     assert.equal((clientNoBase as any).resolveUrl('https://other.com/api'), 'https://other.com/api');
+  });
+
+  it('aborts in-flight fetches on mutate() and registers pending loads with SuspenseTrackerContext (Bug 8a)', async () => {
+    let observedAbort = false;
+    let trackedPromises: Promise<unknown>[] = [];
+
+    let resolveFetch!: (v: string) => void;
+    await new Promise<void>((done) => {
+      createRoot((dispose) => {
+        SuspenseTrackerContext.Provider({
+          value: {
+            track(p) {
+              trackedPromises.push(p);
+            }
+          },
+          children: () => {
+            const [res, { mutate }] = createResource(({ abortSignal }) => {
+              abortSignal.addEventListener('abort', () => {
+                observedAbort = true;
+              });
+              return new Promise<string>((r) => {
+                resolveFetch = r;
+              });
+            });
+
+            assert.equal(trackedPromises.length, 1);
+            mutate('optimistic');
+            assert.equal(observedAbort, true, 'mutate() must abort obsolete in-flight fetch');
+            assert.equal(res.data.value, 'optimistic');
+
+            resolveFetch('stale');
+            dispose();
+            done();
+          }
+        });
+      });
+    });
+
+    await Promise.all(trackedPromises);
+  });
+
+  it('scrubs prototype pollution in HttpClient JSON payloads and cleans up AbortSignal listeners (Bug 8a)', async () => {
+    const originalFetch = globalThis.fetch;
+    const addedListeners: Array<() => void> = [];
+    const removedListeners: Array<() => void> = [];
+    const mockCallerSignal = {
+      aborted: false,
+      reason: undefined,
+      addEventListener: (_type: string, fn: any) => {
+        addedListeners.push(fn);
+      },
+      removeEventListener: (_type: string, fn: any) => {
+        removedListeners.push(fn);
+      }
+    } as unknown as AbortSignal;
+
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"safe":"yes","__proto__":{"polluted":true},"nested":{"constructor":{"prototype":{"evil":1}}}}'
+      }) as any) as any;
+
+    try {
+      const client = createHttpClient('https://api.example.com');
+      const data = await client.get<any>('/items', {
+        timeoutMs: 5000,
+        signal: mockCallerSignal
+      });
+      assert.equal(data.safe, 'yes');
+      assert.equal(Object.prototype.hasOwnProperty.call(data, '__proto__'), false);
+      assert.equal((data as any).polluted, undefined);
+      assert.equal(({} as any).polluted, undefined);
+      assert.equal(addedListeners.length, 1);
+      assert.equal(removedListeners.length, 1);
+      assert.equal(removedListeners[0], addedListeners[0], 'Must remove abort listener in finally block');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

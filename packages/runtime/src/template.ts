@@ -12,62 +12,114 @@ export type TagNameToElement<T extends string> =
 type Whitespace = ' ' | '\t' | '\n' | '\r';
 
 type TrimLeft<S extends string> = S extends `${Whitespace}${infer Rest}` ? TrimLeft<Rest> : S;
+type TrimRight<S extends string> = S extends `${infer Rest}${Whitespace}` ? TrimRight<Rest> : S;
+type Trim<S extends string> = TrimRight<TrimLeft<S>>;
 
-type FindTagEnd<S extends string> =
-  S extends `${infer Before}/>${infer After}`
-    ? S extends `${infer Before2}>${infer After2}`
-      ? Before extends `${infer _BeforeShort}>${string}`
-        ? [Before2, After2]
-        : [Before, `/${After}`]
-      : [Before, `/${After}`]
-    : S extends `${infer Before}>${infer After}`
-    ? [Before, After]
-    : [S, ''];
+// Extract tag name deterministically up to first whitespace, '/', or '>' (prevents Whitespace union distribution)
+type ExtractTagName<S extends string, Acc extends string = ''> =
+  S extends `${infer C}${infer Rest}`
+    ? C extends Whitespace | '/' | '>'
+      ? [Acc, `${C}${Rest}`]
+      : ExtractTagName<Rest, `${Acc}${C}`>
+    : [Acc, ''];
+
+// Quote-aware scan to the closing '>' of an opening tag
+type ScanTagEnd<
+  S extends string,
+  Quote extends string = '',
+  Acc extends string = ''
+> =
+  S extends `${infer C}${infer Rest}`
+    ? Quote extends ''
+      ? C extends '"' | "'"
+        ? ScanTagEnd<Rest, C, `${Acc}${C}`>
+        : C extends '>'
+          ? [Acc, Rest]
+          : ScanTagEnd<Rest, '', `${Acc}${C}`>
+      : C extends Quote
+        ? ScanTagEnd<Rest, '', `${Acc}${C}`>
+        : ScanTagEnd<Rest, Quote, `${Acc}${C}`>
+    : [Acc, ''];
+
+type ReadAttrName<S extends string, Acc extends string = ''> =
+  S extends `${infer C}${infer Rest}`
+    ? C extends Whitespace | '=' | '/'
+      ? [Acc, `${C}${Rest}`]
+      : ReadAttrName<Rest, `${Acc}${C}`>
+    : [Acc, ''];
+
+type SkipAttrValue<S extends string> =
+  TrimLeft<S> extends `=${infer AfterEq}`
+    ? TrimLeft<AfterEq> extends `"${string}"${infer Rest}`
+      ? Rest
+      : TrimLeft<AfterEq> extends `'${string}'${infer Rest}`
+        ? Rest
+        : TrimLeft<AfterEq> extends `${string}${Whitespace}${infer Rest}`
+          ? Rest
+          : ''
+    : S;
+
+type ReadAttrValue<S extends string> =
+  TrimLeft<S> extends `=${infer AfterEq}`
+    ? TrimLeft<AfterEq> extends `"${infer Val}"${infer Rest}`
+      ? [Val, Rest]
+      : TrimLeft<AfterEq> extends `'${infer Val}'${infer Rest}`
+        ? [Val, Rest]
+        : TrimLeft<AfterEq> extends `${infer Val}${Whitespace}${infer Rest}`
+          ? [Val, Rest]
+          : [TrimLeft<AfterEq>, '']
+    : ['', S];
+
+type SkipWhitespaceAndSlashes<S extends string> =
+  S extends `${infer C}${infer Rest}`
+    ? C extends Whitespace | '/'
+      ? SkipWhitespaceAndSlashes<Rest>
+      : S
+    : '';
+
+type ParseRefFromAttrs<Tag extends string, Attrs extends string> =
+  SkipWhitespaceAndSlashes<Attrs> extends ''
+    ? unknown
+    : ReadAttrName<SkipWhitespaceAndSlashes<Attrs>> extends [infer Name extends string, infer AfterName extends string]
+      ? Name extends ''
+        ? unknown
+        : Lowercase<Name> extends 'ref'
+          ? ReadAttrValue<AfterName> extends [infer RefVal extends string, infer RestAttrs extends string]
+            ? (Trim<RefVal> extends ''
+                ? unknown
+                : { [K in Trim<RefVal>]: TagNameToElement<Lowercase<Tag>> }) &
+              ParseRefFromAttrs<Tag, RestAttrs>
+            : unknown
+          : ParseRefFromAttrs<Tag, SkipAttrValue<AfterName>>
+      : unknown;
+
+type EmptyRefs = Record<never, never>;
+
+type ExtractRefsInner<S extends string> =
+  string extends S
+    ? Record<string, HTMLElement>
+    : S extends `${string}<${infer Rest}`
+      ? Rest extends `!--${string}-->${infer AfterComment}`
+        ? ExtractRefsInner<AfterComment>
+        : Rest extends `/${string}>${infer AfterClose}`
+          ? ExtractRefsInner<AfterClose>
+          : Rest extends `!${string}>${infer AfterDecl}`
+            ? ExtractRefsInner<AfterDecl>
+            : ExtractTagName<TrimLeft<Rest>> extends [infer Tag extends string, infer AfterTag extends string]
+              ? Tag extends ''
+                ? ExtractRefsInner<AfterTag>
+                : ScanTagEnd<AfterTag> extends [infer Attrs extends string, infer Remainder extends string]
+                  ? ParseRefFromAttrs<Tag, Attrs> & ExtractRefsInner<Remainder>
+                  : EmptyRefs
+              : EmptyRefs
+      : EmptyRefs;
+
+type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
 export type ExtractRefs<S extends string> =
   string extends S
     ? Record<string, HTMLElement>
-    : S extends `${string}<${infer Rest}`
-    ? Rest extends `/${string}`
-      ? ExtractRefs<Rest>
-      : Rest extends `!${string}`
-      ? ExtractRefs<Rest>
-      : ProcessTag<TrimLeft<Rest>>
-    : Record<string, never>;
-
-type ProcessTag<S extends string> =
-  S extends `${infer TagName}${Whitespace}${infer AttrsAndRest}`
-    ? FindTagEnd<AttrsAndRest> extends [infer Attrs extends string, infer Remainder extends string]
-      ? ParseRef<TagName, Attrs> & ExtractRefs<Remainder>
-      : Record<string, never>
-    : S extends `${string}>${infer Remainder}`
-    ? ExtractRefs<Remainder>
-    : Record<string, never>;
-
-type CleanRefName<S extends string> =
-  S extends ` ${infer R}` ? CleanRefName<R> :
-  S extends `${infer R} ` ? CleanRefName<R> : S;
-
-type ParseRef<Tag extends string, Attrs extends string> =
-  Attrs extends `${string}ref="${infer Name}"${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}ref='${infer Name}'${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}ref = "${infer Name}"${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}ref = '${infer Name}'${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}REF="${infer Name}"${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}REF='${infer Name}'${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}Ref="${infer Name}"${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Attrs extends `${string}Ref='${infer Name}'${string}`
-    ? { [K in CleanRefName<Name>]: TagNameToElement<Lowercase<Tag>> }
-    : Record<string, never>;
-
-type Prettify<T> = { [K in keyof T]: T[K] } & {};
+    : Prettify<ExtractRefsInner<S>>;
 
 export type TemplateRefs<S extends string = string> =
   string extends S
@@ -403,7 +455,7 @@ function patchMultiRootFragment(fragment: Node): Node {
 export function template<S extends string = string>(htmlString: S): TemplateFactory<S> {
   let templateElement: HTMLTemplateElement | null = null;
   let refDescriptors: RefDescriptor[] | null = null;
-  const hasRefAttr = /\bref\s*=/i.test(htmlString);
+  const hasRefAttr = /(?:^|[\s/])ref\s*=/i.test(htmlString);
 
   const createNode = function createNode(): TemplateRoot<S> {
     const trimmed = htmlString.trim();
@@ -412,7 +464,7 @@ export function template<S extends string = string>(htmlString: S): TemplateFact
       const refs: Record<string, any> = Object.create(null);
       const seenRefs = new Set<string>();
       if (hasRefAttr) {
-        const regex = /<([a-zA-Z0-9-]+)[^>]*?\bref\s*=\s*["']([^"']+)["']/gi;
+        const regex = /<([a-zA-Z0-9-]+)[^>]*?(?:^|[\s/])ref\s*=\s*["']([^"']+)["']/gi;
         let match: RegExpExecArray | null;
         while ((match = regex.exec(trimmed)) !== null) {
           const tagName = match[1].toUpperCase();
@@ -435,7 +487,7 @@ export function template<S extends string = string>(htmlString: S): TemplateFact
       // Root tag match if single root
       const rootMatch = trimmed.match(/^<([a-zA-Z0-9-]+)[^>]*>/);
       const rootTag = rootMatch ? rootMatch[1].toUpperCase() : 'DIV';
-      const rootRefMatch = rootMatch ? rootMatch[0].match(/\bref\s*=\s*["']([^"']+)["']/i) : null;
+      const rootRefMatch = rootMatch ? rootMatch[0].match(/(?:^|[\s/])ref\s*=\s*["']([^"']+)["']/i) : null;
       const rootRefName = rootRefMatch ? rootRefMatch[1] : null;
 
       const mockRoot = createMockElement(rootTag, trimmed);

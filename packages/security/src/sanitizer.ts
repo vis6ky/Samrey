@@ -5,16 +5,91 @@
 
 const SAFE_URI_SCHEMES = /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i;
 const DANGEROUS_URI_PATTERNS = /^(javascript|vbscript|data|blob):/i;
+export const SAFE_IMAGE_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=]+$/i;
 
-function decodeHtmlEntities(str: string): string {
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+  tab: '\t',
+  newline: '\n',
+  colon: ':',
+  semi: ';',
+  lpar: '(',
+  rpar: ')',
+  sol: '/',
+  bsol: '\\',
+  apos: "'",
+  quot: '"',
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  nbsp: '\u00a0',
+  lcub: '{',
+  rcub: '}',
+  equals: '=',
+  plus: '+',
+  comma: ',',
+  period: '.',
+  excl: '!',
+  num: '#',
+  quest: '?',
+  percnt: '%',
+  commat: '@',
+  dollar: '$',
+  ast: '*',
+  hyphen: '-',
+  dash: '-',
+  lowbar: '_'
+};
+
+function safeCodePoint(code: number): string {
+  if (code === 0) return '\0';
+  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) {
+    return '\uFFFD';
+  }
+  try {
+    return String.fromCodePoint(code);
+  } catch {
+    return '\uFFFD';
+  }
+}
+
+/**
+ * Decodes numeric HTML character references and critical HTML5 named entities
+ * (such as `&Tab;`, `&NewLine;`, `&colon;`, `&lpar;`, `&sol;`) case-insensitively.
+ */
+export function decodeHtmlEntities(str: string): string {
   return str
-    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
-      try { return String.fromCharCode(parseInt(hex, 16)); } catch { return ''; }
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => safeCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);?/gi, (_, dec) => safeCodePoint(parseInt(dec, 10)))
+    .replace(/&([a-zA-Z][a-zA-Z0-9]*);/g, (full, name: string) => {
+      const mapped = NAMED_HTML_ENTITIES[name.toLowerCase()];
+      return mapped !== undefined ? mapped : full;
     })
-    .replace(/&#([0-9]+);?/gi, (_, dec) => {
-      try { return String.fromCharCode(parseInt(dec, 10)); } catch { return ''; }
-    })
-    .replace(/&colon;?/gi, ':');
+    .replace(/&(amp|lt|gt|quot)(?![a-zA-Z0-9=])/gi, (full, name: string) => {
+      const mapped = NAMED_HTML_ENTITIES[name.toLowerCase()];
+      return mapped !== undefined ? mapped : full;
+    });
+}
+
+function decodeHtmlEntitiesDeep(str: string): string {
+  let prev = str;
+  for (let i = 0; i < 3; i++) {
+    const next = decodeHtmlEntities(prev);
+    if (next === prev) return next;
+    prev = next;
+  }
+  return prev;
+}
+
+function safeDecodePercentBytes(str: string): string {
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    // Decode individual ASCII %XX sequences when trailing malformed bytes trigger URIError
+    return str.replace(/%([0-9a-fA-F]{2})/g, (full, hex: string) => {
+      const code = parseInt(hex, 16);
+      return code <= 0x7f ? String.fromCharCode(code) : full;
+    });
+  }
 }
 
 export interface SanitizeUriOptions {
@@ -28,13 +103,18 @@ export interface SanitizeUriOptions {
    * @default true
    */
   allowProtocolRelative?: boolean;
+  /**
+   * Whether to allow base64-encoded bitmap image `data:` URIs (`png`, `jpeg`, `jpg`, `gif`, `webp`).
+   * Strictly rejects `data:text/html`, `data:image/svg+xml`, and non-base64 `data:` payloads.
+   * @default false
+   */
+  allowImageDataUri?: boolean;
 }
 
 /**
  * Validates and sanitizes a URL or URI string for resource-loading and asset contexts.
- * Blocks dangerous schemes (javascript:, vbscript:, data:text/html, blob:).
- * Decodes URL encodings in scheme to prevent obfuscated javascript: executions.
- * Only allows safe protocols (http:, https:, mailto:, tel:) and relative paths.
+ * Blocks dangerous schemes (`javascript:`, `vbscript:`, `data:text/html`, `blob:`),
+ * including obfuscation via `&Tab;`, `&NewLine;`, numeric entities, and `%XX` encoding.
  *
  * NOTE: For client-side routing or server redirects, use `sanitizeRedirectUri()` instead,
  * which rejects protocol-relative URLs (`//evil.com`) to prevent open redirect vulnerabilities.
@@ -42,21 +122,35 @@ export interface SanitizeUriOptions {
 export function sanitizeUri(rawUri: string | null | undefined, options?: SanitizeUriOptions): string {
   if (!rawUri) return '';
   const trimmed = String(rawUri).trim();
+  if (!trimmed) return '';
 
-  // Strip control characters, null bytes, and non-printable chars
-  let cleanSchemeCheck = decodeHtmlEntities(trimmed).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+  const hasRawControls = /[\u0000-\u001F\u007F-\u009F]/.test(trimmed);
+  const stripInvisibles = (val: string) =>
+    val.replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u202A-\u202E\uFEFF\s]/g, '');
 
-  // Try decoding potential percent-encoded scheme bypasses (e.g. %6a%61%76%61%73%63%72%69%70%74:)
-  try {
-    const decoded = decodeURIComponent(cleanSchemeCheck);
-    if (decoded !== cleanSchemeCheck) {
-      cleanSchemeCheck = decodeHtmlEntities(decoded).replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
-    }
-  } catch {
-    // Malformed encoding in scheme check
+  let cleanSchemeCheck = stripInvisibles(decodeHtmlEntitiesDeep(trimmed));
+
+  // Decode up to 2 passes of percent encoding + HTML entities to neutralize mixed bypasses (e.g. java%09script:, %26Tab%3B)
+  for (let i = 0; i < 2; i++) {
+    const decoded = safeDecodePercentBytes(cleanSchemeCheck);
+    const next = stripInvisibles(decodeHtmlEntitiesDeep(decoded));
+    if (next === cleanSchemeCheck) break;
+    cleanSchemeCheck = next;
   }
 
   if (DANGEROUS_URI_PATTERNS.test(cleanSchemeCheck)) {
+    if (
+      options?.allowImageDataUri &&
+      !hasRawControls &&
+      /^data:/i.test(cleanSchemeCheck) &&
+      SAFE_IMAGE_DATA_URI.test(cleanSchemeCheck)
+    ) {
+      return trimmed;
+    }
+    return 'about:blank';
+  }
+
+  if (hasRawControls) {
     return 'about:blank';
   }
 
@@ -76,7 +170,7 @@ export function sanitizeUri(rawUri: string | null | undefined, options?: Sanitiz
     return trimmed;
   }
 
-  // Treat unrecognized absolute schemes as unsafe
+  // Treat unrecognized absolute schemes or obfuscated schemes as unsafe
   if (/^[a-z0-9+.-]+:/i.test(trimmed) || /^[a-z0-9+.-]+:/i.test(cleanSchemeCheck)) {
     return 'about:blank';
   }
@@ -86,27 +180,31 @@ export function sanitizeUri(rawUri: string | null | undefined, options?: Sanitiz
 
 /**
  * Validates that a redirect URI is strictly internal / same-origin safe.
- * Rejects protocol-relative URLs (e.g. //evil.com, /\\evil.com) and external absolute URLs.
+ * Rejects protocol-relative URLs (e.g. `//evil.com`, `/\\evil.com`, `/%2fevil.com`, `/%5cevil.com`) and external absolute URLs.
  */
 export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback = '/'): string {
   if (!rawUri) return fallback;
   const trimmed = String(rawUri).trim();
+  if (!trimmed) return fallback;
 
   // Strip control characters, tabs, and non-printable characters
   const stripped = trimmed.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
 
-  // Reject javascript: / data: / vbscript:
-  const safe = sanitizeUri(stripped);
+  // Reject javascript: / data: / vbscript: / entity-obfuscated schemes
+  const safe = sanitizeUri(stripped, { allowProtocolRelative: false });
   if (safe === 'about:blank') return fallback;
 
-  // Reject protocol-relative URLs (e.g. //attacker.com or /\attacker.com or /\t/evil.com)
-  if (
-    stripped.startsWith('//') ||
-    stripped.startsWith('/\\') ||
-    stripped.startsWith('\\\\') ||
-    stripped.startsWith('\\/') ||
-    /^\/[\\/]/i.test(stripped)
-  ) {
+  // Normalize HTML entities and %XX sequences before checking leading slashes/backslashes
+  const decodedLeading = safeDecodePercentBytes(decodeHtmlEntitiesDeep(stripped)).replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+
+  const isProtoRelative = (val: string) =>
+    val.startsWith('//') ||
+    val.startsWith('/\\') ||
+    val.startsWith('\\\\') ||
+    val.startsWith('\\/') ||
+    /^\/[\\/]/i.test(val);
+
+  if (isProtoRelative(stripped) || isProtoRelative(decodedLeading)) {
     return fallback;
   }
 
@@ -122,8 +220,8 @@ export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback 
  * Decodes CSS backslash escape sequences (hex escapes like `\65` and literal character escapes).
  */
 export function decodeCssEscapes(css: string): string {
-  return css.replace(/\\([0-9a-fA-F]{1,6}\s?|[\s\S])/g, (match, p1) => {
-    if (/^[0-9a-fA-F]{1,6}/.test(p1)) {
+  return css.replace(/\\([0-9a-fA-F]{1,6}(?:\r\n|[ \t\r\n\f])?|[\s\S])/g, (_match, p1: string) => {
+    if (/^[0-9a-fA-F]{1,6}(?:\r\n|[ \t\r\n\f])?$/.test(p1)) {
       const hex = p1.trim();
       const code = parseInt(hex, 16);
       if (code === 0 || (code >= 0xd800 && code <= 0xdfff) || code > 0x10ffff) {
@@ -139,57 +237,280 @@ export function decodeCssEscapes(css: string): string {
   });
 }
 
+function stripCssCommentsOutsideStrings(css: string): string {
+  let out = '';
+  let quote: string | null = null;
+  let i = 0;
+
+  while (i < css.length) {
+    const ch = css[i];
+    if (quote) {
+      out += ch;
+      if (ch === '\\' && i + 1 < css.length) {
+        out += css[i + 1];
+        i += 2;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      i++;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      out += ch;
+      i++;
+      continue;
+    }
+
+    if (ch === '/' && css[i + 1] === '*') {
+      const closeIdx = css.indexOf('*/', i + 2);
+      if (closeIdx === -1) break;
+      i = closeIdx + 2;
+      continue;
+    }
+
+    out += ch;
+    i++;
+  }
+
+  return out;
+}
+
+function decodeCssEscapesOutsideStrings(css: string): string {
+  let out = '';
+  let quote: string | null = null;
+  let i = 0;
+
+  while (i < css.length) {
+    const ch = css[i];
+    if (quote) {
+      out += ch;
+      if (ch === '\\' && i + 1 < css.length) {
+        out += css[i + 1];
+        i += 2;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      i++;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      out += ch;
+      i++;
+      continue;
+    }
+
+    if (ch === '\\' && i + 1 < css.length) {
+      const rest = css.slice(i);
+      const m = /^\\([0-9a-fA-F]{1,6}(?:\r\n|[ \t\r\n\f])?|[\s\S])/.exec(rest);
+      if (m) {
+        out += decodeCssEscapes(m[0]);
+        i += m[0].length;
+        continue;
+      }
+    }
+
+    out += ch;
+    i++;
+  }
+
+  return out;
+}
+
+function findMatchingParen(str: string, openParenIdx: number): number {
+  let depth = 0;
+  let quote: string | null = null;
+
+  for (let i = openParenIdx; i < str.length; i++) {
+    const ch = str[i];
+    if (quote) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+
+  return str.length - 1;
+}
+
+function findDeclarationEnd(str: string, startIdx: number): number {
+  let depthParen = 0;
+  let depthBrace = 0;
+  let quote: string | null = null;
+
+  for (let i = startIdx; i < str.length; i++) {
+    const ch = str[i];
+    if (quote) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === '(') {
+      depthParen++;
+    } else if (ch === ')') {
+      if (depthParen > 0) depthParen--;
+    } else if (ch === '{') {
+      depthBrace++;
+    } else if (ch === '}') {
+      if (depthBrace > 0) depthBrace--;
+      else return i - 1;
+    } else if (ch === ';' && depthParen === 0 && depthBrace === 0) {
+      return i;
+    }
+  }
+
+  return str.length - 1;
+}
+
+function sanitizeCssUrlArgument(rawArg: string): boolean {
+  let trimmed = rawArg.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    trimmed = trimmed.slice(1, -1).trim();
+  }
+  if (!trimmed) return false;
+  const decoded = decodeCssEscapes(decodeHtmlEntitiesDeep(trimmed));
+  const safe = sanitizeUri(decoded, { allowImageDataUri: true });
+  return safe !== 'about:blank';
+}
+
+function isIdentBoundaryBefore(str: string, idx: number): boolean {
+  return idx === 0 || !/[a-zA-Z0-9_-]/.test(str[idx - 1]);
+}
+
+function isDeclBoundaryBefore(str: string, idx: number): boolean {
+  let i = idx - 1;
+  while (i >= 0 && /\s/.test(str[i])) i--;
+  return i < 0 || str[i] === ';' || str[i] === '{' || str[i] === '}';
+}
+
+function sanitizeNormalizedCss(str: string): string {
+  let out = '';
+  let quote: string | null = null;
+  let i = 0;
+
+  while (i < str.length) {
+    const ch = str[i];
+
+    if (quote) {
+      out += ch;
+      if (ch === '\\' && i + 1 < str.length) {
+        out += str[i + 1];
+        i += 2;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      i++;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      out += ch;
+      i++;
+      continue;
+    }
+
+    if (ch === '@' && isIdentBoundaryBefore(str, i)) {
+      const atMatch = /^@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/i.exec(str.slice(i));
+      if (atMatch) {
+        i = findDeclarationEnd(str, i) + 1;
+        continue;
+      }
+    }
+
+    if (isDeclBoundaryBefore(str, i)) {
+      const propMatch = /^(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/i.exec(str.slice(i));
+      if (propMatch) {
+        i = findDeclarationEnd(str, i) + 1;
+        continue;
+      }
+    }
+
+    if (isIdentBoundaryBefore(str, i)) {
+      const exprMatch = /^(?:expression|progid\s*:)/i.exec(str.slice(i));
+      if (exprMatch) {
+        if (exprMatch[0].toLowerCase().startsWith('expression')) {
+          const afterKw = str.slice(i + 'expression'.length);
+          const wsMatch = /^\s*\(/.exec(afterKw);
+          if (wsMatch) {
+            const openIdx = i + 'expression'.length + wsMatch[0].length - 1;
+            i = findMatchingParen(str, openIdx) + 1;
+            continue;
+          }
+        } else {
+          const end = findDeclarationEnd(str, i);
+          i = str[end] === ';' ? end : end + 1;
+          continue;
+        }
+      }
+
+      const urlMatch = /^url\s*\(/i.exec(str.slice(i));
+      if (urlMatch) {
+        const openIdx = i + urlMatch[0].length - 1;
+        const closeIdx = findMatchingParen(str, openIdx);
+        const inner = str.slice(openIdx + 1, closeIdx);
+        out += sanitizeCssUrlArgument(inner) ? str.slice(i, closeIdx + 1) : 'url("")';
+        i = closeIdx + 1;
+        continue;
+      }
+
+      const imgSetMatch = /^(?:-webkit-)?image-set\s*\(/i.exec(str.slice(i));
+      if (imgSetMatch) {
+        const openIdx = i + imgSetMatch[0].length - 1;
+        const closeIdx = findMatchingParen(str, openIdx);
+        const inner = str.slice(openIdx + 1, closeIdx);
+        let sanitizedInner = sanitizeNormalizedCss(inner);
+        sanitizedInner = sanitizedInner.replace(/(["'])((?:\\.|(?!\1)[^\\])*)\1/g, (qFull, _q, qVal: string) => {
+          return sanitizeCssUrlArgument(qVal) ? qFull : '""';
+        });
+        out += str.slice(i, openIdx + 1) + sanitizedInner + ')';
+        i = closeIdx + 1;
+        continue;
+      }
+    }
+
+    out += ch;
+    i++;
+  }
+
+  return out;
+}
+
 /**
  * Sanitizes inline CSS or style strings against script execution vectors
- * (such as expression(), url(javascript:), behavior:, and @import).
- * Employs multi-pass normalization, CSS comment stripping, backslash escape decoding,
- * and comprehensive URL validation (NEW-001).
+ * (`expression()`, `url(javascript:)`, `behavior:`, `@import`, backslash CSS escapes, and nested parens).
+ * Uses balanced CSS tokenization instead of unsafe lazy regexes (NEW-001).
  */
 export function sanitizeCssStyle(css: unknown): string {
   if (css === null || css === undefined) return '';
-  let str = String(css);
-  let prev = '';
-  let iterations = 0;
+  let str = decodeHtmlEntitiesDeep(String(css));
 
-  while (str !== prev && iterations < 5) {
-    prev = str;
-    iterations++;
-
-    // 1. Strip CSS comments (/* ... */) to prevent token splitting bypasses (e.g. exp/* */ression)
-    let normalized = str.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    // 2. Decode CSS escapes and HTML entities for keyword detection
-    const decoded = decodeCssEscapes(decodeHtmlEntities(normalized));
-
-    // 3. Remove dangerous properties, functions, and at-rules
-    if (/expression\s*\(|behavior\s*:|-moz-binding\s*:|-webkit-binding\s*:|binding\s*:|@import\b|@charset\b|@namespace\b/i.test(decoded)) {
-      normalized = normalized
-        .replace(/expression\s*\(.*?\)/gis, '')
-        .replace(/behavior\s*:[^;}]*/gis, '')
-        .replace(/-moz-binding\s*:[^;}]*/gis, '')
-        .replace(/-webkit-binding\s*:[^;}]*/gis, '')
-        .replace(/binding\s*:[^;}]*/gis, '')
-        .replace(/@import\b[^;}]*;?/gis, '')
-        .replace(/@charset\b[^;}]*;?/gis, '')
-        .replace(/@namespace\b[^;}]*;?/gis, '');
-    }
-
-    // 4. Sanitize url(...) declarations against javascript:, vbscript:, and unsafe data: schemes
-    normalized = normalized.replace(/url\s*\(\s*(["']?)([\s\S]*?)\1\s*\)/gi, (fullMatch, _quote, rawUrl) => {
-      const cleanUrl = decodeCssEscapes(decodeHtmlEntities(rawUrl)).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
-      if (/^(javascript|vbscript):/i.test(cleanUrl)) {
-        return 'url("")';
-      }
-      if (/^data:/i.test(cleanUrl) && !SAFE_IMAGE_DATA_URI.test(cleanUrl)) {
-        return 'url("")';
-      }
-      return fullMatch;
-    });
-
-    str = normalized;
+  for (let pass = 0; pass < 3; pass++) {
+    const next = decodeCssEscapesOutsideStrings(stripCssCommentsOutsideStrings(str));
+    if (next === str) break;
+    str = next;
   }
 
-  return str;
+  return sanitizeNormalizedCss(str).trim();
 }
 
 /**
@@ -470,164 +791,710 @@ export function escapeForScriptPayload(jsonString: string): string {
 
 export const escapeJsonStringForScript = escapeForScriptPayload;
 
-const SAFE_IMAGE_DATA_URI = /^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=]+$/i;
+/** Shared canonical URL-bearing HTML attributes (NEW-002). */
+export const URL_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'href',
+  'src',
+  'action',
+  'formaction',
+  'data',
+  'poster',
+  'codebase',
+  'background',
+  'cite',
+  'longdesc',
+  'profile',
+  'usemap',
+  'xlink:href',
+  'xml:base',
+  'ping',
+  'dynsrc',
+  'lowsrc'
+]);
 
-const URL_ATTRS_PATTERN = /\b(href|src|action|formaction|data|poster|codebase|background|cite|longdesc|profile|usemap|xlink:href|xml:base|ping)\s*=\s*(?:("|\')([\s\S]*?)\2|([^\s>]+))/gis;
-const SRCSET_PATTERN = /\b(srcset)\s*=\s*(?:("|\')([\s\S]*?)\2|([^\s>]+))/gis;
+/** Compound srcset attributes. */
+export const SRCSET_ATTRIBUTES: ReadonlySet<string> = new Set(['srcset', 'imagesrcset']);
+
+/** Shared dangerous tags stripped in untrusted rich-HTML mode. */
+export const DANGEROUS_HTML_TAGS: ReadonlySet<string> = new Set([
+  'script',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+  'form',
+  'input',
+  'textarea',
+  'button',
+  'select',
+  'option',
+  'optgroup',
+  'fieldset',
+  'label',
+  'datalist',
+  'output',
+  'base',
+  'link',
+  'meta',
+  'applet',
+  'noscript',
+  'noembed',
+  'noframes',
+  'xmp',
+  'plaintext',
+  'title',
+  'portal',
+  'frame',
+  'frameset',
+  'basefont',
+  'bgsound',
+  'slot',
+  'template',
+  'foreignobject',
+  'animate',
+  'animatemotion',
+  'animatetransform',
+  'set',
+  'discard',
+  'handler',
+  'listener',
+  'mpath',
+  'feimage',
+  'annotation-xml'
+]);
+
+/** Shared dangerous executable tags stripped even in developer-authored templates. */
+export const DANGEROUS_TEMPLATE_TAGS: ReadonlySet<string> = new Set([
+  'script',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+  'base',
+  'link',
+  'meta',
+  'applet',
+  'noscript',
+  'noembed',
+  'noframes',
+  'xmp',
+  'plaintext',
+  'title',
+  'portal',
+  'frame',
+  'frameset',
+  'basefont',
+  'bgsound',
+  'foreignobject',
+  'animate',
+  'animatemotion',
+  'animatetransform',
+  'set',
+  'discard',
+  'handler',
+  'listener',
+  'mpath',
+  'feimage',
+  'annotation-xml'
+]);
+
+const RAWTEXT_STRIP_TAGS: ReadonlySet<string> = new Set([
+  'script',
+  'style',
+  'xmp',
+  'noembed',
+  'noframes',
+  'noscript',
+  'iframe',
+  'plaintext'
+]);
+
+const VOID_HTML_TAGS: ReadonlySet<string> = new Set([
+  'area',
+  'base',
+  'basefont',
+  'bgsound',
+  'br',
+  'col',
+  'embed',
+  'frame',
+  'hr',
+  'img',
+  'input',
+  'keygen',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+]);
+
+const COMPILER_SLOT_COMMENT_RE = /^<!-- (?:dynamic|component|show|for)-slot -->$/;
+
+/**
+ * Sanitizes compound `srcset` / `imagesrcset` attribute strings without corrupting `data:image/...;base64,...` commas.
+ */
+export function sanitizeSrcset(rawVal: string): string {
+  const candidates: string[] = [];
+  let i = 0;
+  const len = rawVal.length;
+
+  while (i < len) {
+    while (i < len && (rawVal[i] === ',' || /\s/.test(rawVal[i]))) i++;
+    if (i >= len) break;
+
+    const urlStart = i;
+    while (i < len && !/\s/.test(rawVal[i])) i++;
+    let urlToken = rawVal.slice(urlStart, i);
+
+    let trailingCommas = false;
+    // Strip trailing commas unless inside a data URI payload without whitespace
+    while (urlToken.endsWith(',') && !urlToken.toLowerCase().startsWith('data:')) {
+      urlToken = urlToken.slice(0, -1);
+      trailingCommas = true;
+    }
+    if (urlToken.toLowerCase().startsWith('data:') && urlToken.endsWith(',')) {
+      urlToken = urlToken.slice(0, -1);
+      trailingCommas = true;
+    }
+
+    let descriptor = '';
+    if (!trailingCommas) {
+      const descStart = i;
+      while (i < len && rawVal[i] !== ',') i++;
+      descriptor = rawVal.slice(descStart, i).trim();
+      if (i < len && rawVal[i] === ',') i++;
+    }
+
+    const decodedUrl = decodeHtmlEntitiesDeep(urlToken);
+    const safeUrl = sanitizeUri(decodedUrl, { allowImageDataUri: true });
+    const emittedUrl = safeUrl === 'about:blank' ? 'about:blank' : urlToken;
+    candidates.push(descriptor ? `${emittedUrl} ${descriptor}` : emittedUrl);
+  }
+
+  return candidates.join(', ');
+}
+
+interface ParsedAttr {
+  name: string;
+  hasValue: boolean;
+  value: string;
+}
+
+interface ParsedTagResult {
+  tagName: string;
+  attrs: ParsedAttr[];
+  selfClosing: boolean;
+  nextIndex: number;
+  abortedAtLt: boolean;
+}
+
+function parseOpenTag(html: string, startLt: number): ParsedTagResult | null {
+  const len = html.length;
+  let i = startLt + 1;
+  const tagStart = i;
+  if (i >= len || !/[a-zA-Z]/.test(html[i])) return null;
+
+  while (i < len && !/[\s/>]/.test(html[i]) && html[i] !== '<') i++;
+  if (i < len && html[i] === '<') {
+    return { tagName: html.slice(tagStart, i), attrs: [], selfClosing: false, nextIndex: i, abortedAtLt: true };
+  }
+  const tagName = html.slice(tagStart, i);
+  const attrs: ParsedAttr[] = [];
+  let selfClosing = false;
+
+  while (i < len) {
+    while (i < len && (/\s/.test(html[i]) || html[i] === '/')) {
+      if (html[i] === '/' && html[i + 1] === '>') {
+        selfClosing = true;
+        return { tagName, attrs, selfClosing, nextIndex: i + 2, abortedAtLt: false };
+      }
+      i++;
+    }
+    if (i >= len) break;
+    if (html[i] === '>') {
+      return { tagName, attrs, selfClosing, nextIndex: i + 1, abortedAtLt: false };
+    }
+    if (html[i] === '<') {
+      return { tagName, attrs, selfClosing: false, nextIndex: i, abortedAtLt: true };
+    }
+
+    const attrStart = i;
+    while (i < len && !/[\s=/>]/.test(html[i]) && html[i] !== '<') i++;
+    if (i < len && html[i] === '<') {
+      return { tagName, attrs, selfClosing: false, nextIndex: i, abortedAtLt: true };
+    }
+    const attrName = html.slice(attrStart, i);
+
+    while (i < len && /\s/.test(html[i])) i++;
+    if (i < len && html[i] === '=') {
+      i++;
+      while (i < len && /\s/.test(html[i])) i++;
+      if (i >= len) {
+        if (attrName) attrs.push({ name: attrName, hasValue: true, value: '' });
+        break;
+      }
+
+      let attrValue = '';
+      if (html[i] === '"' || html[i] === "'") {
+        const quote = html[i++];
+        const valStart = i;
+        while (i < len && html[i] !== quote) i++;
+        attrValue = html.slice(valStart, i);
+        if (i < len && html[i] === quote) i++;
+      } else {
+        const valStart = i;
+        while (i < len && !/[\s>]/.test(html[i])) {
+          if (html[i] === '/' && html[i + 1] === '>') break;
+          i++;
+        }
+        attrValue = html.slice(valStart, i);
+      }
+      if (attrName) attrs.push({ name: attrName, hasValue: true, value: attrValue });
+    } else {
+      if (attrName) attrs.push({ name: attrName, hasValue: false, value: '' });
+    }
+  }
+
+  return { tagName, attrs, selfClosing: false, nextIndex: len, abortedAtLt: false };
+}
+
+function escapeSerializedAttrValue(val: string): string {
+  return val.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function sanitizeAttributeList(
+  attrs: ParsedAttr[],
+  options: { preserveAllFormAttrs: boolean; onlySanitizeUrls?: boolean }
+): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+
+  for (const attr of attrs) {
+    if (!/^[a-zA-Z_:][a-zA-Z0-9_.:-]*$/.test(attr.name)) continue;
+    const lower = attr.name.toLowerCase();
+    if (seen.has(lower)) continue;
+    seen.add(lower);
+
+    if (!options.onlySanitizeUrls) {
+      if (lower.startsWith('on') || lower === 'srcdoc') continue;
+      if (!options.preserveAllFormAttrs && lower === 'formaction') continue;
+    }
+
+    if (!attr.hasValue) {
+      parts.push(attr.name);
+      continue;
+    }
+
+    if (SRCSET_ATTRIBUTES.has(lower)) {
+      parts.push(`${attr.name}="${escapeSerializedAttrValue(sanitizeSrcset(attr.value))}"`);
+      continue;
+    }
+
+    if (URL_ATTRIBUTES.has(lower)) {
+      if (lower === 'ping') {
+        const safePing = attr.value
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((tok) => {
+            const safe = sanitizeUri(decodeHtmlEntitiesDeep(tok), { allowImageDataUri: true });
+            return safe === 'about:blank' ? 'about:blank' : tok;
+          })
+          .join(' ');
+        parts.push(`${attr.name}="${escapeSerializedAttrValue(safePing)}"`);
+      } else {
+        const safe = sanitizeUri(decodeHtmlEntitiesDeep(attr.value), { allowImageDataUri: true });
+        const finalVal = safe === 'about:blank' ? 'about:blank' : attr.value;
+        parts.push(`${attr.name}="${escapeSerializedAttrValue(finalVal)}"`);
+      }
+      continue;
+    }
+
+    if (lower === 'style' && !options.onlySanitizeUrls) {
+      parts.push(`${attr.name}="${escapeSerializedAttrValue(sanitizeCssStyle(attr.value))}"`);
+      continue;
+    }
+
+    parts.push(`${attr.name}="${escapeSerializedAttrValue(attr.value)}"`);
+  }
+
+  return parts.length > 0 ? ' ' + parts.join(' ') : '';
+}
+
+function findRawtextClose(html: string, start: number, tagLower: string): number {
+  const len = html.length;
+  let i = start;
+  while (i < len) {
+    const closeStart = html.indexOf('</', i);
+    if (closeStart === -1) return len;
+    const afterNameIdx = closeStart + 2 + tagLower.length;
+    if (
+      afterNameIdx <= len &&
+      html.slice(closeStart + 2, afterNameIdx).toLowerCase() === tagLower &&
+      (afterNameIdx === len || /[\s/>]/.test(html[afterNameIdx]))
+    ) {
+      const gt = html.indexOf('>', afterNameIdx);
+      return gt === -1 ? len : gt + 1;
+    }
+    i = closeStart + 2;
+  }
+  return len;
+}
+
+function findStrippedElementEnd(html: string, start: number, tagLower: string): number {
+  let depth = 1;
+  let i = start;
+  const len = html.length;
+
+  while (i < len && depth > 0) {
+    const lt = html.indexOf('<', i);
+    if (lt === -1) return len;
+
+    if (html.startsWith('</', lt)) {
+      let j = lt + 2;
+      while (j < len && !/[\s>]/.test(html[j])) j++;
+      const closeName = html.slice(lt + 2, j).toLowerCase();
+      const gt = html.indexOf('>', j);
+      i = gt === -1 ? len : gt + 1;
+      if (closeName === tagLower) {
+        depth--;
+        if (depth === 0) return i;
+      }
+      continue;
+    }
+
+    const parsed = parseOpenTag(html, lt);
+    if (parsed && !parsed.abortedAtLt) {
+      if (parsed.tagName.toLowerCase() === tagLower && !parsed.selfClosing) {
+        depth++;
+      }
+      i = parsed.nextIndex;
+      continue;
+    }
+
+    i = lt + 1;
+  }
+
+  return len;
+}
+
+function findCommentEnd(html: string, startAfterBangDash: number): number {
+  const len = html.length;
+  if (html[startAfterBangDash] === '>') return startAfterBangDash + 1;
+  if (html.startsWith('->', startAfterBangDash)) return startAfterBangDash + 2;
+  for (let i = startAfterBangDash; i < len; i++) {
+    if (html.startsWith('-->', i)) return i + 3;
+    if (html.startsWith('--!>', i)) return i + 4;
+  }
+  return len;
+}
+
+function sanitizeHtmlWithTokenizer(
+  html: string,
+  options: { dangerousTags: ReadonlySet<string>; preserveCompilerSlots: boolean; preserveAllFormAttrs: boolean }
+): string {
+  const len = html.length;
+  let out = '';
+  let i = 0;
+  const foreignStack: ('svg' | 'math')[] = [];
+
+  while (i < len) {
+    const lt = html.indexOf('<', i);
+    if (lt === -1) {
+      out += html.slice(i);
+      break;
+    }
+
+    if (lt > i) {
+      out += html.slice(i, lt);
+      i = lt;
+    }
+
+    // Comments, CDATA, DOCTYPE, conditional comments
+    if (html.startsWith('<!--', i)) {
+      const commentEnd = findCommentEnd(html, i + 4);
+      const fullComment = html.slice(i, commentEnd);
+      if (options.preserveCompilerSlots && COMPILER_SLOT_COMMENT_RE.test(fullComment)) {
+        out += fullComment;
+      }
+      i = commentEnd;
+      continue;
+    }
+
+    if (html.slice(i, i + 9).toUpperCase() === '<![CDATA[') {
+      const cdataEnd = html.indexOf(']]>', i + 9);
+      i = cdataEnd === -1 ? len : cdataEnd + 3;
+      continue;
+    }
+
+    if (html.startsWith('<!', i) || html.startsWith('<?', i)) {
+      const gt = html.indexOf('>', i + 2);
+      i = gt === -1 ? len : gt + 1;
+      continue;
+    }
+
+    // Closing tags
+    if (html.startsWith('</', i)) {
+      let j = i + 2;
+      while (j < len && !/[\s>]/.test(html[j]) && html[j] !== '<') j++;
+      if (j < len && html[j] === '<') {
+        out += '&lt;' + html.slice(i + 1, j);
+        i = j;
+        continue;
+      }
+      const closeName = html.slice(i + 2, j).toLowerCase();
+      const gt = html.indexOf('>', j);
+      i = gt === -1 ? len : gt + 1;
+
+      if (!closeName || !/^[a-zA-Z][a-zA-Z0-9:-]*$/.test(closeName)) continue;
+      if (options.dangerousTags.has(closeName)) continue;
+
+      if (closeName === 'svg' || closeName === 'math') {
+        const idx = foreignStack.lastIndexOf(closeName);
+        if (idx !== -1) foreignStack.splice(idx, 1);
+      }
+      out += `</${closeName}>`;
+      continue;
+    }
+
+    // Opening tag
+    const parsed = parseOpenTag(html, i);
+    if (!parsed) {
+      // Stray `<` not opening a tag (e.g. `<<script>` or `< 5`)
+      out += html[i + 1] === '<' ? '&lt;' : '<';
+      i++;
+      continue;
+    }
+
+    if (parsed.abortedAtLt) {
+      // Neutralize unclosed `<` before another `<` so stripping never coalesces tags (mXSS defense)
+      out += '&lt;' + html.slice(i + 1, parsed.nextIndex);
+      i = parsed.nextIndex;
+      continue;
+    }
+
+    const lowerTag = parsed.tagName.toLowerCase();
+    const inForeign = foreignStack.length > 0;
+    i = parsed.nextIndex;
+
+    if (options.dangerousTags.has(lowerTag)) {
+      if (lowerTag === 'plaintext') {
+        i = len;
+        break;
+      }
+      if (VOID_HTML_TAGS.has(lowerTag) || (inForeign && parsed.selfClosing)) {
+        continue;
+      }
+      if (RAWTEXT_STRIP_TAGS.has(lowerTag)) {
+        i = findRawtextClose(html, i, lowerTag);
+      } else {
+        i = findStrippedElementEnd(html, i, lowerTag);
+      }
+      continue;
+    }
+
+    if (!parsed.selfClosing && (lowerTag === 'svg' || lowerTag === 'math')) {
+      foreignStack.push(lowerTag);
+    }
+
+    // RCDATA textarea when preserved in template mode: escape body text up to </textarea>
+    const serializedAttrs = sanitizeAttributeList(parsed.attrs, {
+      preserveAllFormAttrs: options.preserveAllFormAttrs
+    });
+
+    if (lowerTag === 'textarea' && !parsed.selfClosing) {
+      const closeEnd = findRawtextClose(html, i, 'textarea');
+      const closeTagIdx = html.slice(i, closeEnd).toLowerCase().lastIndexOf('</textarea');
+      const innerRaw = closeTagIdx === -1 ? html.slice(i, closeEnd) : html.slice(i, i + closeTagIdx);
+      out += `<${parsed.tagName}${serializedAttrs}>${escapeHtmlText(innerRaw)}</textarea>`;
+      i = closeEnd;
+      continue;
+    }
+
+    out += `<${parsed.tagName}${serializedAttrs}${parsed.selfClosing && inForeign ? ' />' : '>'}`;
+  }
+
+  return out;
+}
 
 /**
  * Sanitizes all URL-bearing attributes in HTML strings, including standard attributes
- * and compound srcset attributes (NEW-002).
+ * and compound `srcset` attributes (NEW-002), using stateful tag/attribute tokenization.
  */
 export function sanitizeHtmlUrlAttributes(html: string): string {
-  let res = html.replace(URL_ATTRS_PATTERN, (match, attr, quote, innerQuoted, unquoted) => {
-    const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
-    const decoded = decodeHtmlEntities(rawVal).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
-    if (/^(javascript|vbscript):/i.test(decoded)) {
-      return `${attr}="about:blank"`;
-    }
-    if (/^data:/i.test(decoded)) {
-      if (!SAFE_IMAGE_DATA_URI.test(decoded)) {
-        return `${attr}="about:blank"`;
-      }
-    }
-    return match;
-  });
+  if (!html) return '';
+  const len = html.length;
+  let out = '';
+  let i = 0;
 
-  // Comprehensive srcset handling (NEW-002)
-  res = res.replace(SRCSET_PATTERN, (match, attr, quote, innerQuoted, unquoted) => {
-    const rawVal = innerQuoted !== undefined ? innerQuoted : unquoted;
-    const parts = rawVal.split(',');
-    const sanitizedParts = parts.map((part: string) => {
-      const trimmedPart = part.trim();
-      const spaceIdx = trimmedPart.search(/\s/);
-      const urlCandidate = spaceIdx === -1 ? trimmedPart : trimmedPart.slice(0, spaceIdx);
-      const descriptor = spaceIdx === -1 ? '' : trimmedPart.slice(spaceIdx);
-
-      const decodedUrl = decodeHtmlEntities(urlCandidate).replace(/[\u0000-\u0020\u007F-\u009F\s]/g, '');
-      if (/^(javascript|vbscript):/i.test(decodedUrl) || (/^data:/i.test(decodedUrl) && !SAFE_IMAGE_DATA_URI.test(decodedUrl))) {
-        return `about:blank${descriptor}`;
-      }
-      return `${urlCandidate}${descriptor}`;
+  while (i < len) {
+    const lt = html.indexOf('<', i);
+    if (lt === -1) {
+      out += html.slice(i);
+      break;
+    }
+    if (lt > i) {
+      out += html.slice(i, lt);
+      i = lt;
+    }
+    if (html.startsWith('<!--', i)) {
+      const end = findCommentEnd(html, i + 4);
+      out += html.slice(i, end);
+      i = end;
+      continue;
+    }
+    if (html.startsWith('</', i) || html.startsWith('<!', i) || html.startsWith('<?', i)) {
+      const gt = html.indexOf('>', i + 2);
+      const end = gt === -1 ? len : gt + 1;
+      out += html.slice(i, end);
+      i = end;
+      continue;
+    }
+    const parsed = parseOpenTag(html, i);
+    if (!parsed || parsed.abortedAtLt) {
+      out += parsed ? html.slice(i, parsed.nextIndex) : '<';
+      i = parsed ? parsed.nextIndex : i + 1;
+      continue;
+    }
+    const serializedAttrs = sanitizeAttributeList(parsed.attrs, {
+      preserveAllFormAttrs: true,
+      onlySanitizeUrls: true
     });
-    return `${attr}="${sanitizedParts.join(', ')}"`;
-  });
+    out += `<${parsed.tagName}${serializedAttrs}${parsed.selfClosing ? ' />' : '>'}`;
+    i = parsed.nextIndex;
+  }
 
-  return res;
+  return out;
 }
 
 /**
- * Neutralizes mXSS CDATA sections, downlevel conditional comments, and HTML comments.
- * Preserves only exact Samrey compiler slot anchor comments when `preserveCompilerSlots` is true.
- */
-function stripMxssCommentsAndCdata(html: string, preserveCompilerSlots: boolean): string {
-  return html
-    .replace(/<!\[CDATA\[[\s\S]*?(?:\]\]>|$)/gi, '')
-    .replace(/<!\[[^\]]*\]>/gi, '')
-    .replace(/<!--(?:>|->|[\s\S]*?(?:--!?>|$))/g, (match) => {
-      if (preserveCompilerSlots && /^<!-- (?:dynamic|component|show|for)-slot -->$/.test(match)) {
-        return match;
-      }
-      return '';
-    });
-}
-
-/**
- * Strips dangerous HTML tags and attributes for rich text boundaries.
- * Employs multi-pass convergence to prevent nested tag/attribute bypasses (EXT-003)
- * and strips CDATA/comment mXSS vectors.
+ * Strips dangerous HTML tags and attributes for rich text boundaries using
+ * multi-pass stateful HTML tokenization (no space-delimiter or quoted-`>` regex bypasses).
  */
 export function sanitizeHtmlString(html: string): string {
   if (!html) return '';
 
-  let str = html;
-  let prev = '';
-  let iterations = 0;
-
-  while (str !== prev && iterations < 5) {
-    prev = str;
-    iterations++;
-
-    // 0. Strip CDATA blocks, downlevel conditional comments, and HTML5/malformed comments (mXSS hardening)
-    str = stripMxssCommentsAndCdata(str, false);
-
-    // 1. Strip dangerous tags and their content (including parser-switching rawtext tags)
-    str = str
-      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet|noscript|noembed|noframes|xmp|plaintext)\b[^>]*>.*?<\/\1>/gis, '')
-      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet|noscript|noembed|noframes|xmp|plaintext)\b[^>]*\/?>/gis, '')
-      // Neutralize SVG and MathML script/execution payloads
-      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
-        return match
-          .replace(/<script\b[^>]*>.*?<\/script>/gis, '')
-          .replace(/[\s/]+(on[a-zA-Z0-9_\-]+|xlink:href)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
-      })
-      .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gis, (match) => {
-        return match.replace(/<script\b[^>]*>.*?<\/script>/gis, '');
-      });
-
-    // 2. Strip all inline on* event handlers, formaction, and srcdoc
-    str = str.replace(/[\s/]+(on[a-zA-Z0-9_\-]+|formaction|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
-
-    // 3. Sanitize all URL-bearing attributes and srcset (NEW-002)
-    str = sanitizeHtmlUrlAttributes(str);
-
-    // 4. Sanitize inline style attributes (NEW-001)
-    str = str.replace(/\b(style)\s*=\s*(["'])([\s\S]*?)\2/gis, (_, attr, quote, css) => {
-      return `${attr}=${quote}${sanitizeCssStyle(css)}${quote}`;
+  let str = String(html);
+  for (let pass = 0; pass < 4; pass++) {
+    const next = sanitizeHtmlWithTokenizer(str, {
+      dangerousTags: DANGEROUS_HTML_TAGS,
+      preserveCompilerSlots: false,
+      preserveAllFormAttrs: false
     });
+    if (next === str) return next;
+    str = next;
   }
 
   return str;
 }
 
 /**
- * Sanitizes template HTML skeletons used by compile-time and runtime template() cloning (EXT-002).
- * Preserves interactive UI tags (<button ref="...">, <input>, <form>, <textarea>, <svg>, <path>, ref attributes)
- * and compiler slot markers (<!-- show-slot -->, etc.),
- * while strictly stripping executable tags (<script>, <object>, <embed>, <applet>, <base>, <meta>, <iframe>),
- * CDATA/malformed comment mXSS vectors, all inline on* event handlers, dangerous schemes, and CSS injection.
+ * Sanitizes template HTML skeletons used by compile-time and runtime `template()` cloning (EXT-002).
+ * Preserves interactive UI tags (`<button ref="...">`, `<input>`, `<form>`, `<textarea>`, `<svg>`, `<path>`)
+ * and exact compiler slot markers (`<!-- show-slot -->`, etc.),
+ * while strictly stripping executable tags (`<script>`, `<style>`, `<object>`, `<embed>`, `<applet>`, `<base>`, `<meta>`, `<iframe>`, SVG `<animate>`/`<foreignObject>`),
+ * CDATA/malformed comment mXSS vectors, all inline `on*` event handlers, dangerous URI schemes, and CSS injection.
  */
 export function sanitizeTemplateHtml(html: string): string {
   if (!html) return '';
 
-  let str = html;
-  let prev = '';
-  let iterations = 0;
-
-  while (str !== prev && iterations < 5) {
-    prev = str;
-    iterations++;
-
-    // 0. Strip CDATA blocks, conditional comments, and arbitrary/malformed comments while preserving compiler slot markers
-    str = stripMxssCommentsAndCdata(str, true);
-
-    // 1. Strip strictly dangerous executable tags and their contents
-    str = str
-      .replace(/<(script|object|embed|applet|base|meta|iframe|noembed|noframes|xmp|plaintext)\b[^>]*>.*?<\/\1>/gis, '')
-      .replace(/<(script|object|embed|applet|base|meta|iframe|noembed|noframes|xmp|plaintext)\b[^>]*\/?>/gis, '')
-      // Neutralize any scripts inside SVG or MathML
-      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
-        return match
-          .replace(/<script\b[^>]*>.*?<\/script>/gis, '')
-          .replace(/[\s/]+(on[a-zA-Z0-9_\-]+|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
-      })
-      .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gis, (match) => {
-        return match.replace(/<script\b[^>]*>.*?<\/script>/gis, '');
-      });
-
-    // 2. Strip all inline on* event handlers and srcdoc
-    str = str.replace(/[\s/]+(on[a-zA-Z0-9_\-]+|srcdoc)\s*=\s*(["'][^"']*["']|[^\s>]+)/gis, '');
-
-    // 3. Sanitize URL-bearing attributes
-    str = sanitizeHtmlUrlAttributes(str);
-
-    // 4. Sanitize inline style attributes
-    str = str.replace(/\b(style)\s*=\s*(["'])([\s\S]*?)\2/gis, (_, attr, quote, css) => {
-      return `${attr}=${quote}${sanitizeCssStyle(css)}${quote}`;
+  let str = String(html);
+  for (let pass = 0; pass < 4; pass++) {
+    const next = sanitizeHtmlWithTokenizer(str, {
+      dangerousTags: DANGEROUS_TEMPLATE_TAGS,
+      preserveCompilerSlots: true,
+      preserveAllFormAttrs: true
     });
+    if (next === str) return next;
+    str = next;
   }
 
   return str;
+}
+
+const ALLOWED_SSR_HEAD_TAGS: ReadonlySet<string> = new Set(['meta', 'link', 'base']);
+
+/**
+ * Sanitizes SSR `<head>` custom markup (`options.headTags`), permitting only safe
+ * metadata elements (`<meta>`, `<link>`, `<base>`) while stripping `<script>`,
+ * inline handlers, `<meta http-equiv="refresh">`, `<link rel="import">`, and
+ * free-form text that could break out of `<head>` in HTML5 parsers (Bug 8c).
+ */
+export function sanitizeHeadTags(headHtml: string): string {
+  if (!headHtml) return '';
+  const html = String(headHtml);
+  const len = html.length;
+  const tags: string[] = [];
+  let i = 0;
+
+  while (i < len) {
+    const lt = html.indexOf('<', i);
+    if (lt === -1) break;
+    i = lt;
+
+    if (html.startsWith('<!--', i)) {
+      i = findCommentEnd(html, i + 4);
+      continue;
+    }
+    if (html.slice(i, i + 9).toUpperCase() === '<![CDATA[') {
+      const end = html.indexOf(']]>', i + 9);
+      i = end === -1 ? len : end + 3;
+      continue;
+    }
+    if (html.startsWith('</', i) || html.startsWith('<!', i) || html.startsWith('<?', i)) {
+      const gt = html.indexOf('>', i + 2);
+      i = gt === -1 ? len : gt + 1;
+      continue;
+    }
+
+    const parsed = parseOpenTag(html, i);
+    if (!parsed || parsed.abortedAtLt) {
+      i = parsed ? parsed.nextIndex : i + 1;
+      continue;
+    }
+
+    const lowerTag = parsed.tagName.toLowerCase();
+    i = parsed.nextIndex;
+
+    if (!ALLOWED_SSR_HEAD_TAGS.has(lowerTag)) {
+      if (lowerTag === 'plaintext') break;
+      if (!VOID_HTML_TAGS.has(lowerTag)) {
+        if (RAWTEXT_STRIP_TAGS.has(lowerTag)) {
+          i = findRawtextClose(html, i, lowerTag);
+        } else {
+          i = findStrippedElementEnd(html, i, lowerTag);
+        }
+      }
+      continue;
+    }
+
+    if (lowerTag === 'meta') {
+      const httpEquivAttr = parsed.attrs.find((a) => a.name.toLowerCase() === 'http-equiv');
+      if (httpEquivAttr) {
+        const val = decodeHtmlEntitiesDeep(httpEquivAttr.value).trim().toLowerCase();
+        if (val === 'refresh' || val === 'set-cookie' || val === 'link') {
+          continue;
+        }
+      }
+    }
+
+    if (lowerTag === 'link') {
+      const relAttr = parsed.attrs.find((a) => a.name.toLowerCase() === 'rel');
+      if (relAttr) {
+        const relTokens = decodeHtmlEntitiesDeep(relAttr.value).toLowerCase().split(/\s+/);
+        if (relTokens.includes('import')) {
+          continue;
+        }
+      }
+    }
+
+    const serializedAttrs = sanitizeAttributeList(parsed.attrs, { preserveAllFormAttrs: false });
+    tags.push(`<${lowerTag}${serializedAttrs}>`);
+  }
+
+  return tags.join('\n  ');
 }
 
 export const sanitizeHtml = sanitizeHtmlString;

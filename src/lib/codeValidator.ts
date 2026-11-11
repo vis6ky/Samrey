@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @samrey/doc - Samrey v2.0.0 Code & AST Validation Engine
+ * @samrey/doc - Samrey v2.1.0 Code & AST Validation Engine
  *
  * Implements real client-side validation for generated TypeScript / Samrey code:
  * 1. Syntax & Structural Balance (parentheses, braces, brackets, quotes)
- * 2. Symbol & Package Audit (grounded exclusively against @samrey/* v2.0.0 exports)
+ * 2. Symbol & Package Audit (grounded exclusively against @samrey/* v2.1.0 exports)
  * 3. Hallucination & Legacy Name Audit (blocks @aether/*, invent-a-hook, etc.)
  * 4. Foreign Framework Detection (React, Vue, Angular, Svelte, Solid, Redux, RxJS, etc.)
  * 5. Samrey Reactivity Pattern Audit (warns against static unwrapped signal in el(), in-place array mutations)
@@ -222,12 +222,12 @@ export function validateSamreyCode(
         }
       }
     } else if (pkg.startsWith('@aether/')) {
-      errors.push(`Deprecated package \`${pkg}\`. Use official \`@samrey/*\` packages in v2.0.0.`);
+      errors.push(`Deprecated package \`${pkg}\`. Use official \`@samrey/*\` packages in v2.1.0.`);
     }
   }
 
   if (errors.length === 0 && auditedSymbols.length > 0) {
-    passedChecks.push(`Grounded against @samrey/* v2.0.0 (${auditedSymbols.length} symbols verified)`);
+    passedChecks.push(`Grounded against @samrey/* v2.1.0 (${auditedSymbols.length} symbols verified)`);
   }
 
   // 3. Foreign Framework Detection
@@ -267,7 +267,7 @@ export function validateSamreyCode(
 
   return {
     isValid,
-    badgeText: isValid ? '✓ Samrey v2.0.0 Verified' : '⚠ Generated solution needs correction',
+    badgeText: isValid ? '✓ Samrey v2.1.0 Verified' : '⚠ Generated solution needs correction',
     badgeStatus: isValid ? 'verified' : 'needs_correction',
     errors,
     warnings,

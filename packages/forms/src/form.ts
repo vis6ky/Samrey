@@ -39,7 +39,7 @@ export function createForm<TValues extends Record<string, any>>(
   }
 
   const isValid = computed(() => {
-    const fieldsValid = Object.values<FieldState<unknown>>(fields).every((f) => !f.error.value);
+    const fieldsValid = (Object.values(fields) as FieldState<unknown>[]).every((f) => !f.error.value);
     return fieldsValid && !formErrorSignal.value;
   });
 

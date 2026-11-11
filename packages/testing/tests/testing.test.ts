@@ -22,4 +22,17 @@ describe('@samrey/testing', () => {
     await flushReactivity();
     assert.equal(cleanedUp, true);
   });
+
+  it('supports renderTest alias cleanly', () => {
+    let cleaned = false;
+    const { container, unmount } = renderTest(() => {
+      onCleanup(() => {
+        cleaned = true;
+      });
+      return { ok: true };
+    });
+    assert.deepEqual(container, { ok: true });
+    unmount();
+    assert.equal(cleaned, true);
+  });
 });

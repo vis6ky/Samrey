@@ -31,6 +31,9 @@ Registers a cleanup handler for the active Owner.
 ### `compileTemplate(source: string, options?: CompileOptions): CompileResult`
 Parses JSX/HTML template markup into AIR representation, hoists static subtrees, and generates runtime code with source maps.
 
+### `lintAccessibility(tag: string, attributes: Record<string, string>): string[]` (alias `lintA11y`)
+Audits element tag names and attributes against accessibility rules (missing `alt`, unlabeled interactive anchors).
+
 ### `classifySecurityContext(attributeName: string, tagName: string): SecurityContext`
 Statically categorizes attribute or text bindings (HTML, URI, SafeAttr, CSS).
 
@@ -66,8 +69,14 @@ Surgically updates node `textContent` reactively.
 ### `bindAttr(element: Element, name: string, getter: () => unknown): void`
 Binds dynamic attribute values with runtime security validations.
 
-### `bindEvent(element: Element, eventName: string, handler: EventListener): void`
-Attaches an event listener bound to the active Owner lifecycle.
+### `on(element: EventTarget, eventName: string, handler: (event: Event) => void, options?: boolean | AddEventListenerOptions): void`
+Attaches an event listener bound to the active Owner lifecycle with automatic cleanup and hydration event retargeting. `bindEvent` is an alias for `on`.
+
+### `bindEvent`
+Alias for `on`.
+
+### `rawHtml(html: string | (() => string)): Node`
+Safely renders HTML fragments through `TrustedTypesPolicy.createHTML()` (executing `sanitizeHtmlString()`).
 
 ### `Show<T>(props: ShowProps<T>): Node`
 Declarative conditional rendering component.
@@ -91,20 +100,28 @@ Keyed list differential reconciliation component. Reconciles dynamic collections
 
 ## `@samrey/security`
 
-### `escapeHtmlText(str: string): string`
-Context-aware HTML escaping for text nodes (`&`, `<`, `>`, `"`, `'`).
+### `escapeHtmlText(str: unknown): string` / `escapeHtmlAttribute(str: unknown): string`
+Context-aware HTML escaping for text nodes (`&`, `<`, `>`) and HTML attributes (`&`, `<`, `>`, `"`, `'`, `` ` ``).
 
-### `sanitizeUri(uri: string, fallback?: string): string`
-Sanitizes URLs against `javascript:`, `vbscript:`, and `data:` schemes.
+### `sanitizeHtmlString(html: string): string` / `sanitizeHtml`
+Parser-based HTML sanitizer that removes unsafe tags (`<script>`, `<object>`, `<embed>`, `<form>`, etc.), inline `on*` event handlers, and dangerous URLs while preserving safe structural markup.
 
-### `sanitizeRedirectUri(uri: string, fallback?: string): string`
-Enforces relative same-origin redirect targets.
+### `sanitizeUri(rawUri: string | null | undefined, options?: SanitizeUriOptions): string`
+Validates resource-loading URIs. Blocks `javascript:`, `vbscript:`, `blob:`, and non-whitelisted `data:` schemes (including HTML/percent obfuscation). Returns `''` for null/empty input and `'about:blank'` on blocked URLs.
+- `options.allowProtocolRelative?: boolean` (default `true`): permits `//cdn.example.com/...` for resource tags (`sanitizeRedirectUri` rejects `//`).
+- `options.allowImageDataUri?: boolean` (default `false`): allows base64 bitmap image `data:image/{png,jpeg,jpg,gif,webp};base64,...` URIs when enabled (never SVG).
 
-### `getTrustedTypesPolicy(): TrustedTypePolicy`
-Provides the native W3C Trusted Types policy or compliant fallback.
+### `sanitizeSrcset(rawVal: string): string` / `sanitizeCssStyle(css: unknown): string` / `sanitizeHeadTags(headHtml: string): string`
+Sanitizes comma-separated responsive `srcset` lists, tokenizes & strips dangerous CSS constructs (`expression()`, `behavior:`, `-moz-binding:`, `@import`, dangerous `url()`), and restricts SSR `headTags` to safe `<meta>`, `<link>`, and `<base>` elements.
 
-### `createCsrfToken(): string` / `verifyCsrfToken(a: string, b: string): boolean`
-Generates entropy-backed CSRF tokens and verifies them via constant-time comparison.
+### `sanitizeRedirectUri(rawUri: string | null | undefined, fallback = '/'): string`
+Enforces relative same-origin redirect targets; strictly rejects `//`, `/\`, `\\`, `\/`, dangerous schemes, and cross-origin URLs.
+
+### `getSamreyTrustedPolicy(options?: TrustedTypesOptions): SamreyTrustedPolicy` / `getSamreyTemplateTrustedPolicy(): SamreyTrustedPolicy`
+Provides native W3C Trusted Types policies (`samrey#html` via `sanitizeHtmlString` and `samrey#template` via `sanitizeTemplateHtml`) or fail-closed programmatic fallbacks. Both are also exposed via the `TrustedTypesPolicy` facade object (`setAllowedScriptOrigins(origins)` configures allowed script origins).
+
+### `generateCsrfToken(entropyOrSecret?: number | string): string` / `verifyCsrfToken(submittedToken: string | null | undefined, expectedToken: string): boolean`
+Generates entropy-backed CSRF tokens and verifies submitted tokens against an expected session token in constant time via `timingSafeEqual()`. (`createCsrfToken` aliases `generateCsrfToken`; `validateCsrfToken` aliases `verifyCsrfToken`.)
 
 ---
 
@@ -115,6 +132,12 @@ Creates a reactive router instance.
 - `.currentPath`: Computed signal of current path.
 - `.currentParams`: Computed signal of active route parameters.
 - `.navigate(path: string)`: Navigates safely to a new path.
+
+### `useParams<T = Record<string, string>>(): ReadonlySignal<T>`
+Returns a read-only signal of matched route parameters from the active router instance.
+
+### `RouterOutlet(routes?: RouteRecord[], fallback?: () => unknown): Node` / `Link(props: LinkProps): HTMLAnchorElement`
+Mounts matched route views reactively and creates progressive-enhancement navigation anchors.
 
 ### `matchPath(pattern: string, pathname: string): Record<string, string> | null`
 Matches a parameterized URL pattern (e.g. `/users/:id`) against an incoming pathname.
@@ -156,8 +179,8 @@ Streams HTML chunks over Web Streams API.
 ### `generateStaticSite(routes: StaticRouteConfig[], options: SSGOptions): Promise<SSGResult>`
 Generates pre-rendered HTML files and XML sitemaps.
 
-### `hydrate(container: Element, app: () => unknown): HydrationResult`
-Hydrates server-rendered DOM nodes and replays early user interactions.
+### `hydrate(componentFn: () => Node | Node[], container: HTMLElement, options?: HydrateOptions): HydrationResult`
+Non-destructively hydrates server-rendered DOM nodes via `HydrationCaptureRegistry` node adoption (`repairMismatch` defaults to `true`, with `onMismatch` callback) and replays early captured user interactions (`hydrateFromSSR` is an exported alias).
 
 ---
 

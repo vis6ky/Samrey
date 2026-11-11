@@ -1,6 +1,6 @@
 # Getting Started with Samrey
 
-> **Samrey Framework v2.0.0** — Fast, pure, fine-grained reactive web framework for modern TypeScript applications.
+> **Samrey Framework v2.1.0** — Fast, pure, fine-grained reactive web framework for modern TypeScript applications.
 
 This guide walks you through bootstrapping an application with the Samrey CLI, understanding Samrey's core mental model, and building production-ready apps.
 

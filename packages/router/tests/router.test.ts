@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, Link } from '../src/index.js';
+import { onCleanup } from '@samrey/reactivity';
+import { matchPath, createRouter, matchRoutes, Router, Route, useNavigate, Link, createLink } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -61,6 +62,9 @@ describe('@samrey/router', () => {
         {
           path: '/',
           component: () => {
+            onCleanup(() => {
+              homeDisposals++;
+            });
             return ['Home Part 1', 'Home Part 2'];
           }
         },
@@ -78,6 +82,7 @@ describe('@samrey/router', () => {
     const nav = useNavigate();
     nav('/about');
     assert.equal(aboutMounted, 1);
+    assert.equal(homeDisposals, 1);
   });
 
   it('enforces route guards, falling through to subsequent routes or null when blocked', () => {
@@ -158,5 +163,67 @@ describe('@samrey/router', () => {
 
     linkEl.dispatchEvent(mockEvent);
     assert.equal(prevented, false, 'Link with target="_blank" must not preventDefault()');
+  });
+
+  it('prevents open redirects in navigate(), popstate, Link, and createLink (Bug 6)', () => {
+    const originalWindow = (globalThis as any).window;
+    let locationHrefWrites = 0;
+    let popstateHandler: (() => void) | null = null;
+    const mockLocation = {
+      pathname: '/dashboard',
+      search: '',
+      hash: '',
+      get href() {
+        return 'https://app.samrey.test/dashboard';
+      },
+      set href(_v: string) {
+        locationHrefWrites++;
+      }
+    };
+
+    (globalThis as any).window = {
+      location: mockLocation,
+      history: { pushState: () => {}, replaceState: () => {} },
+      addEventListener: (evt: string, fn: () => void) => {
+        if (evt === 'popstate') popstateHandler = fn;
+      },
+      removeEventListener: () => {}
+    };
+
+    try {
+      const router = createRouter([{ path: '/dashboard', component: () => 'Dashboard' }]);
+      assert.equal(router.currentPath.value, '/dashboard');
+
+      for (const malicious of [
+        '//evil.com/phishing',
+        '  //evil.com/phishing',
+        '/\\evil.com',
+        '/%2fevil.com',
+        'https://attacker.com/login',
+        'javascript:alert(1)'
+      ]) {
+        router.navigate(malicious);
+        assert.equal(router.currentPath.value, '/dashboard');
+        assert.equal(locationHrefWrites, 0, `navigate("${malicious}") must not write window.location.href`);
+      }
+
+      // Spoofed popstate pathname must also be sanitized
+      mockLocation.pathname = '//evil.com';
+      assert.ok(popstateHandler !== null);
+      (popstateHandler as () => void)();
+      assert.equal(router.currentPath.value, '/');
+
+      // createLink / Link reject protocol-relative and javascript: URIs while keeping explicit https:
+      assert.equal(createLink(router, '//evil.com/phish').href, '/');
+      assert.equal(createLink(router, 'javascript:alert(1)').href, '/');
+      assert.equal(createLink(router, 'https://samrey.dev/docs').href, 'https://samrey.dev/docs');
+      assert.equal(Link({ href: '//evil.com/phish', children: 'Bad' }).getAttribute?.('href') ?? (Link({ href: '//evil.com/phish', children: 'Bad' }) as any).href, '/');
+    } finally {
+      if (originalWindow) {
+        (globalThis as any).window = originalWindow;
+      } else {
+        delete (globalThis as any).window;
+      }
+    }
   });
 });

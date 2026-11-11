@@ -689,7 +689,12 @@ export function SafeWidget() {
       fallback: (err, reset) => {
         const alert = document.createElement('div');
         alert.className = 'error-alert';
-        alert.innerHTML = '<p>Error caught: ' + err.message + '</p><button class="retry">Retry</button>';
+        const errMsg = document.createElement('p');
+        errMsg.textContent = 'Error caught: ' + err.message;
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry';
+        retryBtn.textContent = 'Retry';
+        alert.replaceChildren(errMsg, retryBtn);
         on(alert.querySelector('.retry')!, 'click', () => {
           triggerCrash.set(false);
           reset();

@@ -79,16 +79,29 @@ export async function runAllBenchmarks(targetCategory?: string) {
 
   // If full benchmark run, update results.json
   if (!targetCategory || targetCategory === 'all') {
+    const cpuCount = os.cpus().length;
+    const cpuModel = os.cpus()[0]?.model || `${process.arch} CPU`;
+    const totalMemoryBytes = os.totalmem();
+    const totalMemoryGb = (totalMemoryBytes / 1024 / 1024 / 1024).toFixed(1);
+    const platformName =
+      process.platform === 'darwin'
+        ? 'macOS'
+        : process.platform === 'win32'
+          ? 'Windows'
+          : process.platform;
+    const machineLabel = `${platformName} ${os.release()} ${process.arch} (${cpuCount} CPU, ${totalMemoryGb}GB RAM)`;
+
     const resultsPayload = {
       timestamp: new Date().toISOString(),
       system: {
-        machine: 'Linux x86_64 (2 vCPU, 4GB RAM, gVisor container runtime)',
+        machine: machineLabel,
         node: process.version,
         platform: process.platform,
+        release: os.release(),
         arch: process.arch,
-        cpuCount: os.cpus().length,
-        cpuModel: os.cpus()[0]?.model || 'gVisor virtual CPU',
-        totalMemoryBytes: os.totalmem(),
+        cpuCount,
+        cpuModel,
+        totalMemoryBytes,
         freeMemoryBytes: os.freemem()
       },
       totalBenchmarks: allResults.length,

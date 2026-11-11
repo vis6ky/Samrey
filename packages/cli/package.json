@@ -44,7 +44,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/cli.test.ts",
-    "build": "esbuild src/bin.ts --bundle --alias:@samrey/compiler=../compiler/src/index.ts --alias:@samrey/security=../security/src/index.ts --alias:@samrey/reactivity=../reactivity/src/index.ts --alias:@samrey/runtime=../runtime/src/index.ts --alias:@samrey/forms=../forms/src/index.ts --alias:@samrey/http=../http/src/index.ts --alias:@samrey/router=../router/src/index.ts --alias:@samrey/ssr=../ssr/src/index.ts --alias:@samrey/ai=../ai/src/index.ts --alias:@samrey/mcp-server=../mcp-server/src/index.ts --platform=node --format=esm --external:fsevents --banner:js=\"#!/usr/bin/env node\" --outfile=bin/samrey.bundle.js",
+    "build": "esbuild src/bin.ts --bundle --alias:@samrey/compiler=../compiler/src/index.ts --alias:@samrey/security=../security/src/index.ts --alias:@samrey/reactivity=../reactivity/src/index.ts --alias:@samrey/runtime=../runtime/src/index.ts --alias:@samrey/forms=../forms/src/index.ts --alias:@samrey/http=../http/src/index.ts --alias:@samrey/router=../router/src/index.ts --alias:@samrey/ssr=../ssr/src/index.ts --alias:@samrey/ai=../ai/src/index.ts --alias:@samrey/mcp-server=../mcp-server/src/index.ts --platform=node --format=esm --external:vite --external:esbuild --external:lightningcss --external:postcss --external:rollup --external:typescript --external:tsx --external:fsevents --banner:js=\"#!/usr/bin/env node\" --outfile=bin/samrey.bundle.js",
     "prepack": "npm run build"
   },
   "bin": {
@@ -53,7 +53,8 @@
   "dependencies": {
     "@samrey/ai": "^2.1.0",
     "@samrey/compiler": "^2.1.0",
-    "@samrey/mcp-server": "^2.1.0"
+    "@samrey/mcp-server": "^2.1.0",
+    "@samrey/security": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

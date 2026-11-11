@@ -9,10 +9,8 @@ import {
   writeAllInstructions,
   installSkills,
   searchDocs,
-  getDocumentation,
   analyzeProject,
   validateSamreyCode,
-  discoverSamreyProject,
   SAMREY_SKILLS
 } from '@samrey/ai';
 import { SamreyMcpServer } from '@samrey/mcp-server';

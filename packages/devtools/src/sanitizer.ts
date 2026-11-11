@@ -78,7 +78,8 @@ export function sanitizePayload<T>(
   }
 
   if (type === 'function') {
-    return `[Function ${(value as Function).name || 'anonymous'}]` as unknown as T;
+    const fn = value as unknown as { name?: string };
+    return `[Function ${fn.name || 'anonymous'}]` as unknown as T;
   }
 
   if (type === 'object') {

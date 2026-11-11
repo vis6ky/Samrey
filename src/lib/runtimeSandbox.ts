@@ -401,36 +401,294 @@ export function SecuritySandboxWidget() {
   }
 ];
 
+function findMatchingDelimiter(src: string, openIdx: number, openChar: string, closeChar: string): number {
+  let depth = 0;
+  let i = openIdx;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      i = skipStringOrTemplate(src, i);
+      continue;
+    }
+    if (ch === '/' && src[i + 1] === '/') {
+      const nl = src.indexOf('\n', i + 2);
+      i = nl === -1 ? src.length : nl + 1;
+      continue;
+    }
+    if (ch === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      i = end === -1 ? src.length : end + 2;
+      continue;
+    }
+    if (ch === openChar) depth++;
+    else if (ch === closeChar) {
+      depth--;
+      if (depth === 0) return i;
+    }
+    i++;
+  }
+  return -1;
+}
+
+function skipStringOrTemplate(src: string, start: number): number {
+  const quote = src[start];
+  let i = start + 1;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
+    if (quote === '`' && ch === '$' && src[i + 1] === '{') {
+      const closeBrace = findMatchingDelimiter(src, i + 1, '{', '}');
+      if (closeBrace === -1) return src.length;
+      i = closeBrace + 1;
+      continue;
+    }
+    if (ch === quote) return i + 1;
+    i++;
+  }
+  return src.length;
+}
+
+function stripParamListAnnotations(paramsRaw: string): string {
+  const parts: string[] = [];
+  let segStart = 0;
+  let depthParen = 0;
+  let depthBrace = 0;
+  let depthBracket = 0;
+  let depthAngle = 0;
+
+  const pushSegment = (raw: string) => {
+    // Only strip trailing `? : Type` before default `=` initializer at parameter top level
+    let eqIdx = -1;
+    let p = 0, b = 0, k = 0, a = 0;
+    let colonIdx = -1;
+    for (let i = 0; i < raw.length; i++) {
+      const ch = raw[i];
+      if (ch === "'" || ch === '"' || ch === '`') {
+        i = skipStringOrTemplate(raw, i) - 1;
+        continue;
+      }
+      if (ch === '(') p++;
+      else if (ch === ')') p--;
+      else if (ch === '{') b++;
+      else if (ch === '}') b--;
+      else if (ch === '[') k++;
+      else if (ch === ']') k--;
+      else if (ch === '<' && raw[i + 1] !== '=' && raw[i - 1] !== '=') a++;
+      else if (ch === '>' && raw[i - 1] !== '=' && a > 0) a--;
+      else if (p === 0 && b === 0 && k === 0 && a === 0) {
+        if (ch === ':' && colonIdx === -1) colonIdx = i;
+        else if (ch === '=' && eqIdx === -1) {
+          eqIdx = i;
+          break;
+        }
+      }
+    }
+
+    if (colonIdx !== -1 && (eqIdx === -1 || colonIdx < eqIdx)) {
+      const namePart = raw.slice(0, colonIdx).replace(/\?\s*$/, '');
+      const defaultPart = eqIdx !== -1 ? ' ' + raw.slice(eqIdx) : '';
+      parts.push(namePart + defaultPart);
+    } else {
+      parts.push(raw);
+    }
+  };
+
+  for (let i = 0; i < paramsRaw.length; i++) {
+    const ch = paramsRaw[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      i = skipStringOrTemplate(paramsRaw, i) - 1;
+      continue;
+    }
+    if (ch === '(') depthParen++;
+    else if (ch === ')') depthParen--;
+    else if (ch === '{') depthBrace++;
+    else if (ch === '}') depthBrace--;
+    else if (ch === '[') depthBracket++;
+    else if (ch === ']') depthBracket--;
+    else if (ch === '<' && paramsRaw[i + 1] !== '=' && paramsRaw[i - 1] !== '=') depthAngle++;
+    else if (ch === '>' && paramsRaw[i - 1] !== '=' && depthAngle > 0) depthAngle--;
+    else if (ch === ',' && depthParen === 0 && depthBrace === 0 && depthBracket === 0 && depthAngle === 0) {
+      pushSegment(paramsRaw.slice(segStart, i));
+      segStart = i + 1;
+    }
+  }
+  pushSegment(paramsRaw.slice(segStart));
+  return parts.join(',');
+}
+
 /**
- * Strips TypeScript types and module declarations to prepare for browser evaluation
+ * Strips TypeScript types and module declarations cleanly without corrupting string literals or object keys
  */
 export function sanitizeTypeScriptCode(source: string): string {
-  let js = source;
+  // Mask strings & comments while tokenizing so literal colons, classes, and quotes stay untouched
+  let { masked: work, literals } = maskNonCodeRegions(source);
 
-  // 1. Remove import statements
-  js = js.replace(/import\s+(?:\{[^}]*\}|\*\s+as\s+[^;]+|[^;]+)\s+from\s+['"][^'"]+['"];?/g, '');
+  // 1. Remove import statements (single-line or multi-line named imports)
+  work = work.replace(/^\s*import\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?\u0000TSLIT_\d+\u0000\s*;?/gm, '');
 
-  // 2. Remove export statements
-  js = js.replace(/export\s+default\s+/g, '');
-  js = js.replace(/export\s+/g, '');
+  // 2. Remove export modifiers
+  work = work.replace(/\bexport\s+type\s+\{[^}]*\}\s*;?/g, '');
+  work = work.replace(/\bexport\s+default\s+/g, '');
+  work = work.replace(/\bexport\s+/g, '');
 
-  // 3. Remove interface and type declarations
-  js = js.replace(/(?:interface|type)\s+[A-Za-z0-9_$]+(?:<[^>]*>)?\s*(?:=\s*)?\{[\s\S]*?\};?/g, '');
-  js = js.replace(/type\s+[A-Za-z0-9_$]+\s*=\s*[^;]+;/g, '');
+  // 3. Remove interface and type declarations with balanced brace matching
+  work = work.replace(/\binterface\s+[A-Za-z0-9_$]+(?:<[^>\n]*>)?\s*(?:extends\s+[^{]+)?\{/g, () => '\u0000DROP_BLOCK\u0000{');
+  while (work.includes('\u0000DROP_BLOCK\u0000{')) {
+    const markerIdx = work.indexOf('\u0000DROP_BLOCK\u0000{');
+    const braceIdx = markerIdx + '\u0000DROP_BLOCK\u0000'.length;
+    const closeIdx = findMatchingDelimiter(work, braceIdx, '{', '}');
+    if (closeIdx === -1) break;
+    work = work.slice(0, markerIdx) + work.slice(closeIdx + 1);
+  }
+  work = work.replace(/\btype\s+[A-Za-z0-9_$]+(?:<[^>\n]*>)?\s*=\s*(?:\{[\s\S]*?\}|[^;\n]+);?/g, '');
 
-  // 4. Remove type casts: 'as HTMLElement', 'as string', etc.
-  js = js.replace(/\s+as\s+[A-Za-z0-9_$<>\[\]|&\s]+/g, '');
+  // 4. Remove type assertions ('expr as TypeName') and simple generic call args ('fn<Type>(')
+  work = work.replace(/\s+as\s+[A-Za-z0-9_$]+(?:\.[A-Za-z0-9_$]+)*(?:<[^>\n]*>)?(?:\[\])*/g, '');
+  work = work.replace(/([A-Za-z0-9_$])<[A-Za-z0-9_$,\s|&<>[\]{}'":.?]+>(?=\s*\()/g, '$1');
 
-  // 5. Remove simple generic type arguments: 'signal<boolean>(true)' -> 'signal(true)'
-  js = js.replace(/<[A-Za-z0-9_$,\s|&<>[\]{}':]+>(?=\s*\()/g, '');
+  // 5. Strip typed variable declarations: `const x: Foo<Bar>[] =`
+  work = work.replace(/(\b(?:const|let|var)\s+[A-Za-z0-9_$]+)\s*:\s*[^=;\n]+(?==)/g, '$1 ');
 
-  // 6. Remove TypeScript parameter type annotations: '(props: Props)' -> '(props)'
-  js = js.replace(/\(([^)]*)\)/g, (_match, params) => {
-    const cleanedParams = params.replace(/:\s*[A-Za-z0-9_$<>\[\]|&{}\s?'":]+/g, '');
-    return `(${cleanedParams})`;
-  });
+  // 6. Strip TypeScript parameter and return annotations on function declarations and arrow functions
+  let out = '';
+  let idx = 0;
+  while (idx < work.length) {
+    const fnMatch = /^(?:function(?:\s+[A-Za-z0-9_$]+)?\s*|=>)/.exec(work.slice(idx));
+    const funcDeclMatch = /^function(?:\s+[A-Za-z0-9_$]+)?(?:\s*<[^>\n]*>)?\s*\(/.exec(work.slice(idx));
+    if (funcDeclMatch) {
+      const openParen = idx + funcDeclMatch[0].length - 1;
+      const closeParen = findMatchingDelimiter(work, openParen, '(', ')');
+      if (closeParen !== -1) {
+        const headerWithoutGeneric = funcDeclMatch[0].replace(/<[^>\n]*>\s*\($/, '(');
+        const cleanParams = stripParamListAnnotations(work.slice(openParen + 1, closeParen));
+        // Check for optional ': ReturnType {' before body brace
+        const afterParen = work.slice(closeParen + 1);
+        const retMatch = /^\s*:\s*[^{;=\n]+(?=\{)/.exec(afterParen);
+        out += headerWithoutGeneric.slice(0, -1) + '(' + cleanParams + ')';
+        idx = closeParen + 1 + (retMatch ? retMatch[0].length : 0);
+        continue;
+      }
+    }
 
-  return js.trim();
+    // Arrow function `(params)[: ReturnType] =>`
+    if (work[idx] === '(') {
+      const prevCharMatch = work.slice(0, idx).match(/([A-Za-z0-9_$.])\s*$/);
+      const prevIdent = work.slice(0, idx).match(/([A-Za-z0-9_$]+)\s*$/)?.[1];
+      const isCallArg = prevCharMatch && !['return', 'async', 'await', 'throw', 'typeof', 'yield'].includes(prevIdent || '');
+      const closeParen = findMatchingDelimiter(work, idx, '(', ')');
+      if (!isCallArg && closeParen !== -1) {
+        const afterArrow = /^\s*(?::\s*[^=>{;\n]+)?\s*=>/.exec(work.slice(closeParen + 1));
+        if (afterArrow) {
+          const cleanParams = stripParamListAnnotations(work.slice(idx + 1, closeParen));
+          out += '(' + cleanParams + ') =>';
+          idx = closeParen + 1 + afterArrow[0].length;
+          continue;
+        }
+      }
+    }
+
+    if (fnMatch && fnMatch[0] === '=>') {
+      out += '=>';
+      idx += 2;
+      continue;
+    }
+
+    out += work[idx];
+    idx++;
+  }
+
+  // Restore original string literals & template literals verbatim (also cleaning any nested TS syntax inside strings untouched)
+  return out.replace(/\u0000TSLIT_(\d+)\u0000/g, (_, n: string) => literals[Number(n)] ?? '').trim();
+}
+
+function maskNonCodeRegions(source: string): { masked: string; literals: string[] } {
+  const literals: string[] = [];
+  let masked = '';
+  let i = 0;
+
+  while (i < source.length) {
+    const ch = source[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      const end = skipStringOrTemplate(source, i);
+      const raw = source.slice(i, end);
+      const token = `\u0000TSLIT_${literals.length}\u0000`;
+      literals.push(raw);
+      masked += token;
+      // Preserve interpolated `${expr}` snippets cleanly in comment-free scan? Actually keep raw for restore; security check inspects nested expressions separately.
+      i = end;
+      continue;
+    }
+    if (ch === '/' && source[i + 1] === '/') {
+      const nl = source.indexOf('\n', i + 2);
+      i = nl === -1 ? source.length : nl;
+      masked += ' ';
+      continue;
+    }
+    if (ch === '/' && source[i + 1] === '*') {
+      const end = source.indexOf('*/', i + 2);
+      i = end === -1 ? source.length : end + 2;
+      masked += ' ';
+      continue;
+    }
+    masked += ch;
+    i++;
+  }
+
+  return { masked, literals };
+}
+
+function stripStringsAndComments(source: string): string {
+  const { masked, literals } = maskNonCodeRegions(source);
+  // Extract code inside template literal `${...}` expressions so hidden `${document.cookie}` cannot evade checks
+  const extraExprs: string[] = [];
+  for (const lit of literals) {
+    if (lit.startsWith('`')) {
+      let j = 1;
+      while (j < lit.length - 1) {
+        if (lit[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (lit[j] === '$' && lit[j + 1] === '{') {
+          const closeBrace = findMatchingDelimiter(lit, j + 1, '{', '}');
+          if (closeBrace === -1) break;
+          extraExprs.push(stripStringsAndComments(lit.slice(j + 2, closeBrace)));
+          j = closeBrace + 1;
+          continue;
+        }
+        j++;
+      }
+    }
+  }
+  return masked + (extraExprs.length > 0 ? '\n' + extraExprs.join('\n') : '');
+}
+
+export function validateSandboxCodeSafety(source: string): string | null {
+  if (/\.constructor\b|\.__proto__\b|\bprototype\b|\[['"`]?(?:constructor|__proto__|prototype)['"`]?\]/.test(source)) {
+    return 'Blocked prototype/constructor chain access inside sandbox.';
+  }
+
+  const codeOnly = stripStringsAndComments(source);
+  const blockedPatterns: Array<[RegExp, string]> = [
+    [/\beval\b/, 'Dynamic eval() execution is prohibited in the Samrey sandbox.'],
+    [/\bnew\s+Function\b|\bFunction\s*\(/, 'Dynamic Function() construction is prohibited in the Samrey sandbox.'],
+    [/\bimport\s*\(/, 'Dynamic import() is prohibited inside the Samrey sandbox.'],
+    [/\b(?:window|globalThis|self|top|parent|frames)\b/, 'Direct global window/frame access is isolated inside the Samrey sandbox.'],
+    [/\b(?:document|localStorage|sessionStorage|indexedDB|cookieStore|navigator|location|history)\b/, 'Direct browser DOM storage/navigation APIs are isolated inside the Samrey sandbox.'],
+    [/\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|importScripts)\b/, 'Network/worker primitives are blocked inside the Samrey sandbox; use createResource with safe mocks.'],
+    [/\b(?:Reflect|Proxy)\b/, 'Meta-programming Reflect/Proxy escape hatches are blocked inside the Samrey sandbox.'],
+    [/\.(?:innerHTML|outerHTML|insertAdjacentHTML)\b/, 'Raw HTML injection sinks are blocked inside the Samrey sandbox; use el() or rawHtml().']
+  ];
+
+  for (const [pattern, reason] of blockedPatterns) {
+    if (pattern.test(codeOnly)) {
+      return reason;
+    }
+  }
+  return null;
 }
 
 /**
@@ -444,11 +702,38 @@ export function executeSamreyCode(
 
   try {
     const cleanCode = sanitizeTypeScriptCode(rawCode);
+    const violation = validateSandboxCodeSafety(cleanCode);
+    if (violation) {
+      log(`[Sandbox Security] ${violation}`, 'error');
+      return { success: false, error: violation };
+    }
 
     log('[AST Transpiler] Stripped TypeScript type signatures. Preparing reactive scope...', 'info');
 
-    // Create execution scope with all @samrey/* primitives
+    // Create execution scope with all @samrey/* primitives and explicit global isolation
     const scope = {
+      window: undefined,
+      globalThis: undefined,
+      self: undefined,
+      top: undefined,
+      parent: undefined,
+      frames: undefined,
+      document: undefined,
+      fetch: undefined,
+      XMLHttpRequest: undefined,
+      WebSocket: undefined,
+      EventSource: undefined,
+      navigator: undefined,
+      location: undefined,
+      history: undefined,
+      localStorage: undefined,
+      sessionStorage: undefined,
+      indexedDB: undefined,
+      cookieStore: undefined,
+      Function: undefined,
+      importScripts: undefined,
+      Reflect: undefined,
+      Proxy: undefined,
       // Reactivity
       signal: Reactivity.signal,
       computed: Reactivity.computed,
@@ -498,6 +783,18 @@ export function executeSamreyCode(
 
       // Helpers
       icon,
+      setTimeout: (fn: unknown, delay?: number, ...args: unknown[]) => {
+        if (typeof fn !== 'function') {
+          throw new TypeError('[Sandbox Security] setTimeout requires a function callback.');
+        }
+        return setTimeout(fn as (...a: unknown[]) => void, delay, ...args);
+      },
+      setInterval: (fn: unknown, delay?: number, ...args: unknown[]) => {
+        if (typeof fn !== 'function') {
+          throw new TypeError('[Sandbox Security] setInterval requires a function callback.');
+        }
+        return setInterval(fn as (...a: unknown[]) => void, delay, ...args);
+      },
       console: {
         log: (...args: any[]) => {
           log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'info');
@@ -519,11 +816,12 @@ export function executeSamreyCode(
       funcNames.push(match[1]);
     }
 
-    // Determine target execution expression
+    // Determine target execution expression (always strict mode to prevent implicit global this leakage)
     let wrappedCode: string;
     if (funcNames.length > 0) {
       const primaryFunc = funcNames[0];
       wrappedCode = `
+        'use strict';
         ${cleanCode}
         if (typeof ${primaryFunc} === 'function') {
           return ${primaryFunc}();
@@ -532,6 +830,7 @@ export function executeSamreyCode(
       `;
     } else {
       wrappedCode = `
+        'use strict';
         ${cleanCode}
       `;
     }

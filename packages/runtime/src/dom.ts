@@ -5,7 +5,16 @@
 
 import { bindText, bindAttr, bindClass, bindDynamicChild } from './bindings.js';
 import { on } from './events.js';
-import { sanitizeHtmlString, sanitizeUri, sanitizeCssStyle, escapeHtmlText, escapeHtmlAttribute, TrustedTypesPolicy } from '@samrey/security';
+import {
+  URL_ATTRIBUTES,
+  SRCSET_ATTRIBUTES,
+  sanitizeUri,
+  sanitizeSrcset,
+  sanitizeCssStyle,
+  escapeHtmlText,
+  escapeHtmlAttribute,
+  TrustedTypesPolicy
+} from '@samrey/security';
 import { effect } from '@samrey/reactivity';
 
 export type ChildValue =
@@ -22,7 +31,14 @@ export type ElementProps = Record<string, unknown>;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DANGEROUS_ATTR_NAMES = new Set(['innerhtml', 'outerhtml', 'srcdoc']);
-const URI_ATTRS = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'data', 'poster', 'codebase']);
+const HTML_BOOLEAN_ATTRS = new Set([
+  'disabled', 'checked', 'selected', 'readonly', 'required', 'multiple', 'hidden',
+  'open', 'autofocus', 'autoplay', 'controls', 'loop', 'muted', 'novalidate',
+  'reversed', 'scoped', 'ismap', 'defer', 'async', 'allowfullscreen', 'default', 'inert'
+]);
+const HTML_VOID_TAGS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'
+]);
 
 export function appendChildren(parent: Node, children: ChildValue[]): void {
   for (const child of children) {
@@ -70,11 +86,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         const resolvedV = typeof v === 'function' ? (v as () => unknown)() : v;
         if (resolvedV === undefined || resolvedV === null || resolvedV === false) continue;
         if (resolvedV === true) {
-          attributes[k] = '';
+          attributes[k] = HTML_BOOLEAN_ATTRS.has(lk) ? '' : 'true';
           continue;
         }
         let safeV = String(resolvedV);
-        if (URI_ATTRS.has(lk)) safeV = sanitizeUri(safeV);
+        if (SRCSET_ATTRIBUTES.has(lk)) safeV = sanitizeSrcset(safeV);
+        else if (URL_ATTRIBUTES.has(lk)) safeV = sanitizeUri(safeV, { allowImageDataUri: true });
         else if (lk === 'style') safeV = sanitizeCssStyle(safeV);
         attributes[k] = safeV;
       }
@@ -317,10 +334,25 @@ export function el<K extends keyof HTMLElementTagNameMap>(
         for (const [k, v] of Object.entries(attributes)) {
           attrStr += ` ${k}="${escapeHtmlAttribute(v)}"`;
         }
+        if (HTML_VOID_TAGS.has(tag)) {
+          return `<${tag}${attrStr}>`;
+        }
         return `<${tag}${attrStr}>${this.innerHTML}</${tag}>`;
       },
       get textContent() {
         return childNodes.map((ch: any) => ch.textContent ?? '').join('');
+      },
+      set textContent(val: string) {
+        childNodes.length = 0;
+        const str = val === null || val === undefined ? '' : String(val);
+        if (str !== '') {
+          childNodes.push({
+            nodeType: 3,
+            nodeName: '#text',
+            textContent: str,
+            parentNode: mockElem
+          });
+        }
       }
     };
 
@@ -457,6 +489,18 @@ export function frag(...children: ChildValue[]): DocumentFragment {
       },
       get textContent() {
         return childNodes.map((ch: any) => ch.textContent ?? '').join('');
+      },
+      set textContent(val: string) {
+        childNodes.length = 0;
+        const str = val === null || val === undefined ? '' : String(val);
+        if (str !== '') {
+          childNodes.push({
+            nodeType: 3,
+            nodeName: '#text',
+            textContent: str,
+            parentNode: mockFrag
+          });
+        }
       }
     };
     return mockFrag as unknown as DocumentFragment;
@@ -538,12 +582,14 @@ function applyAttributes(elem: Element, attrs?: ElementProps | null): void {
       bindAttr(elem, key, val as () => unknown);
     } else if (typeof val === 'boolean') {
       if (val) {
-        elem.setAttribute(key, '');
+        elem.setAttribute(key, HTML_BOOLEAN_ATTRS.has(lowerKey) ? '' : 'true');
       }
     } else {
       let finalVal = String(val);
-      if (URI_ATTRS.has(lowerKey)) {
-        finalVal = sanitizeUri(finalVal);
+      if (SRCSET_ATTRIBUTES.has(lowerKey)) {
+        finalVal = sanitizeSrcset(finalVal);
+      } else if (URL_ATTRIBUTES.has(lowerKey)) {
+        finalVal = sanitizeUri(finalVal, { allowImageDataUri: true });
       }
       elem.setAttribute(key, finalVal);
     }

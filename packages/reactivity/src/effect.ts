@@ -31,10 +31,11 @@ export function effect(fn: () => void | (() => void)): () => void {
       if (hasRun) {
         let hasComputeds = false;
         for (const source of this.sources) {
-          if (typeof (source as Subscriber).update === 'function') {
+          const maybeSub = source as unknown as Partial<Subscriber>;
+          if (typeof maybeSub.update === 'function') {
             hasComputeds = true;
-            if ((source as Subscriber).isDirty) {
-              (source as Subscriber).update();
+            if (maybeSub.isDirty) {
+              maybeSub.update();
             }
           }
         }
@@ -78,10 +79,17 @@ export function effect(fn: () => void | (() => void)): () => void {
       }
       if (effectOwner.children.length > 0) {
         const ch = effectOwner.children;
-        for (let i = 0; i < ch.length; i++) {
-          ch[i].dispose();
+        (effectOwner as any).isDisposing = true;
+        try {
+          for (let i = ch.length - 1; i >= 0; i--) {
+            const child = ch[i];
+            child.parent = null;
+            child.dispose();
+          }
+        } finally {
+          ch.length = 0;
+          (effectOwner as any).isDisposing = false;
         }
-        ch.length = 0;
       }
 
       // Reset dirty flag BEFORE executing fn so any signal write inside fn sets dirty and re-queues

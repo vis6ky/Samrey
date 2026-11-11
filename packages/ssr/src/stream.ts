@@ -6,7 +6,7 @@
 import { serializeStateForHydration } from './serializer.js';
 import { getDelegatedEventScript } from './hydration.js';
 import { createSSRContext, runWithSSRContext, resolveSSRContext, SSRContext } from './context.js';
-import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@samrey/security';
+import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri, sanitizeHeadTags } from '@samrey/security';
 
 export interface RenderToStringOptions {
   title?: string;
@@ -57,19 +57,25 @@ function serializeNodeOutput(val: unknown): string {
   return String(val);
 }
 
-function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions, titleText: string): {
+function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions): {
   stylesTags: string;
   clientScriptTag: string;
   metaTags: string;
+  safeHeadTags: string;
   delegatorScript: string;
 } {
   const nonce = options.nonce || options.scriptNonce;
   const delegatorScript = getDelegatedEventScript(options.events, nonce);
-  const clientScriptTag = options.clientScript
-    ? `<script type="module" src="${escapeHtmlAttribute(sanitizeUri(options.clientScript))}"${nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : ''}></script>`
+  const sanitizedClientScript = options.clientScript ? sanitizeUri(options.clientScript, { allowImageDataUri: false }) : '';
+  const clientScriptTag = sanitizedClientScript && sanitizedClientScript !== 'about:blank'
+    ? `<script type="module" src="${escapeHtmlAttribute(sanitizedClientScript)}"${nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : ''}></script>`
     : '';
   const stylesTags = options.clientStyles
-    ? options.clientStyles.map((s) => `<link rel="stylesheet" href="${escapeHtmlAttribute(sanitizeUri(s))}">`).join('\n  ')
+    ? options.clientStyles
+        .map((s) => sanitizeUri(s, { allowImageDataUri: false }))
+        .filter((s) => s !== 'about:blank')
+        .map((s) => `<link rel="stylesheet" href="${escapeHtmlAttribute(s)}">`)
+        .join('\n  ')
     : '';
   const metaTags = ctx.head.meta
     .map((m) => {
@@ -77,8 +83,9 @@ function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions, tit
       return `<meta ${attr} content="${escapeHtmlAttribute(m.content || '')}">`;
     })
     .join('\n  ');
+  const safeHeadTags = options.headTags ? sanitizeHeadTags(options.headTags) : '';
 
-  return { stylesTags, clientScriptTag, metaTags, delegatorScript };
+  return { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript };
 }
 
 /**
@@ -119,7 +126,7 @@ export async function renderToString(
   }
 
   const title = options.title || ctx.head.title || 'Samrey Application';
-  const { stylesTags, clientScriptTag, metaTags, delegatorScript } = renderHeadElements(ctx, options, title);
+  const { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
 
   // Generate serialized state script
   const nonce = options.nonce || options.scriptNonce;
@@ -136,7 +143,7 @@ export async function renderToString(
   <title>${escapeHtmlText(title)}</title>
   ${metaTags}
   ${stylesTags}
-  ${options.headTags || ''}
+  ${safeHeadTags}
   ${delegatorScript}
 </head>
 <body>
@@ -160,12 +167,21 @@ export function renderToStream(
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       let isClosed = false;
-      let timeoutId: any;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let onAbort: (() => void) | undefined;
+
+      const cleanupAbortListener = () => {
+        if (options.abortSignal && onAbort) {
+          options.abortSignal.removeEventListener('abort', onAbort);
+          onAbort = undefined;
+        }
+      };
 
       const safeClose = () => {
         if (!isClosed) {
           isClosed = true;
-          if (timeoutId) clearTimeout(timeoutId);
+          if (timeoutId !== undefined) clearTimeout(timeoutId);
+          cleanupAbortListener();
           controller.close();
         }
       };
@@ -173,7 +189,8 @@ export function renderToStream(
       const safeError = (err: unknown) => {
         if (!isClosed) {
           isClosed = true;
-          if (timeoutId) clearTimeout(timeoutId);
+          if (timeoutId !== undefined) clearTimeout(timeoutId);
+          cleanupAbortListener();
           ctx.loaders.clear();
           ctx.errors.length = 0;
           controller.error(err);
@@ -186,7 +203,8 @@ export function renderToStream(
       }
 
       if (options.abortSignal) {
-        options.abortSignal.addEventListener('abort', () => safeError(options.abortSignal?.reason));
+        onAbort = () => safeError(options.abortSignal?.reason);
+        options.abortSignal.addEventListener('abort', onAbort, { once: true });
       }
 
       if (options.timeoutMs && options.timeoutMs > 0) {
@@ -225,7 +243,7 @@ export function renderToStream(
 
       // 2. Head elements (title, meta, links) are now collected from the synchronous shell render
       const title = options.title || ctx.head.title || 'Samrey Application';
-      const { stylesTags, clientScriptTag, metaTags, delegatorScript } = renderHeadElements(ctx, options, title);
+      const { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
       ctx.headFlushed = true;
 
       // Write head and opening shell
@@ -237,7 +255,7 @@ export function renderToStream(
   <title>${escapeHtmlText(title)}</title>
   ${metaTags}
   ${stylesTags}
-  ${options.headTags || ''}
+  ${safeHeadTags}
   ${delegatorScript}
 </head>
 <body>

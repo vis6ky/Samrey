@@ -96,8 +96,12 @@ export function createContext<T>(defaultValue?: T): Context<T> {
     defaultValue,
     Provider(props: { value: T; children: any }) {
       if (currentOwner) {
-        if (!currentOwner.context) currentOwner.context = Object.create(null);
-        currentOwner.context[id] = props.value;
+        let ctx = currentOwner.context;
+        if (!ctx) {
+          ctx = Object.create(null) as Record<string | symbol, unknown>;
+          currentOwner.context = ctx;
+        }
+        ctx[id] = props.value;
       }
       return typeof props.children === 'function' ? props.children() : props.children;
     }
@@ -161,4 +165,52 @@ export function handleError(err: unknown, owner: Owner | null = currentOwner): v
   }
 
   console.error('[Samrey Reactivity] Unhandled error in effect:', err);
+}
+
+export interface SuspenseTracker {
+  track(promise: Promise<unknown>): void;
+}
+
+/**
+ * Shared context connecting `<Suspense>` boundaries (in `@samrey/runtime`)
+ * with async data primitives such as `createResource()` (in `@samrey/http`).
+ */
+export const SuspenseTrackerContext = createContext<SuspenseTracker | null>(null);
+
+export interface HydrationCaptureRegistry {
+  retargeters: WeakMap<object, Array<(newTarget: any) => void>>;
+}
+
+let activeHydrationCapture: HydrationCaptureRegistry | null = null;
+
+/**
+ * Runs a component instantiation under non-destructive hydration capture mode so
+ * bindings and event listeners created by `@samrey/runtime` can be retargeted onto
+ * matching server-rendered DOM nodes in `@samrey/ssr`.
+ */
+export function runWithHydrationCapture<T>(fn: () => T): { result: T; capture: HydrationCaptureRegistry } {
+  const capture: HydrationCaptureRegistry = {
+    retargeters: new WeakMap()
+  };
+  const prev = activeHydrationCapture;
+  activeHydrationCapture = capture;
+  try {
+    return { result: fn(), capture };
+  } finally {
+    activeHydrationCapture = prev;
+  }
+}
+
+export function isHydrationCapturing(): boolean {
+  return activeHydrationCapture !== null;
+}
+
+export function recordHydrationRetarget(target: object, retargetFn: (newTarget: any) => void): void {
+  if (!activeHydrationCapture || !target || typeof target !== 'object') return;
+  let list = activeHydrationCapture.retargeters.get(target);
+  if (!list) {
+    list = [];
+    activeHydrationCapture.retargeters.set(target, list);
+  }
+  list.push(retargetFn);
 }

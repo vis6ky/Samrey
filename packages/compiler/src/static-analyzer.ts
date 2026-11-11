@@ -3,7 +3,7 @@
  * @samrey/compiler - Compile-Time Static Analysis & Constant Folding
  */
 
-import { ASTNode, ASTAttributeNode, ASTElementNode } from './ast.js';
+import { ASTNode } from './ast.js';
 
 export interface ConstantFoldResult {
   isConstant: boolean;

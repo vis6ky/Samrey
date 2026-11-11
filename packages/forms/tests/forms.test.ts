@@ -223,4 +223,41 @@ describe('@samrey/forms', () => {
     listeners['input'][0]({ target: { value: 'charlie' } });
     assert.equal(field.value.value, 'charlie');
   });
+
+  it('discards stale asynchronous validator resolutions to prevent race overwrites (Bug 13c)', async () => {
+    let resolveFirst!: (msg: string | null) => void;
+    let resolveSecond!: (msg: string | null) => void;
+    let callNum = 0;
+
+    const field = createField('username', '', () => {
+      callNum++;
+      if (callNum === 1) {
+        return new Promise<string | null>((r) => {
+          resolveFirst = r;
+        });
+      }
+      return new Promise<string | null>((r) => {
+        resolveSecond = r;
+      });
+    });
+
+    field.setValue('stale');
+    field.setTouched(true); // fires call #1
+    field.setValue('valid_new'); // fires call #2 because already touched
+
+    assert.equal(callNum, 2);
+    assert.equal(field.isValidating.value, true);
+
+    // Second (newer) validation finishes first cleanly
+    resolveSecond(null);
+    await new Promise((r) => setTimeout(r, 0));
+    assert.equal(field.error.value, null);
+    assert.equal(field.isValidating.value, false);
+
+    // First (stale) validation rejects or resolves with an error afterwards — must be ignored
+    resolveFirst('Username stale is taken');
+    await new Promise((r) => setTimeout(r, 0));
+    assert.equal(field.error.value, null);
+    assert.equal(field.isValidating.value, false);
+  });
 });

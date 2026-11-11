@@ -6,8 +6,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { compileTemplate, SamreyCompilerError } from '../src/index.js';
-import { signal } from '../../reactivity/src/index.js';
-import { bindClass, bindProperty } from '../../runtime/src/index.js';
+import { signal } from '@samrey/reactivity';
+import { bindClass, bindProperty } from '@samrey/runtime';
 
 describe('Item 6: Directive Syntax Support (class:name={x} and .property={x})', () => {
   describe('a. Compiler code generation for class:name={x}', () => {

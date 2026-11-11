@@ -30,7 +30,7 @@ export class SamreyMcpServer {
   constructor(options: SamreyMcpServerOptions = {}) {
     this.projectRoot = options.projectRoot || process.cwd();
     this.serverName = options.serverName || '@samrey/mcp-server';
-    this.serverVersion = options.serverVersion || '2.0.0';
+    this.serverVersion = options.serverVersion || '2.1.0';
     this.allowExec = options.allowExec ?? false;
   }
 

@@ -3,23 +3,27 @@
  * @samrey/router - Router State Manager
  */
 
-import { signal, computed, effect, createOwner, runWithOwner, onCleanup, Owner } from '@samrey/reactivity';
+import { signal, computed, effect, createOwner, runWithOwner, onCleanup, Owner, ReadonlySignal } from '@samrey/reactivity';
 import { sanitizeRedirectUri } from '@samrey/security';
 import { el, text } from '@samrey/runtime';
-import { RouteRecord, RouterInstance, RouteMatch } from './types.js';
+import { RouteRecord, RouterInstance } from './types.js';
 import { matchRoutes } from './matcher.js';
+import { isPlainLeftClick, resolveLinkTarget } from './link-helpers.js';
 
 function resolvePath(to: string, current: string): string {
   if (!to) return current;
-  if (/^(https?:|\/\/|mailto:|tel:)/i.test(to)) {
-    return to;
+  const trimmed = to.trim();
+  if (!trimmed) return current;
+  // Preserve explicit URI schemes, protocol-relative prefixes, and backslash tricks so sanitizeRedirectUri rejects them explicitly
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/[\\/]|\\)/i.test(trimmed)) {
+    return trimmed;
   }
   try {
     const base = 'http://localhost' + (current.startsWith('/') ? current : '/' + current);
-    const resolved = new URL(to, base);
+    const resolved = new URL(trimmed, base);
     return resolved.pathname + resolved.search + resolved.hash;
   } catch {
-    return to.startsWith('/') ? to : '/' + to;
+    return trimmed.startsWith('/') ? trimmed : '/' + trimmed;
   }
 }
 
@@ -35,7 +39,7 @@ export function createRouter(routes: RouteRecord[], initialPath?: string): Route
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     const handlePopState = () => {
       const loc = window.location.pathname + (window.location.search || '') + (window.location.hash || '');
-      pathSignal.value = loc;
+      pathSignal.value = sanitizeRedirectUri(loc, '/');
     };
     window.addEventListener('popstate', handlePopState);
     cleanupPopState = () => {
@@ -54,12 +58,6 @@ export function createRouter(routes: RouteRecord[], initialPath?: string): Route
 
   function navigate(to: string): void {
     const resolved = resolvePath(to, pathSignal.value);
-    if (/^(https?:|\/\/|mailto:|tel:)/i.test(resolved)) {
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.href = resolved;
-      }
-      return;
-    }
     const safeTo = sanitizeRedirectUri(resolved, pathSignal.value);
     if (pathSignal.value !== safeTo) {
       pathSignal.value = safeTo;
@@ -95,9 +93,9 @@ export function useRouter(): RouterInstance {
   return activeRouterInstance;
 }
 
-export function useParams<T extends Record<string, string> = Record<string, string>>() {
+export function useParams<T extends Record<string, string> = Record<string, string>>(): ReadonlySignal<T> {
   const router = useRouter();
-  return router.currentParams;
+  return router.currentParams as ReadonlySignal<T>;
 }
 
 export function useLocation() {
@@ -141,18 +139,20 @@ export function useSearchParams() {
 export function createBrowserHistory() {
   return {
     push: (url: string) => {
+      const safeUrl = sanitizeRedirectUri(url, '/');
       if (typeof window !== 'undefined' && window.history) {
         try {
-          window.history.pushState(null, '', url);
+          window.history.pushState(null, '', safeUrl);
         } catch {
           // Ignored in sandboxed iframes
         }
       }
     },
     replace: (url: string) => {
+      const safeUrl = sanitizeRedirectUri(url, '/');
       if (typeof window !== 'undefined' && window.history) {
         try {
-          window.history.replaceState(null, '', url);
+          window.history.replaceState(null, '', safeUrl);
         } catch {
           // Ignored in sandboxed iframes
         }
@@ -160,7 +160,10 @@ export function createBrowserHistory() {
     },
     listen: (fn: (url: string) => void) => {
       if (typeof window !== 'undefined') {
-        const handler = () => fn(window.location.pathname + (window.location.search || '') + (window.location.hash || ''));
+        const handler = () => {
+          const rawUrl = window.location.pathname + (window.location.search || '') + (window.location.hash || '');
+          fn(sanitizeRedirectUri(rawUrl, '/'));
+        };
         window.addEventListener('popstate', handler);
         return () => window.removeEventListener('popstate', handler);
       }
@@ -307,14 +310,10 @@ export interface LinkProps {
 
 export function Link(props: LinkProps) {
   const router = useRouter();
-  const isExternal = /^(https?:|\/\/|mailto:|tel:)/i.test(props.href);
-  const safeTo = isExternal ? props.href : sanitizeRedirectUri(props.href, '/');
+  const { isExternal, safeHref: safeTo } = resolveLinkTarget(props.href);
 
   const handleClick = (e: MouseEvent) => {
-    if (e.defaultPrevented || (e.button !== undefined && e.button !== 0) || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-      return;
-    }
-    if (isExternal || (props.target && props.target !== '_self')) {
+    if (!isPlainLeftClick(e) || isExternal || (props.target && props.target !== '_self')) {
       return;
     }
     e.preventDefault();
@@ -337,6 +336,9 @@ export function Link(props: LinkProps) {
   });
 
   const { class: _cls, activeClass: _ac, href: _h, children: _ch, ...restAttrs } = props;
+  if (props.target === '_blank' && !restAttrs.rel) {
+    restAttrs.rel = 'noopener noreferrer';
+  }
 
   return el(
     'a',

@@ -1,6 +1,6 @@
 # Samrey Framework — Security Policy & Disclosure
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **License:** Apache-2.0  
 
 ---

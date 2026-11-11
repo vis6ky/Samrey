@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @samrey/doc - Authoritative Samrey v2.0.0 Developer Knowledge Base & Retrieval Engine
+ * @samrey/doc - Authoritative Samrey v2.1.0 Developer Knowledge Base & Retrieval Engine
  *
  * Grounded exclusively on official @samrey/* packages, APIs, error codes (AETH-xxx),
  * and architectural specifications. Adheres strictly to the 12-section answer schema.

@@ -174,6 +174,19 @@ const safe = true;
     const inlineSanitized = formatInlineMarkdown('[click me](javascript:alert(1)) <script>alert("xss")</script>');
     assert.ok(!inlineSanitized.includes('javascript:'), 'Must sanitize javascript: URI scheme');
     assert.ok(!inlineSanitized.includes('<script>'), 'Must escape script tags');
+
+    // Bug 9: attribute breakout, underscore in URLs, and code span preservation
+    const attrBreakout = formatInlineMarkdown('[x](https://a.com/"onclick="alert(1))');
+    assert.ok(!attrBreakout.includes('"onclick='), 'Must attribute-escape quotes inside href');
+
+    const imgBreakout = formatInlineMarkdown('![x" onerror="alert(1)](https://a.com/pic.png)');
+    assert.ok(!imgBreakout.includes('" onerror="alert(1)'), 'Must attribute-escape quotes inside img alt');
+
+    const urlWithUnderscores = formatInlineMarkdown('[doc](https://a.com/my_file_v1)');
+    assert.ok(urlWithUnderscores.includes('href="https://a.com/my_file_v1"'), 'Must not corrupt URLs with underscores into <em>');
+
+    const codeWithUnderscores = formatInlineMarkdown('`my_var_name`');
+    assert.ok(codeWithUnderscores.includes('>my_var_name</code>'), 'Must preserve underscores inside inline code spans');
   });
 
   it('14. Verifies copy code button functionality on rendered code blocks', () => {
@@ -187,6 +200,36 @@ export const count = signal(0);
     const copyBtn = (rendered as HTMLElement).querySelector('button');
     assert.ok(copyBtn, 'Copy button must be rendered on fenced code block');
     assert.ok(copyBtn.getAttribute('aria-label')?.includes('Copy') || copyBtn.textContent?.includes('Copy'), 'Button has copy label');
+  });
+
+  it('15. Verifies runtimeSandbox executes all playground presets cleanly and blocks sandbox escape attempts (Bug 9)', async () => {
+    const { executeSamreyCode, PLAYGROUND_PRESETS } = await import('../../src/lib/runtimeSandbox.js');
+    assert.ok(PLAYGROUND_PRESETS.length >= 4);
+
+    for (const preset of PLAYGROUND_PRESETS) {
+      const result = executeSamreyCode(preset.code);
+      assert.equal(result.success, true, `Preset ${preset.id} failed: ${result.error}`);
+    }
+
+    const typedDemo = executeSamreyCode(
+      'interface Props { initial?: number }\nexport function Demo(props: Props = { initial: 7 }): unknown {\n  const count: number = props.initial ?? 0;\n  return el("div", { class: "p-6-card" }, String(count));\n}'
+    );
+    assert.equal(typedDemo.success, true, typedDemo.error);
+
+    const maliciousSnippets = [
+      '({}).constructor.constructor("return window")()',
+      '(0, eval)("1+1")',
+      'eval("1+1")',
+      'new Function("return 1")()',
+      'window.location = "https://evil.com"',
+      'fetch("https://evil.com")',
+      'setTimeout("alert(1)", 0)',
+      'el("div", null, `${document.cookie}`)'
+    ];
+    for (const payload of maliciousSnippets) {
+      const res = executeSamreyCode(payload);
+      assert.equal(res.success, false, `Must reject unsafe sandbox payload: ${payload}`);
+    }
   });
 
 });

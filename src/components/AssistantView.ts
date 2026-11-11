@@ -114,7 +114,7 @@ export function AssistantView(): HTMLElement {
     searchQuery.value = q;
     feedbackState.value = 'none';
     currentCodeResult.value = null;
-    loadingStage.value = 'Analyzing intent & inspecting Samrey v2.0.0 knowledge...';
+    loadingStage.value = 'Analyzing intent & inspecting Samrey v2.1.0 knowledge...';
 
     const stageTimer = setTimeout(() => {
       if (isLoading.value) {
@@ -407,7 +407,7 @@ export function AssistantView(): HTMLElement {
     el('div', { class: 'relative z-10 max-w-3xl space-y-4' },
       el('div', { class: 'inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-mono font-medium' },
         icon('sparkles', 'w-3.5 h-3.5 text-indigo-400'),
-        el('span', null, 'Samrey Framework v2.0.0 · Unified Developer Assistant')
+        el('span', null, 'Samrey Framework v2.1.0 · Unified Developer Assistant')
       ),
       el('h1', { class: 'text-3xl sm:text-4xl font-extrabold tracking-tight text-white' },
         'SAMREY DEVELOPER ASSISTANT'
@@ -692,7 +692,7 @@ export function Broken() {
       box.appendChild(
         el('div', { class: 'text-center space-y-1' },
           el('h4', { class: 'text-base font-bold text-slate-900' }, () => loadingStage.value),
-          el('p', { class: 'text-xs text-slate-500 font-mono' }, 'Grounded against official @samrey/* packages in v2.0.0')
+          el('p', { class: 'text-xs text-slate-500 font-mono' }, 'Grounded against official @samrey/* packages in v2.1.0')
         )
       );
       return box;
@@ -821,7 +821,7 @@ export function Broken() {
         createCodeBlock(
           () => currentAnswer.value?.tsCodeExample || currentAnswer.value?.completeWorkingExample || '',
           'TypeScript',
-          '@samrey/runtime v2.0.0'
+          '@samrey/runtime v2.1.0'
         )
       );
       card.appendChild(sectionImplementation);

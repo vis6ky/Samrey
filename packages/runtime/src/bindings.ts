@@ -3,8 +3,8 @@
  * @samrey/runtime - Fine-Grained Reactive DOM Slot Binders
  */
 
-import { effect } from '@samrey/reactivity';
-import { sanitizeUri, sanitizeCssStyle } from '@samrey/security';
+import { effect, isHydrationCapturing, recordHydrationRetarget } from '@samrey/reactivity';
+import { URL_ATTRIBUTES, SRCSET_ATTRIBUTES, sanitizeUri, sanitizeSrcset, sanitizeCssStyle } from '@samrey/security';
 
 const DANGEROUS_ATTR_NAMES = new Set([
   'innerhtml',
@@ -12,15 +12,10 @@ const DANGEROUS_ATTR_NAMES = new Set([
   'srcdoc'
 ]);
 
-const URI_ATTRS = new Set([
-  'href',
-  'src',
-  'action',
-  'formaction',
-  'xlink:href',
-  'data',
-  'poster',
-  'codebase'
+const HTML_BOOLEAN_ATTRS = new Set([
+  'disabled', 'checked', 'selected', 'readonly', 'required', 'multiple', 'hidden',
+  'open', 'autofocus', 'autoplay', 'controls', 'loop', 'muted', 'novalidate',
+  'reversed', 'scoped', 'ismap', 'defer', 'async', 'allowfullscreen', 'default', 'inert'
 ]);
 
 export function bindText(node: Node, getter: () => unknown): void {
@@ -51,6 +46,14 @@ export function bindText(node: Node, getter: () => unknown): void {
       targetNode.textContent = nextText;
     }
   });
+  if (isHydrationCapturing()) {
+    recordHydrationRetarget(targetNode as object, (nextNode: Node) => {
+      targetNode = nextNode;
+      if (prevText !== null && targetNode.textContent !== prevText) {
+        targetNode.textContent = prevText;
+      }
+    });
+  }
 }
 
 export function bindDynamicChild(parent: Node, getter: () => unknown): void {
@@ -119,8 +122,33 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
     return;
   }
 
+  let targetElem: Element = element;
   let prevVal: string | null = null;
   let prevNull = true;
+
+  const applyAttrValue = (elem: Element, rawVal: unknown, nextStr: string | null, remove: boolean) => {
+    try {
+      if (remove || nextStr === null) {
+        elem.removeAttribute(attrName);
+        if (attrName === 'value' && 'value' in elem) {
+          (elem as any).value = '';
+        } else if (attrName === 'checked' && 'checked' in elem) {
+          (elem as any).checked = false;
+        }
+      } else {
+        elem.setAttribute(attrName, nextStr);
+        if (attrName === 'value' && 'value' in elem) {
+          (elem as any).value = nextStr;
+        } else if (attrName === 'checked' && 'checked' in elem) {
+          (elem as any).checked = Boolean(rawVal);
+        }
+      }
+    } catch (err) {
+      if (!remove) {
+        console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
+      }
+    }
+  };
 
   effect(() => {
     let val = getter();
@@ -129,42 +157,39 @@ export function bindAttr(element: Element, attrName: string, getter: () => unkno
       if (!prevNull) {
         prevNull = true;
         prevVal = null;
-        try {
-          element.removeAttribute(attrName);
-          if (attrName === 'value' && 'value' in element) {
-            (element as any).value = '';
-          } else if (attrName === 'checked' && 'checked' in element) {
-            (element as any).checked = false;
-          }
-        } catch {
-          // Ignore removal errors on mock/detached nodes
-        }
+        applyAttrValue(targetElem, val, null, true);
       }
       return;
     }
 
-    if (URI_ATTRS.has(lowerName)) {
-      val = sanitizeUri(String(val));
+    if (SRCSET_ATTRIBUTES.has(lowerName)) {
+      val = sanitizeSrcset(String(val));
+    } else if (URL_ATTRIBUTES.has(lowerName)) {
+      val = sanitizeUri(String(val), { allowImageDataUri: true });
     } else if (lowerName === 'style') {
       val = sanitizeCssStyle(val);
     }
 
-    const nextStr = String(val);
+    const nextStr = val === true && HTML_BOOLEAN_ATTRS.has(lowerName) ? '' : String(val);
     if (prevNull || nextStr !== prevVal) {
       prevNull = false;
       prevVal = nextStr;
-      try {
-        element.setAttribute(attrName, nextStr);
-        if (attrName === 'value' && 'value' in element) {
-          (element as any).value = nextStr;
-        } else if (attrName === 'checked' && 'checked' in element) {
-          (element as any).checked = Boolean(val);
-        }
-      } catch (err) {
-        console.warn(`[Samrey Runtime] Failed to set attribute "${attrName}":`, err);
-      }
+      applyAttrValue(targetElem, val, nextStr, false);
     }
   });
+
+  if (isHydrationCapturing()) {
+    recordHydrationRetarget(element as object, (nextElem: Element) => {
+      targetElem = nextElem;
+      if (attrName !== 'value' && attrName !== 'checked') {
+        if (!prevNull && prevVal !== null && targetElem.getAttribute?.(attrName) !== prevVal) {
+          applyAttrValue(targetElem, prevVal, prevVal, false);
+        } else if (prevNull && targetElem.hasAttribute?.(attrName)) {
+          applyAttrValue(targetElem, null, null, true);
+        }
+      }
+    });
+  }
 }
 
 export const bindAttribute = bindAttr;
@@ -185,28 +210,45 @@ export function bindProperty(element: Element, propName: string, getter: () => u
     return;
   }
 
+  let targetElem: Element = element;
   effect(() => {
     try {
-      (element as any)[propName] = getter();
+      (targetElem as any)[propName] = getter();
     } catch (err) {
       console.warn(`[Samrey Runtime] Failed to set property "${propName}":`, err);
     }
   });
+  if (isHydrationCapturing()) {
+    recordHydrationRetarget(element as object, (nextElem: Element) => {
+      targetElem = nextElem;
+    });
+  }
 }
 
 export function bindClass(element: Element, className: string, getter: () => boolean): void {
+  let targetElem: Element = element;
   let prevActive: boolean | null = null;
   effect(() => {
     const active = Boolean(getter());
     if (active !== prevActive) {
       prevActive = active;
       if (active) {
-        element.classList.add(className);
+        targetElem.classList.add(className);
       } else {
-        element.classList.remove(className);
+        targetElem.classList.remove(className);
       }
     }
   });
+  if (isHydrationCapturing()) {
+    recordHydrationRetarget(element as object, (nextElem: Element) => {
+      targetElem = nextElem;
+      if (prevActive === true) {
+        targetElem.classList?.add(className);
+      } else if (prevActive === false) {
+        targetElem.classList?.remove(className);
+      }
+    });
+  }
 }
 
 export function bindStyle(element: Element, propertyName: string, getter: () => unknown): void {
@@ -214,21 +256,33 @@ export function bindStyle(element: Element, propertyName: string, getter: () => 
     ? propertyName
     : propertyName.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
 
+  let targetElem: Element = element;
   let prevVal: string | null = null;
+
+  const applyStyle = (elem: Element, val: string | null) => {
+    if (!('style' in elem) || !(elem as any).style) return;
+    const s = (elem as any).style;
+    if (val === null) {
+      if (typeof s.removeProperty === 'function') {
+        s.removeProperty(cssProp);
+      } else {
+        delete s[propertyName];
+        delete s[cssProp];
+      }
+    } else if (typeof s.setProperty === 'function') {
+      s.setProperty(cssProp, val);
+    } else {
+      s[propertyName] = val;
+      s[cssProp] = val;
+    }
+  };
+
   effect(() => {
     const rawVal = getter();
     if (rawVal === null || rawVal === undefined || rawVal === false) {
       if (prevVal !== null) {
         prevVal = null;
-        if ('style' in element && (element as any).style) {
-          const s = (element as any).style;
-          if (typeof s.removeProperty === 'function') {
-            s.removeProperty(cssProp);
-          } else {
-            delete s[propertyName];
-            delete s[cssProp];
-          }
-        }
+        applyStyle(targetElem, null);
       }
       return;
     }
@@ -236,17 +290,17 @@ export function bindStyle(element: Element, propertyName: string, getter: () => 
     const sanitized = sanitizeCssStyle(rawVal).trim();
     if (sanitized !== prevVal) {
       prevVal = sanitized;
-      if ('style' in element && (element as any).style) {
-        const s = (element as any).style;
-        if (typeof s.setProperty === 'function') {
-          s.setProperty(cssProp, sanitized);
-        } else {
-          s[propertyName] = sanitized;
-          s[cssProp] = sanitized;
-        }
-      }
+      applyStyle(targetElem, sanitized);
     }
   });
+  if (isHydrationCapturing()) {
+    recordHydrationRetarget(element as object, (nextElem: Element) => {
+      targetElem = nextElem;
+      if (prevVal !== null) {
+        applyStyle(targetElem, prevVal);
+      }
+    });
+  }
 }
 
 

@@ -28,6 +28,10 @@ Version 2.1.0 introduces fine-grained Template References, enabling direct acces
    - Added diagnostics `SAMREY-109` (duplicate template reference), `SAMREY-110` (invalid reference identifier), and `SAMREY-111` (unsupported reference placement on custom components or control flow tags).
 6. **Instance Isolation & Reactive Lifecycle Cleanup**:
    - Clones have independent registries and DOM nodes. Metadata is automatically released when reactive scopes dispose or via explicit `root.disposeRefs()`.
+7. **Security, SSR Hydration, Strict TypeScript & Tooling Hardening**:
+   - **Security (`EXT-001`–`EXT-004`, `NEW-001`–`NEW-003`)**: Escaped & validated SSR `scriptId`, enforced `sanitizeTemplateHtml()` on `samrey#template` Trusted Types policy, replaced regex HTML/CSS sanitizers with stateful parsers (`sanitizeHtmlString`, `sanitizeCssStyle`, `sanitizeHeadTags`), added full `URL_ATTRIBUTES` / `srcset` checks, and eliminated unsafe `innerHTML` sinks in Markdown rendering and playground sandbox code.
+   - **Non-Destructive Hydration & Stream Teardown**: Preserved matching SSR DOM nodes via `HydrationCaptureRegistry` retargeting with `repairMismatch` fallback, CSS-escaped replay selectors, and `abortSignal` / timeout listener cleanup.
+   - **Strict TypeScript, CLI & Benchmarks**: Enabled strict typechecking (`npm run typecheck`) across root + all 13 packages, added VLQ v3 SourceMaps and native TS/path-safe dev server handling in `@samrey/cli` (`446.8kb` bundle), enabled Vite manual chunking, and fixed real OS reporting + `git archive` fallback in `benchmarks/runner.ts` and `benchmarks/check-regression.ts`.
 
 ---
 

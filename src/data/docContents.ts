@@ -108,7 +108,7 @@ A primary root cause of Cross-Site Scripting (XSS) in frontend frameworks is the
     content: `# Architectural Specification: Samrey Frontend Framework
 
 **Document**: docs/ARCHITECTURE.md  
-**Version**: 2.0.0  
+**Version**: 2.1.0 (Built on 2.0.0 Architecture)  
 **Author**: Lead Framework Architect  
 **Classification**: Core Engineering Blueprint  
 

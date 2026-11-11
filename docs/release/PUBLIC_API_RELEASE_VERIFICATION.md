@@ -11,9 +11,9 @@
 
 | Package | Expected Exports | Actual Exports | Missing | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `@samrey/reactivity` | 15 | 30 | 0 | **PASS** |
+| `@samrey/reactivity` | 15 | 34 | 0 | **PASS** |
 | `@samrey/runtime` | 18 | 45 | 0 | **PASS** |
-| `@samrey/security` | 10 | 31 | 0 | **PASS** |
+| `@samrey/security` | 10 | 39 | 0 | **PASS** |
 | `@samrey/compiler` | 9 | 19 | 0 | **PASS** |
 | `@samrey/router` | 14 | 17 | 0 | **PASS** |
 | `@samrey/http` | 4 | 8 | 0 | **PASS** |
@@ -21,7 +21,7 @@
 | `@samrey/ssr` | 9 | 23 | 0 | **PASS** |
 | `@samrey/testing` | 6 | 9 | 0 | **PASS** |
 | `@samrey/devtools` | 9 | 26 | 0 | **PASS** |
-| `@samrey/cli` | 13 | 18 | 0 | **PASS** |
+| `@samrey/cli` | 13 | 20 | 0 | **PASS** |
 
 ## 2. Detailed Symbol Breakdown
 

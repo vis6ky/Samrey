@@ -5,11 +5,11 @@ import {
   computed, 
   effect, 
   batch, 
-  untrack, 
+  createOwner,
+  runWithOwner,
   createRoot, 
   onCleanup,
-  createStore,
-  onError
+  createStore
 } from '../src/index.js';
 
 describe('@samrey/reactivity', () => {
@@ -63,7 +63,7 @@ describe('@samrey/reactivity', () => {
       effect(() => {
         runs++;
         // Read both
-        const _ = `${first.value} ${last.value}`;
+        void `${first.value} ${last.value}`;
       });
     });
 
@@ -145,7 +145,7 @@ describe('@samrey/reactivity', () => {
     createRoot(() => {
       effect(() => {
         effectRuns++;
-        const _ = `${label.value}: ${isEven.value}`;
+        void `${label.value}: ${isEven.value}`;
       });
     });
 
@@ -170,7 +170,7 @@ describe('@samrey/reactivity', () => {
     createRoot(() => {
       effect(() => {
         runs++;
-        const _ = num.value;
+        void num.value;
       });
     });
 
@@ -242,6 +242,92 @@ describe('@samrey/reactivity', () => {
         return arr;
       });
       assert.equal(warnings.length, 1);
+    } finally {
+      console.warn = origWarn;
+      if (origNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = origNodeEnv;
+      }
+    }
+  });
+
+  it('disposes all nested child owners and effects without skipping every second child', () => {
+    const trigger = signal(0);
+    const disposedIds: string[] = [];
+
+    const dispose = createRoot((disposeRoot) => {
+      effect(() => {
+        const run = trigger.value;
+        // Create 4 sibling child owners inside the effect
+        for (let i = 0; i < 4; i++) {
+          const child = createOwner();
+          runWithOwner(child, () => {
+            onCleanup(() => disposedIds.push(`owner-${run}-${i}`));
+          });
+        }
+        // Also create 4 nested effects inside the outer effect
+        for (let i = 0; i < 4; i++) {
+          effect(() => {
+            void run;
+            onCleanup(() => disposedIds.push(`nested-${run}-${i}`));
+          });
+        }
+      });
+      return disposeRoot;
+    });
+
+    assert.equal(disposedIds.length, 0);
+
+    // Trigger outer effect re-run: all 4 child owners and all 4 nested effects from run 0 must dispose
+    trigger.value = 1;
+    for (let i = 0; i < 4; i++) {
+      assert.ok(disposedIds.includes(`owner-0-${i}`), `missing owner-0-${i}`);
+      assert.ok(disposedIds.includes(`nested-0-${i}`), `missing nested-0-${i}`);
+    }
+
+    // Dispose root: all 4 child owners and all 4 nested effects from run 1 must dispose
+    dispose();
+    for (let i = 0; i < 4; i++) {
+      assert.ok(disposedIds.includes(`owner-1-${i}`), `missing owner-1-${i}`);
+      assert.ok(disposedIds.includes(`nested-1-${i}`), `missing nested-1-${i}`);
+    }
+  });
+
+  it('detects same-length in-place array mutations in dev mode while keeping zero-copy reference identity', () => {
+    const origWarn = console.warn;
+    const origNodeEnv = process.env.NODE_ENV;
+    const warnings: string[] = [];
+    console.warn = (msg: unknown) => {
+      warnings.push(String(msg));
+    };
+
+    try {
+      process.env.NODE_ENV = 'development';
+      const rawArr = [3, 1, 2];
+      const items = signal(rawArr);
+      assert.strictEqual(items.value, rawArr);
+
+      // Same-length index mutation returned as same reference
+      items.update((arr) => {
+        arr[0] = 99;
+        return arr;
+      });
+      assert.equal(warnings.length, 1);
+      assert.ok(warnings[0].includes('In-place array mutation detected'));
+      assert.strictEqual(items.value, rawArr);
+
+      // Same-length sort mutation returned as same reference
+      items.update((arr) => arr.sort((a, b) => a - b));
+      assert.equal(warnings.length, 2);
+
+      // Production mode remains silent
+      process.env.NODE_ENV = 'production';
+      items.update((arr) => {
+        arr[1] = 42;
+        return arr;
+      });
+      assert.equal(warnings.length, 2);
     } finally {
       console.warn = origWarn;
       if (origNodeEnv === undefined) {

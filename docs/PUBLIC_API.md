@@ -1,6 +1,6 @@
 # Samrey Framework — Public API Authoritative Reference
 
-> **Samrey v2.0.0 Formal API Contract & Package Specification**
+> **Samrey v2.1.0 Formal API Contract & Package Specification**
 
 This document serves as the authoritative Public API contract for all 11 packages comprising the Samrey Framework.
 
@@ -83,8 +83,11 @@ Direct DOM instantiation, reactive bindings, lifecycle hooks, and control flow.
 | `svg(tag, props, ...children)` | Function | Creates an SVG namespace DOM element. | Browser |
 | `fragment(...children)` | Function | Creates a lightweight DOM DocumentFragment. | Browser |
 | `text(content)` | Function | Creates a reactive DOM TextNode updated via signal bindings. | Browser |
+| `template<S>(html: S)` | Function | Clones pre-parsed static HTML templates with O(1) `root.refs`, `root.ref()`, and `root.disposeRefs()` lifecycle cleanup. | Browser |
+| `on(el, event, handler, opts?)` | Function | Attaches owner-scoped DOM event listeners with cleanup and hydration retargeting (`bindEvent` alias). | Browser |
+| `rawHtml(html)` | Function | Parses HTML through `TrustedTypesPolicy.createHTML()` / `sanitizeHtmlString()` into DOM nodes. | Browser |
 | `mount(component, container)` | Function | Mounts a root component into a DOM element with lifecycle scope. Returns unmount function. | Browser |
-| `hydrate(component, container)` | Function | Hydrates server-rendered HTML into an interactive client DOM tree without redraw. | Browser |
+| `hydrate(component, container, options?)` | Function | Non-destructively hydrates server-rendered HTML into an interactive client DOM tree with mismatch repair and event replay. | Browser |
 | `Show` | Component | Conditional rendering component (`when`, `fallback`, `children`). | Universal |
 | `For` | Component | High-performance keyed list reconciliation component (`each`, `key`, `children`, `fallback`). | Universal |
 | `Switch` / `Match` | Components | Multi-branch conditional selection control flow. | Universal |
@@ -107,15 +110,18 @@ Zero-trust sanitization, CSP enforcement, URI scheme verification, and anti-forg
 
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
-| `sanitizeHtml(input: string)` | Function | Escapes raw HTML tags and dangerous tokens to prevent XSS. | Universal |
-| `sanitizeUrl(url: string)` | Function | Strips dangerous schemes (`javascript:`, `data:text/html`, `vbscript:`). | Universal |
-| `sanitizeAttribute(attr, val)` | Function | Context-aware attribute sanitizer. | Universal |
-| `isSafeUrl(url: string)` | Function | Validates if a URL uses a safe protocol (`http`, `https`, `mailto`, relative). | Universal |
+| `sanitizeHtml(input: string)` | Function | Strips unsafe tags (`<script>`, etc.), inline `on*` handlers, and dangerous URLs via parser-based `sanitizeHtmlString`. | Universal |
+| `sanitizeUrl(url, options?)` | Function | Alias for `sanitizeUri`. Blocks `javascript:`, `vbscript:`, `blob:`, and non-bitmap `data:` schemes (returns `'about:blank'` or `''`). | Universal |
+| `sanitizeRedirectUri(url, fallback?)` | Function | Enforces same-origin relative redirect targets (rejects `//`, `/\`, backslashes, and external origins). | Universal |
+| `sanitizeCssStyle(css)` | Function | Tokenizer-based CSS sanitizer neutralizing comments, escapes, `expression()`, `behavior:`, `@import`, and dangerous `url()`. | Universal |
+| `sanitizeHeadTags(headHtml)` | Function | Sanitizes SSR custom head markup to safe `<meta>`, `<link>`, and `<base>` elements. | Server / Universal |
+| `sanitizeAttribute(attr, val)` | Function | Alias for `escapeHtmlAttribute`. Escapes attribute text (`&`, `<`, `>`, `"`, `'`). | Universal |
+| `isSafeUrl(url: string)` | Function | Validates if a URL passes `sanitizeUri` without rewriting to `'about:blank'`. | Universal |
 | `safeJsonParse<T>(json: string)` | Function | Deserializes JSON while neutralizing prototype pollution keys (`__proto__`, `constructor`). | Universal |
 | `safeJsonStringify(obj: unknown)` | Function | Serializes JSON safely with Unicode HTML entity escaping (`<` -> `\u003c`). | Universal |
-| `createCsrfToken(secret: string)` | Function | Generates a cryptographically secure CSRF session token. | Universal |
-| `validateCsrfToken(token, secret)` | Function | Validates CSRF token authenticity and timestamp expiration. | Universal |
-| `TrustedTypesPolicy` | Class | Manages browser Trusted Types security policy integration. | Browser |
+| `createCsrfToken(entropyOrSecret?)` | Function | Alias for `generateCsrfToken`. Generates a cryptographically secure CSRF session token. | Universal |
+| `validateCsrfToken(token, expected)` | Function | Alias for `verifyCsrfToken`. Constant-time comparison against the expected CSRF session token. | Universal |
+| `TrustedTypesPolicy` | Object | W3C Trusted Types facade & fallback object exposing `getPolicy()`, `getTemplatePolicy()`, `createHTML()`, `createTemplateHTML()`, `createScriptURL()`. | Browser |
 
 ---
 
@@ -132,7 +138,7 @@ Samrey Intermediate Representation (AIR), security AST classifier, a11y linter, 
 | `buildAIR(ast, options?)` | Function | Transforms AST into Samrey Intermediate Representation (AIR). | Node / Universal |
 | `generateCode(air, options?)` | Function | Emits production JavaScript code with cloneNode calls and targeted signal bindings. | Node / Universal |
 | `classifySecurityNode(node)` | Function | Classifies AST nodes for dynamic security risks. | Node / Universal |
-| `lintAccessibility(ast)` | Function | Audits AST nodes against WCAG AA accessibility standards. | Node / Universal |
+| `lintAccessibility(tag, attributes)` | Function | Audits element tags and attributes against WCAG AA accessibility rules (alias for `lintA11y`). | Node / Universal |
 | `SamreyCompilerError` | Class | Structured compiler error class with source frames. | Node / Universal |
 | `generateSourceFrame(src, l, c)` | Function | Generates a terminal-friendly visual code pointer frame. | Node / Universal |
 | `ERROR_REGISTRY` | Constant | Catalog of compiler and framework error definitions. | Node / Universal |
@@ -151,7 +157,7 @@ Declarative client-side and SSR-compatible routing with zero dependencies.
 | `Route` | Component | Declarative route definition (`path`, `component`, `guard`). | Universal |
 | `Link` | Component | Accessible client navigation anchor with pushState interception and active class styling. | Browser |
 | `useRouter()` | Function | Returns the active Router instance with `navigate()`, `back()`, `forward()`. | Universal |
-| `useParams<T>()` | Function | Returns a reactive signal of URL route parameters (e.g. `:id`). | Universal |
+| `useParams<T>()` | Function | Returns a `ReadonlySignal<T>` of matched URL route parameters (e.g. `:id`). | Universal |
 | `useSearchParams()` | Function | Returns reactive search/query parameters with setter. | Universal |
 | `useLocation()` | Function | Returns reactive signal of current pathname, search, and hash. | Universal |
 | `matchRoute(pattern, path)` | Function | Fast regex-compiled parameterized route pattern matcher. | Universal |

@@ -6,6 +6,7 @@
 import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { compileTemplate } from '@samrey/compiler';
 import { CommandResult } from './create.js';
 
 export interface DevCommandOptions {
@@ -19,10 +20,14 @@ const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
+  '.samrey': 'text/javascript; charset=utf-8',
   '.ts': 'text/javascript; charset=utf-8',
   '.tsx': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
+  '.css': 'text/css; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -31,6 +36,137 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
   '.wasm': 'application/wasm'
 };
+
+async function transpileTypeScriptModule(filePath: string, source: string, isTsx: boolean): Promise<string> {
+  try {
+    const esbuild = await import('esbuild');
+    const result = await esbuild.transform(source, {
+      loader: isTsx ? 'tsx' : 'ts',
+      format: 'esm',
+      sourcefile: filePath,
+      sourcemap: 'inline'
+    });
+    return result.code;
+  } catch (esbuildErr: any) {
+    try {
+      const ts = await import('typescript');
+      const transpileModule = ts.transpileModule ?? ts.default?.transpileModule;
+      if (typeof transpileModule === 'function') {
+        const out = transpileModule(source, {
+          fileName: filePath,
+          compilerOptions: {
+            module: 99, // ESNext
+            target: 9,  // ES2022
+            jsx: 1      // Preserve
+          }
+        });
+        return out.outputText;
+      }
+    } catch {
+      // Fall through to unified error below
+    }
+    throw new Error(
+      `Failed to transpile ${path.basename(filePath)}: ${esbuildErr?.message || 'neither esbuild nor typescript could transpile module'}`
+    );
+  }
+}
+
+export function createNativeDevHandler(absoluteRoot: string): http.RequestListener {
+  const resolvedRoot = path.resolve(absoluteRoot);
+  return async (req, res) => {
+    const rawPath = (req.url || '/').split(/[?#]/)[0] || '/';
+    let reqPath: string;
+    try {
+      reqPath = decodeURIComponent(rawPath);
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('400 Bad Request');
+      return;
+    }
+
+    if (reqPath.includes('\0')) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('400 Bad Request');
+      return;
+    }
+
+    const slashNormalized = reqPath.replace(/\\/g, '/');
+    if (slashNormalized.split('/').some((seg) => seg === '..')) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('403 Forbidden');
+      return;
+    }
+
+    if (slashNormalized === '/') reqPath = '/index.html';
+    else reqPath = slashNormalized;
+
+    const cleanPath = path.posix.normalize(reqPath);
+    const relativeTarget = cleanPath.replace(/^\/+/, '');
+    let filePath = path.resolve(resolvedRoot, relativeTarget);
+
+    if (
+      !filePath.startsWith(resolvedRoot + path.sep) &&
+      filePath !== path.join(resolvedRoot, 'index.html') &&
+      filePath !== resolvedRoot
+    ) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('403 Forbidden');
+      return;
+    }
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(filePath, 'index.html');
+    }
+
+    if (!fs.existsSync(filePath)) {
+      const reqExt = path.extname(reqPath).toLowerCase();
+      if (reqExt && reqExt !== '.html') {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('404 Not Found');
+        return;
+      }
+      // SPA Fallback to index.html only for extensionless client-side routes
+      filePath = path.join(resolvedRoot, 'index.html');
+    }
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath).toLowerCase();
+
+      if (ext === '.samrey') {
+        try {
+          const source = fs.readFileSync(filePath, 'utf-8');
+          const compiled = compileTemplate(source, { filename: filePath });
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+          res.end(compiled.generatedCode);
+        } catch (err: any) {
+          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end(`[Samrey Compile Error] ${err?.message || err}`);
+        }
+        return;
+      }
+
+      if (ext === '.ts' || ext === '.tsx') {
+        try {
+          const source = fs.readFileSync(filePath, 'utf-8');
+          const transpiled = await transpileTypeScriptModule(filePath, source, ext === '.tsx');
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+          res.end(transpiled);
+        } catch (err: any) {
+          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end(`[Samrey Dev Error] ${err?.message || err}`);
+        }
+        return;
+      }
+
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': contentType });
+      fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('404 Not Found');
+    }
+  };
+}
 
 export async function runDevCommand(options: DevCommandOptions = {}): Promise<CommandResult> {
   const port = options.port || 3000;
@@ -89,35 +225,7 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   // Native lightweight dev server fallback
   const rootDir = process.cwd();
   const absoluteRoot = path.resolve(rootDir);
-
-  const server = http.createServer((req, res) => {
-    let reqPath = req.url?.split('?')[0] || '/';
-    if (reqPath === '/') reqPath = '/index.html';
-
-    const cleanPath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
-    let filePath = path.resolve(absoluteRoot, '.' + cleanPath);
-
-    if (!filePath.startsWith(absoluteRoot + path.sep) && filePath !== path.join(absoluteRoot, 'index.html')) {
-      res.writeHead(403, { 'Content-Type': 'text/plain' });
-      res.end('403 Forbidden');
-      return;
-    }
-
-    if (!fs.existsSync(filePath)) {
-      // SPA Fallback to index.html
-      filePath = path.join(absoluteRoot, 'index.html');
-    }
-
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      const ext = path.extname(filePath).toLowerCase();
-      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
-      fs.createReadStream(filePath).pipe(res);
-    } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found');
-    }
-  });
+  const server = http.createServer(createNativeDevHandler(absoluteRoot));
 
   const listenHost = options.host ? (typeof options.host === 'string' ? options.host : '0.0.0.0') : '127.0.0.1';
 

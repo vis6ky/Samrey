@@ -3,8 +3,26 @@
  * @samrey/http - Fetch Client Wrapper
  */
 
-import { sanitizeUri } from '@samrey/security';
+import { sanitizeUri, safeJsonParse, scrubPrototypePollution } from '@samrey/security';
 import { HttpError } from './types.js';
+
+async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined> {
+  if (typeof res.text === 'function') {
+    const rawText = await res.text();
+    if (!rawText || rawText.trim() === '') {
+      return undefined;
+    }
+    try {
+      return safeJsonParse<T>(rawText);
+    } catch {
+      return rawText as unknown as T;
+    }
+  }
+  if (typeof res.json === 'function') {
+    return scrubPrototypePollution(await res.json()) as T;
+  }
+  return undefined;
+}
 
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number;
@@ -49,7 +67,7 @@ export class HttpClient {
     if (safe === 'about:blank' && raw !== 'about:blank') {
       throw new Error(`[Samrey HTTP] Blocked insecure request URL: "${raw}"`);
     }
-    return raw;
+    return safe;
   }
 
   private async request<T>(path: string, method: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
@@ -80,13 +98,20 @@ export class HttpClient {
     }
 
     let controller: AbortController | undefined;
-    let timeoutId: any;
-    let signal = options.signal;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const externalSignal = options.signal;
+    let abortListener: (() => void) | undefined;
+    let signal = externalSignal;
 
     if (options.timeoutMs && options.timeoutMs > 0) {
       controller = new AbortController();
-      if (signal) {
-        signal.addEventListener('abort', () => controller?.abort(signal?.reason));
+      if (externalSignal) {
+        if (externalSignal.aborted) {
+          controller.abort(externalSignal.reason);
+        } else {
+          abortListener = () => controller?.abort(externalSignal.reason);
+          externalSignal.addEventListener('abort', abortListener, { once: true });
+        }
       }
       timeoutId = setTimeout(() => {
         controller?.abort(new Error(`[Samrey HTTP] Request timed out after ${options.timeoutMs}ms`));
@@ -104,15 +129,11 @@ export class HttpClient {
       });
 
       if (!res.ok) {
-        let errBody: any;
+        let errBody: unknown;
         try {
-          errBody = await res.json();
+          errBody = await readSafeResponsePayload(res);
         } catch {
-          try {
-            errBody = await res.text();
-          } catch {
-            errBody = undefined;
-          }
+          errBody = undefined;
         }
         throw new HttpError(res.status, `HTTP Error ${res.status}: ${res.statusText}`, errBody);
       }
@@ -121,19 +142,13 @@ export class HttpClient {
         return undefined as unknown as T;
       }
 
-      const text = await res.text();
-      if (!text || text.trim() === '') {
-        return undefined as unknown as T;
-      }
-
-      try {
-        return JSON.parse(text) as T;
-      } catch {
-        return text as unknown as T;
-      }
+      return (await readSafeResponsePayload<T>(res)) as T;
     } finally {
-      if (timeoutId) {
+      if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
+      }
+      if (externalSignal && abortListener) {
+        externalSignal.removeEventListener('abort', abortListener);
       }
     }
   }

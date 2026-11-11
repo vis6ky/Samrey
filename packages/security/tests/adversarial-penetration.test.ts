@@ -1,22 +1,17 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { compileTemplate } from '@samrey/compiler';
-import { bindAttr, bindText } from '@samrey/runtime';
+import { bindAttr } from '@samrey/runtime';
 import { signal } from '@samrey/reactivity';
 import { createRouter } from '@samrey/router';
 import { serializeStateForHydration, deserializeHydrationState, stripSecrets } from '@samrey/ssr';
 import { samreyDevToolsBridge, initDevTools } from '@samrey/devtools';
-import { runCreateCommand } from '@samrey/cli/src/commands/create.js';
-import { runGenerateCommand } from '@samrey/cli/src/commands/generate.js';
+import { runCreateCommand, runGenerateCommand } from '@samrey/cli';
 import { createForm } from '@samrey/forms';
-import { 
-  sanitizeUri, 
-  sanitizeRedirectUri, 
-  sanitizeCssStyle, 
-  escapeForScriptPayload,
+import {
   verifyCsrfToken,
   generateCsrfToken
-} from '../src/index.ts';
+} from '../src/index.js';
 
 describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
   describe('Vulnerability 1: Compiler Constant-Folding XSS & Attribute Breakout', () => {
@@ -50,8 +45,8 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
     it('sanitizes href, src, action, formaction, and xlink:href dynamically', () => {
       const dummyElem = {
         attrs: {} as Record<string, string>,
-        setAttribute(name: string, val: string) { this.attrs[name] = val; },
-        removeAttribute(name: string) { delete this.attrs[name]; }
+        setAttribute(this: { attrs: Record<string, string> }, name: string, val: string) { this.attrs[name] = val; },
+        removeAttribute(this: { attrs: Record<string, string> }, name: string) { delete this.attrs[name]; }
       } as unknown as Element;
 
       const uriSignal = signal('javascript:alert(1)');
@@ -76,8 +71,8 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
     it('refuses to bind dangerous attribute names like innerHTML and inline event handlers', () => {
       const dummyElem = {
         attrs: {} as Record<string, string>,
-        setAttribute(name: string, val: string) { this.attrs[name] = val; },
-        removeAttribute(name: string) { delete this.attrs[name]; }
+        setAttribute(this: { attrs: Record<string, string> }, name: string, val: string) { this.attrs[name] = val; },
+        removeAttribute(this: { attrs: Record<string, string> }, name: string) { delete this.attrs[name]; }
       } as unknown as Element;
 
       bindAttr(dummyElem, 'innerHTML', () => '<img src=x onerror=alert(1)>');
@@ -93,8 +88,8 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
     it('sanitizes dynamic CSS style attributes against script execution', () => {
       const dummyElem = {
         attrs: {} as Record<string, string>,
-        setAttribute(name: string, val: string) { this.attrs[name] = val; },
-        removeAttribute(name: string) { delete this.attrs[name]; }
+        setAttribute(this: { attrs: Record<string, string> }, name: string, val: string) { this.attrs[name] = val; },
+        removeAttribute(this: { attrs: Record<string, string> }, name: string) { delete this.attrs[name]; }
       } as unknown as Element;
 
       const styleSignal = signal('background: url(javascript:alert(1)); color: blue;');
@@ -130,9 +125,9 @@ describe('Samrey Adversarial Security & Penetration Testing Suite', () => {
       ]);
 
       assert.doesNotThrow(() => {
-        const match1 = router.match('/user/%E0%A4%9');
-        const match2 = router.match('/user/%ZZ');
-        const match3 = router.match('/user/%');
+        router.match('/user/%E0%A4%9');
+        router.match('/user/%ZZ');
+        router.match('/user/%');
       });
     });
   });

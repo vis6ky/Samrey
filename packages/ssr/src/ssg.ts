@@ -3,7 +3,8 @@
  * @samrey/ssr - Static Site Generation (SSG) Engine
  */
 
-import { renderToString, RenderToStringOptions } from './stream.js';
+import { renderToString } from './stream.js';
+import { escapeHtmlText, sanitizeUri } from '@samrey/security';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
@@ -178,17 +179,23 @@ export async function generateStaticSite(
   // Optional sitemap generation
   let sitemapXml: string | undefined;
   if (options.generateSitemap && options.baseUrl) {
-    const base = options.baseUrl.replace(/\/$/, '');
+    const safeBase = sanitizeUri(options.baseUrl.replace(/\/$/, ''), { allowProtocolRelative: false });
+    if (safeBase === 'about:blank') {
+      throw new Error(`[Samrey SSG] Refusing invalid sitemap baseUrl: "${options.baseUrl}"`);
+    }
+    const base = safeBase.replace(/\/$/, '');
     sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${generatedPages
-  .map(
-    (p) => `  <url>
-    <loc>${base}${p.path.startsWith('/') ? p.path : '/' + p.path}</loc>
+  .map((p) => {
+    const normalizedPath = p.path.startsWith('/') ? p.path : '/' + p.path;
+    const locUrl = escapeHtmlText(`${base}${normalizedPath}`);
+    return `  <url>
+    <loc>${locUrl}</loc>
     <changefreq>daily</changefreq>
     <priority>${p.path === '/' ? '1.0' : '0.8'}</priority>
-  </url>`
-  )
+  </url>`;
+  })
   .join('\n')}
 </urlset>`;
 

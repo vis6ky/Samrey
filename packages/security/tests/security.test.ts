@@ -15,7 +15,7 @@ import {
   getSamreyTemplateTrustedPolicy,
   sanitizeTemplateHtml,
   decodeCssEscapes
-} from '../src/index.ts';
+} from '../src/index.js';
 
 describe('@samrey/security', () => {
   it('blocks javascript: URLs and dangerous schemes', () => {
@@ -255,5 +255,90 @@ describe('@samrey/security', () => {
     assert.ok(!cleanTmpl.includes('onerror'));
     assert.ok(!cleanTmpl.includes('malicious'));
     assert.ok(!cleanTmpl.includes('<![CDATA['));
+  });
+
+  it('blocks HTML/template tokenizer bypasses (no-space attrs, quoted >, </script >, SVG animate, <style> in templates)', () => {
+    // 1. Missing whitespace between quoted attribute and event handler
+    const noSpaceHtml = sanitizeHtmlString('<img src="x"onerror="alert(1)">');
+    assert.ok(!noSpaceHtml.includes('onerror'));
+    assert.ok(noSpaceHtml.includes('<img src="x">'));
+
+    const noSpaceTmpl = sanitizeTemplateHtml('<button ref="b"onclick="alert(1)">Hi</button>');
+    assert.ok(!noSpaceTmpl.includes('onclick'));
+    assert.ok(noSpaceTmpl.includes('<button ref="b">Hi</button>'));
+
+    // 2. Quoted '>' inside attributes must not end tag parsing prematurely
+    const quotedGt = sanitizeHtmlString('<div title=">" onclick="alert(1)">Safe</div>');
+    assert.ok(!quotedGt.includes('onclick'));
+    assert.ok(quotedGt.includes('Safe'));
+
+    // 3. Whitespace/attributes in </script > and unclosed <script>
+    assert.equal(sanitizeHtmlString('<script>alert(1)</script ><b>Ok</b>'), '<b>Ok</b>');
+    assert.equal(sanitizeHtmlString('<b>Ok</b><script>alert(1)'), '<b>Ok</b>');
+    assert.equal(sanitizeTemplateHtml('<div>Hi</div><script>alert(1)</script >'), '<div>Hi</div>');
+
+    // 4. SVG dangerous elements (<animate>, <set>, <foreignObject>, <discard>) and data:image/svg+xml
+    const svgAttack = '<svg><animate onbegin="alert(1)" attributeName="href" to="javascript:alert(1)"></animate><foreignObject><script>alert(2)</script></foreignObject><path d="M0 0" /></svg>';
+    for (const clean of [sanitizeHtmlString(svgAttack), sanitizeTemplateHtml(svgAttack)]) {
+      assert.ok(!clean.includes('<animate'));
+      assert.ok(!clean.includes('onbegin'));
+      assert.ok(!clean.includes('<foreignObject'));
+      assert.ok(!clean.includes('alert(2)'));
+      assert.ok(clean.includes('<path d="M0 0" />'));
+    }
+
+    const svgDataUri = '<img src="data:image/svg+xml;base64,PHNjcmlwdD4=" srcset="data:image/png;base64,iVBOR== 1x, javascript:alert(1) 2x">';
+    const cleanedData = sanitizeHtmlString(svgDataUri);
+    assert.ok(!cleanedData.includes('image/svg+xml'));
+    assert.ok(cleanedData.includes('src="about:blank"'));
+    assert.ok(cleanedData.includes('srcset="data:image/png;base64,iVBOR== 1x, about:blank 2x"'));
+
+    // 5. <style> tag must be stripped even in template mode
+    const tmplWithStyle = '<div>Hi</div><style>body{background:url(javascript:alert(1))}</style>';
+    assert.equal(sanitizeTemplateHtml(tmplWithStyle), '<div>Hi</div>');
+  });
+
+  it('blocks named HTML entity scheme bypasses (&Tab;, &NewLine;, mixed/malformed %XX) while preserving safe query strings', () => {
+    const uriAttacks = [
+      'java&Tab;script:alert(1)',
+      'java&NewLine;script:alert(1)',
+      'java&#x09;script&colon;alert&lpar;1&rpar;',
+      'jav&#38;Tab;script:alert(1)',
+      '%6a%61vascript:%ZZ',
+      'https://example.com\t/evil'
+    ];
+    for (const attack of uriAttacks) {
+      assert.equal(sanitizeUri(attack), 'about:blank', `Failed to block URI attack: ${attack}`);
+    }
+    assert.equal(sanitizeUri('https://example.com/?a=1&tab=2'), 'https://example.com/?a=1&tab=2');
+    assert.equal(sanitizeRedirectUri('/%2fevil.com', '/safe'), '/safe');
+    assert.equal(sanitizeRedirectUri('/%5cevil.com', '/safe'), '/safe');
+  });
+
+  it('sanitizes CSS escapes before url() and balances nested parentheses without leaving stray )', () => {
+    const escapedUrl = 'background: \\75rl(javascript:alert(1)); color: blue;';
+    const cleanEscapedUrl = sanitizeCssStyle(escapedUrl);
+    assert.ok(!cleanEscapedUrl.includes('javascript:'));
+    assert.ok(!cleanEscapedUrl.includes('\\75'));
+    assert.ok(cleanEscapedUrl.includes('background: url(""); color: blue;'));
+
+    const spacedEscapedUrl = 'background: \\75 rl(javascript:alert(1));';
+    const cleanSpaced = sanitizeCssStyle(spacedEscapedUrl);
+    assert.equal(cleanSpaced, 'background: url("");');
+
+    const escapedExpr = 'width: expr\\65ssion(alert(1)); height: 10px;';
+    const cleanExpr = sanitizeCssStyle(escapedExpr);
+    assert.ok(!cleanExpr.includes('expression'));
+    assert.ok(!cleanExpr.includes('alert(1)'));
+    assert.ok(!cleanExpr.includes(')'));
+    assert.ok(cleanExpr.includes('height: 10px;'));
+
+    const nestedParensUrl = 'background: url(javascript:alert(1)); color: green;';
+    assert.equal(sanitizeCssStyle(nestedParensUrl), 'background: url(""); color: green;');
+
+    const imgSet = 'background-image: image-set("javascript:alert(1)" 1x, "https://cdn.example.com/a.png" 2x);';
+    const cleanImgSet = sanitizeCssStyle(imgSet);
+    assert.ok(!cleanImgSet.includes('javascript:'));
+    assert.ok(cleanImgSet.includes('https://cdn.example.com/a.png'));
   });
 });

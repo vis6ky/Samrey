@@ -5,7 +5,7 @@
 
 import { Dependency, ReadonlySignal, Subscriber } from './types.js';
 import { trackDependency, setActiveSubscriber, incrementClock } from './batch.js';
-import { createOwner, onCleanup } from './owner.js';
+import { onCleanup } from './owner.js';
 
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
   let cachedValue: T;

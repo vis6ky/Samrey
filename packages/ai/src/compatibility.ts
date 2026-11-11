@@ -6,10 +6,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { spawn } from 'node:child_process';
-import { signal, computed, effect, batch } from '@samrey/reactivity';
-import { template, Show, For, on, bindText, bindAttr, createComponent } from '@samrey/runtime';
+import { signal, effect } from '@samrey/reactivity';
+import { Show, For, on, createComponent } from '@samrey/runtime';
 import { compileTemplate } from '@samrey/compiler';
-import { createRouter, matchPath } from '@samrey/router';
+import { matchPath } from '@samrey/router';
 import { createForm } from '@samrey/forms';
 import { createResource } from '@samrey/http';
 import { renderToString } from '@samrey/ssr';
@@ -466,7 +466,7 @@ export async function verifyStdioHandshake(mcpBinPath?: string): Promise<StdioHa
       params: {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'samrey-compatibility-suite', version: '2.0.0' }
+        clientInfo: { name: 'samrey-compatibility-suite', version: '2.1.0' }
       }
     }) + '\n';
 

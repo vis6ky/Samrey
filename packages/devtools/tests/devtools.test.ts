@@ -1,8 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { 
-  samreyDevToolsBridge, 
-  defaultGraphInspector,
+import {
   defaultComponentInspector,
   defaultOwnerInspector,
   defaultRouterInspector,
@@ -11,7 +9,6 @@ import {
   defaultPerformanceInspector,
   sanitizePayload,
   isSensitiveKey,
-  DevToolsEvent,
   initDevtools,
   getGraphSnapshot
 } from '../src/index.js';

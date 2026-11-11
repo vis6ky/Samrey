@@ -1,17 +1,20 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { 
-  template, 
-  bindText, 
-  bindAttr, 
-  createComponent, 
-  Show, 
+import {
+  template,
+  bindText,
+  bindAttr,
+  createComponent,
+  el,
+  Show,
   For,
   ErrorBoundary,
+  Dynamic,
+  Suspense,
   onMount,
   bindStyle
 } from '../src/index.js';
-import { signal, onCleanup, effect, createRoot } from '@samrey/reactivity';
+import { signal, onCleanup, effect, createRoot, useContext, SuspenseTrackerContext } from '@samrey/reactivity';
 
 // Lightweight Test DOM Node structure for pure Node.js environments
 class TestNode {
@@ -185,7 +188,7 @@ describe('@samrey/runtime', () => {
       return { nodeType: 1, title: props.title } as unknown as Node;
     };
 
-    const comp = createComponent(MyComponent, { title: 'App' });
+    createComponent(MyComponent, { title: 'App' });
     assert.equal(executions, 1);
 
     // Mutating signal does NOT re-run component constructor!
@@ -466,8 +469,8 @@ describe('@samrey/runtime', () => {
       let fallbackRendered = false;
       let caughtMessage = '';
 
-      const boundary = ErrorBoundary({
-        fallback: (err, reset) => {
+      ErrorBoundary({
+        fallback: (err, _reset) => {
           fallbackRendered = true;
           caughtMessage = err.message;
           return new TestNode(1, 'DIV', `Caught: ${err.message}`) as unknown as Node;
@@ -585,6 +588,108 @@ describe('@samrey/runtime', () => {
       const brand = signal('#123456');
       bindStyle(el, '--brand-color', () => brand.value);
       assert.equal(styles['--brand-color'], '#123456');
+    });
+  });
+
+  describe('Control Flow & Attribute Hardening Regressions', () => {
+    it('ErrorBoundary calls fallback strictly once on synchronous throw and supports reset()', () => {
+      let fallbackCalls = 0;
+      let shouldThrow = true;
+      let resetFn: (() => void) | null = null;
+
+      const node = ErrorBoundary({
+        fallback: (err, reset) => {
+          fallbackCalls++;
+          resetFn = reset;
+          return new TestNode(1, 'DIV', `Err:${err.message}`) as unknown as Node;
+        },
+        children: () => {
+          if (shouldThrow) {
+            throw new Error('SyncBoom');
+          }
+          return new TestNode(1, 'DIV', 'Recovered') as unknown as Node;
+        }
+      });
+
+      assert.equal(fallbackCalls, 1, 'fallback must be called strictly once on synchronous throw');
+      assert.ok((node as any).outerHTML.includes('Err:SyncBoom'));
+
+      shouldThrow = false;
+      resetFn!();
+      assert.equal(fallbackCalls, 1);
+      assert.ok((node as any).outerHTML.includes('Recovered'));
+    });
+
+    it('Dynamic returns a single Node for HTML tags and blocks dangerous executable tags', () => {
+      const btn = Dynamic({ component: 'button', type: 'button', children: 'Click' });
+      assert.equal(Array.isArray(btn), false);
+      assert.equal((btn as Node).nodeType, 1);
+      assert.equal((btn as any).tagName, 'BUTTON');
+
+      const blockedScript = Dynamic({ component: 'script', children: 'alert(1)' });
+      assert.equal(Array.isArray(blockedScript), false);
+      assert.notEqual((blockedScript as any).tagName, 'SCRIPT');
+      assert.equal((blockedScript as Node).nodeType, 3);
+    });
+
+    it('Suspense tracks SuspenseTrackerContext resources and propagates async rejections to ErrorBoundary', async () => {
+      let resolveReq!: () => void;
+      const pendingPromise = new Promise<void>((res) => { resolveReq = res; });
+
+      const container = new TestNode(1, 'DIV');
+      const suspNode = Suspense({
+        fallback: () => new TestNode(1, 'SPAN', 'Loading...') as unknown as Node,
+        children: () => {
+          const tracker = useContext(SuspenseTrackerContext);
+          assert.ok(tracker, 'Suspense must provide SuspenseTrackerContext');
+          tracker.track(pendingPromise);
+          return new TestNode(1, 'SPAN', 'Ready') as unknown as Node;
+        }
+      });
+      container.appendChild(suspNode as unknown as TestNode);
+
+      assert.ok((suspNode as any).outerHTML.includes('Loading...'));
+      resolveReq();
+      await pendingPromise;
+      await Promise.resolve();
+      assert.ok((suspNode as any).outerHTML.includes('Ready'));
+
+      // Async rejection inside Suspense is caught by enclosing ErrorBoundary
+      let caughtInBoundary = '';
+      const errNode = ErrorBoundary({
+        fallback: (err) => {
+          caughtInBoundary = err.message;
+          return new TestNode(1, 'DIV', `Caught:${err.message}`) as unknown as Node;
+        },
+        children: () =>
+          Suspense({
+            fallback: () => new TestNode(1, 'SPAN', 'Loading2...') as unknown as Node,
+            children: () => Promise.reject(new Error('AsyncSuspenseFail'))
+          })
+      });
+
+      await new Promise((r) => setTimeout(r, 10));
+      assert.equal(caughtInBoundary, 'AsyncSuspenseFail');
+      assert.ok((errNode as any).outerHTML.includes('Caught:AsyncSuspenseFail'));
+    });
+
+    it('sanitizes srcset/ping in el()/bindAttr, emits aria-hidden="true", and avoids closing tags on void elements', () => {
+      const img = el('img', {
+        src: 'photo.png',
+        srcset: 'a.jpg 1x, javascript:alert(1) 2x',
+        disabled: true,
+        'aria-hidden': true
+      }) as any;
+
+      assert.equal(img.getAttribute('aria-hidden'), 'true');
+      assert.equal(img.getAttribute('disabled'), '');
+      assert.equal(img.getAttribute('srcset'), 'a.jpg 1x, about:blank 2x');
+      assert.ok(!img.outerHTML.includes('</img>'), 'Void element outerHTML must not have closing tag');
+
+      bindAttr(img, 'srcset', () => 'safe.jpg 1x, vbscript:msgbox(1) 2x');
+      assert.equal(img.getAttribute('srcset'), 'safe.jpg 1x, about:blank 2x');
+      bindAttr(img, 'aria-expanded', () => true);
+      assert.equal(img.getAttribute('aria-expanded'), 'true');
     });
   });
 });

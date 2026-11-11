@@ -57,26 +57,40 @@ export function createField<T>(
   const touchedSignal = signal<boolean>(false);
   const isValidatingSignal = signal<boolean>(false);
   const initial = initialValue;
+  let validationSeq = 0;
 
   function runValidation(): boolean | Promise<boolean> {
-    if (!validator) return true;
+    const seq = ++validationSeq;
+    if (!validator) {
+      isValidatingSignal.value = false;
+      return true;
+    }
     const res = validator(valueSignal.value);
     if (isPromise(res)) {
       isValidatingSignal.value = true;
       return res
         .then((msg) => {
+          if (seq !== validationSeq) {
+            return !errorSignal.value;
+          }
           errorSignal.value = msg || null;
           return !msg;
         })
         .catch((err) => {
+          if (seq !== validationSeq) {
+            return !errorSignal.value;
+          }
           errorSignal.value = err?.message || 'Validation error';
           return false;
         })
         .finally(() => {
-          isValidatingSignal.value = false;
+          if (seq === validationSeq) {
+            isValidatingSignal.value = false;
+          }
         });
     }
     errorSignal.value = res || null;
+    isValidatingSignal.value = false;
     return !res;
   }
 
@@ -86,10 +100,17 @@ export function createField<T>(
       if (validator) {
         runValidation();
       } else {
+        validationSeq++;
+        isValidatingSignal.value = false;
         errorSignal.value = null;
       }
-    } else if (!validator && errorSignal.value) {
-      errorSignal.value = null;
+    } else {
+      // Cancel any prior in-flight validation tied to the previous value
+      validationSeq++;
+      isValidatingSignal.value = false;
+      if (!validator && errorSignal.value) {
+        errorSignal.value = null;
+      }
     }
   }
 
@@ -101,6 +122,8 @@ export function createField<T>(
   }
 
   function setError(msg: string | null): void {
+    validationSeq++;
+    isValidatingSignal.value = false;
     errorSignal.value = msg;
   }
 

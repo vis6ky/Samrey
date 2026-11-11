@@ -6,8 +6,19 @@
  * Enforces strict security policies via @samrey/security (sanitizing URIs, attributes, and raw HTML).
  */
 
-import { el, rawHtml } from '@samrey/runtime';
-import { sanitizeUri, escapeHtmlText } from '@samrey/security';
+import { el } from '@samrey/runtime';
+import {
+  sanitizeUri,
+  escapeHtmlText,
+  escapeHtmlAttribute,
+  decodeHtmlEntities,
+  getSamreyTrustedPolicy
+} from '@samrey/security';
+
+function setInlineMarkdownHtml(target: HTMLElement, text: string): void {
+  const safeHtml = getSamreyTrustedPolicy().createHTML(formatInlineMarkdown(text));
+  target.innerHTML = safeHtml as unknown as string;
+}
 
 export interface RenderMarkdownOptions {
   enableCopyCode?: boolean;
@@ -145,7 +156,7 @@ export function renderMarkdown(markdownText: string, options: RenderMarkdownOpti
 
     if (paraLines.length > 0) {
       const p = el('p', { class: 'text-slate-700 leading-relaxed' });
-      p.innerHTML = formatInlineMarkdown(paraLines.join(' '));
+      setInlineMarkdownHtml(p, paraLines.join(' '));
       container.appendChild(p);
     }
   }
@@ -174,7 +185,7 @@ function createHeadingElement(level: number, rawTitle: string): HTMLElement {
     class: classes[level] || classes[3]
   });
 
-  heading.innerHTML = formatInlineMarkdown(rawTitle);
+  setInlineMarkdownHtml(heading, rawTitle);
   return heading;
 }
 
@@ -229,7 +240,7 @@ function createTableElement(tableLines: string[]): HTMLElement {
   const trHead = el('tr', null);
   for (const cell of headerCells) {
     const th = el('th', { class: 'px-4 py-3' });
-    th.innerHTML = formatInlineMarkdown(cell);
+    setInlineMarkdownHtml(th, cell);
     trHead.appendChild(th);
   }
   thead.appendChild(trHead);
@@ -245,7 +256,7 @@ function createTableElement(tableLines: string[]): HTMLElement {
     for (let c = 0; c < headerCells.length; c++) {
       const cellText = rowCells[c] || '';
       const td = el('td', { class: 'px-4 py-2.5 text-slate-700 align-top' });
-      td.innerHTML = formatInlineMarkdown(cellText);
+      setInlineMarkdownHtml(td, cellText);
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
@@ -267,7 +278,7 @@ function createUnorderedListElement(items: string[]): HTMLElement {
   for (const raw of items) {
     const textContent = raw.replace(/^\s*[-*+]\s+/, '');
     const li = el('li', { class: 'leading-relaxed' });
-    li.innerHTML = formatInlineMarkdown(textContent);
+    setInlineMarkdownHtml(li, textContent);
     ul.appendChild(li);
   }
   return ul;
@@ -278,46 +289,62 @@ function createOrderedListElement(items: string[]): HTMLElement {
   for (const raw of items) {
     const textContent = raw.replace(/^\s*\d+\.\s+/, '');
     const li = el('li', { class: 'leading-relaxed' });
-    li.innerHTML = formatInlineMarkdown(textContent);
+    setInlineMarkdownHtml(li, textContent);
     ol.appendChild(li);
   }
   return ol;
 }
 
+function formatInlineTextFormatting(escaped: string): string {
+  return escaped
+    .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong class="font-bold text-slate-900">$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>')
+    .replace(/_([^_]+)_/g, '<em class="italic">$1</em>')
+    .replace(/~~([^~]+)~~/g, '<del class="line-through text-slate-400">$1</del>');
+}
+
 export function formatInlineMarkdown(text: string): string {
   if (!text) return '';
 
-  let escaped = escapeHtmlText(text);
+  const placeholders: string[] = [];
+  const stash = (html: string): string => {
+    const idx = placeholders.length;
+    placeholders.push(html);
+    return `\u0000MDP_${idx}\u0000`;
+  };
 
-  // Inline Code: `code`
-  escaped = escaped.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-slate-100 text-cyan-700 font-mono text-[12px] border border-slate-200">$1</code>');
+  let work = String(text).replace(/\u0000/g, '');
 
-  // Bold: **text** or __text__
-  escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
-  escaped = escaped.replace(/__([^_]+)__/g, '<strong class="font-bold text-slate-900">$1</strong>');
+  // 1. Protect Inline Code spans before emphasis passes
+  work = work.replace(/`([^`]+)`/g, (_, codeBody: string) =>
+    stash(`<code class="px-1.5 py-0.5 rounded bg-slate-100 text-cyan-700 font-mono text-[12px] border border-slate-200">${escapeHtmlText(codeBody)}</code>`)
+  );
 
-  // Italic: *text* or _text_
-  escaped = escaped.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-  escaped = escaped.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
-
-  // Strikethrough: ~~text~~
-  escaped = escaped.replace(/~~([^~]+)~~/g, '<del class="line-through text-slate-400">$1</del>');
-
-  // Images: ![alt](url)
-  escaped = escaped.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
-    const safeUrl = sanitizeUri(url);
-    return `<img src="${safeUrl}" alt="${alt}" class="rounded-lg shadow-sm max-w-full my-2" loading="lazy" />`;
+  // 2. Protect Images: ![alt](url) with URI sanitization & attribute escaping
+  work = work.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt: string, rawUrl: string) => {
+    const decodedUrl = decodeHtmlEntities(rawUrl.trim());
+    const safeUrl = escapeHtmlAttribute(sanitizeUri(decodedUrl, { allowProtocolRelative: true, allowImageDataUri: true }));
+    const safeAlt = escapeHtmlAttribute(alt);
+    return stash(`<img src="${safeUrl}" alt="${safeAlt}" class="rounded-lg shadow-sm max-w-full my-2" loading="lazy" />`);
   });
 
-  // Links: [text](url)
-  escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
-    const safeUrl = sanitizeUri(url);
-    const isExternal = safeUrl.startsWith('http');
+  // 3. Protect Links: [text](url) with URI sanitization & attribute escaping
+  work = work.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label: string, rawUrl: string) => {
+    const decodedUrl = decodeHtmlEntities(rawUrl.trim());
+    const safeUri = sanitizeUri(decodedUrl, { allowProtocolRelative: true });
+    const safeHref = escapeHtmlAttribute(safeUri);
+    const isExternal = /^https?:\/\//i.test(safeUri) || safeUri.startsWith('//');
     const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
-    return `<a href="${safeUrl}"${target} class="font-medium text-cyan-600 hover:text-cyan-800 hover:underline transition">${label}</a>`;
+    const safeLabel = formatInlineTextFormatting(escapeHtmlText(label));
+    return stash(`<a href="${safeHref}"${target} class="font-medium text-cyan-600 hover:text-cyan-800 hover:underline transition">${safeLabel}</a>`);
   });
 
-  return escaped;
+  // 4. Escape HTML text & apply inline formatting outside code/URLs
+  const formatted = formatInlineTextFormatting(escapeHtmlText(work));
+
+  // 5. Restore protected tokens
+  return formatted.replace(/\u0000MDP_(\d+)\u0000/g, (_, i: string) => placeholders[Number(i)] ?? '');
 }
 
 export { renderMarkdown as renderMarkdownToSamreyDOM };

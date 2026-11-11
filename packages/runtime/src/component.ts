@@ -3,7 +3,7 @@
  * @samrey/runtime - Single-Execution Component Instantiator
  */
 
-import { createRoot, createOwner, getOwner, runWithOwner, Owner, onCleanup, handleError } from '@samrey/reactivity';
+import { createRoot, createOwner, getOwner, runWithOwner, onCleanup, handleError } from '@samrey/reactivity';
 
 export type Component<P = Record<string, unknown>> = (props: P) => Node | Node[];
 

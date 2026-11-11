@@ -6,13 +6,9 @@
 import {
   ASTRootNode,
   ASTNode,
-  ASTElementNode,
-  ASTComponentNode,
   ASTTextNode,
   ASTInterpolationNode,
   ASTAttributeNode,
-  ASTShowNode,
-  ASTForNode,
   SourceLocation,
   Position
 } from './ast.js';
@@ -30,13 +26,28 @@ import { classifyBindingContext } from './security-classifier.js';
 import { generateModuleCode } from './codegen.js';
 import { evaluateConstantExpression } from './static-analyzer.js';
 import { SamreyCompilerError, SamreyErrorCode } from './errors.js';
-import { escapeHtmlText, escapeHtmlAttribute, sanitizeUri } from '@samrey/security';
+import {
+  URL_ATTRIBUTES,
+  SRCSET_ATTRIBUTES,
+  escapeHtmlText,
+  escapeHtmlAttribute,
+  sanitizeCssStyle,
+  sanitizeSrcset,
+  sanitizeUri
+} from '@samrey/security';
 import { lintA11y } from './a11y-linter.js';
 
 // Void elements that do not require closing tags in HTML
 const VOID_ELEMENTS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
   'link', 'meta', 'param', 'source', 'track', 'wbr'
+]);
+
+// HTML boolean attributes whose presence alone denotes true (as opposed to aria-* or contenteditable)
+const HTML_BOOLEAN_ATTRS = new Set([
+  'disabled', 'checked', 'selected', 'readonly', 'required', 'multiple', 'hidden',
+  'open', 'autofocus', 'autoplay', 'controls', 'loop', 'muted', 'novalidate',
+  'reversed', 'scoped', 'ismap', 'defer', 'async', 'allowfullscreen', 'default', 'inert'
 ]);
 
 // Pre-computed ASCII Lookup Tables for Zero-Regex, High-Throughput Tokenization
@@ -171,10 +182,6 @@ export class TemplateParser {
 
   public getStructuredErrors(): SamreyCompilerError[] {
     return this.errors;
-  }
-
-  private isEOF(): boolean {
-    return this.cursor >= this.length;
   }
 
   private peekCode(offset = 0): number {
@@ -487,162 +494,6 @@ export class TemplateParser {
       children,
       isSelfClosing,
       loc
-    };
-  }
-
-  private parseShowComponent(
-    startPos: Position,
-    attributes: ASTAttributeNode[],
-    isSelfClosing: boolean
-  ): ASTShowNode {
-    let whenExpr = '() => false';
-    let fallbackNodes: ASTNode[] | undefined;
-    let fallbackExpr: string | undefined;
-
-    let hasWhen = false;
-    for (let i = 0; i < attributes.length; i++) {
-      const attr = attributes[i];
-      if (attr.name === 'when') {
-        hasWhen = true;
-        whenExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => false');
-      } else if (attr.name.toLowerCase() === 'ref') {
-        this.recordDiagnostic(
-          'Unsupported template ref on <Show>',
-          attr.loc.start,
-          'SAMREY-111',
-          'Template ref attributes cannot be placed on control flow components (<Show> or <For>).',
-          'Place the ref attribute on a child HTML element instead.'
-        );
-      } else if (attr.name === 'fallback') {
-        if (attr.isDynamic && attr.expression) {
-          fallbackExpr = attr.expression;
-        } else if (attr.value) {
-          fallbackNodes = [
-            {
-              type: 'Text',
-              value: attr.value,
-              loc: attr.loc
-            }
-          ];
-        }
-      }
-    }
-
-    if (!hasWhen) {
-      this.recordDiagnostic(
-        '<Show> component is missing required "when" prop',
-        startPos,
-        'SAMREY-103',
-        '<Show> requires a "when" conditional expression to evaluate whether to render its children.',
-        'Add when={...} to <Show>, e.g. <Show when={isLoggedIn()}>'
-      );
-    }
-
-    const children: ASTNode[] = [];
-    if (!isSelfClosing) {
-      const closingTag = '</Show>';
-      while (this.cursor < this.length && !this.peekString(closingTag)) {
-        const child = this.parseNode();
-        if (child) this.appendChild(children, child);
-      }
-      if (this.peekString(closingTag)) {
-        this.advance(closingTag.length);
-      } else {
-        this.recordDiagnostic(
-          'Unclosed <Show> component tag',
-          startPos,
-          'SAMREY-101',
-          '<Show> component was opened but not closed before the end of the template.',
-          'Add </Show> to close the component.'
-        );
-      }
-    }
-
-    const endPos = this.getPosition();
-    return {
-      type: 'Show',
-      when: whenExpr,
-      fallback: fallbackNodes,
-      fallbackExpression: fallbackExpr,
-      children,
-      loc: { start: startPos, end: endPos }
-    };
-  }
-
-  private parseForComponent(
-    startPos: Position,
-    attributes: ASTAttributeNode[],
-    isSelfClosing: boolean
-  ): ASTForNode {
-    let eachExpr = '() => []';
-    let keyExpr: string | undefined;
-    let fallbackNodes: ASTNode[] | undefined;
-    let fallbackExpr: string | undefined;
-    let hasEach = false;
-
-    for (let i = 0; i < attributes.length; i++) {
-      const attr = attributes[i];
-      if (attr.name === 'each') {
-        hasEach = true;
-        eachExpr = attr.expression || (attr.value ? `() => (${attr.value})` : '() => []');
-      } else if (attr.name === 'key') {
-        keyExpr = attr.expression || attr.value || undefined;
-      } else if (attr.name.toLowerCase() === 'ref') {
-        this.recordDiagnostic(
-          'Unsupported template ref on <For>',
-          attr.loc.start,
-          'SAMREY-111',
-          'Template ref attributes cannot be placed on control flow components (<Show> or <For>).',
-          'Place the ref attribute on a child HTML element instead.'
-        );
-      } else if (attr.name === 'fallback') {
-        if (attr.isDynamic && attr.expression) {
-          fallbackExpr = attr.expression;
-        } else if (attr.value) {
-          fallbackNodes = [{ type: 'Text', value: attr.value, loc: attr.loc }];
-        }
-      }
-    }
-
-    if (!hasEach) {
-      this.recordDiagnostic(
-        '<For> component is missing required "each" prop',
-        startPos,
-        'SAMREY-103',
-        '<For> requires an "each" array or reactive accessor to iterate over.',
-        'Add each={...} to <For>, e.g. <For each={users()} key="id">'
-      );
-    }
-
-    const children: ASTNode[] = [];
-    if (!isSelfClosing) {
-      const closingTag = '</For>';
-      while (this.cursor < this.length && !this.peekString(closingTag)) {
-        const child = this.parseNode();
-        if (child) this.appendChild(children, child);
-      }
-      if (this.peekString(closingTag)) {
-        this.advance(closingTag.length);
-      } else {
-        this.recordDiagnostic(
-          'Unclosed <For> component tag',
-          startPos,
-          'SAMREY-101',
-          '<For> component was opened but not closed before the end of the template.',
-          'Add </For> to close the component.'
-        );
-      }
-    }
-
-    const endPos = this.getPosition();
-    return {
-      type: 'For',
-      each: eachExpr,
-      key: keyExpr,
-      fallback: fallbackNodes,
-      fallbackExpression: fallbackExpr,
-      children,
-      loc: { start: startPos, end: endPos }
     };
   }
 
@@ -1041,12 +892,18 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               if (val === 'false' || val === 'null' || val === 'undefined') {
                 // Falsy constant: attribute is omitted from static HTML
               } else if (val === 'true') {
-                // Boolean true: emit boolean attribute without value
-                tagOpen += ` ${attr.name}`;
+                // True HTML boolean attributes emit bare attr; ARIA/enumerated attrs keep ="true"
+                tagOpen += HTML_BOOLEAN_ATTRS.has(lowerName)
+                  ? ` ${attr.name}`
+                  : ` ${attr.name}="true"`;
               } else {
                 let safeFoldVal = val;
-                if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href' || lowerName === 'data') {
-                  safeFoldVal = sanitizeUri(safeFoldVal);
+                if (SRCSET_ATTRIBUTES.has(lowerName)) {
+                  safeFoldVal = sanitizeSrcset(safeFoldVal);
+                } else if (URL_ATTRIBUTES.has(lowerName)) {
+                  safeFoldVal = sanitizeUri(safeFoldVal, { allowImageDataUri: true });
+                } else if (lowerName === 'style') {
+                  safeFoldVal = sanitizeCssStyle(safeFoldVal);
                 }
                 tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeFoldVal)}"`;
               }
@@ -1062,8 +919,12 @@ export function buildAIRFromAST(ast: ASTRootNode): {
             }
           } else if (attr.value !== null) {
             let safeAttrVal = attr.value;
-            if (lowerName === 'href' || lowerName === 'src' || lowerName === 'action' || lowerName === 'formaction' || lowerName === 'xlink:href' || lowerName === 'data') {
-              safeAttrVal = sanitizeUri(safeAttrVal);
+            if (SRCSET_ATTRIBUTES.has(lowerName)) {
+              safeAttrVal = sanitizeSrcset(safeAttrVal);
+            } else if (URL_ATTRIBUTES.has(lowerName)) {
+              safeAttrVal = sanitizeUri(safeAttrVal, { allowImageDataUri: true });
+            } else if (lowerName === 'style') {
+              safeAttrVal = sanitizeCssStyle(safeAttrVal);
             }
             tagOpen += ` ${attr.name}="${escapeHtmlAttribute(safeAttrVal)}"`;
           } else {
@@ -1108,7 +969,18 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         childIndex++;
       } else if (node.type === 'Show') {
         htmlParts.push('<!-- show-slot -->');
-        const helper = `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, children: () => /* sub-render */ null })`;
+        const childHtml = processNodes(node.children, [], false);
+        const childrenFn = childHtml
+          ? `() => template(${JSON.stringify(childHtml)})()`
+          : '() => null';
+        const fallbackFn = node.fallbackExpression
+          ? node.fallbackExpression
+          : node.fallback
+            ? `() => template(${JSON.stringify(processNodes(node.fallback, [], false))})()`
+            : undefined;
+        const helper = fallbackFn
+          ? `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, fallback: ${fallbackFn}, children: ${childrenFn} })`
+          : `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, children: ${childrenFn} })`;
         slots.push({
           type: 'control-flow-slot',
           flowType: 'Show',
@@ -1119,7 +991,11 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         childIndex++;
       } else if (node.type === 'For') {
         htmlParts.push('<!-- for-slot -->');
-        const helper = `For({ each: ${node.each.startsWith('(') ? node.each : `() => (${node.each})`}, key: ${node.key || 'undefined'}, children: (item, i) => /* sub-render */ null })`;
+        const childHtml = processNodes(node.children, [], false);
+        const childrenFn = childHtml
+          ? `(_item, _i) => template(${JSON.stringify(childHtml)})()`
+          : '(_item, _i) => null';
+        const helper = `For({ each: ${node.each.startsWith('(') ? node.each : `() => (${node.each})`}, key: ${node.key || 'undefined'}, children: ${childrenFn} })`;
         slots.push({
           type: 'control-flow-slot',
           flowType: 'For',

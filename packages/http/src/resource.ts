@@ -3,7 +3,7 @@
  * @samrey/http - Reactive Resource Primitive
  */
 
-import { signal, computed, effect, onCleanup } from '@samrey/reactivity';
+import { signal, computed, effect, onCleanup, useContext, SuspenseTrackerContext } from '@samrey/reactivity';
 import { Resource, ResourceStatus } from './types.js';
 
 export interface ResourceOptions<T = unknown> {
@@ -35,23 +35,25 @@ export function createResource<T, S = unknown>(
   const data = signal<T | undefined>(options.initialValue);
   const error = signal<Error | null>(null);
   const status = signal<ResourceStatus>('idle');
+  const suspenseTracker = useContext(SuspenseTrackerContext);
 
   let activeSeq = 0;
   let activeController: AbortController | null = null;
-  let timeoutId: any;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  async function load(explicitSource?: S): Promise<T> {
+  function load(explicitSource?: S): Promise<T> {
     const seq = ++activeSeq;
     if (activeController) {
       activeController.abort();
       activeController = null;
     }
-    if (timeoutId) {
+    if (timeoutId !== undefined) {
       clearTimeout(timeoutId);
       timeoutId = undefined;
     }
 
-    activeController = new AbortController();
+    const controller = new AbortController();
+    activeController = controller;
     if (options.timeoutMs && options.timeoutMs > 0) {
       timeoutId = setTimeout(() => {
         if (seq === activeSeq && activeController) {
@@ -63,27 +65,39 @@ export function createResource<T, S = unknown>(
     status.value = 'pending';
     error.value = null;
 
-    try {
-      const sourceVal = explicitSource !== undefined ? explicitSource : (source ? source() : (undefined as unknown as S));
-      const result = await fetcher(sourceVal, { abortSignal: activeController.signal });
-      if (seq === activeSeq) {
-        data.value = result;
-        status.value = 'success';
-      }
-      return result;
-    } catch (err: any) {
-      if (seq === activeSeq) {
-        if (err?.name !== 'AbortError') {
-          error.value = err instanceof Error ? err : new Error(String(err));
-          status.value = 'error';
+    const run = (async () => {
+      try {
+        const sourceVal = explicitSource !== undefined ? explicitSource : (source ? source() : (undefined as unknown as S));
+        const result = await fetcher(sourceVal, { abortSignal: controller.signal });
+        if (seq === activeSeq) {
+          data.value = result;
+          status.value = 'success';
+        }
+        return result;
+      } catch (err: any) {
+        if (seq === activeSeq) {
+          if (err?.name !== 'AbortError') {
+            error.value = err instanceof Error ? err : new Error(String(err));
+            status.value = 'error';
+          }
+        }
+        throw err;
+      } finally {
+        if (seq === activeSeq && timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+        if (activeController === controller) {
+          activeController = null;
         }
       }
-      throw err;
-    } finally {
-      if (seq === activeSeq && timeoutId) {
-        clearTimeout(timeoutId);
-      }
+    })();
+
+    if (suspenseTracker) {
+      suspenseTracker.track(run.catch(() => {}));
     }
+
+    return run;
   }
 
   // Reactive source tracking
@@ -97,14 +111,26 @@ export function createResource<T, S = unknown>(
   }
 
   onCleanup(() => {
-    if (timeoutId) clearTimeout(timeoutId);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
     if (activeController) {
       activeController.abort();
+      activeController = null;
     }
   });
 
   const mutate = (optimisticValue: T | ((prev: T | undefined) => T)): void => {
     activeSeq++;
+    if (activeController) {
+      activeController.abort();
+      activeController = null;
+    }
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
     if (typeof optimisticValue === 'function') {
       data.value = (optimisticValue as (prev: T | undefined) => T)(data.value);
     } else {

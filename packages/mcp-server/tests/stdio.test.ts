@@ -58,7 +58,7 @@ class LiveMcpClient {
 
     this.child.on('exit', (code) => {
       if (code !== 0 && code !== null) {
-        for (const [id, handlers] of this.pendingRequests.entries()) {
+        for (const [, handlers] of this.pendingRequests.entries()) {
           handlers.reject(new Error(`MCP server child process exited prematurely with code ${code}. Stderr: ${this.stderrOutput}`));
         }
         this.pendingRequests.clear();
@@ -175,7 +175,7 @@ describe('MCP Server: Real Stdio JSON-RPC Process Integration', () => {
     assert.strictEqual(res.jsonrpc, '2.0');
     assert.ok(res.result, 'Response must have result');
     assert.strictEqual(res.result.serverInfo.name, '@samrey/mcp-server');
-    assert.strictEqual(res.result.serverInfo.version, '2.0.0');
+    assert.strictEqual(res.result.serverInfo.version, '2.1.0');
     assert.strictEqual(res.result.protocolVersion, '2024-11-05');
     assert.ok(res.result.capabilities.tools, 'Must declare tools capability');
     assert.ok(res.result.capabilities.resources, 'Must declare resources capability');

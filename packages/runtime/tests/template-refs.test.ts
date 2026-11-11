@@ -470,24 +470,29 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
     assert.strictEqual((clone2.refs.rememberMe as any).checked ?? false, false);
   });
 
-  it('17. Real DOM mock template cloning with full binding and event integration', () => {
-    // Realistic browser element mock
-    class BrowserElement {
-      public nodeType = 1;
+  it('17. Real DOM HTML parsing & template cloning with full binding and event integration', () => {
+    const VOID_TAGS = new Set(['AREA', 'BASE', 'BR', 'COL', 'EMBED', 'HR', 'IMG', 'INPUT', 'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR']);
+
+    // Realistic DOM Element / DocumentFragment / Text / Comment model backed by an actual HTML parser
+    class BrowserNode {
+      public nodeType: number;
       public tagName: string;
+      public nodeName: string;
       public textContent: string = '';
       public attributes: Record<string, string> = {};
-      public childNodes: BrowserElement[] = [];
-      public parentNode: BrowserElement | null = null;
-      public content?: BrowserElement;
+      public childNodes: BrowserNode[] = [];
+      public parentNode: BrowserNode | null = null;
+      public content?: BrowserNode;
       public eventListeners: Record<string, Function[]> = {};
       public value: string = '';
       public checked: boolean = false;
 
-      constructor(tag: string) {
+      constructor(tag: string, nodeType = 1) {
+        this.nodeType = nodeType;
         this.tagName = tag.toUpperCase();
-        if (this.tagName === 'TEMPLATE') {
-          this.content = new BrowserElement('#document-fragment');
+        this.nodeName = nodeType === 3 ? '#text' : nodeType === 8 ? '#comment' : nodeType === 11 ? '#document-fragment' : this.tagName;
+        if (nodeType === 1 && this.tagName === 'TEMPLATE') {
+          this.content = new BrowserNode('#document-fragment', 11);
         }
       }
 
@@ -507,19 +512,37 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
         return name.toLowerCase() in this.attributes;
       }
 
-      appendChild(child: BrowserElement) {
+      appendChild(child: BrowserNode) {
         child.parentNode = this;
         this.childNodes.push(child);
         return child;
+      }
+
+      replaceChildren(...nodes: BrowserNode[]) {
+        for (const c of this.childNodes) c.parentNode = null;
+        this.childNodes = [];
+        for (const n of nodes) this.appendChild(n);
       }
 
       get firstChild() {
         return this.childNodes[0] ?? null;
       }
 
+      get nextSibling(): BrowserNode | null {
+        if (!this.parentNode) return null;
+        const idx = this.parentNode.childNodes.indexOf(this);
+        return idx !== -1 && idx + 1 < this.parentNode.childNodes.length ? this.parentNode.childNodes[idx + 1] : null;
+      }
+
       addEventListener(event: string, fn: Function) {
         if (!this.eventListeners[event]) this.eventListeners[event] = [];
         this.eventListeners[event].push(fn);
+      }
+
+      removeEventListener(event: string, fn: Function) {
+        if (this.eventListeners[event]) {
+          this.eventListeners[event] = this.eventListeners[event].filter((h) => h !== fn);
+        }
       }
 
       dispatchEvent(event: { type: string }) {
@@ -528,8 +551,8 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
         return true;
       }
 
-      cloneNode(deep?: boolean): BrowserElement {
-        const el = new BrowserElement(this.tagName);
+      cloneNode(deep?: boolean): BrowserNode {
+        const el = new BrowserNode(this.tagName, this.nodeType);
         el.attributes = { ...this.attributes };
         el.textContent = this.textContent;
         el.value = this.value;
@@ -547,26 +570,94 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
         return el;
       }
 
-      set innerHTML(_val: string) {
-        // Build nested form hierarchy
-        const form = new BrowserElement('FORM');
-        form.setAttribute('ref', 'userForm');
+      set innerHTML(htmlVal: string) {
+        const target = this.content || this;
+        target.childNodes = [];
+        const stack: BrowserNode[] = [target];
+        const len = htmlVal.length;
+        let i = 0;
 
-        const input = new BrowserElement('INPUT');
-        input.setAttribute('ref', 'email');
-        input.value = '';
-        form.appendChild(input);
+        while (i < len) {
+          const lt = htmlVal.indexOf('<', i);
+          if (lt === -1) {
+            const txt = htmlVal.slice(i);
+            if (txt) {
+              const tn = new BrowserNode('#text', 3);
+              tn.textContent = txt;
+              stack[stack.length - 1].appendChild(tn);
+            }
+            break;
+          }
+          if (lt > i) {
+            const tn = new BrowserNode('#text', 3);
+            tn.textContent = htmlVal.slice(i, lt);
+            stack[stack.length - 1].appendChild(tn);
+          }
+          if (htmlVal.startsWith('<!--', lt)) {
+            const end = htmlVal.indexOf('-->', lt + 4);
+            const closeIdx = end === -1 ? len : end + 3;
+            const c = new BrowserNode('#comment', 8);
+            c.textContent = htmlVal.slice(lt + 4, end === -1 ? len : end);
+            stack[stack.length - 1].appendChild(c);
+            i = closeIdx;
+            continue;
+          }
+          if (htmlVal.startsWith('</', lt)) {
+            const gt = htmlVal.indexOf('>', lt + 2);
+            const closeTag = htmlVal.slice(lt + 2, gt === -1 ? len : gt).trim().toUpperCase();
+            while (stack.length > 1 && stack[stack.length - 1].tagName !== closeTag) {
+              stack.pop();
+            }
+            if (stack.length > 1) stack.pop();
+            i = gt === -1 ? len : gt + 1;
+            continue;
+          }
 
-        const btn = new BrowserElement('BUTTON');
-        btn.setAttribute('ref', 'submitBtn');
-        form.appendChild(btn);
+          let j = lt + 1;
+          while (j < len && !/[\s/>]/.test(htmlVal[j])) j++;
+          const tagName = htmlVal.slice(lt + 1, j).toUpperCase();
+          const elem = new BrowserNode(tagName, 1);
+          let selfClosing = false;
 
-        const p = new BrowserElement('P');
-        p.setAttribute('ref', 'statusMsg');
-        form.appendChild(p);
+          while (j < len) {
+            while (j < len && /\s/.test(htmlVal[j])) j++;
+            if (htmlVal[j] === '/' && htmlVal[j + 1] === '>') {
+              selfClosing = true;
+              j += 2;
+              break;
+            }
+            if (htmlVal[j] === '>') {
+              j++;
+              break;
+            }
+            const attrStart = j;
+            while (j < len && !/[\s=/>]/.test(htmlVal[j])) j++;
+            const attrName = htmlVal.slice(attrStart, j);
+            while (j < len && /\s/.test(htmlVal[j])) j++;
+            let attrVal = '';
+            if (htmlVal[j] === '=') {
+              j++;
+              while (j < len && /\s/.test(htmlVal[j])) j++;
+              if (htmlVal[j] === '"' || htmlVal[j] === "'") {
+                const q = htmlVal[j++];
+                const vStart = j;
+                while (j < len && htmlVal[j] !== q) j++;
+                attrVal = htmlVal.slice(vStart, j);
+                if (htmlVal[j] === q) j++;
+              } else {
+                const vStart = j;
+                while (j < len && !/[\s>]/.test(htmlVal[j])) j++;
+                attrVal = htmlVal.slice(vStart, j);
+              }
+            }
+            if (attrName) elem.setAttribute(attrName, attrVal);
+          }
 
-        if (this.content) {
-          this.content.childNodes = [form];
+          stack[stack.length - 1].appendChild(elem);
+          if (!selfClosing && !VOID_TAGS.has(tagName)) {
+            stack.push(elem);
+          }
+          i = j;
         }
       }
     }
@@ -574,36 +665,48 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
     const origDoc = (globalThis as any).document;
     (globalThis as any).document = {
       createElement(tag: string) {
-        return new BrowserElement(tag);
+        return new BrowserNode(tag, 1);
+      },
+      createTextNode(txt: string) {
+        const tn = new BrowserNode('#text', 3);
+        tn.textContent = txt;
+        return tn;
+      },
+      createComment(txt: string) {
+        const cn = new BrowserNode('#comment', 8);
+        cn.textContent = txt;
+        return cn;
       }
     };
 
     try {
-      const tmpl = template(`
-        <form ref="userForm">
-          <input ref="email" />
-          <button ref="submitBtn">Submit</button>
-          <p ref="statusMsg"></p>
-        </form>
-      `);
+      // Test A: Dynamic HTML input actually parsed (form + whitespace/case + data-ref ignored)
+      const tmpl = template(
+        `<form ref="userForm"><!-- lead comment --><div data-ref="ignored"><input REF = "email" value="" /><button ref="submitBtn">Submit</button><p ref="statusMsg"></p></div></form>`
+      );
 
       const root = tmpl.clone();
       const { userForm, email, submitBtn, statusMsg } = root.refs;
 
       assert.strictEqual(userForm, root);
-      assert.ok(email);
-      assert.ok(submitBtn);
-      assert.ok(statusMsg);
+      assert.strictEqual((email as any).tagName, 'INPUT');
+      assert.strictEqual((submitBtn as any).tagName, 'BUTTON');
+      assert.strictEqual((statusMsg as any).tagName, 'P');
+      assert.strictEqual(root.ref('ignored'), undefined, 'data-ref must not register as template ref');
 
-      // Mutate form values
+      // Mutate form values independently on second clone
+      const root2 = tmpl.clone();
       (email as any).value = 'browser-test@samrey.dev';
       assert.strictEqual((email as any).value, 'browser-test@samrey.dev');
+      assert.strictEqual((root2.refs.email as any).value, '');
 
-      // Bind text and events
+      // Bind text, attributes, and events on real parsed nodes
       const statusSig = signal('Pending');
+      const disabledSig = signal(false);
       let submitted = false;
 
       bindText(statusMsg, () => statusSig.value);
+      bindAttr(submitBtn, 'disabled', () => disabledSig.value);
       bindEvent(submitBtn, 'click', () => {
         submitted = true;
       });
@@ -612,6 +715,9 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
       statusSig.value = 'Success';
       assert.strictEqual(statusMsg.textContent, 'Success');
 
+      disabledSig.value = true;
+      assert.ok(submitBtn.getAttribute('disabled') !== null);
+
       (submitBtn as any).dispatchEvent({ type: 'click' });
       assert.strictEqual(submitted, true, 'Event binding on ref must trigger handler');
 
@@ -619,6 +725,13 @@ describe('Samrey 2.1.0 — Template References (root.refs & root.ref())', () => 
       root.disposeRefs();
       assert.strictEqual(Object.keys(root.refs).length, 0);
       assert.strictEqual(root.ref('email'), undefined);
+
+      // Test B: Multi-root parsed template fragment
+      const multi = template('<header ref="hdr">Top</header><section ref="body"><span ref="inner">Txt</span></section>');
+      const multiRoot = multi.clone();
+      assert.strictEqual((multiRoot.refs.hdr as any).tagName, 'HEADER');
+      assert.strictEqual((multiRoot.refs.body as any).tagName, 'SECTION');
+      assert.strictEqual((multiRoot.refs.inner as any).tagName, 'SPAN');
     } finally {
       (globalThis as any).document = origDoc;
     }

@@ -1,17 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { TemplateParser, compileTemplate } from '@samrey/compiler';
-import { evaluateConstantExpression } from '@samrey/compiler/src/static-analyzer.js';
-import { 
-  sanitizeUri, 
-  sanitizeRedirectUri, 
-  sanitizeCssStyle, 
-  escapeHtmlAttribute, 
-  escapeHtmlText, 
-  escapeForScriptPayload 
-} from '../src/index.ts';
-import { serializeStateForHydration, deserializeHydrationState, safeJsonParse } from '@samrey/ssr';
-import { matchPath } from '@samrey/router/src/matcher.js';
+import { TemplateParser, compileTemplate, evaluateConstantExpression } from '@samrey/compiler';
+import {
+  sanitizeUri,
+  sanitizeRedirectUri
+} from '../src/index.js';
+import { serializeStateForHydration, safeJsonParse } from '@samrey/ssr';
+import { matchPath } from '@samrey/router';
 
 describe('Security Fuzzing Suite', () => {
   describe('Template Parser & Compiler Fuzzing', () => {
@@ -213,7 +208,7 @@ describe('Security Fuzzing Suite', () => {
 
       for (const p of malformedPaths) {
         assert.doesNotThrow(() => {
-          const match = matchPath('/user/:id', p);
+          matchPath('/user/:id', p);
           // Match might be null or return raw malformed string, but must never throw
         }, `Router crashed on malformed path: ${p}`);
       }

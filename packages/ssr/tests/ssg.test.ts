@@ -48,4 +48,19 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
     assert.ok(result.sitemapXml?.includes('https://samrey.dev/blog/launching-samrey'));
     assert.ok(result.sitemapXml?.includes('https://samrey.dev/about'));
   });
+
+  it('XML-escapes special characters in generated sitemap <loc> entries (Bug 8b)', async () => {
+    const result = await generateStaticSite(
+      [{ path: '/search?q=a&b=<tag>', component: () => '<p>Search</p>' }],
+      {
+        writeFiles: false,
+        generateSitemap: true,
+        baseUrl: 'https://samrey.dev'
+      }
+    );
+
+    assert.ok(result.sitemapXml);
+    assert.ok(result.sitemapXml?.includes('https://samrey.dev/search?q=a&amp;b=&lt;tag&gt;'));
+    assert.ok(!result.sitemapXml?.includes('<tag></loc>'));
+  });
 });

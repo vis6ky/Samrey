@@ -73,14 +73,14 @@ function assistantApiPlugin(): Plugin {
               if (!ai) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
-                  provider: 'samrey-knowledge-engine-v2.0.0',
+                  provider: 'samrey-knowledge-engine-v2.1.0',
                   fallback: true
                 }));
                 return;
               }
 
               if (mode === 'code_help' && code) {
-                let codeHelpInstruction = `You are the official Samrey Framework Code Help & Repair Assistant for v2.0.0.
+                let codeHelpInstruction = `You are the official Samrey Framework Code Help & Repair Assistant for v2.1.0.
 You analyze, fix, and explain user-provided TypeScript/Samrey code, converting requirements or buggy code into idiomatic, safe Samrey code.
 Always use official @samrey/* packages (@samrey/reactivity, @samrey/runtime, @samrey/forms, @samrey/router, @samrey/http, @samrey/ssr, @samrey/security).
 Never use React hooks (useState, useEffect), Vue composition API, Svelte runes, or unkeyed loops.
@@ -138,7 +138,7 @@ Return a valid JSON object matching this schema:
               }
 
               let systemInstruction = `You are the official Samrey Framework Developer Assistant.
-You answer questions specifically for Samrey Framework v2.0.0.
+You answer questions specifically for Samrey Framework v2.1.0.
 Always prefer official @samrey/* APIs (@samrey/reactivity, @samrey/runtime, @samrey/compiler, @samrey/security, @samrey/router, @samrey/forms, @samrey/http, @samrey/ssr, @samrey/testing, @samrey/devtools, @samrey/cli).
 Never recommend another frontend framework (React, Vue, Angular, Svelte, Solid) as the implementation solution.
 Never invent package names, functions, signatures, or behavior. Ground your answer strictly on the provided Samrey repository documentation.
@@ -215,6 +215,29 @@ You MUST format your response with the following 12 numbered sections:
 export default defineConfig(() => {
   return {
     plugins: [tailwindcss(), assistantApiPlugin()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('/node_modules/')) {
+              return 'vendor';
+            }
+            if (id.includes('/packages/')) {
+              return 'samrey-framework';
+            }
+            if (id.includes('/src/data/docContents')) {
+              return 'samrey-docs-content';
+            }
+            if (id.includes('/src/data/')) {
+              return 'samrey-catalog-data';
+            }
+            if (id.includes('/src/components/') || id.includes('/src/task-studio/')) {
+              return 'samrey-ui';
+            }
+          }
+        }
+      }
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

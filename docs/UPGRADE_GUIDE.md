@@ -1,7 +1,13 @@
-# Samrey Framework — Migration & Upgrade Guide (1.x to 2.x)
+# Samrey Framework — Migration & Upgrade Guide
 
-**Current Version:** 2.0.0  
+**Current Version:** 2.1.0  
 **License:** Apache-2.0  
+
+---
+
+## Upgrading from 2.0.0 to 2.1.0
+
+Samrey `2.1.0` is backwards-compatible with `2.0.0` public APIs while introducing Template References (`ref="..."`, `root.refs`, `root.ref()`, `root.disposeRefs()`), compiler diagnostics (`SAMREY-109` through `SAMREY-111`), hardened security sanitization (tokenizer CSS sanitization, `sanitizeRedirectUri`, `sanitizeHeadTags`, fail-closed SSR `scriptId` & Trusted Types template sanitization), and non-destructive SSR in-place hydration. Update dependencies to `^2.1.0` and run `npm install`.
 
 ---
 

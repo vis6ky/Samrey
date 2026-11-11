@@ -6,9 +6,25 @@
 import { Dependency, Signal, Subscriber } from './types.js';
 import { trackDependency, incrementClock, batch } from './batch.js';
 
+function isDevRuntime(): boolean {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env.NODE_ENV !== 'production';
+  }
+  return Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV);
+}
+
+function arraysShallowDifferent(prev: unknown[], next: unknown[]): boolean {
+  if (prev.length !== next.length) return true;
+  for (let i = 0; i < prev.length; i++) {
+    if (!Object.is(prev[i], next[i])) return true;
+  }
+  return false;
+}
+
 export function signal<T>(initialValue: T): Signal<T> {
   let currentValue = initialValue;
-  let lastKnownLength = Array.isArray(initialValue) ? initialValue.length : -1;
+  let lastArraySnapshot: unknown[] | null =
+    Array.isArray(initialValue) && isDevRuntime() ? initialValue.slice() : null;
 
   const node: Dependency = {
     version: 1,
@@ -28,7 +44,10 @@ export function signal<T>(initialValue: T): Signal<T> {
 
     if (!Object.is(nextValue, currentValue)) {
       currentValue = nextValue;
-      lastKnownLength = Array.isArray(nextValue) ? nextValue.length : -1;
+      if (lastArraySnapshot !== null || Array.isArray(nextValue)) {
+        lastArraySnapshot =
+          Array.isArray(nextValue) && isDevRuntime() ? nextValue.slice() : null;
+      }
       node.version = incrementClock();
 
       if (node.subscribers.size > 0) {
@@ -39,13 +58,12 @@ export function signal<T>(initialValue: T): Signal<T> {
         });
       }
     } else if (
-      typeof process !== 'undefined' &&
-      process.env?.NODE_ENV !== 'production' &&
+      lastArraySnapshot !== null &&
       Array.isArray(nextValue) &&
-      lastKnownLength !== -1 &&
-      nextValue.length !== lastKnownLength
+      isDevRuntime() &&
+      arraysShallowDifferent(lastArraySnapshot, nextValue)
     ) {
-      lastKnownLength = nextValue.length;
+      lastArraySnapshot = nextValue.slice();
       console.warn(
         '[Samrey Reactivity Warning] In-place array mutation detected without returning a new array reference. Reactivity requires immutable reference replacement (e.g. signal.update(arr => [...arr, item])).'
       );
