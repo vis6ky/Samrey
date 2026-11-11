@@ -106,6 +106,16 @@ export function Show<T>(props: ShowProps<T>): Node {
   let prevCondition: unknown = undefined;
   let prevTruthy: boolean | null = null;
 
+  if (
+    isDev &&
+    typeof props.children === 'object' &&
+    props.children !== null
+  ) {
+    console.warn(
+      '[Samrey Runtime Warning] <Show> received a pre-instantiated DOM Node/Array instead of a factory function `children: () => ...`. Passing pre-rendered nodes executes children eagerly even when `when` is false. Prefer lazy factory functions: `children: () => MyComponent()`.'
+    );
+  }
+
   const isKeyed = typeof props.children === 'function' && props.children.length > 0;
 
   const marker = createControlFlowMarker('samrey:show', (parent) => {

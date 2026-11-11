@@ -203,4 +203,52 @@ describe('@samrey/reactivity', () => {
       }
     );
   });
+
+  it('preserves exact array reference identity and emits a dev warning only on in-place mutation reassignments', () => {
+    const rawArr = [1, 2];
+    const items = signal<number[]>(rawArr);
+
+    // Exact reference equality preserved (zero Proxy wrapper overhead on read)
+    assert.strictEqual(items.value, rawArr);
+
+    const warnings: string[] = [];
+    const origWarn = console.warn;
+    const origNodeEnv = process.env.NODE_ENV;
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args.map(String).join(' '));
+    };
+
+    try {
+      process.env.NODE_ENV = 'development';
+
+      // Valid immutable replacement produces zero warnings
+      const nextArr = [...items.value, 3];
+      items.value = nextArr;
+      assert.equal(warnings.length, 0);
+      assert.strictEqual(items.value, nextArr);
+
+      // In-place mutation followed by returning same reference triggers dev warning
+      items.update((arr) => {
+        arr.push(4);
+        return arr;
+      });
+      assert.equal(warnings.length, 1);
+      assert.ok(warnings[0].includes('In-place array mutation detected'));
+
+      // Production mode emits zero warnings
+      process.env.NODE_ENV = 'production';
+      items.update((arr) => {
+        arr.push(5);
+        return arr;
+      });
+      assert.equal(warnings.length, 1);
+    } finally {
+      console.warn = origWarn;
+      if (origNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = origNodeEnv;
+      }
+    }
+  });
 });

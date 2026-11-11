@@ -9,6 +9,7 @@ export type ResourceStatus = 'idle' | 'pending' | 'success' | 'error';
 
 export interface ResourceActions<T = unknown> {
   refetch: (explicitSource?: any) => Promise<T>;
+  mutate: (optimisticValue: T | ((prev: T | undefined) => T)) => void;
 }
 
 export interface Resource<T> extends Iterable<any> {
@@ -17,6 +18,7 @@ export interface Resource<T> extends Iterable<any> {
   status: ReadonlySignal<ResourceStatus>;
   loading: ReadonlySignal<boolean>;
   refetch: (explicitSource?: any) => Promise<T>;
+  mutate: (optimisticValue: T | ((prev: T | undefined) => T)) => void;
   [Symbol.iterator](): Iterator<any>;
 }
 

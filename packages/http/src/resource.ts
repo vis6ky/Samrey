@@ -103,15 +103,27 @@ export function createResource<T, S = unknown>(
     }
   });
 
+  const mutate = (optimisticValue: T | ((prev: T | undefined) => T)): void => {
+    activeSeq++;
+    if (typeof optimisticValue === 'function') {
+      data.value = (optimisticValue as (prev: T | undefined) => T)(data.value);
+    } else {
+      data.value = optimisticValue;
+    }
+    error.value = null;
+    status.value = 'success';
+  };
+
   const resource: Resource<T> = {
     data: computed(() => data.value),
     error: computed(() => error.value),
     status: computed(() => status.value),
     loading: computed(() => status.value === 'pending'),
     refetch: (explicitSource?: S) => load(explicitSource),
+    mutate,
     *[Symbol.iterator]() {
       yield resource;
-      yield { refetch: resource.refetch };
+      yield { refetch: resource.refetch, mutate: resource.mutate };
     }
   };
 

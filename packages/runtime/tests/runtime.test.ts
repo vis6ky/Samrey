@@ -272,6 +272,34 @@ describe('@samrey/runtime', () => {
       outer.value = false;
       assert.equal(container.childNodes.length, 1); // only outer marker remaining
     });
+
+    it('warns in dev mode when pre-instantiated DOM node is passed instead of lazy factory function', () => {
+      const warnings: string[] = [];
+      const origWarn = console.warn;
+      console.warn = (...args: unknown[]) => {
+        warnings.push(args.map(String).join(' '));
+      };
+
+      try {
+        // Lazy factory produces zero warnings
+        Show({
+          when: () => false,
+          children: () => new TestNode(1, 'DIV', 'Lazy') as unknown as Node
+        });
+        assert.equal(warnings.length, 0);
+
+        // Pre-instantiated node triggers clear warning
+        const eagerNode = new TestNode(1, 'DIV', 'Eager') as unknown as Node;
+        Show({
+          when: () => false,
+          children: eagerNode
+        });
+        assert.equal(warnings.length, 1);
+        assert.ok(warnings[0].includes('pre-instantiated DOM Node/Array'));
+      } finally {
+        console.warn = origWarn;
+      }
+    });
   });
 
   describe('<For> Keyed List Reconciliation', () => {

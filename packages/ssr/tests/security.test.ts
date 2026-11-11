@@ -113,4 +113,65 @@ describe('@samrey/ssr - State Security, Secret Guard & Validation', () => {
     const output3 = serializeStateForHydration({ count: 42 }, { id: validCustomId });
     assert.ok(output3.startsWith('<script id="my-custom-state_123"'));
   });
+
+  it('hardens deserializeHydrationState against DOM clobbering and non-JSON script tags', () => {
+    const hadDocument = 'document' in globalThis;
+    const origDocument = (globalThis as any).document;
+
+    try {
+      // 1. querySelector enforces exact script[type="application/json"] selector even when clobbered forms exist
+      let queriedSelector = '';
+      const validScript = {
+        nodeName: 'SCRIPT',
+        getAttribute: (attr: string) => (attr === 'type' ? 'application/json' : null),
+        textContent: '{"user":"alice"}'
+      };
+      (globalThis as any).document = {
+        querySelector: (sel: string) => {
+          queriedSelector = sel;
+          return validScript;
+        },
+        getElementById: () => ({
+          nodeName: 'FORM',
+          textContent: '{"clobbered":true}'
+        })
+      };
+
+      const okState = deserializeHydrationState({ fallback: { user: 'fallback' } });
+      assert.ok(queriedSelector.includes('script[type="application/json"]'));
+      assert.deepEqual(okState, { user: 'alice' });
+
+      // 2. Rejects script element without type="application/json" even if nodeName is SCRIPT
+      const executableScript = {
+        nodeName: 'SCRIPT',
+        getAttribute: (attr: string) => (attr === 'type' ? 'text/javascript' : null),
+        textContent: '{"pwned":true}'
+      };
+      (globalThis as any).document = {
+        getElementById: () => executableScript
+      };
+
+      const rejectedWrongType = deserializeHydrationState({ fallback: { safe: true } });
+      assert.deepEqual(rejectedWrongType, { safe: true });
+
+      // 3. Rejects script element missing type attribute (getAttribute('type') === null)
+      const missingTypeScript = {
+        nodeName: 'SCRIPT',
+        getAttribute: () => null,
+        textContent: '{"pwned":true}'
+      };
+      (globalThis as any).document = {
+        getElementById: () => missingTypeScript
+      };
+
+      const rejectedNullType = deserializeHydrationState({ fallback: { safe: true } });
+      assert.deepEqual(rejectedNullType, { safe: true });
+    } finally {
+      if (hadDocument) {
+        (globalThis as any).document = origDocument;
+      } else {
+        delete (globalThis as any).document;
+      }
+    }
+  });
 });

@@ -83,10 +83,35 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
     return fallback;
   }
 
-  const script = document.getElementById(scriptId);
-  // Defend against DOM clobbering: ensure target is an actual SCRIPT element
-  if (!script || (script.nodeName !== 'SCRIPT' && !(typeof HTMLScriptElement !== 'undefined' && script instanceof HTMLScriptElement))) {
+  let script: Element | null = null;
+  if (typeof document.querySelector === 'function') {
+    try {
+      const selector = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+        ? `script[type="application/json"]#${CSS.escape(scriptId)}`
+        : `script[type="application/json"][id="${escapeHtmlAttribute(scriptId)}"]`;
+      script = document.querySelector(selector);
+    } catch {
+      script = typeof document.getElementById === 'function' ? document.getElementById(scriptId) : null;
+    }
+  } else if (typeof document.getElementById === 'function') {
+    script = document.getElementById(scriptId);
+  }
+
+  // Defend against DOM clobbering: ensure target is an actual SCRIPT element with JSON type
+  if (!script) {
     return fallback;
+  }
+  if (typeof HTMLScriptElement !== 'undefined' && typeof HTMLElement !== 'undefined' && script instanceof HTMLElement && !(script instanceof HTMLScriptElement)) {
+    return fallback;
+  }
+  if (script.nodeName !== 'SCRIPT') {
+    return fallback;
+  }
+  if (typeof script.getAttribute === 'function') {
+    const typeAttr = script.getAttribute('type');
+    if (typeAttr !== 'application/json') {
+      return fallback;
+    }
   }
 
   const rawContent = script.textContent;

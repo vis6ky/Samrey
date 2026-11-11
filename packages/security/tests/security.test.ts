@@ -215,4 +215,45 @@ describe('@samrey/security', () => {
     assert.ok(!cleaned.includes('<script>'));
     assert.ok(!cleaned.includes('alert(1)'));
   });
+
+  it('hardens HTML and template sanitizers against CDATA, malformed comments, and rawtext mXSS vectors', () => {
+    // 1. CDATA injection inside SVG / raw HTML
+    const cdataPayload = '<svg><desc><![CDATA[</desc><script>alert(1)</script>]]></desc></svg><![CDATA[<img src=x onerror=alert(2)>]]>';
+    const cleanCdata = sanitizeHtmlString(cdataPayload);
+    assert.ok(!cleanCdata.includes('<![CDATA['));
+    assert.ok(!cleanCdata.includes('<script>'));
+    assert.ok(!cleanCdata.includes('onerror'));
+
+    // 2. Malformed & abrupt HTML5 comments (--!>, <!-->, <!--->) and conditional comments
+    const commentPayloads = [
+      '<!-- safe --!><script>alert(1)</script>',
+      '<!--><img src=x onerror=alert(1)>',
+      '<!---><script>alert(2)</script>',
+      '<!--[if gte IE 4]><script>alert(3)</script><![endif]-->',
+      '<![if !IE]><img src=x onerror=alert(4)><![endif]>'
+    ];
+    for (const payload of commentPayloads) {
+      const sanitized = sanitizeHtmlString(payload);
+      assert.ok(!sanitized.includes('<script>'), `Comment mXSS leaked script: ${payload}`);
+      assert.ok(!sanitized.includes('onerror'), `Comment mXSS leaked handler: ${payload}`);
+      assert.ok(!sanitized.includes('<!--'), `Comment mXSS left raw comment marker: ${payload}`);
+    }
+
+    // 3. Parser-switching rawtext tags (<noscript>, <noembed>, <xmp>)
+    const rawtextPayload = '<noscript><p title="</noscript><img src=x onerror=alert(1)>"></noscript><xmp><script>alert(2)</script></xmp>';
+    const cleanRawtext = sanitizeHtmlString(rawtextPayload);
+    assert.ok(!cleanRawtext.includes('<noscript'));
+    assert.ok(!cleanRawtext.includes('onerror'));
+    assert.ok(!cleanRawtext.includes('<xmp'));
+    assert.ok(!cleanRawtext.includes('<script'));
+
+    // 4. sanitizeTemplateHtml preserves compiler slot comments while stripping malicious comments/CDATA
+    const tmplWithSlotAndAttack = '<div><!-- show-slot --><!-- malicious --!><script>alert(1)</script><![CDATA[<img src=x onerror=alert(2)>]]><!-- <!-- for-slot --> <script>alert(3)</script> --></div>';
+    const cleanTmpl = sanitizeTemplateHtml(tmplWithSlotAndAttack);
+    assert.ok(cleanTmpl.includes('<!-- show-slot -->'), 'Compiler show-slot anchor must be preserved');
+    assert.ok(!cleanTmpl.includes('<script>'));
+    assert.ok(!cleanTmpl.includes('onerror'));
+    assert.ok(!cleanTmpl.includes('malicious'));
+    assert.ok(!cleanTmpl.includes('<![CDATA['));
+  });
 });

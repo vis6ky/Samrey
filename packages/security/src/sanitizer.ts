@@ -517,8 +517,25 @@ export function sanitizeHtmlUrlAttributes(html: string): string {
 }
 
 /**
+ * Neutralizes mXSS CDATA sections, downlevel conditional comments, and HTML comments.
+ * Preserves only exact Samrey compiler slot anchor comments when `preserveCompilerSlots` is true.
+ */
+function stripMxssCommentsAndCdata(html: string, preserveCompilerSlots: boolean): string {
+  return html
+    .replace(/<!\[CDATA\[[\s\S]*?(?:\]\]>|$)/gi, '')
+    .replace(/<!\[[^\]]*\]>/gi, '')
+    .replace(/<!--(?:>|->|[\s\S]*?(?:--!?>|$))/g, (match) => {
+      if (preserveCompilerSlots && /^<!-- (?:dynamic|component|show|for)-slot -->$/.test(match)) {
+        return match;
+      }
+      return '';
+    });
+}
+
+/**
  * Strips dangerous HTML tags and attributes for rich text boundaries.
- * Employs multi-pass convergence to prevent nested tag/attribute bypasses (EXT-003).
+ * Employs multi-pass convergence to prevent nested tag/attribute bypasses (EXT-003)
+ * and strips CDATA/comment mXSS vectors.
  */
 export function sanitizeHtmlString(html: string): string {
   if (!html) return '';
@@ -531,10 +548,13 @@ export function sanitizeHtmlString(html: string): string {
     prev = str;
     iterations++;
 
-    // 1. Strip dangerous tags and their content
+    // 0. Strip CDATA blocks, downlevel conditional comments, and HTML5/malformed comments (mXSS hardening)
+    str = stripMxssCommentsAndCdata(str, false);
+
+    // 1. Strip dangerous tags and their content (including parser-switching rawtext tags)
     str = str
-      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet)\b[^>]*>.*?<\/\1>/gis, '')
-      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet)\b[^>]*\/?>/gis, '')
+      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet|noscript|noembed|noframes|xmp|plaintext)\b[^>]*>.*?<\/\1>/gis, '')
+      .replace(/<(script|iframe|object|embed|style|form|input|textarea|button|base|link|meta|applet|noscript|noembed|noframes|xmp|plaintext)\b[^>]*\/?>/gis, '')
       // Neutralize SVG and MathML script/execution payloads
       .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
         return match
@@ -562,9 +582,10 @@ export function sanitizeHtmlString(html: string): string {
 
 /**
  * Sanitizes template HTML skeletons used by compile-time and runtime template() cloning (EXT-002).
- * Preserves interactive UI tags (<button ref="...">, <input>, <form>, <textarea>, <svg>, <path>, ref attributes),
+ * Preserves interactive UI tags (<button ref="...">, <input>, <form>, <textarea>, <svg>, <path>, ref attributes)
+ * and compiler slot markers (<!-- show-slot -->, etc.),
  * while strictly stripping executable tags (<script>, <object>, <embed>, <applet>, <base>, <meta>, <iframe>),
- * all inline on* event handlers, dangerous schemes (javascript:, vbscript:), and CSS injection in style attributes.
+ * CDATA/malformed comment mXSS vectors, all inline on* event handlers, dangerous schemes, and CSS injection.
  */
 export function sanitizeTemplateHtml(html: string): string {
   if (!html) return '';
@@ -577,10 +598,13 @@ export function sanitizeTemplateHtml(html: string): string {
     prev = str;
     iterations++;
 
+    // 0. Strip CDATA blocks, conditional comments, and arbitrary/malformed comments while preserving compiler slot markers
+    str = stripMxssCommentsAndCdata(str, true);
+
     // 1. Strip strictly dangerous executable tags and their contents
     str = str
-      .replace(/<(script|object|embed|applet|base|meta|iframe)\b[^>]*>.*?<\/\1>/gis, '')
-      .replace(/<(script|object|embed|applet|base|meta|iframe)\b[^>]*\/?>/gis, '')
+      .replace(/<(script|object|embed|applet|base|meta|iframe|noembed|noframes|xmp|plaintext)\b[^>]*>.*?<\/\1>/gis, '')
+      .replace(/<(script|object|embed|applet|base|meta|iframe|noembed|noframes|xmp|plaintext)\b[^>]*\/?>/gis, '')
       // Neutralize any scripts inside SVG or MathML
       .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gis, (match) => {
         return match

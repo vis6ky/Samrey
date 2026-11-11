@@ -8,6 +8,7 @@ import { trackDependency, incrementClock, batch } from './batch.js';
 
 export function signal<T>(initialValue: T): Signal<T> {
   let currentValue = initialValue;
+  let lastKnownLength = Array.isArray(initialValue) ? initialValue.length : -1;
 
   const node: Dependency = {
     version: 1,
@@ -27,6 +28,7 @@ export function signal<T>(initialValue: T): Signal<T> {
 
     if (!Object.is(nextValue, currentValue)) {
       currentValue = nextValue;
+      lastKnownLength = Array.isArray(nextValue) ? nextValue.length : -1;
       node.version = incrementClock();
 
       if (node.subscribers.size > 0) {
@@ -36,6 +38,17 @@ export function signal<T>(initialValue: T): Signal<T> {
           }
         });
       }
+    } else if (
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV !== 'production' &&
+      Array.isArray(nextValue) &&
+      lastKnownLength !== -1 &&
+      nextValue.length !== lastKnownLength
+    ) {
+      lastKnownLength = nextValue.length;
+      console.warn(
+        '[Samrey Reactivity Warning] In-place array mutation detected without returning a new array reference. Reactivity requires immutable reference replacement (e.g. signal.update(arr => [...arr, item])).'
+      );
     }
   }
 

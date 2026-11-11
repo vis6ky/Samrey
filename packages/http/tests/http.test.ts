@@ -33,6 +33,37 @@ describe('@samrey/http', () => {
     assert.deepEqual(users.data.value, { count: 42 });
   });
 
+  it('supports optimistic mutate() updates and prevents stale in-flight fetches from overwriting optimistic state', async () => {
+    let resolveSlowFetch!: (val: { count: number }) => void;
+    const slowPromise = new Promise<{ count: number }>((resolve) => {
+      resolveSlowFetch = resolve;
+    });
+
+    const [stats, { mutate, refetch }] = createResource(async () => slowPromise, {
+      initialValue: { count: 10 }
+    });
+
+    assert.equal(typeof mutate, 'function');
+    assert.equal(typeof refetch, 'function');
+    assert.equal(stats.status.value, 'pending');
+
+    // Optimistically update with a direct value while initial fetch is still pending
+    mutate({ count: 99 });
+    assert.deepEqual(stats.data.value, { count: 99 });
+    assert.equal(stats.status.value, 'success');
+    assert.equal(stats.error.value, null);
+
+    // Functional updater works on optimistic value
+    mutate((prev) => ({ count: (prev?.count ?? 0) + 1 }));
+    assert.deepEqual(stats.data.value, { count: 100 });
+
+    // Resolving the older in-flight fetch must NOT overwrite the optimistic mutation
+    resolveSlowFetch({ count: 10 });
+    await slowPromise;
+    await Promise.resolve();
+    assert.deepEqual(stats.data.value, { count: 100 });
+  });
+
   it('deduplicates simultaneous identical in-flight requests', async () => {
     const cache = new RequestCache();
     let networkCalls = 0;
