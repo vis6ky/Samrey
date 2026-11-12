@@ -71,7 +71,34 @@ async function transpileTypeScriptModule(filePath: string, source: string, isTsx
   }
 }
 
-export function createNativeDevHandler(absoluteRoot: string): http.RequestListener {
+function hasForbiddenDotSegment(relPath: string): boolean {
+  const normalized = relPath.replace(/\\/g, '/');
+  return normalized
+    .split('/')
+    .some((seg) => seg === '..' || (seg.startsWith('.') && seg !== '.' && seg !== '.well-known'));
+}
+
+function normalizeHostHeader(hostHeader: string): string {
+  const trimmed = hostHeader.trim().toLowerCase();
+  if (trimmed.startsWith('[')) {
+    const endBracket = trimmed.indexOf(']');
+    return endBracket === -1 ? trimmed : trimmed.slice(0, endBracket + 1);
+  }
+  const colonIdx = trimmed.indexOf(':');
+  return colonIdx === -1 ? trimmed : trimmed.slice(0, colonIdx);
+}
+
+function sanitizeDevErrorMessage(msg: unknown, resolvedRoot: string, realRoot: string): string {
+  let text = String(msg || 'Unknown error');
+  for (const root of [resolvedRoot, realRoot]) {
+    if (root) {
+      text = text.split(root + path.sep).join('').split(root).join('.');
+    }
+  }
+  return text.split('\n')[0];
+}
+
+export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: string[]): http.RequestListener {
   const resolvedRoot = path.resolve(absoluteRoot);
   const realRoot = (() => {
     try {
@@ -81,19 +108,46 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
     }
   })();
 
+  const trustedHostSet = new Set<string>(['localhost', '127.0.0.1', '::1', '[::1]']);
+  if (allowedHosts) {
+    for (const h of allowedHosts) {
+      if (h && h !== '0.0.0.0' && h !== '::') {
+        trustedHostSet.add(normalizeHostHeader(h));
+      }
+    }
+  }
+
   const isLexicallyWithinRoot = (candidate: string): boolean =>
     candidate === resolvedRoot || candidate.startsWith(resolvedRoot + path.sep);
 
   const isRealPathWithinRoot = (candidate: string): boolean => {
     try {
       const realCandidate = fs.realpathSync(candidate);
-      return realCandidate === realRoot || realCandidate.startsWith(realRoot + path.sep);
+      if (realCandidate !== realRoot && !realCandidate.startsWith(realRoot + path.sep)) {
+        return false;
+      }
+      const relFromRealRoot = path.relative(realRoot, realCandidate);
+      return !hasForbiddenDotSegment(relFromRealRoot);
     } catch {
       return false;
     }
   };
 
   return async (req, res) => {
+    const rawHost = req.headers?.host;
+    if (typeof rawHost === 'string') {
+      const hostName = normalizeHostHeader(rawHost);
+      if (!trustedHostSet.has(hostName)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('403 Forbidden: Untrusted Host header');
+        return;
+      }
+    } else if ((req as any).socket) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('400 Bad Request');
+      return;
+    }
+
     const method = (req.method || 'GET').toUpperCase();
     if (method !== 'GET' && method !== 'HEAD') {
       res.writeHead(405, { Allow: 'GET, HEAD', 'Content-Type': 'text/plain; charset=utf-8' });
@@ -118,12 +172,7 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
     }
 
     const slashNormalized = reqPath.replace(/\\/g, '/');
-    const pathSegments = slashNormalized.split('/');
-    if (
-      pathSegments.some(
-        (seg) => seg === '..' || (seg.startsWith('.') && seg !== '.' && seg !== '.well-known')
-      )
-    ) {
+    if (hasForbiddenDotSegment(slashNormalized)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('403 Forbidden');
       return;
@@ -219,12 +268,16 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
       if (ext === '.samrey') {
         try {
           const source = fs.readFileSync(filePath, 'utf-8');
-          const compiled = compileTemplate(source, { filename: filePath });
+          const compiled = compileTemplate(source, { filename: path.basename(filePath) });
           res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
           res.end(method === 'HEAD' ? undefined : compiled.generatedCode);
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end(method === 'HEAD' ? undefined : `[Samrey Compile Error] ${err?.message || err}`);
+          res.end(
+            method === 'HEAD'
+              ? undefined
+              : `[Samrey Compile Error] ${sanitizeDevErrorMessage(err?.message || err, resolvedRoot, realRoot)}`
+          );
         }
         return;
       }
@@ -237,18 +290,63 @@ export function createNativeDevHandler(absoluteRoot: string): http.RequestListen
           res.end(method === 'HEAD' ? undefined : transpiled);
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end(method === 'HEAD' ? undefined : `[Samrey Dev Error] ${err?.message || err}`);
+          res.end(
+            method === 'HEAD'
+              ? undefined
+              : `[Samrey Dev Error] ${sanitizeDevErrorMessage(err?.message || err, resolvedRoot, realRoot)}`
+          );
         }
         return;
       }
 
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
+      const respHeaders: Record<string, string> = { 'Content-Type': contentType };
+      if (ext === '.svg') {
+        respHeaders['X-Content-Type-Options'] = 'nosniff';
+        respHeaders['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+      }
+
       if (method === 'HEAD') {
-        res.end();
+        try {
+          fs.accessSync(filePath, fs.constants.R_OK);
+          res.writeHead(200, respHeaders);
+          res.end();
+        } catch (err: any) {
+          const code = err?.code === 'EACCES' ? 403 : 500;
+          res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end();
+        }
         return;
       }
-      fs.createReadStream(filePath).pipe(res);
+
+      await new Promise<void>((resolve) => {
+        const stream = fs.createReadStream(filePath);
+        let settled = false;
+        const finish = () => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        };
+        stream.once('open', () => {
+          if (!res.headersSent) {
+            res.writeHead(200, respHeaders);
+          }
+          stream.pipe(res);
+        });
+        stream.once('error', (err: any) => {
+          const code = err?.code === 'EACCES' ? 403 : 500;
+          if (!res.headersSent) {
+            res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(code === 403 ? '403 Forbidden' : '500 Internal Server Error');
+          } else {
+            res.end();
+          }
+          finish();
+        });
+        res.once('finish', finish);
+        res.once('close', finish);
+      });
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end(method === 'HEAD' ? undefined : '404 Not Found');
@@ -313,9 +411,10 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   // Native lightweight dev server fallback
   const rootDir = process.cwd();
   const absoluteRoot = path.resolve(rootDir);
-  const server = http.createServer(createNativeDevHandler(absoluteRoot));
-
   const listenHost = options.host ? (typeof options.host === 'string' ? options.host : '0.0.0.0') : '127.0.0.1';
+  const server = http.createServer(
+    createNativeDevHandler(absoluteRoot, typeof options.host === 'string' ? [options.host] : undefined)
+  );
 
   return new Promise((resolve) => {
     server.listen(port, listenHost, () => {

@@ -43,6 +43,7 @@ const VOID_ELEMENTS = new Set([
   'link', 'meta', 'param', 'source', 'track', 'wbr'
 ]);
 const FOREIGN_ELEMENTS = new Set(['svg', 'math']);
+const HTML_INTEGRATION_ELEMENTS = new Set(['foreignobject', 'desc', 'title', 'annotation-xml']);
 
 // HTML boolean attributes whose presence alone denotes true (as opposed to aria-* or contenteditable)
 const HTML_BOOLEAN_ATTRS = new Set([
@@ -418,12 +419,26 @@ export class TemplateParser {
         foundClosing = true;
       }
     } else if (!isSelfClosing) {
-      const closingTag = `</${tagName}>`;
+      const lowerTagName = tagName.toLowerCase();
+      const allowCaseInsensitiveClose = tagName.length > 0 && tagName[0] >= 'a' && tagName[0] <= 'z';
       while (this.cursor < this.length) {
-        if (this.peekString(closingTag)) {
-          this.advance(closingTag.length);
-          foundClosing = true;
-          break;
+        if (this.peekString('</')) {
+          const nameStart = this.cursor + 2;
+          const nameSlice = this.source.slice(nameStart, nameStart + tagName.length);
+          const nameMatches = allowCaseInsensitiveClose
+            ? nameSlice.toLowerCase() === lowerTagName
+            : nameSlice === tagName;
+          if (nameMatches) {
+            let closeEnd = nameStart + tagName.length;
+            while (closeEnd < this.length && /\s/.test(this.source[closeEnd])) {
+              closeEnd++;
+            }
+            if (closeEnd < this.length && this.source.charCodeAt(closeEnd) === 62) {
+              this.advance(closeEnd - this.cursor + 1);
+              foundClosing = true;
+              break;
+            }
+          }
         }
 
         if (this.peekString('</')) {
@@ -817,11 +832,14 @@ export function buildAIRFromAST(ast: ASTRootNode): {
     return normalized;
   }
 
+  const slotExprMap = new WeakMap<object, string>();
+
   function processNodes(
     rawNodes: ASTNode[],
     currentPath: number[],
     isRootLevel = false,
-    inForeign = false
+    inForeign = false,
+    currentExpr = 'root'
   ): string {
     const nodes = normalizeNodes(rawNodes);
     const htmlParts: string[] = [];
@@ -831,6 +849,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
       const node = nodes[i];
       const isSingleRootElement = isRootLevel && isSingleRoot && i === 0 && node.type === 'Element';
       const nodePath = isSingleRootElement ? [] : currentPath.concat(childIndex);
+      const nodeExpr = isSingleRootElement ? 'root' : `${currentExpr}.childNodes[${childIndex}]`;
 
       if (node.type === 'Text') {
         htmlParts.push(node.value);
@@ -843,6 +862,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           path: nodePath,
           securityContext: node.securityContext
         };
+        slotExprMap.set(dynamicSlot, `${currentExpr}.childNodes[${childIndex}]`);
         slots.push(dynamicSlot);
         childIndex++;
       } else if (node.type === 'Element') {
@@ -867,6 +887,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               handlerExpression: attr.expression || attr.value || '() => {}',
               path: nodePath
             };
+            slotExprMap.set(eventSlot, nodeExpr);
             slots.push(eventSlot);
           } else if (attr.name.startsWith('class:') && attr.name.length > 6) {
             const className = attr.name.slice(6);
@@ -879,6 +900,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               expression: expr,
               path: nodePath
             };
+            slotExprMap.set(classSlot, nodeExpr);
             slots.push(classSlot);
           } else if (attr.name.startsWith('.') && attr.name.length > 1) {
             const propertyName = attr.name.slice(1);
@@ -891,6 +913,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
               expression: expr,
               path: nodePath
             };
+            slotExprMap.set(propSlot, nodeExpr);
             slots.push(propSlot);
           } else if (attr.isDynamic && attr.expression) {
             // Compile-time Constant Expression Folding for static attributes
@@ -923,6 +946,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
                 path: nodePath,
                 securityContext: attr.securityContext
               };
+              slotExprMap.set(attrSlot, nodeExpr);
               slots.push(attrSlot);
             }
           } else if (attr.value !== null) {
@@ -942,6 +966,8 @@ export function buildAIRFromAST(ast: ASTRootNode): {
 
         const lowerTag = node.tag.toLowerCase();
         const isForeign = inForeign || FOREIGN_ELEMENTS.has(lowerTag);
+        const childForeign = HTML_INTEGRATION_ELEMENTS.has(lowerTag) ? false : isForeign;
+        const childContainerExpr = lowerTag === 'template' ? `${nodeExpr}.content` : nodeExpr;
 
         if (node.isSelfClosing) {
           if (VOID_ELEMENTS.has(lowerTag) || isForeign) {
@@ -952,7 +978,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           }
         } else {
           tagOpen += '>';
-          const childrenHtml = processNodes(node.children, nodePath, false, isForeign);
+          const childrenHtml = processNodes(node.children, nodePath, false, childForeign, childContainerExpr);
           htmlParts.push(`${tagOpen}${childrenHtml}</${node.tag}>`);
         }
 
@@ -974,13 +1000,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         const helper = `createComponent(${node.name}, { ${node.props
           .map((p) => `${p.name}: ${p.expression || JSON.stringify(p.value)}`)
           .join(', ')} })`;
-        slots.push({
+        const compSlot: AIRControlFlowSlotNode = {
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: helper,
           path: nodePath,
           helperCode: helper
-        });
+        };
+        slotExprMap.set(compSlot, nodeExpr);
+        slots.push(compSlot);
         childIndex++;
       } else if (node.type === 'Show') {
         htmlParts.push('<!-- show-slot -->');
@@ -997,13 +1025,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
         const helper = fallbackFn
           ? `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, fallback: ${fallbackFn}, children: ${childrenFn} })`
           : `Show({ when: ${node.when.startsWith('(') ? node.when : `() => (${node.when})`}, children: ${childrenFn} })`;
-        slots.push({
+        const showSlot: AIRControlFlowSlotNode = {
           type: 'control-flow-slot',
           flowType: 'Show',
           expression: node.when,
           path: nodePath,
           helperCode: helper
-        });
+        };
+        slotExprMap.set(showSlot, nodeExpr);
+        slots.push(showSlot);
         childIndex++;
       } else if (node.type === 'For') {
         htmlParts.push('<!-- for-slot -->');
@@ -1013,13 +1043,15 @@ export function buildAIRFromAST(ast: ASTRootNode): {
           ? `(_item, _i) => template(${JSON.stringify(childHtml)})()`
           : '(_item, _i) => null';
         const helper = `For({ each: ${node.each.startsWith('(') ? node.each : `() => (${node.each})`}, key: ${node.key || 'undefined'}, children: ${childrenFn} })`;
-        slots.push({
+        const forSlot: AIRControlFlowSlotNode = {
           type: 'control-flow-slot',
           flowType: 'For',
           expression: node.each,
           path: nodePath,
           helperCode: helper
-        });
+        };
+        slotExprMap.set(forSlot, nodeExpr);
+        slots.push(forSlot);
         childIndex++;
       }
     }
@@ -1049,7 +1081,7 @@ export function buildAIRFromAST(ast: ASTRootNode): {
   // Generate binding instructions from slots
   for (let idx = 0; idx < slots.length; idx++) {
     const slot = slots[idx];
-    const target = getNodeExpr(slot.path);
+    const target = slotExprMap.get(slot) ?? getNodeExpr(slot.path);
     if (slot.type === 'dynamic-text') {
       usedHelpers.add('bindText');
       bindingsCode.push(`bindText(${target}, () => (${slot.expression}));`);

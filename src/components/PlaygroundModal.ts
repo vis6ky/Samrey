@@ -9,7 +9,7 @@ import { el, Show, For } from '@samrey/runtime';
 import { signal, computed, effect } from '@samrey/reactivity';
 import { icon } from '../lib/icons.js';
 import { validateSamreyCode } from '../lib/codeValidator.js';
-import { executeSamreyCode, PLAYGROUND_PRESETS, PlaygroundPreset } from '../lib/runtimeSandbox.js';
+import { executeSamreyCode, sanitizeSandboxErrorMessage, PLAYGROUND_PRESETS, PlaygroundPreset } from '../lib/runtimeSandbox.js';
 
 export interface PlaygroundModalProps {
   isOpen: { value: boolean };
@@ -67,11 +67,11 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
         runtimeError.value = null;
         addLog('[Runtime] Component mounted and reactive bindings activated.', 'success');
       } else {
-        runtimeError.value = execResult.error || 'Failed to evaluate component tree.';
+        runtimeError.value = sanitizeSandboxErrorMessage(execResult.error || 'Failed to evaluate component tree.');
         renderedElement.value = null;
       }
     } catch (err: any) {
-      const msg = err?.message || String(err);
+      const msg = sanitizeSandboxErrorMessage(err?.message || String(err));
       runtimeError.value = msg;
       renderedElement.value = null;
       addLog(`[Fatal Runtime Error] ${msg}`, 'error');
@@ -359,7 +359,13 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
           // Dynamic mounting effect: mounts the rendered element whenever it updates
           effect(() => {
             const node = renderedElement.value;
-            mountContainer.innerHTML = '';
+            if (typeof mountContainer.replaceChildren === 'function') {
+              mountContainer.replaceChildren();
+            } else {
+              while (mountContainer.firstChild) {
+                mountContainer.removeChild(mountContainer.firstChild);
+              }
+            }
             if (node) {
               mountContainer.appendChild(node);
             } else if (!runtimeError.value) {

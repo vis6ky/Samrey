@@ -60,24 +60,61 @@ function serializeNodeOutput(val: unknown): string {
 
 function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions): {
   stylesTags: string;
+  linksTags: string;
+  headScriptsTags: string;
   clientScriptTag: string;
   metaTags: string;
   safeHeadTags: string;
   delegatorScript: string;
 } {
   const nonce = options.nonce || options.scriptNonce;
+  const nonceAttr = nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : '';
   const delegatorScript = getDelegatedEventScript(options.events, nonce);
-  const sanitizedClientScript = options.clientScript ? sanitizeUri(options.clientScript, { allowImageDataUri: false }) : '';
-  const clientScriptTag = sanitizedClientScript && sanitizedClientScript !== 'about:blank'
-    ? `<script type="module" src="${escapeHtmlAttribute(sanitizedClientScript)}"${nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : ''}></script>`
+  const sanitizeAsset = (raw?: string): string => {
+    if (!raw) return '';
+    const cleaned = sanitizeUri(raw, { allowImageDataUri: false, allowProtocolRelative: false });
+    return cleaned && cleaned !== 'about:blank' ? cleaned : '';
+  };
+
+  const sanitizedClientScript = sanitizeAsset(options.clientScript);
+  const clientScriptTag = sanitizedClientScript
+    ? `<script type="module" src="${escapeHtmlAttribute(sanitizedClientScript)}"${nonceAttr}></script>`
     : '';
   const stylesTags = options.clientStyles
     ? options.clientStyles
-        .map((s) => sanitizeUri(s, { allowImageDataUri: false }))
-        .filter((s) => s !== 'about:blank')
+        .map((s) => sanitizeAsset(s))
+        .filter(Boolean)
         .map((s) => `<link rel="stylesheet" href="${escapeHtmlAttribute(s)}">`)
         .join('\n  ')
     : '';
+  const linksTags = ctx.head.links
+    .map((link) => {
+      const rel = String(link.rel || '').trim();
+      if (!rel || rel.toLowerCase() === 'import') return '';
+      const safeHref = sanitizeAsset(link.href);
+      if (!safeHref) return '';
+      const asAttr = link.as ? ` as="${escapeHtmlAttribute(link.as)}"` : '';
+      return `<link rel="${escapeHtmlAttribute(rel)}" href="${escapeHtmlAttribute(safeHref)}"${asAttr}>`;
+    })
+    .filter(Boolean)
+    .join('\n  ');
+  const headScriptsTags = ctx.head.scripts
+    .map((sc) => {
+      const typeAttr = sc.type ? ` type="${escapeHtmlAttribute(sc.type)}"` : '';
+      const deferAttr = sc.defer ? ' defer' : '';
+      if (sc.src) {
+        const safeSrc = sanitizeAsset(sc.src);
+        if (!safeSrc) return '';
+        return `<script${typeAttr} src="${escapeHtmlAttribute(safeSrc)}"${deferAttr}${nonceAttr}></script>`;
+      }
+      if (typeof sc.inline === 'string' && sc.inline.length > 0) {
+        const safeInline = sc.inline.replace(/<\//gi, '<\\/').replace(/<!--/g, '\\x3C!--');
+        return `<script${typeAttr}${deferAttr}${nonceAttr}>${safeInline}</script>`;
+      }
+      return '';
+    })
+    .filter(Boolean)
+    .join('\n  ');
   const metaTags = ctx.head.meta
     .map((m) => {
       const attr = m.name ? `name="${escapeHtmlAttribute(m.name)}"` : `property="${escapeHtmlAttribute(m.property || '')}"`;
@@ -86,7 +123,7 @@ function renderHeadElements(ctx: SSRContext, options: RenderToStringOptions): {
     .join('\n  ');
   const safeHeadTags = options.headTags ? sanitizeHeadTags(options.headTags) : '';
 
-  return { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript };
+  return { stylesTags, linksTags, headScriptsTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript };
 }
 
 /**
@@ -154,7 +191,7 @@ export async function renderToString(
   }
 
   const title = options.title || ctx.head.title || 'Samrey Application';
-  const { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
+  const { stylesTags, linksTags, headScriptsTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
 
   // Generate serialized state script
   const nonce = options.nonce || options.scriptNonce;
@@ -170,8 +207,10 @@ export async function renderToString(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtmlText(title)}</title>
   ${metaTags}
+  ${linksTags}
   ${stylesTags}
   ${safeHeadTags}
+  ${headScriptsTags}
   ${delegatorScript}
 </head>
 <body>
@@ -286,7 +325,7 @@ export function renderToStream(
 
       // 2. Head elements (title, meta, links) are now collected from the synchronous shell render
       const title = options.title || ctx.head.title || 'Samrey Application';
-      const { stylesTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
+      const { stylesTags, linksTags, headScriptsTags, clientScriptTag, metaTags, safeHeadTags, delegatorScript } = renderHeadElements(ctx, options);
       ctx.headFlushed = true;
 
       // Write head and opening shell
@@ -297,8 +336,10 @@ export function renderToStream(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtmlText(title)}</title>
   ${metaTags}
+  ${linksTags}
   ${stylesTags}
   ${safeHeadTags}
+  ${headScriptsTags}
   ${delegatorScript}
 </head>
 <body>

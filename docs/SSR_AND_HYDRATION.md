@@ -74,7 +74,7 @@ return new Response(stream, {
 Samrey's `generateStaticSite` engine compiles route manifests into pre-rendered static `.html` files, dynamic parameterized paths, and automated XML sitemaps (`baseUrl` validated with `sanitizeUri(..., { allowProtocolRelative: false })` and sitemap `<loc>` URLs escaped via `escapeHtmlText`):
 
 ```typescript
-import { generateStaticSite, StaticRouteConfig } from '@samrey/ssr';
+import { generateStaticSite, type StaticRouteConfig } from '@samrey/ssr';
 
 const routes: StaticRouteConfig[] = [
   { path: '/', component: () => '<h1>Home</h1>' },

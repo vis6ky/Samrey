@@ -36,9 +36,7 @@ export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
     'onError', 'produce', 'queueEffect', 'reconcile', 'recordHydrationRetarget',
     'runWithHydrationCapture', 'runWithOwner', 'setActiveSubscriber',
     'setGlobalErrorHandler', 'setOwner', 'signal', 'trackDependency', 'untrack',
-    'useContext',
-    // Type exports allowed in `import type`
-    'Signal', 'ReadonlySignal', 'Store', 'Owner', 'Context'
+    'useContext'
   ],
   '@samrey/runtime': [
     'Dynamic', 'ErrorBoundary', 'For', 'Match', 'Portal', 'Show', 'Suspense', 'Switch',
@@ -55,15 +53,11 @@ export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
     'Link', 'Route', 'Router', 'RouterContext', 'RouterOutlet', 'createBrowserHistory',
     'createLink', 'createMemoryHistory', 'createRouter', 'matchPath', 'matchRoute',
     'matchRoutes', 'setRouterInstance', 'useLocation', 'useNavigate', 'useParams',
-    'useRouter', 'useSearchParams',
-    // Type exports
-    'RouteConfig', 'RouterOptions', 'RouteMatch', 'NavigateOptions', 'RouteParams'
+    'useRouter', 'useSearchParams'
   ],
   '@samrey/forms': [
     'bindField', 'computeAriaAttributes', 'createField', 'createForm',
-    'getAccessibleFieldProps', 'validateSchema', 'validators',
-    // Type exports
-    'FormConfig', 'FieldConfig', 'ValidationResult', 'FieldState', 'FormState'
+    'getAccessibleFieldProps', 'validateSchema', 'validators'
   ],
   '@samrey/http': [
     'HttpClient', 'HttpError', 'RequestCache', 'createHttpCache', 'createHttpClient',
@@ -85,10 +79,11 @@ export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
   '@samrey/ssr': [
     'createSSRContext', 'createServerData', 'deserializeHydrationState', 'escapeHtml',
     'escapeJsonState', 'generatePreHydrationScript', 'generateStaticSite',
-    'getDelegatedEventScript', 'getSSRContext', 'hydrate', 'hydrateFromSSR',
-    'invalidateClientDataCache', 'isSensitiveKey', 'renderToStream', 'renderToString',
-    'replayCapturedEvents', 'resolveSSRContext', 'runWithSSRContext', 'safeJsonParse',
-    'sanitizeSsrState', 'serializeState', 'serializeStateForHydration', 'stripSecrets'
+    'getDelegatedEventScript', 'getSSRContext', 'getSSRLoaderError', 'hydrate',
+    'hydrateFromSSR', 'invalidateClientDataCache', 'isSensitiveKey', 'renderToStream',
+    'renderToString', 'replayCapturedEvents', 'resolveSSRContext', 'runWithSSRContext',
+    'safeJsonParse', 'sanitizeSsrState', 'serializeState', 'serializeStateForHydration',
+    'stripSecrets'
   ],
   '@samrey/testing': [
     'cleanupAllTestContainers', 'createMockResource', 'fireEvent', 'flushReactivity',
@@ -138,6 +133,79 @@ export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
   ]
 };
 
+export const OFFICIAL_SAMREY_TYPES: Record<string, string[]> = {
+  '@samrey/reactivity': [
+    'Context', 'Dependency', 'HydrationCaptureRegistry', 'Owner', 'ReactiveNode',
+    'ReadonlySignal', 'Signal', 'Subscriber', 'SuspenseTracker'
+  ],
+  '@samrey/runtime': [
+    'ChildValue', 'Component', 'DevDiagnostic', 'DynamicProps', 'ElementProps',
+    'ErrorBoundaryProps', 'ExtractRefs', 'ForProps', 'MatchProps', 'PortalProps',
+    'ShowProps', 'SuspenseProps', 'SwitchProps', 'TagNameToElement', 'TemplateFactory',
+    'TemplateRefs', 'TemplateRoot'
+  ],
+  '@samrey/compiler': [
+    'AIRCompilationResult', 'AIRControlFlowSlotNode', 'AIRDynamicAttrNode',
+    'AIRDynamicClassNode', 'AIRDynamicEventNode', 'AIRDynamicPropertyNode',
+    'AIRDynamicTextNode', 'AIRNode', 'AIRStaticNode', 'AIRTemplateUnit',
+    'ASTAttributeNode', 'ASTComponentNode', 'ASTElementNode', 'ASTForNode',
+    'ASTInterpolationNode', 'ASTNode', 'ASTRootNode', 'ASTShowNode', 'ASTTextNode',
+    'ConstantFoldResult', 'ErrorDefinition', 'ParseOptions', 'ParseResult', 'Position',
+    'SamreyDiagnosticOptions', 'SamreyErrorCode', 'SecurityContext', 'SourceLocation',
+    'SourceLocationInfo'
+  ],
+  '@samrey/router': [
+    'LinkProps', 'RouteMatch', 'RouteRecord', 'RouterInstance'
+  ],
+  '@samrey/forms': [
+    'AriaBindingAttributes', 'BindFieldOptions', 'FieldState', 'FormConfig',
+    'FormInstance', 'FormValidateFn', 'StandardSchemaFailure', 'StandardSchemaIssue',
+    'StandardSchemaResult', 'StandardSchemaSuccess', 'StandardSchemaV1', 'Validator'
+  ],
+  '@samrey/http': [
+    'HttpCacheOptions', 'RequestOptions', 'Resource', 'ResourceActions',
+    'ResourceOptions', 'ResourceStatus'
+  ],
+  '@samrey/ssr': [
+    'DeserializeOptions', 'GeneratedPage', 'HydrateOptions', 'HydrationResult',
+    'RenderToStreamOptions', 'RenderToStringOptions', 'SSGOptions', 'SSGResult',
+    'SSRContext', 'SSRHeadMetadata', 'SecretGuardOptions', 'SerializeOptions',
+    'ServerDataActions', 'ServerDataOptions', 'StateValidator', 'StaticPathEntry',
+    'StaticRouteConfig'
+  ],
+  '@samrey/testing': [
+    'TestRenderResult'
+  ],
+  '@samrey/devtools': [
+    'DevToolsEvent', 'DevToolsEventType', 'InspectedComponent', 'InspectedEffect',
+    'InspectedField', 'InspectedForm', 'InspectedHttpRequest', 'InspectedOwner',
+    'InspectedPerfMetric', 'InspectedRoute', 'InspectedSignalNode'
+  ],
+  '@samrey/security': [
+    'SamreyTrustedPolicy', 'SanitizeUriOptions', 'SecretGuardOptions',
+    'TrustedTypesOptions'
+  ],
+  '@samrey/cli': [
+    'AnalyzeCommandOptions', 'AuditCommandOptions', 'AuditReport',
+    'BuildCommandOptions', 'CommandResult', 'CreateCommandOptions', 'DevCommandOptions',
+    'GenerateArtifactType', 'GenerateCommandOptions', 'PreviewCommandOptions',
+    'RawSourceMapV3', 'SamreyPluginOptions', 'StarterProjectFiles', 'TestCommandOptions'
+  ],
+  '@samrey/ai': [
+    'AgentSkillDefinition', 'AiIntegrationConfig', 'AiPlatform', 'ApiReference',
+    'CodeIssue', 'CodeToken', 'CodeValidationError', 'CodeValidationResult',
+    'CodeValidationWarning', 'CompatibilitySuiteReport', 'CompatibilityTask',
+    'DiagnosticDiagnosis', 'DocSection', 'InstalledSamreyPackage',
+    'ProjectAnalysisReport', 'SamreyCodeExample', 'SamreyProjectContext',
+    'SearchResult', 'SecurityPolicy', 'StdioHandshakeResult', 'TaskExecutionResult'
+  ],
+  '@samrey/mcp-server': [
+    'JsonRpcRequest', 'JsonRpcResponse', 'McpPromptDefinition', 'McpResourceDefinition',
+    'McpToolDefinition', 'SafeCommandResult', 'SamreyMcpServerOptions',
+    'ToolCallResult', 'ToolContext'
+  ]
+};
+
 const FOREIGN_API_MAP: Array<{ regex: RegExp; name: string; framework: string; alternative: string }> = [
   { regex: /\buseState\b/, name: 'useState', framework: 'React', alternative: "signal() from '@samrey/reactivity'" },
   { regex: /\buseEffect\b/, name: 'useEffect', framework: 'React', alternative: "effect() or onMount() from '@samrey/reactivity' / '@samrey/runtime'" },
@@ -154,10 +222,64 @@ const FOREIGN_API_MAP: Array<{ regex: RegExp; name: string; framework: string; a
   { regex: /\bdefineComponent\b/, name: 'defineComponent', framework: 'Vue', alternative: "Plain function component returning el() from '@samrey/runtime'" },
   { regex: /\bcreateSlice\b/, name: 'createSlice', framework: 'Redux Toolkit', alternative: "createStore() from '@samrey/reactivity'" },
   { regex: /\buseSelector\b/, name: 'useSelector', framework: 'Redux', alternative: "computed(() => store.key) from '@samrey/reactivity'" },
-  { regex: /\bcreateStore(?!\s*\(.*@samrey\/reactivity)/, name: 'Redux createStore', framework: 'Redux', alternative: "createStore() from '@samrey/reactivity'" },
   { regex: /\bBehaviorSubject\b|\bObservable\b/, name: 'RxJS Observable', framework: 'RxJS', alternative: "signal() and effect() from '@samrey/reactivity'" },
   { regex: /\$state|\$derived|\$effect/, name: 'Svelte 5 Runes', framework: 'Svelte', alternative: "signal(), computed(), effect() from '@samrey/reactivity'" }
 ];
+
+function stripCommentsAndStrings(code: string, keepStrings = false): string {
+  let out = '';
+  let i = 0;
+  while (i < code.length) {
+    const ch = code[i];
+    const next = code[i + 1];
+    if (ch === '/' && next === '/') {
+      out += '  ';
+      i += 2;
+      while (i < code.length && code[i] !== '\n') {
+        out += ' ';
+        i++;
+      }
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      out += '  ';
+      i += 2;
+      while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) {
+        out += code[i] === '\n' ? '\n' : ' ';
+        i++;
+      }
+      if (i < code.length) {
+        out += '  ';
+        i += 2;
+      }
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      const quote = ch;
+      out += keepStrings ? ch : ' ';
+      i++;
+      while (i < code.length) {
+        const cur = code[i];
+        if (cur === '\\' && i + 1 < code.length) {
+          out += keepStrings ? cur + code[i + 1] : (code[i + 1] === '\n' ? ' \n' : '  ');
+          i += 2;
+          continue;
+        }
+        if (cur === quote) {
+          out += keepStrings ? cur : ' ';
+          i++;
+          break;
+        }
+        out += keepStrings ? cur : (cur === '\n' ? '\n' : ' ');
+        i++;
+      }
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
 
 /**
  * Validates syntax, structure, symbols, imports, and reactive patterns in TypeScript/Samrey code.
@@ -267,23 +389,47 @@ export function validateSamreyCode(
     passedChecks.push('AST & Bracket Structure Balanced');
   }
 
-  // 2. Package & Import Audit
-  const importRegex = /import\s+(?:\{([^}]+)\}|\*\s+as\s+(\w+)|(\w+))\s+from\s+['"]([^'"]+)['"]/g;
-  let match: RegExpExecArray | null;
+  const codeWithoutComments = stripCommentsAndStrings(trimmed, true);
+  const codeWithoutCommentsAndStrings = stripCommentsAndStrings(trimmed, false);
 
-  while ((match = importRegex.exec(trimmed)) !== null) {
-    const pkg = match[4];
-    const namedImports = match[1] ? match[1].split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim()).filter(Boolean) : [];
+  // 2. Package & Import Audit
+  const importRegex = /\bimport\s+((?:type\s+)?(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}|[A-Za-z_$][\w$]*(?:\s*,\s*(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}))?))\s+from\s+['"]([^'"]+)['"]/g;
+  let match: RegExpExecArray | null;
+  let importsSamreyReactivity = false;
+  let importsRedux = false;
+
+  while ((match = importRegex.exec(codeWithoutComments)) !== null) {
+    const rawClause = match[1].trim();
+    const pkg = match[2];
+    const isGlobalTypeImport = /^\s*type\b/.test(rawClause);
+    const namedMatch = rawClause.match(/\{([\s\S]*?)\}/);
+    const rawItems = namedMatch ? namedMatch[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    if (pkg === '@samrey/reactivity') importsSamreyReactivity = true;
+    if (pkg === 'redux' || pkg === '@reduxjs/toolkit') importsRedux = true;
 
     if (pkg.startsWith('@samrey/')) {
       const validPkgExports = OFFICIAL_SAMREY_EXPORTS[pkg];
+      const validPkgTypes = OFFICIAL_SAMREY_TYPES[pkg] || [];
       if (!validPkgExports) {
         errors.push(`Unknown Samrey package \`${pkg}\`. Valid packages: ${Object.keys(OFFICIAL_SAMREY_EXPORTS).join(', ')}`);
       } else {
-        for (const named of namedImports) {
-          auditedSymbols.push(`${pkg} -> ${named}`);
-          if (!validPkgExports.includes(named)) {
-            errors.push(`Symbol \`${named}\` is not exported by \`${pkg}\`. Available: ${validPkgExports.slice(0, 8).join(', ')}...`);
+        for (const rawItem of rawItems) {
+          const isInlineType = /^\s*type\s+/.test(rawItem);
+          const cleanName = rawItem.replace(/^\s*type\s+/, '').split(/\s+as\s+/)[0].trim();
+          if (!cleanName) continue;
+          auditedSymbols.push(`${pkg} -> ${cleanName}`);
+
+          if (isGlobalTypeImport || isInlineType) {
+            if (!validPkgExports.includes(cleanName) && !validPkgTypes.includes(cleanName)) {
+              errors.push(`Type \`${cleanName}\` is not exported by \`${pkg}\`.`);
+            }
+          } else if (!validPkgExports.includes(cleanName)) {
+            if (validPkgTypes.includes(cleanName)) {
+              errors.push(`Symbol \`${cleanName}\` is a TypeScript type-only export from \`${pkg}\` — use \`import type { ${cleanName} }\` or \`type ${cleanName}\`.`);
+            } else {
+              errors.push(`Symbol \`${cleanName}\` is not exported by \`${pkg}\`. Available: ${validPkgExports.slice(0, 8).join(', ')}...`);
+            }
           }
         }
       }
@@ -296,9 +442,9 @@ export function validateSamreyCode(
     passedChecks.push(`Grounded against @samrey/* v2.1.0 (${auditedSymbols.length} symbols verified)`);
   }
 
-  // 3. Foreign Framework Detection
+  // 3. Foreign Framework Detection (scanned outside comments and string literals)
   for (const foreign of FOREIGN_API_MAP) {
-    if (foreign.regex.test(trimmed)) {
+    if (foreign.regex.test(codeWithoutCommentsAndStrings)) {
       foreignApis.push({
         name: foreign.name,
         framework: foreign.framework,
@@ -310,18 +456,32 @@ export function validateSamreyCode(
     }
   }
 
+  if (
+    /\bcreateStore\b/.test(codeWithoutCommentsAndStrings) &&
+    (importsRedux || (!importsSamreyReactivity && /\b(?:applyMiddleware|combineReducers|compose)\b/.test(codeWithoutCommentsAndStrings)))
+  ) {
+    foreignApis.push({
+      name: 'Redux createStore',
+      framework: 'Redux',
+      samreyAlternative: "createStore() from '@samrey/reactivity'"
+    });
+    if (!options.isForeignConversion && !options.isDebugging) {
+      warnings.push("Foreign API `Redux createStore` (Redux) detected. Recommended: createStore() from '@samrey/reactivity'");
+    }
+  }
+
   if (foreignApis.length === 0) {
     passedChecks.push('Zero Foreign Framework APIs / Native Samrey Architecture');
   }
 
-  // 4. Samrey Specific Reactive Bug Checks
+  // 4. Samrey Specific Reactive Bug Checks (scanned outside comments and strings)
   // Check for broken static text node binding: el('p', null, count.value) where count is a signal
-  if (/\bel\s*\([^)]*,\s*[^,)]*,\s*([a-zA-Z0-9_$]+)\.value\b/.test(trimmed)) {
+  if (/\bel\s*\([^)]*,\s*[^,)]*,\s*([a-zA-Z0-9_$]+)\.value\b/.test(codeWithoutCommentsAndStrings)) {
     warnings.push('Reactive binding note: Signal `.value` evaluated statically inside `el()`. Use accessor closure `() => signal.value` for live fine-grained DOM updates.');
   }
 
   // Check for in-place array mutation: todos.value.push(...)
-  if (/\b([a-zA-Z0-9_$]+)\.value\.(?:push|splice|pop|shift|unshift)\b/.test(trimmed)) {
+  if (/\b([a-zA-Z0-9_$]+)\.value\.(?:push|splice|pop|shift|unshift)\b/.test(codeWithoutCommentsAndStrings)) {
     warnings.push('Reactive state note: In-place array mutation detected. Assign a new array reference `signal.value = [...signal.value, newItem]` to trigger reactive setters.');
   }
 

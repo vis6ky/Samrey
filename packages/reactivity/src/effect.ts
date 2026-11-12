@@ -17,6 +17,7 @@ export function effect(fn: () => void | (() => void)): () => void {
     version: 0,
     isDirty: true,
     isDisposed: false,
+    owner: effectOwner,
     sources: new Set<Dependency>(),
     notify() {
       if (this.isDisposed) return;
@@ -36,7 +37,12 @@ export function effect(fn: () => void | (() => void)): () => void {
           if (typeof maybeSub.update === 'function') {
             hasComputeds = true;
             if (maybeSub.isDirty) {
-              maybeSub.update();
+              try {
+                maybeSub.update();
+              } catch {
+                anyChanged = true;
+                break;
+              }
             }
           }
           if (source.version !== sourceVersions.get(source)) {
@@ -103,14 +109,31 @@ export function effect(fn: () => void | (() => void)): () => void {
       try {
         userCleanup = runWithOwner(effectOwner, () => fn());
         hasRun = true;
-        sourceVersions.clear();
-        for (const source of this.sources) {
-          sourceVersions.set(source, source.version);
-        }
       } catch (err) {
+        hasRun = true;
         handleError(err, effectOwner);
       } finally {
         setActiveSubscriber(prevSub);
+        if (this.isDisposed) {
+          if (typeof userCleanup === 'function') {
+            try {
+              userCleanup();
+            } catch (err) {
+              handleError(err, effectOwner);
+            }
+            userCleanup = undefined;
+          }
+          for (const source of this.sources) {
+            source.subscribers.delete(this);
+          }
+          this.sources.clear();
+          sourceVersions.clear();
+        } else {
+          sourceVersions.clear();
+          for (const source of this.sources) {
+            sourceVersions.set(source, source.version);
+          }
+        }
       }
     }
   };

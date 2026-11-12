@@ -23,14 +23,15 @@ function Counter() {
   const count = signal(0);
   return el('button', {
     id: 'btn',
+    type: 'button',
     onClick: () => count.value++
   }, () => `Count: ${count.value}`);
 }
 
-const { container, findByText, unmount } = renderTest(Counter);
+const { container, unmount } = renderTest(Counter);
 const btn = container.querySelector('#btn')!;
 
-fireEvent.click(btn);
+fireEvent(btn, 'click');
 await flushReactivity();
 
 console.log(btn.textContent); // "Count: 1"
@@ -40,13 +41,12 @@ unmount();
 
 ## API
 
-- `renderTest(component, options)` — Mounts component into a sandboxed test container. Returns `{ container, unmount, findByText, queryByText }`.
-- `fireEvent(element, eventType, eventInit)` — Dispatches bubbling synthetic DOM events.
-- `fireEvent.click(element)` — Convenience click dispatcher.
-- `fireEvent.input(element, value)` — Convenience input change dispatcher.
-- `flushReactivity(): Promise<void>` — Resolves when all pending reactive microtasks have completed.
-- `waitFor(assertion: () => void | Promise<void>, options?): Promise<void>` — Polls an assertion function until it passes or times out.
-- `createTestRouter(routes, initialPath)` — Creates an isolated router instance for testing navigation flows.
+- `renderTest(componentFactory)` — Mounts component inside an isolated reactive root and container. Returns `{ container, unmount }` (`renderTestComponent` and `mount` are aliases).
+- `fireEvent(element, eventName, eventInit?)` — Dispatches bubbling synthetic DOM events (`click`, `input`, etc.).
+- `flushReactivity(): Promise<void>` — Resolves when all pending reactive microtasks have completed (`waitForNextUpdate` is an alias).
+- `waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs?: number): Promise<void>` — Polls a boolean predicate until it returns true or times out.
+- `cleanupAllTestContainers(): void` — Removes all remaining `[data-samrey-test-container]` elements from the DOM.
+- `createMockResource<T>(initialData?: T)` — Creates a lightweight signal-backed mock resource with `mutate()`, `setError()`, and `refetch()`.
 
 ## Environment
 

@@ -14,7 +14,9 @@ import {
   Dynamic,
   Suspense,
   onMount,
-  bindStyle
+  bindStyle,
+  rawHtml,
+  frag
 } from '../src/index.js';
 import { signal, onCleanup, effect, createRoot, useContext, SuspenseTrackerContext } from '@samrey/reactivity';
 
@@ -802,6 +804,65 @@ describe('@samrey/runtime', () => {
       assert.equal(branchMounts, 1, 'Unkeyed Match must not remount across truthy value updates');
       assert.equal(cleanups, 0);
       assert.equal(root.outerHTML, '<div><p>Count:3</p></div>');
+    });
+
+    it('Batch 2 regression: For preserves multi-node and Fragment item child order on initial mount and LIS reconciliation', () => {
+      const items = signal([
+        { id: 1 },
+        { id: 2 },
+        { id: 3 }
+      ]);
+
+      const container = el('div', null,
+        For({
+          each: () => items.value,
+          key: (item) => item.id,
+          children: (item) => frag(
+            el('span', null, `${item.id}a`),
+            el('span', null, `${item.id}b`),
+            el('span', null, `${item.id}c`)
+          )
+        })
+      ) as any;
+
+      const texts = () => container.childNodes
+        .filter((n: any) => n.nodeType === 1)
+        .map((n: any) => n.textContent);
+
+      assert.deepEqual(texts(), ['1a', '1b', '1c', '2a', '2b', '2c', '3a', '3b', '3c']);
+
+      // Reorder completely (moves multi-node fragments backwards via LIS reconciliation)
+      items.value = [{ id: 3 }, { id: 1 }, { id: 2 }];
+      assert.deepEqual(
+        texts(),
+        ['3a', '3b', '3c', '1a', '1b', '1c', '2a', '2b', '2c'],
+        'Multi-node Fragment children must stay in forward [a, b, c] order during reorder'
+      );
+
+      // Reverse + insert new item
+      items.value = [{ id: 2 }, { id: 4 }, { id: 3 }];
+      assert.deepEqual(
+        texts(),
+        ['2a', '2b', '2c', '4a', '4b', '4c', '3a', '3b', '3c'],
+        'Multi-node Fragment children must stay in forward order for moved & inserted items'
+      );
+    });
+
+    it('Batch 2 regression: headless rawHtml parses markup into real DOM element nodes rather than #text nodes', () => {
+      const htmlSig = signal('<div class="card"><b>Hello</b><span>World</span><img src=x onerror=alert(1)></div>');
+      const node = rawHtml(() => htmlSig.value) as any;
+
+      assert.equal(node.nodeType, 1);
+      assert.ok(node.firstChild, 'rawHtml wrapper must have parsed child node');
+      assert.equal(node.firstChild.nodeType, 1, 'Parsed div must be an Element node (nodeType 1), not #text');
+      assert.equal(node.querySelector('b')?.textContent, 'Hello');
+      assert.equal(node.querySelector('span')?.textContent, 'World');
+      assert.equal(node.textContent, 'HelloWorld');
+      assert.ok(!node.outerHTML.includes('onerror'), 'rawHtml must still strip unsafe event handlers');
+
+      htmlSig.value = '<p>Updated <em>text</em></p>';
+      assert.equal(node.querySelector('em')?.textContent, 'text');
+      assert.equal(node.querySelector('b'), null);
     });
   });
 });

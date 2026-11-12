@@ -10,14 +10,18 @@ import { onCleanup } from './owner.js';
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
   let cachedValue: T;
   let isInitialized = false;
+  let hasError = false;
+  let lastError: unknown;
   const trackedVersions: number[] = [];
 
   const node: Subscriber & Dependency = {
     version: 0,
     isDirty: true,
+    isDisposed: false,
     sources: new Set<Dependency>(),
     subscribers: new Set<Subscriber>(),
     notify() {
+      if (this.isDisposed) return;
       if (!this.isDirty) {
         this.isDirty = true;
         for (const sub of [...this.subscribers]) {
@@ -26,6 +30,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
       }
     },
     update() {
+      if (this.isDisposed) return;
       if (this.isDirty) {
         evaluate();
       }
@@ -33,17 +38,27 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   };
 
   function evaluate(): T {
-    if (!node.isDirty && isInitialized) {
+    if (node.isDisposed) {
       return cachedValue;
     }
 
-    if (isInitialized) {
+    if (!node.isDirty) {
+      if (hasError) throw lastError;
+      if (isInitialized) return cachedValue;
+    }
+
+    if (isInitialized || hasError) {
       let i = 0;
       let anyChanged = node.sources.size === 0;
       for (const source of node.sources) {
         const maybeSub = source as unknown as Partial<Subscriber>;
         if (typeof maybeSub.update === 'function' && maybeSub.isDirty) {
-          maybeSub.update();
+          try {
+            maybeSub.update();
+          } catch {
+            anyChanged = true;
+            break;
+          }
         }
         if (source.version !== trackedVersions[i]) {
           anyChanged = true;
@@ -53,6 +68,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
       }
       if (!anyChanged) {
         node.isDirty = false;
+        if (hasError) throw lastError;
         return cachedValue;
       }
     }
@@ -72,20 +88,43 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
       }
       trackedVersions.length = i;
 
-      if (!isInitialized || !Object.is(cachedValue, nextVal)) {
+      if (!isInitialized || hasError || !Object.is(cachedValue, nextVal)) {
         node.version = incrementClock();
       }
       cachedValue = nextVal;
       isInitialized = true;
+      hasError = false;
+      lastError = undefined;
       node.isDirty = false;
+    } catch (err) {
+      let i = 0;
+      for (const source of node.sources) {
+        trackedVersions[i++] = source.version;
+      }
+      trackedVersions.length = i;
+      hasError = true;
+      lastError = err;
+      node.version = incrementClock();
+      node.isDirty = false;
+      throw err;
     } finally {
       setActiveSubscriber(prevSub);
+      if (node.isDisposed) {
+        for (const source of node.sources) {
+          source.subscribers.delete(node);
+        }
+        node.sources.clear();
+        node.subscribers.clear();
+      }
     }
 
     return cachedValue;
   }
 
   function read(): T {
+    if (node.isDisposed) {
+      return cachedValue;
+    }
     trackDependency(node);
     return evaluate();
   }
@@ -100,6 +139,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   });
 
   onCleanup(() => {
+    node.isDisposed = true;
     for (const source of node.sources) {
       source.subscribers.delete(node);
     }

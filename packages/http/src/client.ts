@@ -50,30 +50,69 @@ function mergeHeaders(defaults: Record<string, string>, userHeaders?: HeadersIni
   return headers;
 }
 
+function safeDecodeLeadingRedirectCheck(val: string): string {
+  try {
+    return decodeURIComponent(val);
+  } catch {
+    return val.replace(/%([0-9a-fA-F]{2})/g, (full, hex: string) => {
+      const code = parseInt(hex, 16);
+      return code <= 0x7f ? String.fromCharCode(code) : full;
+    });
+  }
+}
+
+function isProtocolRelativeUrl(raw: string): boolean {
+  const candidates = [raw, safeDecodeLeadingRedirectCheck(raw)];
+  return candidates.some((candidate) => {
+    const slashed = candidate.replace(/\\/g, '/').trim();
+    return slashed.startsWith('//') || raw.trim().startsWith('\\');
+  });
+}
+
 export class HttpClient {
   constructor(private baseUrl = '') {}
 
+  private getExpectedOrigin(): string | null {
+    if (this.baseUrl && /^https?:\/\//i.test(this.baseUrl)) {
+      return new URL(this.baseUrl).origin;
+    }
+    if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+      return window.location.origin;
+    }
+    return null;
+  }
+
+  private assertOriginAllowed(targetUrl: string, allowCrossOrigin: boolean, label = 'URL'): void {
+    if (allowCrossOrigin) return;
+    const expectedOrigin = this.getExpectedOrigin();
+    let parsedTarget: URL;
+    try {
+      parsedTarget = new URL(targetUrl);
+    } catch {
+      throw new Error(`[Samrey HTTP] Blocked cross-origin ${label} "${targetUrl}"`);
+    }
+    if (!expectedOrigin || parsedTarget.origin !== expectedOrigin) {
+      throw new Error(
+        `[Samrey HTTP] Blocked cross-origin ${label} "${targetUrl}" (allowCrossOrigin is false)`
+      );
+    }
+  }
+
   private resolveUrl(path: string, allowCrossOrigin = false): string {
     const trimmedPath = path.trim();
-    if (/^https?:(?!\/\/)/i.test(trimmedPath)) {
+    if (/^[a-z][a-z0-9+.-]*:(?!\/\/)/i.test(trimmedPath) && /^https?:/i.test(trimmedPath)) {
       throw new Error(`[Samrey HTTP] Blocked malformed HTTP URL: "${path}"`);
     }
 
+    if (!allowCrossOrigin && isProtocolRelativeUrl(trimmedPath)) {
+      throw new Error(`[Samrey HTTP] Blocked protocol-relative URL "${path}"`);
+    }
+
     let raw: string;
-    if (trimmedPath.startsWith('//')) {
-      if (this.baseUrl && !allowCrossOrigin) {
-        throw new Error(`[Samrey HTTP] Blocked protocol-relative URL "${path}" when baseUrl is configured`);
-      }
+    if (trimmedPath.startsWith('//') || isProtocolRelativeUrl(trimmedPath)) {
       raw = trimmedPath;
     } else if (/^https?:\/\//i.test(trimmedPath)) {
-      if (this.baseUrl && !allowCrossOrigin) {
-        const sentinelBase = 'https://__samrey_http_base__.invalid';
-        const baseUrlObj = new URL(this.baseUrl, sentinelBase);
-        const targetUrlObj = new URL(trimmedPath);
-        if (baseUrlObj.origin !== targetUrlObj.origin) {
-          throw new Error(`[Samrey HTTP] Blocked cross-origin URL "${path}" when baseUrl is configured`);
-        }
-      }
+      this.assertOriginAllowed(trimmedPath, allowCrossOrigin, 'URL');
       raw = trimmedPath;
     } else if (this.baseUrl) {
       const cleanBase = this.baseUrl.replace(/\/+$/, '');
@@ -82,15 +121,24 @@ export class HttpClient {
     } else {
       raw = trimmedPath;
     }
+
+    if (!allowCrossOrigin && isProtocolRelativeUrl(raw)) {
+      throw new Error(`[Samrey HTTP] Blocked protocol-relative URL "${path}"`);
+    }
+
     const safe = sanitizeUri(raw);
     if (safe === 'about:blank' && raw !== 'about:blank') {
       throw new Error(`[Samrey HTTP] Blocked insecure request URL: "${raw}"`);
+    }
+    if (!allowCrossOrigin && isProtocolRelativeUrl(safe)) {
+      throw new Error(`[Samrey HTTP] Blocked protocol-relative URL "${path}"`);
     }
     return safe;
   }
 
   private async request<T>(path: string, method: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
-    const url = this.resolveUrl(path, options.allowCrossOrigin);
+    const allowCrossOrigin = Boolean(options.allowCrossOrigin);
+    let currentUrl = this.resolveUrl(path, allowCrossOrigin);
 
     const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
     const isBlobOrBuffer = (typeof Blob !== 'undefined' && body instanceof Blob) ||
@@ -107,6 +155,7 @@ export class HttpClient {
 
     const headers = mergeHeaders(defaultHeaders, options.headers);
 
+    let currentMethod = method;
     let requestBody: any = undefined;
     if (body !== undefined) {
       if (isFormData || isBlobOrBuffer || isSearchParams || typeof body === 'string') {
@@ -138,14 +187,66 @@ export class HttpClient {
       signal = controller.signal;
     }
 
+    const canManualRedirect = typeof document === 'undefined';
+    const maxRedirects = 5;
+
     try {
-      const res = await fetch(url, {
-        ...options,
-        method,
-        headers,
-        body: requestBody,
-        signal
-      });
+      let res!: Response;
+      for (let hop = 0; hop <= maxRedirects; hop++) {
+        res = await fetch(currentUrl, {
+          ...options,
+          redirect: options.redirect ?? (!allowCrossOrigin && canManualRedirect ? 'manual' : 'follow'),
+          method: currentMethod,
+          headers,
+          body: requestBody,
+          signal
+        });
+
+        if (!allowCrossOrigin) {
+          if ((res as any).type === 'opaqueredirect') {
+            throw new Error('[Samrey HTTP] Blocked unverified opaque cross-origin redirect');
+          }
+          if (res.url) {
+            if (/^https?:\/\//i.test(res.url)) {
+              this.assertOriginAllowed(res.url, false, 'redirect URL');
+            } else if (isProtocolRelativeUrl(res.url)) {
+              throw new Error(`[Samrey HTTP] Blocked protocol-relative redirect URL "${res.url}"`);
+            }
+          }
+        }
+
+        const isRedirectStatus = res.status >= 300 && res.status < 400;
+        const locationHeader = isRedirectStatus ? res.headers?.get?.('location') : null;
+        if (!isRedirectStatus || !locationHeader || (options.redirect && options.redirect !== 'follow')) {
+          break;
+        }
+        if (hop === maxRedirects) {
+          throw new Error(`[Samrey HTTP] Exceeded maximum redirect limit (${maxRedirects})`);
+        }
+
+        const trimmedLoc = locationHeader.trim();
+        if (!allowCrossOrigin && isProtocolRelativeUrl(trimmedLoc)) {
+          throw new Error(`[Samrey HTTP] Blocked protocol-relative redirect "${locationHeader}"`);
+        }
+
+        let nextTarget: string;
+        if (/^https?:\/\//i.test(trimmedLoc)) {
+          this.assertOriginAllowed(trimmedLoc, allowCrossOrigin, 'redirect');
+          nextTarget = this.resolveUrl(trimmedLoc, allowCrossOrigin);
+        } else if (/^https?:\/\//i.test(currentUrl)) {
+          const resolvedLoc = new URL(trimmedLoc, currentUrl).href;
+          this.assertOriginAllowed(resolvedLoc, allowCrossOrigin, 'redirect');
+          nextTarget = this.resolveUrl(resolvedLoc, allowCrossOrigin);
+        } else {
+          nextTarget = this.resolveUrl(trimmedLoc, allowCrossOrigin);
+        }
+
+        if (res.status === 303 || ((res.status === 301 || res.status === 302) && currentMethod === 'POST')) {
+          currentMethod = 'GET';
+          requestBody = undefined;
+        }
+        currentUrl = nextTarget;
+      }
 
       if (!res.ok) {
         let errBody: unknown;

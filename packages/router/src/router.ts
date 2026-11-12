@@ -111,15 +111,20 @@ export function setRouterInstance(router: RouterInstance | null): void {
   activeRouterInstance = router;
 }
 
-export function useRouter(): RouterInstance {
+function tryUseRouter(): RouterInstance | null {
   const contextual = useContext(RouterContext);
   if (contextual) {
     return contextual;
   }
-  if (!activeRouterInstance) {
-    activeRouterInstance = createRouter([]);
+  return activeRouterInstance ?? null;
+}
+
+export function useRouter(): RouterInstance {
+  const router = tryUseRouter();
+  if (!router) {
+    throw new Error('[Samrey Router] useRouter() must be called inside a Router context or after createRouter().');
   }
-  return activeRouterInstance;
+  return router;
 }
 
 export function useParams<T extends Record<string, string> = Record<string, string>>(): ReadonlySignal<T> {
@@ -252,26 +257,31 @@ export function RouterOutlet(): Node {
         rendered = (match.route.component as any)({ params: match.params });
       });
 
-      if (Array.isArray(rendered)) {
-        for (const item of rendered) {
-          if (item && typeof item === 'object' && 'nodeType' in item) {
-            currentNodes.push(item as Node);
-            outletContainer.appendChild(item as Node);
-          } else if (item !== null && item !== undefined && item !== false) {
-            const t = text(String(item));
-            currentNodes.push(t);
-            outletContainer.appendChild(t);
-          }
+      const appendRouteNode = (item: unknown) => {
+        if (Array.isArray(item)) {
+          for (const sub of item) appendRouteNode(sub);
+          return;
         }
-      } else if (rendered && typeof rendered === 'object' && 'nodeType' in rendered) {
-        const n = rendered as Node;
-        currentNodes.push(n);
-        outletContainer.appendChild(n);
-      } else if (rendered !== null && rendered !== undefined && rendered !== false) {
-        const t = text(String(rendered));
-        currentNodes.push(t);
-        outletContainer.appendChild(t);
-      }
+        if (item && typeof item === 'object' && 'nodeType' in item) {
+          const n = item as Node;
+          if (n.nodeType === 11 && 'childNodes' in n) {
+            const fragChildren = Array.from((n as DocumentFragment).childNodes);
+            outletContainer.appendChild(n);
+            for (const fc of fragChildren) {
+              currentNodes.push(fc);
+            }
+          } else {
+            currentNodes.push(n);
+            outletContainer.appendChild(n);
+          }
+        } else if (item !== null && item !== undefined && item !== false) {
+          const t = text(String(item));
+          currentNodes.push(t);
+          outletContainer.appendChild(t);
+        }
+      };
+
+      appendRouteNode(rendered);
     }
   });
 
@@ -348,11 +358,11 @@ export interface LinkProps {
 }
 
 export function Link(props: LinkProps) {
-  const router = useRouter();
+  const router = tryUseRouter();
   const { isExternal, safeHref: safeTo } = resolveLinkTarget(props.href);
 
   const handleClick = (e: MouseEvent) => {
-    if (!isPlainLeftClick(e) || isExternal || (props.target && props.target !== '_self')) {
+    if (!isPlainLeftClick(e) || isExternal || (props.target && props.target !== '_self') || !router) {
       return;
     }
     e.preventDefault();
@@ -360,7 +370,7 @@ export function Link(props: LinkProps) {
   };
 
   const isActive = computed(() => {
-    if (isExternal) return false;
+    if (isExternal || !router) return false;
     const current = router.currentPath.value.split(/[?#]/)[0];
     const target = safeTo.split(/[?#]/)[0];
     return current === target;

@@ -36,15 +36,71 @@ function isTestOrMinFile(filename: string): boolean {
   return false;
 }
 
+function segmentToRegex(segment: string): RegExp {
+  let expr = '^';
+  for (let i = 0; i < segment.length; i++) {
+    const ch = segment[i]!;
+    if (ch === '*') expr += '[^/]*';
+    else if (ch === '?') expr += '[^/]';
+    else if ('.+^${}()|[]\\'.includes(ch)) expr += '\\' + ch;
+    else expr += ch;
+  }
+  expr += '$';
+  return new RegExp(expr);
+}
+
+function matchSegments(relSegs: string[], patSegs: string[]): boolean {
+  const m = patSegs.length;
+  const n = relSegs.length;
+  const dp: boolean[][] = Array.from({ length: m + 1 }, () => new Array<boolean>(n + 1).fill(false));
+  dp[0]![0] = true;
+
+  for (let i = 1; i <= m; i++) {
+    const pat = patSegs[i - 1]!;
+    if (pat === '**') {
+      dp[i]![0] = dp[i - 1]![0]!;
+      for (let j = 1; j <= n; j++) {
+        dp[i]![j] = dp[i - 1]![j]! || dp[i]![j - 1]!;
+      }
+    } else {
+      const re = segmentToRegex(pat);
+      for (let j = 1; j <= n; j++) {
+        if (dp[i - 1]![j - 1]! && re.test(relSegs[j - 1]!)) {
+          dp[i]![j] = true;
+        }
+      }
+    }
+  }
+
+  return dp[m]![n]!;
+}
+
 function matchesGlob(relPath: string, globPattern: string): boolean {
-  const normalized = relPath.replace(/\\/g, '/');
-  const pattern = globPattern.replace(/\\/g, '/');
-  // Simple glob matching supporting *, **, and exact substrings
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '.*')
-    .replace(/(?<!\.)\*/g, '[^/]*');
-  return new RegExp(`(^|/)${escaped}($|/)`).test(normalized) || new RegExp(`^${escaped}$`).test(normalized);
+  const normalized = relPath.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+|\/+$/g, '');
+  const pattern = globPattern.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+|\/+$/g, '');
+  if (!pattern) return false;
+
+  const relSegs = normalized ? normalized.split('/') : [];
+  if (!pattern.includes('/')) {
+    const segRe = segmentToRegex(pattern);
+    return relSegs.some((seg) => segRe.test(seg));
+  }
+
+  const rawPatSegs = pattern.split('/');
+  const patSegs: string[] = [];
+  for (const s of rawPatSegs) {
+    if (s === '**' && patSegs[patSegs.length - 1] === '**') continue;
+    patSegs.push(s);
+  }
+
+  if (matchSegments(relSegs, patSegs)) {
+    return true;
+  }
+  // Ignoring a directory prefix like `src/**` or `src/vendor` also skips files beneath it
+  if (patSegs[patSegs.length - 1] !== '**' && relSegs.length > patSegs.length) {
+    return matchSegments(relSegs.slice(0, patSegs.length), patSegs);
+  }
+  return false;
 }
 
 function findAuditFiles(dir: string, baseDir = dir, userIgnores: string[] = []): string[] {

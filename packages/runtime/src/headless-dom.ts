@@ -27,6 +27,7 @@ export const HTML_VOID_TAGS = new Set([
 ]);
 
 const FOREIGN_ROOT_TAGS = new Set(['svg', 'math']);
+const HTML_INTEGRATION_TAGS = new Set(['foreignobject', 'desc', 'title', 'annotation-xml']);
 
 /**
  * Validates and sanitizes a static attribute name/value pair for headless elements.
@@ -454,9 +455,11 @@ export function createHeadlessElement(
   initialEventListeners: Record<string, Function[]> = {}
 ): any {
   const upperTag = String(tagName).toUpperCase();
+  const isTemplateElem = upperTag === 'TEMPLATE';
   const attributes: Record<string, string> = { ...initialAttributes };
   const eventListeners: Record<string, Function[]> = { ...initialEventListeners };
   const childNodes: any[] = [];
+  const templateContent = isTemplateElem ? createHeadlessFragment() : null;
   const style: Record<string, string> = {};
 
   const mockElem: any = {
@@ -465,6 +468,7 @@ export function createHeadlessElement(
     tagName: upperTag,
     attributes,
     childNodes,
+    ...(templateContent ? { content: templateContent } : {}),
     style,
     value: getAttrInsensitive(attributes, 'value') ?? '',
     checked: getAttrInsensitive(attributes, 'checked') !== null,
@@ -556,25 +560,22 @@ export function createHeadlessElement(
       return true;
     },
     get innerHTML() {
-      return serializeHeadlessInnerHTML(childNodes);
+      return isTemplateElem && templateContent
+        ? templateContent.innerHTML
+        : serializeHeadlessInnerHTML(childNodes);
     },
     set innerHTML(val: string) {
-      const safeHtml = TrustedTypesPolicy.createHTML(String(val ?? ''));
-      detachHeadlessNodes(childNodes, mockElem);
-      childNodes.length = 0;
-      const textNode = {
-        nodeType: 3,
-        nodeName: '#text',
-        textContent: safeHtml,
-        outerHTML: safeHtml,
-        parentNode: mockElem,
-        previousSibling: null,
-        nextSibling: null,
-        cloneNode() {
-          return { ...this, parentNode: null, previousSibling: null, nextSibling: null };
-        }
-      };
-      childNodes.push(textNode);
+      const safeHtml = String(TrustedTypesPolicy.createHTML(String(val ?? '')) ?? '');
+      const parsedFrag = parseHtmlToHeadlessFragment(safeHtml);
+      if (isTemplateElem && templateContent) {
+        detachHeadlessNodes(templateContent.childNodes, templateContent);
+        templateContent.childNodes.length = 0;
+        appendHeadlessChildTo(templateContent, parsedFrag);
+      } else {
+        detachHeadlessNodes(childNodes, mockElem);
+        childNodes.length = 0;
+        appendHeadlessChildTo(mockElem, parsedFrag);
+      }
     },
     get outerHTML() {
       const tag = upperTag.toLowerCase();
@@ -599,9 +600,16 @@ export function createHeadlessElement(
       cloned.value = mockElem.value;
       cloned.checked = mockElem.checked;
       if (deep) {
-        for (const ch of childNodes) {
-          const chClone = typeof ch.cloneNode === 'function' ? ch.cloneNode(true) : { ...ch, parentNode: null };
-          cloned.appendChild(chClone);
+        if (isTemplateElem && templateContent && cloned.content) {
+          for (const ch of templateContent.childNodes) {
+            const chClone = typeof ch.cloneNode === 'function' ? ch.cloneNode(true) : { ...ch, parentNode: null };
+            cloned.content.appendChild(chClone);
+          }
+        } else {
+          for (const ch of childNodes) {
+            const chClone = typeof ch.cloneNode === 'function' ? ch.cloneNode(true) : { ...ch, parentNode: null };
+            cloned.appendChild(chClone);
+          }
         }
       }
       return cloned;
@@ -788,7 +796,12 @@ export function parseHtmlToHeadlessFragment(html: string): any {
     }
 
     if (!HTML_VOID_TAGS.has(lowerTag) && !(isForeignElem && selfClosing)) {
-      stack.push({ node: elem, tag: lowerTag, isForeign: isForeignElem });
+      const childForeign = HTML_INTEGRATION_TAGS.has(lowerTag) ? false : isForeignElem;
+      stack.push({
+        node: lowerTag === 'template' && elem.content ? elem.content : elem,
+        tag: lowerTag,
+        isForeign: childForeign
+      });
     }
     i = j;
   }

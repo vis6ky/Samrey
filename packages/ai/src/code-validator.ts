@@ -203,6 +203,7 @@ export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
     'generateStaticSite',
     'getDelegatedEventScript',
     'getSSRContext',
+    'getSSRLoaderError',
     'hydrate',
     'hydrateFromSSR',
     'invalidateClientDataCache',
@@ -377,187 +378,184 @@ export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
 
 export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
   '@samrey/reactivity': new Set([
-    'Signal',
-    'ReadonlySignal',
-    'Subscriber',
-    'Dependency',
-    'Owner',
-    'Dispose',
     'Context',
-    'EffectFunction',
-    'MemoFunction',
-    'Store',
-    'ReactiveNode'
+    'Dependency',
+    'HydrationCaptureRegistry',
+    'Owner',
+    'ReactiveNode',
+    'ReadonlySignal',
+    'Signal',
+    'Subscriber',
+    'SuspenseTracker'
+  ]),
+  '@samrey/runtime': new Set([
+    'ChildValue',
+    'Component',
+    'DevDiagnostic',
+    'DynamicProps',
+    'ElementProps',
+    'ErrorBoundaryProps',
+    'ExtractRefs',
+    'ForProps',
+    'MatchProps',
+    'PortalProps',
+    'ShowProps',
+    'SuspenseProps',
+    'SwitchProps',
+    'TagNameToElement',
+    'TemplateFactory',
+    'TemplateRefs',
+    'TemplateRoot'
+  ]),
+  '@samrey/compiler': new Set([
+    'AIRCompilationResult',
+    'AIRControlFlowSlotNode',
+    'AIRDynamicAttrNode',
+    'AIRDynamicClassNode',
+    'AIRDynamicEventNode',
+    'AIRDynamicPropertyNode',
+    'AIRDynamicTextNode',
+    'AIRNode',
+    'AIRStaticNode',
+    'AIRTemplateUnit',
+    'ASTAttributeNode',
+    'ASTComponentNode',
+    'ASTElementNode',
+    'ASTForNode',
+    'ASTInterpolationNode',
+    'ASTNode',
+    'ASTRootNode',
+    'ASTShowNode',
+    'ASTTextNode',
+    'ConstantFoldResult',
+    'ErrorDefinition',
+    'ParseOptions',
+    'ParseResult',
+    'Position',
+    'SamreyDiagnosticOptions',
+    'SamreyErrorCode',
+    'SecurityContext',
+    'SourceLocation',
+    'SourceLocationInfo'
   ]),
   '@samrey/router': new Set([
-    'RouteConfig',
-    'RouteRecord',
-    'RouterOptions',
+    'LinkProps',
     'RouteMatch',
-    'NavigateOptions',
-    'HistoryLocation',
-    'RouteParams',
-    'RouterInstance',
-    'History'
+    'RouteRecord',
+    'RouterInstance'
   ]),
   '@samrey/forms': new Set([
-    'FormConfig',
-    'FieldConfig',
-    'ValidationResult',
+    'AriaBindingAttributes',
+    'BindFieldOptions',
     'FieldState',
-    'FormState',
-    'ValidatorFn',
-    'FormErrors',
+    'FormConfig',
+    'FormInstance',
+    'FormValidateFn',
+    'StandardSchemaFailure',
+    'StandardSchemaIssue',
+    'StandardSchemaResult',
+    'StandardSchemaSuccess',
     'StandardSchemaV1',
     'Validator'
   ]),
-  '@samrey/runtime': new Set([
-    'Component',
-    'Props',
-    'Accessor',
-    'Setter',
-    'BindingContext',
-    'DynamicChild',
-    'TemplateNode',
-    'SecurityClassification',
-    'AIRNode',
-    'ChildValue',
-    'ElementProps',
-    'DevDiagnostic',
-    'ShowProps',
-    'ForProps',
-    'MatchProps',
-    'SwitchProps',
-    'ErrorBoundaryProps',
-    'DynamicProps',
-    'PortalProps',
-    'SuspenseProps'
-  ]),
   '@samrey/http': new Set([
-    'RequestCache',
-    'HttpClient',
-    'HttpError',
-    'HttpClientOptions',
-    'FetchOptions',
-    'Resource',
-    'ResourceStatus',
     'HttpCacheOptions',
+    'RequestOptions',
+    'Resource',
+    'ResourceActions',
     'ResourceOptions',
-    'RequestOptions'
+    'ResourceStatus'
   ]),
   '@samrey/ssr': new Set([
-    'SSRContext',
-    'ServerData',
-    'HydrationOptions',
-    'SerializeOptions',
     'DeserializeOptions',
-    'StateValidator',
+    'GeneratedPage',
     'HydrateOptions',
     'HydrationResult',
-    'StaticPathEntry',
-    'StaticRouteConfig',
-    'SSGOptions',
-    'GeneratedPage',
-    'SSGResult',
-    'SSRHeadMetadata',
-    'RenderToStringOptions',
     'RenderToStreamOptions',
+    'RenderToStringOptions',
+    'SSGOptions',
+    'SSGResult',
+    'SSRContext',
+    'SSRHeadMetadata',
+    'SecretGuardOptions',
+    'SerializeOptions',
+    'ServerDataActions',
     'ServerDataOptions',
-    'ServerDataActions'
+    'StateValidator',
+    'StaticPathEntry',
+    'StaticRouteConfig'
   ]),
   '@samrey/testing': new Set([
-    'TestRenderResult',
-    'RenderResult',
-    'TestContainer'
+    'TestRenderResult'
+  ]),
+  '@samrey/devtools': new Set([
+    'DevToolsEvent',
+    'DevToolsEventType',
+    'InspectedComponent',
+    'InspectedEffect',
+    'InspectedField',
+    'InspectedForm',
+    'InspectedHttpRequest',
+    'InspectedOwner',
+    'InspectedPerfMetric',
+    'InspectedRoute',
+    'InspectedSignalNode'
   ]),
   '@samrey/security': new Set([
     'SamreyTrustedPolicy',
-    'TrustedTypesOptions',
-    'SecretGuardOptions'
-  ]),
-  '@samrey/compiler': new Set([
-    'SourceLocationInfo',
-    'SamreyErrorCode',
-    'ErrorDefinition',
-    'SamreyDiagnosticOptions',
-    'Position',
-    'SourceLocation',
-    'ASTAttributeNode',
-    'ASTTextNode',
-    'ASTInterpolationNode',
-    'ASTElementNode',
-    'ASTComponentNode',
-    'ASTShowNode',
-    'ASTForNode',
-    'ASTRootNode',
-    'ASTNode',
-    'SecurityContext',
-    'AIRStaticNode',
-    'AIRDynamicTextNode',
-    'AIRDynamicAttrNode',
-    'AIRDynamicClassNode',
-    'AIRDynamicPropertyNode',
-    'AIRDynamicEventNode',
-    'AIRControlFlowSlotNode',
-    'AIRNode',
-    'AIRTemplateUnit',
-    'AIRCompilationResult',
-    'ParseOptions',
-    'ParseResult',
-    'ConstantFoldResult'
-  ]),
-  '@samrey/devtools': new Set([
-    'InspectedSignalNode',
-    'InspectedNetworkRequest',
-    'InspectedRouterState',
-    'InspectedFormState'
+    'SanitizeUriOptions',
+    'SecretGuardOptions',
+    'TrustedTypesOptions'
   ]),
   '@samrey/cli': new Set([
-    'ExecResult',
     'AnalyzeCommandOptions',
+    'AuditCommandOptions',
+    'AuditReport',
+    'BuildCommandOptions',
+    'CommandResult',
+    'CreateCommandOptions',
     'DevCommandOptions',
-    'TestCommandOptions',
     'GenerateArtifactType',
     'GenerateCommandOptions',
-    'CreateCommandOptions',
-    'CommandResult',
-    'AuditCommandOptions',
     'PreviewCommandOptions',
-    'BuildCommandOptions',
-    'AuditReport',
+    'RawSourceMapV3',
+    'SamreyPluginOptions',
     'StarterProjectFiles',
-    'SamreyPluginOptions'
+    'TestCommandOptions'
   ]),
   '@samrey/ai': new Set([
-    'InstalledSamreyPackage',
-    'SamreyProjectContext',
+    'AgentSkillDefinition',
+    'AiIntegrationConfig',
+    'AiPlatform',
+    'ApiReference',
+    'CodeIssue',
+    'CodeToken',
     'CodeValidationError',
-    'CodeValidationWarning',
     'CodeValidationResult',
-    'ProjectAnalysisReport',
-    'SamreyCodeExample',
+    'CodeValidationWarning',
+    'CompatibilitySuiteReport',
+    'CompatibilityTask',
     'DiagnosticDiagnosis',
     'DocSection',
-    'ApiReference',
+    'InstalledSamreyPackage',
+    'ProjectAnalysisReport',
+    'SamreyCodeExample',
+    'SamreyProjectContext',
     'SearchResult',
-    'AgentSkillDefinition',
-    'AiPlatform',
     'SecurityPolicy',
-    'AiIntegrationConfig',
-    'CompatibilityTask',
-    'TaskExecutionResult',
-    'CompatibilitySuiteReport'
+    'StdioHandshakeResult',
+    'TaskExecutionResult'
   ]),
   '@samrey/mcp-server': new Set([
-    'SafeCommandResult',
     'JsonRpcRequest',
     'JsonRpcResponse',
-    'McpToolDefinition',
-    'McpResourceDefinition',
     'McpPromptDefinition',
+    'McpResourceDefinition',
+    'McpToolDefinition',
+    'SafeCommandResult',
+    'SamreyMcpServerOptions',
     'ToolCallResult',
-    'ToolContext',
-    'SamreyMcpServerOptions'
+    'ToolContext'
   ])
 };
 
@@ -888,7 +886,8 @@ export function validateSamreyCode(
   }
 
   // 1b. Validate @samrey/* Imports Against Official Package Exports
-  const importRegex = /import\s+([\s\S]*?)\s+from\s+['"](@samrey\/[a-z0-9-]+)['"]/g;
+  const importedReactivitySymbols = new Set<string>();
+  const importRegex = /\bimport\s+((?:type\s+)?(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}|[A-Za-z_$][\w$]*(?:\s*,\s*(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}))?))\s+from\s+['"](@samrey\/[a-z0-9_-]+)['"]/g;
   let impMatch: RegExpExecArray | null;
   while ((impMatch = importRegex.exec(codeWithoutComments)) !== null) {
     const rawClause = impMatch[1].trim();
@@ -914,8 +913,15 @@ export function validateSamreyCode(
         if (!trimmed) continue;
         const isItemType = isGlobalTypeImport || /^\s*type\s+/.test(trimmed);
         const withoutType = trimmed.replace(/^\s*type\s+/, '').trim();
-        const symbol = withoutType.split(/\s+as\s+/)[0].trim();
+        const [symbolPart, aliasPart] = withoutType.split(/\s+as\s+/);
+        const symbol = (symbolPart || '').trim();
+        const localName = (aliasPart || symbolPart || '').trim();
         if (!symbol) continue;
+
+        if (!isItemType && pkg === '@samrey/reactivity') {
+          importedReactivitySymbols.add(localName);
+          importedReactivitySymbols.add(symbol);
+        }
 
         if (isItemType) {
           if (!validExports.has(symbol) && (!validTypes || !validTypes.has(symbol))) {
@@ -955,24 +961,34 @@ export function validateSamreyCode(
   }
 
   // 2. Detect React Hooks
-  for (const hook of FORBIDDEN_HOOKS) {
-    const hookRegex = new RegExp(`\\b${hook}\\s*\\(`, 'g');
-    const match = hookRegex.exec(codeWithoutComments);
-    if (match) {
-      const line = codeWithoutComments.slice(0, match.index).split('\n').length;
-      errors.push({
-        message: `Foreign React hook "${hook}()" detected. React hooks are not part of Samrey.`,
-        line,
-        suggestion:
-          hook === 'useState'
-            ? 'Use "signal(initialValue)" from @samrey/reactivity. Access with .value, mutate with .value = or .update().'
-            : hook === 'useEffect'
-            ? 'Use "effect(() => ...)" from @samrey/reactivity.'
-            : hook === 'useMemo'
-            ? 'Use "computed(() => ...)" from @samrey/reactivity.'
-            : 'Use pure signals, store(), or component-scoped variables.'
-      });
+  const forbiddenHookSet = new Set(FORBIDDEN_HOOKS);
+  const flaggedHooks = new Set<string>();
+  for (let tIdx = 0; tIdx < tokens.length; tIdx++) {
+    const tok = tokens[tIdx];
+    if (tok.type !== 'identifier' || !forbiddenHookSet.has(tok.value)) continue;
+    if (flaggedHooks.has(tok.value)) continue;
+    if (tok.value === 'useContext' && importedReactivitySymbols.has('useContext')) continue;
+    const nextTok = tokens[tIdx + 1];
+    if (!nextTok || nextTok.value !== '(') continue;
+    const prevTok = tokens[tIdx - 1];
+    if (prevTok && prevTok.value === '.') {
+      const ownerTok = tokens[tIdx - 2];
+      if (!ownerTok || ownerTok.value !== 'React') continue;
     }
+    const hook = tok.value;
+    flaggedHooks.add(hook);
+    errors.push({
+      message: `Foreign React hook "${hook}()" detected. React hooks are not part of Samrey.`,
+      line: tok.line,
+      suggestion:
+        hook === 'useState'
+          ? 'Use "signal(initialValue)" from @samrey/reactivity. Access with .value, mutate with .value = or .update().'
+          : hook === 'useEffect'
+          ? 'Use "effect(() => ...)" from @samrey/reactivity.'
+          : hook === 'useMemo'
+          ? 'Use "computed(() => ...)" from @samrey/reactivity.'
+          : 'Use pure signals, store(), or component-scoped variables.'
+    });
   }
 
   // 2b. Detect Vue Directives (v-if, v-for, v-model, etc.)
@@ -1377,6 +1393,170 @@ function extractTemplateString(source: string): string | null {
   return null;
 }
 
+function stripOuterBalancedParens(expr: string): string {
+  let current = expr.trim();
+  while (current.startsWith('(') && current.endsWith(')')) {
+    let depth = 0;
+    let inSingle = false;
+    let inDouble = false;
+    let inBacktick = false;
+    let enclosesAll = true;
+    for (let i = 0; i < current.length; i++) {
+      const ch = current[i];
+      if (inSingle) {
+        if (ch === '\\') i++;
+        else if (ch === "'") inSingle = false;
+        continue;
+      }
+      if (inDouble) {
+        if (ch === '\\') i++;
+        else if (ch === '"') inDouble = false;
+        continue;
+      }
+      if (inBacktick) {
+        if (ch === '\\') i++;
+        else if (ch === '`') inBacktick = false;
+        continue;
+      }
+      if (ch === "'") { inSingle = true; continue; }
+      if (ch === '"') { inDouble = true; continue; }
+      if (ch === '`') { inBacktick = true; continue; }
+      if (ch === '(') depth++;
+      else if (ch === ')') {
+        depth--;
+        if (depth === 0 && i < current.length - 1) {
+          enclosesAll = false;
+          break;
+        }
+      }
+    }
+    if (!enclosesAll || depth !== 0) break;
+    current = current.slice(1, -1).trim();
+  }
+  return current;
+}
+
+function splitTopLevelConditional(expr: string): { cond: string; whenTrue: string; whenFalse: string } | null {
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let braceDepth = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let questionIdx = -1;
+  let nestedQuestions = 0;
+
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    const next = expr[i + 1];
+    if (inSingle) {
+      if (ch === '\\') i++;
+      else if (ch === "'") inSingle = false;
+      continue;
+    }
+    if (inDouble) {
+      if (ch === '\\') i++;
+      else if (ch === '"') inDouble = false;
+      continue;
+    }
+    if (inBacktick) {
+      if (ch === '\\') i++;
+      else if (ch === '`') inBacktick = false;
+      continue;
+    }
+    if (ch === "'") { inSingle = true; continue; }
+    if (ch === '"') { inDouble = true; continue; }
+    if (ch === '`') { inBacktick = true; continue; }
+
+    if (ch === '(') parenDepth++;
+    else if (ch === ')') parenDepth = Math.max(0, parenDepth - 1);
+    else if (ch === '[') bracketDepth++;
+    else if (ch === ']') bracketDepth = Math.max(0, bracketDepth - 1);
+    else if (ch === '{') braceDepth++;
+    else if (ch === '}') braceDepth = Math.max(0, braceDepth - 1);
+    else if (parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
+      if (ch === '?') {
+        if (next === '?' || next === '.') {
+          i++;
+          continue;
+        }
+        if (questionIdx === -1) {
+          questionIdx = i;
+        } else {
+          nestedQuestions++;
+        }
+      } else if (ch === ':' && questionIdx !== -1) {
+        if (nestedQuestions > 0) {
+          nestedQuestions--;
+        } else {
+          return {
+            cond: expr.slice(0, questionIdx).trim(),
+            whenTrue: expr.slice(questionIdx + 1, i).trim(),
+            whenFalse: expr.slice(i + 1).trim()
+          };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function collectTypeofFunctionGuards(cond: string): { trueRefs: Set<string>; falseRefs: Set<string> } {
+  const trueRefs = new Set<string>();
+  const falseRefs = new Set<string>();
+  const member = '[a-zA-Z_$][a-zA-Z0-9_$]*(?:\\s*\\.\\s*[a-zA-Z_$][a-zA-Z0-9_$]*)*';
+  const eqRegex = new RegExp(
+    `\\btypeof\\s+(${member})\\s*(?:===?|!==?)\\s*['"]function['"]|['"]function['"]\\s*(?:===?|!==?)\\s*typeof\\s+(${member})`,
+    'g'
+  );
+  let m: RegExpExecArray | null;
+  while ((m = eqRegex.exec(cond)) !== null) {
+    const rawRef = (m[1] || m[2] || '').replace(/\s+/g, '');
+    if (!rawRef) continue;
+    if (m[0].includes('!=')) {
+      falseRefs.add(rawRef);
+    } else {
+      trueRefs.add(rawRef);
+    }
+  }
+  return { trueRefs, falseRefs };
+}
+
+function isValidAccessorExpression(expr: string, knownFunctionRefs: Set<string> = new Set()): boolean {
+  const trimmed = (expr || '').trim();
+  if (!trimmed) return false;
+
+  if (
+    /^(?:async\s+)?(?:\([^)]*\)|[a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>/.test(trimmed) ||
+    /^(?:async\s+)?function\b/.test(trimmed)
+  ) {
+    return true;
+  }
+
+  const unwrapped = stripOuterBalancedParens(trimmed);
+  if (unwrapped !== trimmed) {
+    return isValidAccessorExpression(unwrapped, knownFunctionRefs);
+  }
+
+  const normalizedRef = unwrapped.replace(/\s+/g, '');
+  if (knownFunctionRefs.has(normalizedRef)) {
+    return true;
+  }
+
+  const conditional = splitTopLevelConditional(unwrapped);
+  if (conditional) {
+    const { trueRefs, falseRefs } = collectTypeofFunctionGuards(conditional.cond);
+    const nextTrueRefs = new Set([...knownFunctionRefs, ...trueRefs]);
+    const nextFalseRefs = new Set([...knownFunctionRefs, ...falseRefs]);
+    return (
+      isValidAccessorExpression(conditional.whenTrue, nextTrueRefs) &&
+      isValidAccessorExpression(conditional.whenFalse, nextFalseRefs)
+    );
+  }
+
+  return false;
+}
+
 function checkBindAccessor(
   helperName: string,
   accessorExpr: string,
@@ -1386,10 +1566,7 @@ function checkBindAccessor(
   const trimmed = (accessorExpr || '').trim();
   if (!trimmed) return;
 
-  const isArrowFn = /^(?:\([^)]*\)|[a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>/.test(trimmed);
-  const isFuncExpr = /^function\b/.test(trimmed);
-
-  if (isArrowFn || isFuncExpr) {
+  if (isValidAccessorExpression(trimmed)) {
     return;
   }
 

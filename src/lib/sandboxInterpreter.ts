@@ -17,11 +17,29 @@ const BLOCKED_PROPERTY_KEYS = new Set([
   '__lookupGetter__',
   '__lookupSetter__',
   'ownerDocument',
-  'defaultView'
+  'defaultView',
+  'innerHTML',
+  'outerHTML',
+  'insertAdjacentHTML',
+  'srcdoc',
+  'getRootNode',
+  'parentNode',
+  'parentElement',
+  'offsetParent',
+  'closest',
+  'contentWindow',
+  'contentDocument'
 ]);
 
 const MAX_EXECUTION_STEPS = 200_000;
 const MAX_CALL_DEPTH = 128;
+
+class SandboxAbortError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SandboxAbortError';
+  }
+}
 
 const BLOCKED_HOST_VALUES = new Set<unknown>(
   [
@@ -53,10 +71,21 @@ const SAFE_CONSTRUCTORS = new Set<unknown>([
   typeof URLSearchParams !== 'undefined' ? URLSearchParams : undefined
 ].filter((v) => v !== undefined));
 
+const SAFE_MATH = Object.freeze(
+  Object.fromEntries(Object.getOwnPropertyNames(Math).map((k) => [k, (Math as unknown as Record<string, unknown>)[k]]))
+);
+
+const SAFE_JSON = Object.freeze({
+  parse: JSON.parse,
+  stringify: JSON.stringify
+});
+
 const IMMUTABLE_HOST_OBJECTS = new Set<unknown>([
   ...SAFE_CONSTRUCTORS,
   Math,
   JSON,
+  SAFE_MATH,
+  SAFE_JSON,
   Object,
   Number,
   String,
@@ -66,8 +95,18 @@ const IMMUTABLE_HOST_OBJECTS = new Set<unknown>([
   Function.prototype,
   Error.prototype,
   TypeError.prototype,
-  RangeError.prototype
-]);
+  RangeError.prototype,
+  Map.prototype,
+  Set.prototype,
+  RegExp.prototype,
+  Date.prototype,
+  Promise.prototype,
+  Number.prototype,
+  String.prototype,
+  Boolean.prototype,
+  typeof URL !== 'undefined' ? URL.prototype : undefined,
+  typeof URLSearchParams !== 'undefined' ? URLSearchParams.prototype : undefined
+].filter((v) => v !== undefined));
 
 const SANDBOX_CLOSURE_FUNCTIONS = new WeakSet<Function>();
 
@@ -125,8 +164,8 @@ function createSafeObjectNamespace() {
 
 function createSafeIntrinsics(): Record<string, unknown> {
   return {
-    Math,
-    JSON,
+    Math: SAFE_MATH,
+    JSON: SAFE_JSON,
     Date,
     Array,
     Number,
@@ -915,6 +954,11 @@ class SandboxParser {
         this.expectPunct(';');
       } else {
         const expr = this.parseExpression();
+        if (expr.kind === 'Binary' && expr.op === 'in' && expr.left.kind === 'Ident' && this.peek().type === 'punct' && this.peek().value === ')') {
+          this.advance();
+          const body = this.parseStatement();
+          return { kind: 'ForIter', mode: 'in', declKind: null, left: { kind: 'IdentPat', name: expr.left.name }, right: expr.right, body };
+        }
         if (expr.kind === 'Ident' && this.peek().type === 'ident' && (this.peek().value === 'of' || this.peek().value === 'in')) {
           const mode = this.advance().value as 'of' | 'in';
           const right = this.parseExpression();
@@ -1516,7 +1560,7 @@ interface ExecBudget {
 function tickStep(budget: ExecBudget): void {
   budget.steps++;
   if (budget.steps > MAX_EXECUTION_STEPS) {
-    throw new Error('[Sandbox Security] Execution step limit exceeded (infinite loop or excessive computation aborted).');
+    throw new SandboxAbortError('[Sandbox Security] Execution step limit exceeded (infinite loop or excessive computation aborted).');
   }
 }
 
@@ -1544,6 +1588,20 @@ function writeSafeProp(obj: unknown, keyRaw: unknown, value: unknown): unknown {
   assertSafeValue(value);
   (obj as Record<string, unknown>)[key] = value;
   return value;
+}
+
+function deleteSafeProp(obj: unknown, keyRaw: unknown): boolean {
+  if (obj === null || obj === undefined || (typeof obj !== 'object' && typeof obj !== 'function')) {
+    return true;
+  }
+  const key = assertSafePropertyKey(keyRaw);
+  if (
+    IMMUTABLE_HOST_OBJECTS.has(obj) ||
+    (typeof obj === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(obj))
+  ) {
+    throw new TypeError(`[Sandbox Security] Deleting host or intrinsic property "${key}" is prohibited.`);
+  }
+  return delete (obj as Record<string, unknown>)[key];
 }
 
 function applyBinaryOp(op: string, l: any, r: any): unknown {
@@ -1649,10 +1707,8 @@ class SandboxEvaluator {
     const evaluator = this;
     if (isAsync) {
       const asyncFn = async function (this: unknown, ...args: unknown[]) {
-        const resetBudget = evaluator.budget.depth === 0;
-        if (resetBudget) evaluator.budget.steps = 0;
         if (evaluator.budget.depth >= MAX_CALL_DEPTH) {
-          throw new Error('[Sandbox Security] Maximum call stack depth exceeded.');
+          throw new SandboxAbortError('[Sandbox Security] Maximum call stack depth exceeded.');
         }
         evaluator.budget.depth++;
         try {
@@ -1686,10 +1742,8 @@ class SandboxEvaluator {
     }
 
     const syncFn = function (this: unknown, ...args: unknown[]) {
-      const resetBudget = evaluator.budget.depth === 0;
-      if (resetBudget) evaluator.budget.steps = 0;
       if (evaluator.budget.depth >= MAX_CALL_DEPTH) {
-        throw new Error('[Sandbox Security] Maximum call stack depth exceeded.');
+        throw new SandboxAbortError('[Sandbox Security] Maximum call stack depth exceeded.');
       }
       evaluator.budget.depth++;
       try {
@@ -1855,6 +1909,7 @@ class SandboxEvaluator {
         const right = this.evalExprSync(stmt.right, env);
         if (stmt.mode === 'of') {
           for (const item of right as Iterable<unknown>) {
+            tickStep(this.budget);
             const iterEnv = new Env(env);
             if (stmt.declKind) {
               this.bindPattern(stmt.left, stmt.declKind, item, iterEnv);
@@ -1867,6 +1922,7 @@ class SandboxEvaluator {
           }
         } else {
           for (const key in right as Record<string, unknown>) {
+            tickStep(this.budget);
             if (BLOCKED_PROPERTY_KEYS.has(key)) continue;
             const iterEnv = new Env(env);
             if (stmt.declKind) {
@@ -1916,6 +1972,9 @@ class SandboxEvaluator {
           this.hoistStatements(stmt.block, tryEnv);
           sig = this.execStmtListSync(stmt.block, tryEnv);
         } catch (err) {
+          if (err instanceof SandboxAbortError) {
+            throw err;
+          }
           if (stmt.handlerBlock) {
             const catchEnv = new Env(env);
             if (stmt.handlerParam) {
@@ -2029,8 +2088,8 @@ class SandboxEvaluator {
             const lastStep = expr.arg.steps[lastIdx];
             if (lastStep.kind === 'member') {
               const target = this.evalChainPrefixSync(expr.arg.base, expr.arg.steps.slice(0, lastIdx), env);
-              const key = assertSafePropertyKey(this.evalExprSync(lastStep.prop, env));
-              return target != null ? delete (target as Record<string, unknown>)[key] : true;
+              const key = this.evalExprSync(lastStep.prop, env);
+              return deleteSafeProp(target, key);
             }
           }
           return true;
@@ -2250,6 +2309,7 @@ class SandboxEvaluator {
         const right = await this.evalExprAsync(stmt.right, env);
         if (stmt.mode === 'of') {
           for (const item of right as Iterable<unknown>) {
+            tickStep(this.budget);
             const iterEnv = new Env(env);
             if (stmt.declKind) {
               this.bindPattern(stmt.left, stmt.declKind, item, iterEnv);
@@ -2262,6 +2322,7 @@ class SandboxEvaluator {
           }
         } else {
           for (const key in right as Record<string, unknown>) {
+            tickStep(this.budget);
             if (BLOCKED_PROPERTY_KEYS.has(key)) continue;
             const iterEnv = new Env(env);
             if (stmt.declKind) {
@@ -2283,6 +2344,9 @@ class SandboxEvaluator {
           this.hoistStatements(stmt.block, tryEnv);
           sig = await this.execStmtListAsync(stmt.block, tryEnv);
         } catch (err) {
+          if (err instanceof SandboxAbortError) {
+            throw err;
+          }
           if (stmt.handlerBlock) {
             const catchEnv = new Env(env);
             if (stmt.handlerParam) this.bindPattern(stmt.handlerParam, 'let', err, catchEnv);
@@ -2455,6 +2519,64 @@ class SandboxEvaluator {
         const instance = new Ctor(...args);
         assertSafeValue(instance);
         return instance;
+      }
+      case 'Unary': {
+        if (expr.op === 'typeof') {
+          if (expr.arg.kind === 'Ident' && !env.lookup(expr.arg.name)) {
+            return 'undefined';
+          }
+          return typeof (await this.evalExprAsync(expr.arg, env));
+        }
+        if (expr.op === 'delete') {
+          if (expr.arg.kind === 'Chain' && expr.arg.steps.length > 0) {
+            const lastIdx = expr.arg.steps.length - 1;
+            const lastStep = expr.arg.steps[lastIdx];
+            if (lastStep.kind === 'member') {
+              const target = await this.evalChainPrefixAsync(expr.arg.base, expr.arg.steps.slice(0, lastIdx), env);
+              const key = await this.evalExprAsync(lastStep.prop, env);
+              return deleteSafeProp(target, key);
+            }
+          }
+          return true;
+        }
+        const val = await this.evalExprAsync(expr.arg, env);
+        switch (expr.op) {
+          case '!': return !val;
+          case '+': return Number(val);
+          case '-': return -Number(val);
+          case '~': return ~Number(val);
+          case 'void': return undefined;
+          default: return undefined;
+        }
+      }
+      case 'Update': {
+        const delta = expr.op === '++' ? 1 : -1;
+        if (expr.arg.kind === 'Ident') {
+          const cur = Number(env.get(expr.arg.name));
+          const next = cur + delta;
+          env.set(expr.arg.name, next);
+          return expr.prefix ? next : cur;
+        }
+        if (expr.arg.kind === 'Chain' && expr.arg.steps.length > 0) {
+          const lastIdx = expr.arg.steps.length - 1;
+          const lastStep = expr.arg.steps[lastIdx];
+          if (lastStep.kind === 'member') {
+            const target = await this.evalChainPrefixAsync(expr.arg.base, expr.arg.steps.slice(0, lastIdx), env);
+            const key = assertSafePropertyKey(await this.evalExprAsync(lastStep.prop, env));
+            const cur = Number(readSafeProp(target, key));
+            const next = cur + delta;
+            writeSafeProp(target, key, next);
+            return expr.prefix ? next : cur;
+          }
+        }
+        throw new SyntaxError('Invalid left-hand side expression in update operation');
+      }
+      case 'Sequence': {
+        let res: unknown = undefined;
+        for (const sub of expr.exprs) {
+          res = await this.evalExprAsync(sub, env);
+        }
+        return res;
       }
       case 'Chain':
         return await this.evalChainPrefixAsync(expr.base, expr.steps, env);

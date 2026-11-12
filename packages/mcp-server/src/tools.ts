@@ -17,8 +17,12 @@ import {
   validateSamreyCode,
   diagnoseError,
   runCompatibilitySuite,
-  writeAllInstructions,
-  installSkills
+  SAMREY_SKILLS,
+  generateAgentsMd,
+  generateGeminiMd,
+  generateClaudeMd,
+  generateCopilotInstructions,
+  generateCursorMdc
 } from '@samrey/ai';
 import { McpToolDefinition, ToolCallResult } from './protocol.js';
 import { resolveSafePath, executeSafeCommand, redactSecrets, safeWriteFile } from './security.js';
@@ -462,8 +466,40 @@ export async function handleToolCall(
     }
 
     case 'samrey_init_project': {
-      const written = writeAllInstructions(root, Boolean(args.force));
-      const skills = installSkills(path.join(root, 'skills'), Boolean(args.force));
+      const force = Boolean(args.force);
+      const written: string[] = [];
+      const installedSkills: string[] = [];
+
+      const instructionTargets = [
+        { relPath: 'AGENTS.md', content: generateAgentsMd() },
+        { relPath: 'GEMINI.md', content: generateGeminiMd() },
+        { relPath: 'CLAUDE.md', content: generateClaudeMd() },
+        { relPath: '.github/copilot-instructions.md', content: generateCopilotInstructions() },
+        { relPath: '.cursor/rules/samrey.mdc', content: generateCursorMdc() }
+      ];
+
+      try {
+        for (const target of instructionTargets) {
+          const safeTarget = resolveSafePath(root, target.relPath);
+          if (!force && fs.existsSync(safeTarget)) continue;
+          safeWriteFile(target.relPath, target.content, root, force);
+          written.push(safeTarget);
+        }
+
+        for (const skill of SAMREY_SKILLS) {
+          const relSkill = path.posix.join('skills', skill.id, 'SKILL.md');
+          const safeSkillPath = resolveSafePath(root, relSkill);
+          if (!force && fs.existsSync(safeSkillPath)) continue;
+          safeWriteFile(relSkill, skill.content, root, force);
+          installedSkills.push(safeSkillPath);
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text', text: err?.message || String(err) }],
+          isError: true
+        };
+      }
+
       return {
         content: [
           {
@@ -472,7 +508,7 @@ export async function handleToolCall(
               {
                 success: true,
                 instructionFiles: written,
-                skillsInstalled: skills.length
+                skillsInstalled: installedSkills.length
               },
               null,
               2
@@ -591,7 +627,14 @@ export function ${name}() {
           isError: true
         };
       }
-      const routeSnippet = `{ path: '${args.path}', component: ${componentName} }`;
+      const routePath = typeof args.path === 'string' ? args.path.trim() : '';
+      if (!routePath || /[\r\n\0]/.test(routePath) || !routePath.startsWith('/') && routePath !== '*') {
+        return {
+          content: [{ type: 'text', text: 'Invalid route path: must be a non-empty route starting with "/" (or "*") without control characters.' }],
+          isError: true
+        };
+      }
+      const routeSnippet = `{ path: ${JSON.stringify(routePath)}, component: ${componentName} }`;
       return {
         content: [{ type: 'text', text: routeSnippet }]
       };

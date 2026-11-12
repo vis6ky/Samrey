@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { onCleanup, createRoot } from '@samrey/reactivity';
-import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, useLocation, Link, createLink, setRouterInstance } from '../src/index.js';
+import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, useLocation, useRouter, Link, createLink, setRouterInstance } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -270,5 +270,115 @@ describe('@samrey/router', () => {
 
     assert.ok(observed.includes('A:/a'));
     assert.ok(observed.includes('B:/b'));
+  });
+
+  it('removes all child nodes when RouterOutlet renders a DocumentFragment and throws in useRouter outside context', () => {
+    setRouterInstance(null as any);
+    assert.throws(() => useRouter(), /Router/i);
+
+    // Build minimal fragment + element tree simulating DOM DocumentFragment move semantics
+    const makeEl = (tag: string, text = '') => {
+      const node: any = {
+        nodeType: 1,
+        tagName: tag,
+        textContent: text,
+        attributes: {} as Record<string, string>,
+        childNodes: [] as any[],
+        parentNode: null as any,
+        setAttribute(k: string, v: string) {
+          node.attributes[k] = v;
+        },
+        getAttribute(k: string) {
+          return node.attributes[k] ?? null;
+        },
+        addEventListener() {},
+        removeEventListener() {},
+        appendChild(child: any) {
+          if (child.nodeType === 11) {
+            const moved = [...child.childNodes];
+            child.childNodes.length = 0;
+            for (const m of moved) {
+              m.parentNode = node;
+              node.childNodes.push(m);
+            }
+            return child;
+          }
+          child.parentNode = node;
+          node.childNodes.push(child);
+          return child;
+        },
+        remove() {
+          if (!node.parentNode) return;
+          const idx = node.parentNode.childNodes.indexOf(node);
+          if (idx !== -1) node.parentNode.childNodes.splice(idx, 1);
+          node.parentNode = null;
+        },
+        removeChild(child: any) {
+          const idx = node.childNodes.indexOf(child);
+          if (idx !== -1) node.childNodes.splice(idx, 1);
+          child.parentNode = null;
+        }
+      };
+      return node;
+    };
+
+    const prevDocument = (globalThis as any).document;
+    (globalThis as any).document = {
+      createElement: (tag: string) => makeEl(tag),
+      createTextNode: (txt: string) => {
+        const t: any = {
+          nodeType: 3,
+          nodeName: '#text',
+          textContent: txt,
+          parentNode: null,
+          remove() {
+            if (!t.parentNode) return;
+            const i = t.parentNode.childNodes.indexOf(t);
+            if (i !== -1) t.parentNode.childNodes.splice(i, 1);
+            t.parentNode = null;
+          }
+        };
+        return t;
+      }
+    };
+
+    try {
+      const disposeRoot = createRoot((dispose) => {
+        const router = createRouter(
+          [
+            {
+              path: '/frag',
+              component: () => {
+                const frag: any = {
+                  nodeType: 11,
+                  childNodes: [] as any[],
+                  appendChild(c: any) { c.parentNode = frag; frag.childNodes.push(c); return c; }
+                };
+                frag.appendChild(makeEl('span', 'One'));
+                frag.appendChild(makeEl('span', 'Two'));
+                return frag;
+              }
+            },
+            {
+              path: '/next',
+              component: () => makeEl('p', 'NextRoute')
+            }
+          ],
+          '/frag'
+        );
+
+        const outlet = RouterOutlet() as any;
+        assert.equal(outlet.childNodes.length, 2);
+
+        router.navigate('/next');
+        assert.equal(outlet.childNodes.length, 1);
+        assert.equal(outlet.childNodes[0].textContent, 'NextRoute');
+        return dispose;
+      });
+      disposeRoot();
+    } finally {
+      setRouterInstance(null as any);
+      (globalThis as any).document = prevDocument;
+    }
   });
 });

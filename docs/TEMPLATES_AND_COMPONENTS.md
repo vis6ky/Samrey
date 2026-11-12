@@ -27,7 +27,6 @@ Components in Samrey are plain JavaScript functions that accept `props` and retu
 
 ```typescript
 import { template, bindText } from '@samrey/runtime';
-import { Signal } from '@samrey/reactivity';
 
 interface CardProps {
   title: string | (() => string);

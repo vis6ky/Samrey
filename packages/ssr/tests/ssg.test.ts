@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateStaticSite, StaticRouteConfig } from '../src/index.js';
+import { generateStaticSite, serializeStateForHydration, StaticRouteConfig } from '../src/index.js';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -80,6 +80,31 @@ describe('@samrey/ssr - Static Site Generation (SSG)', () => {
       assert.equal(res.totalPages, 0);
       const written = await fs.readFile(path.join(nestedOut, 'sitemap.xml'), 'utf8');
       assert.ok(written.includes('<urlset'));
+    } finally {
+      await fs.rm(tmpBase, { recursive: true, force: true });
+    }
+  });
+
+  it('outputs index.html (not index/index.html) for root route and handles undefined hydration state', async () => {
+    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'samrey-ssg-root-'));
+    try {
+      const res = await generateStaticSite(
+        [
+          { path: '/', title: 'Root', component: () => '<h1>Root</h1>' },
+          { path: '/about/', title: 'About', component: () => '<h1>About</h1>' }
+        ],
+        { outDir: tmpBase, writeFiles: true }
+      );
+      const rootHtml = await fs.readFile(path.join(tmpBase, 'index.html'), 'utf8');
+      assert.ok(rootHtml.includes('<h1>Root</h1>'));
+      const nestedIndexExists = await fs.access(path.join(tmpBase, 'index', 'index.html')).then(() => true, () => false);
+      assert.equal(nestedIndexExists, false, 'Root route must write to index.html, not index/index.html');
+      const aboutHtml = await fs.readFile(path.join(tmpBase, 'about', 'index.html'), 'utf8');
+      assert.ok(aboutHtml.includes('<h1>About</h1>'));
+      assert.equal(res.totalPages, 2);
+
+      const serializedUndef = serializeStateForHydration(undefined);
+      assert.ok(serializedUndef.includes('>null</script>'), `Expected null payload for undefined, got: ${serializedUndef}`);
     } finally {
       await fs.rm(tmpBase, { recursive: true, force: true });
     }

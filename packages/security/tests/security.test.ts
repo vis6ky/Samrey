@@ -464,4 +464,98 @@ describe('@samrey/security', () => {
       else delete (globalThis as any).window;
     }
   });
+
+  it('Batch 1 regression: blocks unclosed EOF CSS url, image()/src(), multiline image-set(), CRLF redirect, and HTML foreign-breakout/end-tag > vectors', () => {
+    // 1. Unclosed CSS url("...) and url('...) at EOF must still reject dangerous schemes
+    for (const badUrlCss of [
+      'background: url("javascript:alert(1)',
+      "background: url('javascript:alert(1)",
+      'background: url(  "javascript:alert(1)'
+    ]) {
+      const clean = sanitizeCssStyle(badUrlCss);
+      assert.ok(!clean.toLowerCase().includes('javascript:'), `Must block unclosed EOF url(): ${badUrlCss} -> ${clean}`);
+      assert.ok(clean.includes('url("")'), `Must replace blocked unclosed url() with url(""): ${clean}`);
+    }
+
+    // 2. Uniform CSS image functions: image(), src(), image-set() including multiline bad-string-token
+    for (const badFnCss of [
+      'background: image("javascript:alert(1)")',
+      'src: src("javascript:alert(1)")',
+      'background: image(ltr "javascript:alert(1)", "https://cdn.example.com/a.png")',
+      'background: image-set("a\n , "javascript:alert(1)" 1x)'
+    ]) {
+      const clean = sanitizeCssStyle(badFnCss);
+      assert.ok(!clean.toLowerCase().includes('javascript:'), `Must block JS scheme in CSS function: ${badFnCss} -> ${clean}`);
+    }
+    const mixedImg = sanitizeCssStyle('background: image(ltr "javascript:alert(1)", "https://cdn.example.com/a.png")');
+    assert.ok(mixedImg.includes('https://cdn.example.com/a.png'));
+
+    // 3. sanitizeRedirectUri must reject CRLF / NUL / control characters cleanly
+    assert.equal(sanitizeRedirectUri('/login\r\nSet-Cookie: a=1', '/'), '/');
+    assert.equal(sanitizeRedirectUri('/login\nLocation: //evil.com', '/'), '/');
+    assert.equal(sanitizeRedirectUri('/login\0evil', '/'), '/');
+    assert.equal(sanitizeRedirectUri('/login\tok', '/'), '/');
+
+    // 4. HTML5 foreign-content breakout tags (<p>, <div>, <span>, <table>) pop <svg>/<math> before <textarea />
+    const svgBreakout = sanitizeTemplateHtml('<svg><p><textarea /><b>hi</b></svg>');
+    assert.ok(!svgBreakout.includes('<textarea />'), `Must not emit self-closing <textarea /> after HTML breakout: ${svgBreakout}`);
+    assert.ok(svgBreakout.includes('</textarea>'), `Must close <textarea> properly in HTML mode: ${svgBreakout}`);
+
+    // 5. Closing tags & rawtext strip tags must parse quoted '>' without leaving trailing fragments
+    assert.equal(sanitizeHtmlString('</div title="><script>alert(1)</script>">'), '</div>');
+    assert.equal(sanitizeHtmlString('</div/title="><script>alert(1)</script>">'), '</div>');
+    const textareaEndAttr = sanitizeHtmlString('<textarea>safe</textarea title="><img src=x onerror=alert(1)>">');
+    assert.equal(textareaEndAttr, '', `Must strip rawtext textarea with quoted > in end tag cleanly: ${textareaEndAttr}`);
+    const styleEndAttr = sanitizeHtmlString('<style>a{}</style title="><img src=x onerror=alert(1)>">');
+    assert.equal(styleEndAttr, '', `Must strip rawtext style with quoted > in end tag cleanly: ${styleEndAttr}`);
+    const textareaRdataBreak = sanitizeHtmlString('<textarea><p title="</textarea><img src=x onerror=alert(1)>"></textarea>');
+    assert.ok(!textareaRdataBreak.includes('onerror'), `Must sanitize content after RCDATA </textarea> break cleanly: ${textareaRdataBreak}`);
+  });
+
+  it('Batch 1 regression: enforces per-realm Trusted Types isolation, scoped allowedScriptOrigins, and non-string defaultPolicy fallback', () => {
+    const hadWindow = 'window' in globalThis;
+    const origWindow = (globalThis as any).window;
+    try {
+      const makeRealm = (id: number, withScriptUrl: boolean) => ({
+        trustedTypes: {
+          createPolicy: (name: string, rules: any) => ({ realm: id, name, ...rules }),
+          defaultPolicy: withScriptUrl
+            ? { createHTML: (s: string) => ({ def: s }), createScriptURL: (s: string) => ({ defUrl: s }) }
+            : { createHTML: (s: string) => ({ def: s }) }
+        }
+      });
+
+      resetTrustedPolicyForTest();
+      (globalThis as any).window = makeRealm(1, true);
+      const r1Html = getSamreyTrustedPolicy({ allowedScriptOrigins: ['https://cdn1.example'] }) as any;
+      const r1Tmpl = getSamreyTemplateTrustedPolicy() as any;
+      assert.equal(r1Html.realm, 1);
+      assert.equal(r1Tmpl.realm, 1);
+
+      // Switch realm WITHOUT calling resetTrustedPolicyForTest()
+      (globalThis as any).window = makeRealm(2, true);
+      const r2Html = getSamreyTrustedPolicy() as any;
+      const r2Tmpl = getSamreyTemplateTrustedPolicy() as any;
+      assert.equal(r2Html.realm, 2, 'Switching window.trustedTypes realm must NOT return Realm 1 cached policy');
+      assert.equal(r2Tmpl.realm, 2, 'Switching window.trustedTypes realm must NOT return Realm 1 cached template policy');
+
+      // Realm 1 allowlist must not silently leak into Realm 2 / template policy
+      assert.throws(() => r2Html.createScriptURL('https://cdn1.example/sdk.js'), /Security|blocked/i);
+      assert.throws(() => r2Tmpl.createScriptURL('https://cdn1.example/sdk.js'), /Security|blocked/i);
+
+      // Default policy without createScriptURL must fail closed rather than returning a raw string
+      (globalThis as any).window = {
+        trustedTypes: {
+          createPolicy: () => { throw new TypeError('Policy already exists'); },
+          defaultPolicy: { createHTML: (s: string) => ({ __wrapped: s }) }
+        }
+      };
+      const dupPolicy = getSamreyTrustedPolicy();
+      assert.throws(() => dupPolicy.createScriptURL('/app.js'), /Security|Trusted Types|createScriptURL/i);
+    } finally {
+      resetTrustedPolicyForTest();
+      if (hadWindow) (globalThis as any).window = origWindow;
+      else delete (globalThis as any).window;
+    }
+  });
 });

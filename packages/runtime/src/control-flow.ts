@@ -673,7 +673,9 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
           for (let i = newEntries.length - 1; i >= 0; i--) {
             const entry = newEntries[i];
             for (let n = entry.nodes.length - 1; n >= 0; n--) {
-              parent.insertBefore(entry.nodes[n], nextSibling);
+              const node = entry.nodes[n];
+              parent.insertBefore(node, nextSibling);
+              nextSibling = node;
             }
             if (entry.nodes.length > 0) {
               nextSibling = entry.nodes[0];
@@ -718,6 +720,7 @@ export function For<T, K = unknown>(props: ForProps<T, K>): Node {
             for (let n = entry.nodes.length - 1; n >= 0; n--) {
               const node = entry.nodes[n];
               parent.insertBefore(node, nextSibling);
+              nextSibling = node;
             }
           } else {
             lisIdx--;

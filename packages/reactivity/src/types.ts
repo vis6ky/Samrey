@@ -14,6 +14,7 @@ export interface Subscriber extends ReactiveNode {
   notify(clock: number): void;
   update(): void;
   sources: Set<Dependency>;
+  owner?: Owner | null;
 }
 
 export interface Dependency extends ReactiveNode {

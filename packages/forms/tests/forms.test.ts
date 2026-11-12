@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createField, createForm, computeAriaAttributes, StandardSchemaV1, bindField, validators } from '../src/index.js';
+import { createField, createForm, computeAriaAttributes, getAccessibleFieldProps, StandardSchemaV1, bindField, validators } from '../src/index.js';
 
 describe('@samrey/forms', () => {
   it('tracks field value, dirty, and error state reactively', () => {
@@ -331,5 +331,98 @@ describe('@samrey/forms', () => {
     const ok = await form.submit();
     assert.equal(ok, false);
     assert.equal(submitValidatorCalls, 1, 'form.submit() must invoke each field validator exactly once');
+  });
+
+  it('Batch 2 regression: guards concurrent submit() race, fixes reset() order/async race, fixes getAccessibleFieldProps, and supports validate + Validator[]', async () => {
+    // 1. Concurrent submit() race with async validation + async onSubmit
+    let resolveAsyncVal!: (msg: string | null) => void;
+    let resolveSubmit!: () => void;
+    let submitCalls = 0;
+
+    const raceForm = createForm({
+      initialValues: { username: 'alice' },
+      validators: {
+        username: () => new Promise<string | null>((r) => {
+          resolveAsyncVal = r;
+        })
+      },
+      onSubmit: async () => {
+        submitCalls++;
+        await new Promise<void>((r) => {
+          resolveSubmit = r;
+        });
+      }
+    });
+
+    const s1 = raceForm.submit();
+    const s2 = raceForm.submit();
+    assert.equal(raceForm.isSubmitting.value, true, 'isSubmitting must be true immediately while async submit is in flight');
+    resolveAsyncVal(null);
+    await new Promise((r) => setTimeout(r, 5));
+    assert.equal(submitCalls, 1, 'Concurrent submit() calls must NOT invoke onSubmit twice');
+    resolveSubmit();
+    const [r1, r2] = await Promise.all([s1, s2]);
+    assert.deepEqual([r1, r2], [true, false]);
+    assert.equal(raceForm.isSubmitting.value, false);
+
+    // 2. form.reset() ordering & stale async validator cancellation
+    let validatorRuns = 0;
+    let resolveSlow!: (msg: string | null) => void;
+    const resetForm = createForm({
+      initialValues: { email: 'init@samrey.dev' },
+      validators: {
+        email: (val) => {
+          validatorRuns++;
+          if (val === 'slow@bad') {
+            return new Promise<string | null>((r) => {
+              resolveSlow = r;
+            });
+          }
+          return val.includes('@') ? null : 'Bad email';
+        }
+      },
+      onSubmit: () => {}
+    });
+
+    resetForm.fields.email.setTouched(true, false);
+    resetForm.fields.email.setValue('slow@bad');
+    assert.equal(validatorRuns, 1);
+    resetForm.reset();
+    assert.equal(validatorRuns, 1, 'form.reset() must setTouched(false) BEFORE setValue() so reset never fires validator');
+    assert.equal(resetForm.fields.email.touched.value, false);
+    assert.equal(resetForm.fields.email.error.value, null);
+    assert.equal(resetForm.fields.email.value.value, 'init@samrey.dev');
+
+    // Resolving slow validation from pre-reset must not taint freshly reset field
+    resolveSlow('Stale pre-reset error');
+    await new Promise((r) => setTimeout(r, 5));
+    assert.equal(resetForm.fields.email.error.value, null, 'Stale async validator must not resurrect error after reset()');
+
+    // 3. getAccessibleFieldProps must NOT treat signal function reference as truthy error
+    const cleanField = createField('username', 'alice');
+    const cleanProps = getAccessibleFieldProps(cleanField);
+    assert.equal(cleanProps['aria-invalid'], undefined, 'Valid field with error.value === null must NOT set aria-invalid=true');
+    cleanField.setError('Required');
+    const errProps = getAccessibleFieldProps(cleanField);
+    assert.equal(errProps['aria-invalid'], true);
+    assert.equal(errProps['aria-errormessage'], 'username-error');
+
+    // 4. Documented validate() callback + Validator[] array rules
+    const docForm = createForm({
+      initialValues: { email: 'bad', username: 'a' },
+      validators: {
+        username: [validators.required('Req'), validators.minLength(3, 'Min 3')]
+      },
+      validate: (vals) => {
+        const errs: Record<string, string> = {};
+        if (!vals.email.includes('@')) errs.email = 'Valid email is required';
+        return errs;
+      },
+      onSubmit: () => {}
+    });
+    const okDoc = await docForm.submit();
+    assert.equal(okDoc, false);
+    assert.equal(docForm.fields.username.error.value, 'Min 3');
+    assert.equal(docForm.fields.email.error.value, 'Valid email is required');
   });
 });

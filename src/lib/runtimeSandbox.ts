@@ -687,6 +687,79 @@ function stripStringsAndComments(source: string): string {
   return stripStringsAndCommentsWithBracketCheck(source).codeOnly;
 }
 
+const DANGEROUS_SANDBOX_TAGS = new Set([
+  'script',
+  'iframe',
+  'frame',
+  'frameset',
+  'object',
+  'embed',
+  'applet',
+  'base',
+  'portal',
+  'noscript'
+]);
+
+const RESTRICTED_SANDBOX_ATTRS = new Set([
+  'srcdoc',
+  'innerhtml',
+  'outerhtml',
+  '__proto__',
+  'constructor',
+  'prototype'
+]);
+
+export function sanitizeSandboxErrorMessage(raw: unknown): string {
+  const text = raw instanceof Error ? raw.message : String(raw ?? 'Unknown error');
+  return text
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/file:\/\/[^\s)]+/g, '<sandbox>')
+    .replace(/(?:[A-Za-z]:)?(?:\/[^\s:)]+)+:\d+:\d+/g, '<sandbox>')
+    .replace(/(?:\/Users\/|\/home\/|\/var\/|\/tmp\/|C:\\)[^\s)]+/g, '<sandbox>');
+}
+
+function safeFormatSandboxArg(arg: unknown, indent = 0): string {
+  if (arg === undefined) return 'undefined';
+  if (typeof arg === 'string') return arg;
+  if (arg instanceof Error) return sanitizeSandboxErrorMessage(arg.message);
+  if (typeof arg !== 'object' || arg === null) return String(arg);
+  const seen = new WeakSet<object>();
+  try {
+    return JSON.stringify(
+      arg,
+      (_key, val) => {
+        if (typeof val === 'object' && val !== null) {
+          if (seen.has(val)) return '[Circular]';
+          seen.add(val);
+        }
+        if (typeof val === 'function') return `[Function ${val.name || 'anonymous'}]`;
+        return val;
+      },
+      indent || undefined
+    );
+  } catch {
+    return String(arg);
+  }
+}
+
+function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, unknown> | null): void {
+  const lowerTag = String(tagName ?? '').trim().toLowerCase();
+  if (!lowerTag || DANGEROUS_SANDBOX_TAGS.has(lowerTag)) {
+    throw new TypeError(`[Sandbox Security] Creating <${lowerTag || 'unknown'}> elements inside the sandbox is prohibited.`);
+  }
+  if (attrs && typeof attrs === 'object') {
+    for (const [k, v] of Object.entries(attrs)) {
+      const lk = k.toLowerCase();
+      if (RESTRICTED_SANDBOX_ATTRS.has(lk)) {
+        throw new TypeError(`[Sandbox Security] Restricted attribute "${k}" inside the sandbox is prohibited.`);
+      }
+      if (lk.startsWith('on') && v !== undefined && v !== null && typeof v !== 'function') {
+        throw new TypeError(`[Sandbox Security] String inline event handler "${k}" is prohibited inside the sandbox.`);
+      }
+    }
+  }
+}
+
 export function validateSandboxCodeSafety(source: string): string | null {
   const { codeOnly, blockedBracketProp } = stripStringsAndCommentsWithBracketCheck(source);
   if (
@@ -770,8 +843,14 @@ export function executeSamreyCode(
       runWithOwner: Reactivity.runWithOwner,
 
       // Runtime DOM & Control Flow
-      el: Runtime.el,
-      svgEl: Runtime.svgEl,
+      el: (tagName: any, attrs?: any, ...children: any[]) => {
+        assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.el(tagName, attrs, ...children);
+      },
+      svgEl: (tagName: string, attrs?: any, ...children: any[]) => {
+        assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.svgEl(tagName, attrs, ...children);
+      },
       text: Runtime.text,
       frag: Runtime.frag,
       rawHtml: Runtime.rawHtml,
@@ -786,6 +865,8 @@ export function executeSamreyCode(
       // Forms
       createForm: Forms.createForm,
       createField: Forms.createField,
+      validators: Forms.validators,
+      bindField: Forms.bindField,
       computeAriaAttributes: Forms.computeAriaAttributes,
       getAccessibleFieldProps: Forms.getAccessibleFieldProps,
 
@@ -820,13 +901,13 @@ export function executeSamreyCode(
       },
       console: {
         log: (...args: any[]) => {
-          log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'info');
+          log(args.map((a) => safeFormatSandboxArg(a)).join(' '), 'info');
         },
         warn: (...args: any[]) => {
-          log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'warn');
+          log(args.map((a) => safeFormatSandboxArg(a)).join(' '), 'warn');
         },
         error: (...args: any[]) => {
-          log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), 'error');
+          log(args.map((a) => safeFormatSandboxArg(a)).join(' '), 'error');
         }
       }
     };
@@ -853,14 +934,14 @@ export function executeSamreyCode(
         Runtime.el('span', null, 'Execution Completed (Non-DOM Return Value)')
       ),
       Runtime.el('pre', { class: 'p-3 bg-white rounded-lg border border-indigo-100 text-slate-800' },
-        renderedResult !== undefined ? JSON.stringify(renderedResult, null, 2) : '/* Code executed without explicit DOM return */'
+        renderedResult !== undefined ? safeFormatSandboxArg(renderedResult, 2) : '/* Code executed without explicit DOM return */'
       )
     );
 
     log('[Runtime] Script evaluated without fatal errors.', 'success');
     return { success: true, node: fallbackNode };
   } catch (err: any) {
-    const errMsg = err?.message || String(err);
+    const errMsg = sanitizeSandboxErrorMessage(err?.message || String(err));
     log(`[Execution Error] ${errMsg}`, 'error');
     return { success: false, error: errMsg };
   }

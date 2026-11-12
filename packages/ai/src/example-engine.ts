@@ -36,14 +36,15 @@ export const SAMREY_EXAMPLES: SamreyCodeExample[] = [
         code: `import { signal } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
-const _tmpl = template('<button class="px-4 py-2 bg-blue-600 text-white rounded">Count: </button>');
+const _tmpl = template('<button ref="btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded">Count: <span ref="num"></span></button>');
 
 export function Counter(props: { initial?: number }) {
   const count = signal(props.initial ?? 0);
-  const root = _tmpl() as HTMLButtonElement;
+  const root = _tmpl.clone();
+  const { btn, num } = root.refs;
 
-  bindText(root.firstChild as Text, () => \`Count: \${count.value}\`);
-  on(root, 'click', () => count.update((n) => n + 1));
+  bindText(num, () => count.value.toString());
+  on(btn, 'click', () => count.update((n) => n + 1));
 
   return root;
 }`
@@ -97,7 +98,7 @@ export function CartSummary() {
         code: `import { signal } from '@samrey/reactivity';
 import { Show, template, on } from '@samrey/runtime';
 
-const _tmpl = template('<div class="auth-gate"><header><button id="toggle">Toggle Login</button></header><main></main></div>');
+const _tmpl = template('<div class="auth-gate"><header><button type="button" id="toggle">Toggle Login</button></header><main></main></div>');
 const _userTmpl = template('<div class="welcome"><h3>Welcome back, Member!</h3><p>Your subscription is active.</p></div>');
 const _guestTmpl = template('<div class="login-prompt"><h3>Guest Access</h3><p>Please sign in to continue.</p></div>');
 
@@ -141,8 +142,8 @@ interface Todo {
   text: string;
 }
 
-const _itemTmpl = template('<li class="todo-item"><span class="txt"></span> <button class="del">✕</button></li>');
-const _listTmpl = template('<div class="todo-container"><ul class="list"></ul><button id="add">Add Item</button></div>');
+const _itemTmpl = template('<li class="todo-item"><span class="txt"></span> <button type="button" class="del">✕</button></li>');
+const _listTmpl = template('<div class="todo-container"><ul class="list"></ul><button type="button" id="add">Add Item</button></div>');
 
 export function TodoList() {
   const todos = signal<Todo[]>([
@@ -191,7 +192,7 @@ export function TodoList() {
         code: `import { createStore, effect } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
-const _tmpl = template('<div class="settings"><p id="theme"></p><button id="dark">Dark</button><button id="light">Light</button></div>');
+const _tmpl = template('<div class="settings"><p id="theme"></p><button type="button" id="dark">Dark</button><button type="button" id="light">Light</button></div>');
 
 export function UserSettings() {
   const state = createStore({
@@ -285,7 +286,7 @@ interface UserData {
   email: string;
 }
 
-const _tmpl = template('<div class="profile-card"><div class="view"></div><button id="reload">Reload</button></div>');
+const _tmpl = template('<div class="profile-card"><div class="view"></div><button type="button" id="reload">Reload</button></div>');
 const _userTmpl = template('<div class="details"><h3 id="name"></h3><p id="email"></p></div>');
 const _loadingTmpl = template('<div class="loading">Fetching user data...</div>');
 const _errorTmpl = template('<div class="error">Failed to load user.</div>');
@@ -339,11 +340,11 @@ export function UserProfile(props: { userId: number }) {
 import { template, on, bindText } from '@samrey/runtime';
 
 const _tmpl = template(\`
-<form class="login-box">
+<form ref="formEl" class="login-box">
   <div class="form-group" id="email-group"></div>
   <div class="form-group" id="pass-group"></div>
   <button type="submit" class="btn">Sign In</button>
-  <p class="status"></p>
+  <p ref="status" class="status"></p>
 </form>\`);
 
 export function LoginForm() {
@@ -360,10 +361,12 @@ export function LoginForm() {
     }
   });
 
-  const root = _tmpl() as HTMLFormElement;
-  on(root, 'submit', (e) => {
+  const root = _tmpl.clone();
+  const { formEl, status } = root.refs;
+  bindText(status, () => (form.isSubmitting.value ? 'Submitting...' : ''));
+  on(formEl, 'submit', (e) => {
     e.preventDefault();
-    form.handleSubmit();
+    void form.handleSubmit();
   });
 
   return root;
@@ -378,6 +381,25 @@ export function LoginForm() {
     summary: 'Testing component mounting, DOM queries, and user event triggering.',
     tags: ['testing', 'renderTest', 'fireEvent', 'flushReactivity', 'assertions'],
     files: [
+      {
+        filename: 'Counter.ts',
+        language: 'typescript',
+        code: `import { signal } from '@samrey/reactivity';
+import { template, on, bindText } from '@samrey/runtime';
+
+const _tmpl = template('<button ref="btn" type="button" class="btn">Count: <span ref="num"></span></button>');
+
+export function Counter(props: { initial?: number }) {
+  const count = signal(props.initial ?? 0);
+  const root = _tmpl.clone();
+  const { btn, num } = root.refs;
+
+  bindText(num, () => count.value.toString());
+  on(btn, 'click', () => count.update((n) => n + 1));
+
+  return root;
+}`
+      },
       {
         filename: 'Counter.test.ts',
         language: 'typescript',
@@ -409,6 +431,17 @@ describe('Counter Component', () => {
     summary: 'Streaming SSR into Node.js HTTP response with Progressive Hydration markers.',
     tags: ['ssr', 'renderToString', 'renderToStream', 'hydration'],
     files: [
+      {
+        filename: 'src/App.ts',
+        language: 'typescript',
+        code: `import { template } from '@samrey/runtime';
+
+const _appTmpl = template('<main><h1>Samrey SSR App</h1></main>');
+
+export function App() {
+  return _appTmpl();
+}`
+      },
       {
         filename: 'server.ts',
         language: 'typescript',
@@ -460,8 +493,8 @@ const _dashTmpl = template(\`
   <header class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold">Analytics Overview</h1>
     <div class="actions space-x-2">
-      <button id="refresh" class="px-3 py-1 bg-gray-200 rounded">Refresh</button>
-      <button id="add-metric" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Metric</button>
+      <button type="button" id="refresh" class="px-3 py-1 bg-gray-200 rounded">Refresh</button>
+      <button type="button" id="add-metric" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Metric</button>
     </div>
   </header>
   <div class="summary text-lg font-semibold mb-4" id="total-val"></div>
@@ -543,7 +576,7 @@ export function Dashboard() {
         code: `import { signal } from '@samrey/reactivity';
 import { template, Switch, Match, on } from '@samrey/runtime';
 
-const _navTmpl = template('<nav class="tab-nav"><button data-tab="home">Home</button><button data-tab="profile">Profile</button><button data-tab="settings">Settings</button><div class="content-slot"></div></nav>');
+const _navTmpl = template('<nav class="tab-nav"><button type="button" data-tab="home">Home</button><button type="button" data-tab="profile">Profile</button><button type="button" data-tab="settings">Settings</button><div class="content-slot"></div></nav>');
 
 export function TabSelector() {
   const activeTab = signal<'home' | 'profile' | 'settings'>('home');
@@ -605,7 +638,7 @@ export function TabSelector() {
         filename: 'src/components/DynamicView.ts',
         language: 'typescript',
         code: `import { signal } from '@samrey/reactivity';
-import { Dynamic, on } from '@samrey/runtime';
+import { Dynamic, bindDynamicChild, on } from '@samrey/runtime';
 
 function GridView(props: { items: string[] }) {
   const ul = document.createElement('ul');
@@ -635,18 +668,22 @@ export function DynamicViewContainer() {
 
   const container = document.createElement('div');
   const btn = document.createElement('button');
+  btn.type = 'button';
   btn.textContent = 'Toggle View Type';
   on(btn, 'click', () => {
     currentView.set(currentView.value === GridView ? ListView : GridView);
   });
 
-  container.appendChild(btn);
-  container.appendChild(
+  const slot = document.createElement('div');
+  bindDynamicChild(slot, () =>
     Dynamic({
-      component: () => currentView.value,
-      props: { items }
+      component: currentView.value,
+      items
     })
   );
+
+  container.appendChild(btn);
+  container.appendChild(slot);
 
   return container;
 }`
@@ -867,18 +904,16 @@ export interface EditorState {
 }
 
 export function createEditorStore() {
-  const [state, setState] = createStore<EditorState>({
+  const state = createStore<EditorState>({
     doc: { title: 'Untitled', content: '', tags: [] },
     cursor: { line: 1, col: 1 }
   });
 
   const addTag = (tag: string) => {
-    setState(
-      produce((draft) => {
-        draft.doc.tags.push(tag);
-        draft.cursor.col += 1;
-      })
-    );
+    produce(state, (draft) => {
+      draft.doc.tags.push(tag);
+      draft.cursor.col += 1;
+    });
   };
 
   return { state, addTag };
@@ -935,19 +970,20 @@ export function SvgChart() {
         code: `import { signal } from '@samrey/reactivity';
 import { Portal, Show, template, on } from '@samrey/runtime';
 
-const _modalTmpl = template('<div class="modal-backdrop"><div class="modal-dialog"><h3>Modal Header</h3><button class="close-btn">Close</button></div></div>');
+const _modalTmpl = template('<div class="modal-backdrop"><div class="modal-dialog"><h3>Modal Header</h3><button type="button" class="close-btn">Close</button></div></div>');
 
 export function ModalDemo() {
   const isOpen = signal(false);
   const container = document.createElement('div');
   const openBtn = document.createElement('button');
+  openBtn.type = 'button';
   openBtn.textContent = 'Open Portal Modal';
   on(openBtn, 'click', () => isOpen.set(true));
 
   container.appendChild(openBtn);
   container.appendChild(
     Portal({
-      target: document.body,
+      mount: document.body,
       children: () =>
         Show({
           when: () => isOpen.value,
@@ -1003,18 +1039,17 @@ export function ProductView() {
       {
         filename: 'src/api/client.ts',
         language: 'typescript',
-        code: `import { httpClient, createHttpCache } from '@samrey/http';
+        code: `import { createHttpClient, createHttpCache } from '@samrey/http';
 
 export function setupApiClient() {
-  const cache = createHttpCache({ ttlMs: 60000, maxSize: 50 });
-  const client = httpClient({
-    baseUrl: 'https://api.example.com',
-    cache,
-    headers: { 'Accept': 'application/json' }
-  });
+  const cache = createHttpCache({ defaultTtl: 60000, maxEntries: 50 });
+  const client = createHttpClient('https://api.example.com');
 
   return {
-    getArticles: () => client.get('/articles'),
+    getArticles: () =>
+      cache.dedupe('articles', () =>
+        client.get('/articles', { headers: { Accept: 'application/json' } })
+      ),
     invalidate: () => cache.clear()
   };
 }`
@@ -1032,7 +1067,7 @@ export function setupApiClient() {
         filename: 'src/forms/ContactForm.ts',
         language: 'typescript',
         code: `import { createForm, getAccessibleFieldProps } from '@samrey/forms';
-import { bindAttr, bindText, on } from '@samrey/runtime';
+import { bindAttr, bindText } from '@samrey/runtime';
 
 export function AccessibleContactForm() {
   const form = createForm({
@@ -1042,16 +1077,22 @@ export function AccessibleContactForm() {
       if (!values.email.includes('@')) errors.email = 'Valid email is required.';
       if (values.message.length < 5) errors.message = 'Message must be at least 5 characters.';
       return errors;
-    }
+    },
+    onSubmit: async () => {}
   });
 
   const formEl = document.createElement('form');
   const emailInput = document.createElement('input');
+  emailInput.id = 'contact-email';
   const emailError = document.createElement('span');
+  emailError.id = 'email-error';
 
-  const emailProps = getAccessibleFieldProps(form.fields.email);
-  emailInput.id = emailProps.id;
-  bindAttr(emailInput, 'aria-invalid', () => String(emailProps['aria-invalid']));
+  bindAttr(emailInput, 'aria-invalid', () =>
+    String(Boolean(getAccessibleFieldProps(form.fields.email)['aria-invalid']))
+  );
+  bindAttr(emailInput, 'aria-describedby', () =>
+    getAccessibleFieldProps(form.fields.email)['aria-describedby'] ?? ''
+  );
   bindText(emailError, () => form.fields.email.error.value || '');
 
   formEl.appendChild(emailInput);
@@ -1103,13 +1144,13 @@ export function clientHydrate(App: () => HTMLElement) {
 import { signal } from '@samrey/reactivity';
 import { on, bindText, template } from '@samrey/runtime';
 
-const _tmpl = template('<div><span class="count"></span><button class="inc">+</button></div>');
+const _tmpl = template('<div><span class="count"></span><button type="button" class="inc">+</button></div>');
 
 function Counter() {
   const c = signal(0);
   const root = _tmpl() as HTMLElement;
-  bindText(root.querySelector('.count')!, () => c.value);
-  on(root.querySelector('.inc')!, 'click', () => c.set((n) => n + 1));
+  bindText(root.querySelector('.count')!, () => String(c.value));
+  on(root.querySelector('.inc')!, 'click', () => c.update((n) => n + 1));
   return root;
 }
 
@@ -1118,7 +1159,7 @@ export async function testCounter() {
   const btn = container.querySelector('.inc')!;
   const countSpan = container.querySelector('.count')!;
 
-  fireEvent.click(btn);
+  fireEvent(btn, 'click');
   await waitFor(() => countSpan.textContent === '1');
 
   cleanupAllTestContainers();

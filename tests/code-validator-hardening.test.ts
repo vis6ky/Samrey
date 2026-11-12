@@ -10,7 +10,15 @@
 
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { validateSamreyCode } from '../packages/ai/src/code-validator.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import ts from 'typescript';
+import {
+  validateSamreyCode,
+  OFFICIAL_PACKAGE_EXPORTS,
+  KNOWN_TYPE_EXPORTS
+} from '../packages/ai/src/code-validator.js';
+import * as webCodeValidator from '../src/lib/codeValidator.js';
 
 describe('Item 5: validateSamreyCode Hardening', () => {
   describe('(a) Non-existent @samrey/* package imports', () => {
@@ -71,7 +79,7 @@ describe('Item 5: validateSamreyCode Hardening', () => {
     it('allows TypeScript type-only imports for exported interfaces', () => {
       const code = `
         import { signal, type Signal } from '@samrey/reactivity';
-        import type { RouteConfig } from '@samrey/router';
+        import type { RouteRecord } from '@samrey/router';
       `;
       const res = validateSamreyCode(code);
       assert.strictEqual(res.errors.length, 0, 'Must allow type imports for known types');
@@ -375,6 +383,190 @@ describe('Item 5: validateSamreyCode Hardening', () => {
         const res = validateSamreyCode(sample);
         assert.strictEqual(res.errors.length, 0, `Expected 0 errors for clean sample, got: ${JSON.stringify(res.errors)}`);
         assert.strictEqual(res.valid, true);
+      }
+    });
+  });
+
+  describe('(e) Batch 4: Validator Root-Cause Sync & Import Parity (@samrey/ai + src/lib/codeValidator)', () => {
+    const PACKAGES = [
+      'reactivity', 'runtime', 'compiler', 'router', 'forms',
+      'http', 'ssr', 'testing', 'devtools', 'security', 'cli', 'ai', 'mcp-server'
+    ];
+
+    async function collectRealPackageExports() {
+      const repoRoot = process.cwd();
+      const entryFiles = PACKAGES.map(p => path.join(repoRoot, 'packages', p, 'src', 'index.ts'));
+      const tsconfigPath = ts.findConfigFile(repoRoot, ts.sys.fileExists, 'tsconfig.json');
+      assert.ok(tsconfigPath, 'tsconfig.json must exist');
+      const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
+      const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, repoRoot);
+      const program = ts.createProgram(entryFiles, { ...parsed.options, noEmit: true });
+      const checker = program.getTypeChecker();
+
+      const valueMap: Record<string, Set<string>> = {};
+      const typeOnlyMap: Record<string, Set<string>> = {};
+
+      for (const p of PACKAGES) {
+        const pkgName = `@samrey/${p}`;
+        const entry = path.join(repoRoot, 'packages', p, 'src', 'index.ts');
+        const mod = await import(entry);
+        const valueSet = new Set(Object.keys(mod).filter(k => k !== '__esModule'));
+        const sf = program.getSourceFile(entry);
+        assert.ok(sf, `Missing source file for ${pkgName}`);
+        const modSym = checker.getSymbolAtLocation(sf);
+        assert.ok(modSym, `Missing module symbol for ${pkgName}`);
+        const tsExports = checker.getExportsOfModule(modSym).map(s => s.getName());
+        const typeOnlySet = new Set(
+          tsExports.filter(name => name !== 'default' && !valueSet.has(name))
+        );
+        valueMap[pkgName] = valueSet;
+        typeOnlyMap[pkgName] = typeOnlySet;
+      }
+
+      return { valueMap, typeOnlyMap };
+    }
+
+    it('rejects phantom type imports (RouteConfig, Store, FieldConfig, ValidationResult, RenderResult) in both validators', () => {
+      const validateWebCode = webCodeValidator.validateSamreyCode;
+      const phantomCases = [
+        { code: `import type { RouteConfig } from '@samrey/router';`, symbol: 'RouteConfig' },
+        { code: `import { signal, type Store } from '@samrey/reactivity';`, symbol: 'Store' },
+        { code: `import type { FieldConfig, ValidationResult } from '@samrey/forms';`, symbol: 'FieldConfig' },
+        { code: `import type { RenderResult } from '@samrey/testing';`, symbol: 'RenderResult' }
+      ];
+
+      for (const tc of phantomCases) {
+        const aiRes = validateSamreyCode(tc.code);
+        assert.strictEqual(aiRes.valid, false, `@samrey/ai must reject phantom type ${tc.symbol}`);
+        assert.ok(
+          aiRes.errors.some(e => e.message.includes(tc.symbol)),
+          `@samrey/ai error must mention ${tc.symbol}, got: ${JSON.stringify(aiRes.errors)}`
+        );
+
+        const webRes = validateWebCode(tc.code);
+        assert.strictEqual(webRes.isValid, false, `web validator must reject phantom type ${tc.symbol}`);
+        assert.ok(
+          webRes.errors.some(e => e.includes(tc.symbol)),
+          `web validator error must mention ${tc.symbol}, got: ${JSON.stringify(webRes.errors)}`
+        );
+      }
+    });
+
+    it('supports value, type-only, inline type, and multi-statement imports without semicolon bleed in both validators', () => {
+      const validateWebCode = webCodeValidator.validateSamreyCode;
+      const multiStmtTest = `
+        import { describe, it } from 'node:test';
+        import * as assert from 'node:assert/strict';
+        import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
+      `;
+      const inlineAndMixedTypes = `
+        import { signal, type Signal, createStore } from '@samrey/reactivity';
+        import type { RouteRecord } from '@samrey/router';
+        import { getSSRLoaderError, type StaticRouteConfig } from '@samrey/ssr';
+        import type { SamreyErrorCode } from '@samrey/compiler';
+        export function Example() {
+          const count: Signal<number> = signal(0);
+          const store = createStore({ items: [] as string[] });
+          return { count, store };
+        }
+      `;
+
+      for (const sample of [multiStmtTest, inlineAndMixedTypes]) {
+        const aiRes = validateSamreyCode(sample);
+        assert.strictEqual(aiRes.errors.length, 0, `@samrey/ai unexpected errors: ${JSON.stringify(aiRes.errors)}`);
+        assert.strictEqual(aiRes.valid, true);
+
+        const webRes = validateWebCode(sample);
+        assert.strictEqual(webRes.errors.length, 0, `web validator unexpected errors: ${JSON.stringify(webRes.errors)}`);
+        assert.strictEqual(webRes.foreignApis.length, 0, `web validator unexpected foreignApis: ${JSON.stringify(webRes.foreignApis)}`);
+        assert.strictEqual(webRes.isValid, true);
+      }
+    });
+
+    it('allows @samrey/reactivity useContext() and createStore(), and ignores foreign API names in comments/strings in web validator', () => {
+      const validateWebCode = webCodeValidator.validateSamreyCode;
+      const samreyContextAndStore = `
+        import { createContext, useContext, createStore } from '@samrey/reactivity';
+        const ThemeCtx = createContext<'light' | 'dark'>('light');
+        export function Widget() {
+          const theme = useContext(ThemeCtx);
+          const state = createStore({ count: 0 });
+          return { theme, state };
+        }
+      `;
+
+      const aiRes = validateSamreyCode(samreyContextAndStore);
+      assert.strictEqual(aiRes.errors.length, 0, `@samrey/ai flagged valid @samrey/reactivity useContext/createStore: ${JSON.stringify(aiRes.errors)}`);
+      assert.strictEqual(aiRes.valid, true);
+
+      const webRes = validateWebCode(samreyContextAndStore);
+      assert.strictEqual(webRes.errors.length, 0, `web validator errors: ${JSON.stringify(webRes.errors)}`);
+      assert.strictEqual(webRes.foreignApis.length, 0, `web validator flagged @samrey/reactivity createStore/useContext: ${JSON.stringify(webRes.foreignApis)}`);
+      assert.strictEqual(webRes.isValid, true);
+
+      const commentsAndStrings = `
+        import { signal } from '@samrey/reactivity';
+        // Never use useState, createStore, createSignal, or v-if here
+        export const docNote = "Avoid useEffect, BehaviorSubject, and $state";
+        export const ok = signal(1);
+      `;
+      const webCommentRes = validateWebCode(commentsAndStrings);
+      assert.strictEqual(webCommentRes.foreignApis.length, 0, `comments/strings triggered foreignApis: ${JSON.stringify(webCommentRes.foreignApis)}`);
+      assert.strictEqual(webCommentRes.isValid, true);
+    });
+
+    it('accepts conditional accessor expressions returning functions in bind* helpers', () => {
+      const code = `
+        import { bindText, bindAttr } from '@samrey/runtime';
+        export function Label(props: { title: string | (() => string); disabled?: boolean | (() => boolean) }, span: HTMLElement, btn: HTMLButtonElement) {
+          bindText(span, typeof props.title === 'function' ? props.title : () => props.title);
+          bindAttr(btn, 'disabled', typeof props.disabled === 'function' ? props.disabled : () => Boolean(props.disabled));
+          return span;
+        }
+      `;
+      const res = validateSamreyCode(code);
+      assert.strictEqual(res.errors.length, 0, `Conditional function accessors failed: ${JSON.stringify(res.errors)}`);
+      assert.strictEqual(res.valid, true);
+    });
+
+    it('synchronizes @samrey/ai and web validator export/type registries with TypeScript compiler truth across all 13 packages', async () => {
+      const { valueMap, typeOnlyMap } = await collectRealPackageExports();
+      const webExports = webCodeValidator.OFFICIAL_SAMREY_EXPORTS;
+      const webTypes = (webCodeValidator as Record<string, unknown>).OFFICIAL_SAMREY_TYPES as Record<string, string[]> | undefined;
+      assert.ok(webTypes && typeof webTypes === 'object', 'src/lib/codeValidator.ts must export OFFICIAL_SAMREY_TYPES separate from runtime exports');
+
+      for (const p of PACKAGES) {
+        const pkg = `@samrey/${p}`;
+        const realValues = valueMap[pkg];
+        const realTypes = typeOnlyMap[pkg];
+
+        const aiValues = OFFICIAL_PACKAGE_EXPORTS[pkg];
+        const aiTypes = KNOWN_TYPE_EXPORTS[pkg] ?? new Set<string>();
+        assert.ok(aiValues, `Missing OFFICIAL_PACKAGE_EXPORTS entry for ${pkg}`);
+
+        assert.deepStrictEqual(
+          [...aiValues].sort(),
+          [...realValues].sort(),
+          `Mismatch in OFFICIAL_PACKAGE_EXPORTS for ${pkg}`
+        );
+        assert.deepStrictEqual(
+          [...aiTypes].sort(),
+          [...realTypes].sort(),
+          `Mismatch in KNOWN_TYPE_EXPORTS for ${pkg}`
+        );
+
+        assert.ok(webExports[pkg], `Missing OFFICIAL_SAMREY_EXPORTS entry for ${pkg}`);
+        assert.deepStrictEqual(
+          [...webExports[pkg]].sort(),
+          [...realValues].sort(),
+          `Mismatch in OFFICIAL_SAMREY_EXPORTS (runtime values) for ${pkg}`
+        );
+        assert.ok(webTypes[pkg], `Missing OFFICIAL_SAMREY_TYPES entry for ${pkg}`);
+        assert.deepStrictEqual(
+          [...webTypes[pkg]].sort(),
+          [...realTypes].sort(),
+          `Mismatch in OFFICIAL_SAMREY_TYPES for ${pkg}`
+        );
       }
     });
   });

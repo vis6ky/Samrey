@@ -187,24 +187,33 @@ export function sanitizeRedirectUri(rawUri: string | null | undefined, fallback 
   const trimmed = String(rawUri).trim();
   if (!trimmed) return fallback;
 
-  // Strip control characters, tabs, and non-printable characters
-  const stripped = trimmed.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+  // Reject any ASCII/C1 control characters (including CR, LF, TAB, NUL) to prevent HTTP header/response splitting
+  if (/[\u0000-\u001F\u007F-\u009F]/.test(trimmed)) {
+    return fallback;
+  }
 
   // Reject javascript: / data: / vbscript: / entity-obfuscated schemes
-  const safe = sanitizeUri(stripped, { allowProtocolRelative: false });
+  const safe = sanitizeUri(trimmed, { allowProtocolRelative: false });
   if (safe === 'about:blank') return fallback;
 
-  // Normalize HTML entities and %XX sequences before checking leading slashes/backslashes
-  const decodedLeading = safeDecodePercentBytes(decodeHtmlEntitiesDeep(stripped)).replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+  // Normalize HTML entities and %XX sequences before checking leading slashes/backslashes or obfuscated control chars
+  const decodedLeading = safeDecodePercentBytes(decodeHtmlEntitiesDeep(trimmed));
+  if (/[\u0000-\u001F\u007F-\u009F]/.test(decodedLeading)) {
+    return fallback;
+  }
 
-  const isProtoRelative = (val: string) =>
-    val.startsWith('//') ||
-    val.startsWith('/\\') ||
-    val.startsWith('\\\\') ||
-    val.startsWith('\\/') ||
-    /^\/[\\/]/i.test(val);
+  const isProtoRelative = (val: string) => {
+    const compacted = val.replace(/\s+/g, '');
+    return (
+      compacted.startsWith('//') ||
+      compacted.startsWith('/\\') ||
+      compacted.startsWith('\\\\') ||
+      compacted.startsWith('\\/') ||
+      /^\/[\\/]/i.test(compacted)
+    );
+  };
 
-  if (isProtoRelative(stripped) || isProtoRelative(decodedLeading)) {
+  if (isProtoRelative(trimmed) || isProtoRelative(decodedLeading)) {
     return fallback;
   }
 
@@ -334,7 +343,7 @@ function decodeCssEscapesOutsideStrings(css: string): string {
   return out;
 }
 
-function findMatchingParen(str: string, openParenIdx: number): number {
+function findMatchingParenEnd(str: string, openParenIdx: number): { endIdx: number; foundClose: boolean } {
   let depth = 0;
   let quote: string | null = null;
 
@@ -352,11 +361,16 @@ function findMatchingParen(str: string, openParenIdx: number): number {
       depth++;
     } else if (ch === ')') {
       depth--;
-      if (depth === 0) return i;
+      if (depth === 0) return { endIdx: i, foundClose: true };
     }
   }
 
-  return str.length - 1;
+  return { endIdx: str.length, foundClose: false };
+}
+
+function findMatchingParen(str: string, openParenIdx: number): number {
+  const { endIdx, foundClose } = findMatchingParenEnd(str, openParenIdx);
+  return foundClose ? endIdx : str.length - 1;
 }
 
 function findDeclarationEnd(str: string, startIdx: number): number {
@@ -391,15 +405,60 @@ function findDeclarationEnd(str: string, startIdx: number): number {
   return str.length - 1;
 }
 
-function sanitizeCssUrlArgument(rawArg: string): boolean {
-  let trimmed = rawArg.trim();
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-    trimmed = trimmed.slice(1, -1).trim();
+function readCssQuotedStringToken(
+  str: string,
+  openQuoteIdx: number
+): { rawToken: string; inner: string; nextIndex: number; closedValidly: boolean; hitBadNewline: boolean } {
+  const quote = str[openQuoteIdx];
+  let inner = '';
+  let i = openQuoteIdx + 1;
+  let closedValidly = false;
+  let hitBadNewline = false;
+
+  while (i < str.length) {
+    const step = stepCssQuotedChar(str, i, quote);
+    i = step.nextIndex;
+    if (step.quoteClosed) {
+      if (step.consumed === quote) {
+        closedValidly = true;
+      } else {
+        // Unescaped newline (\n, \r, \f) produces a CSS <bad-string-token>
+        hitBadNewline = true;
+      }
+      break;
+    }
+    inner += step.consumed;
   }
+
+  return {
+    rawToken: str.slice(openQuoteIdx, i),
+    inner,
+    nextIndex: i,
+    closedValidly,
+    hitBadNewline
+  };
+}
+
+function sanitizeCssUrlArgument(rawArg: string): boolean {
+  const trimmed = rawArg.trim();
   if (!trimmed) return false;
-  const decoded = decodeCssEscapes(decodeHtmlEntitiesDeep(trimmed));
+
+  let candidate = trimmed;
+  if (trimmed[0] === '"' || trimmed[0] === "'") {
+    const parsed = readCssQuotedStringToken(trimmed, 0);
+    if (parsed.hitBadNewline) return false;
+    const trailing = trimmed.slice(parsed.nextIndex).trim();
+    // Reject unexpected extra quoted/paren/colon fragments after a CSS string URL token
+    if (trailing && !/^[a-zA-Z0-9_-]+(?:\s+[a-zA-Z0-9_-]+)*$/.test(trailing)) {
+      return false;
+    }
+    candidate = parsed.inner.trim();
+  }
+
+  if (!candidate) return false;
+  const decoded = decodeCssEscapes(decodeHtmlEntitiesDeep(candidate));
   const safe = sanitizeUri(decoded, { allowImageDataUri: true });
-  return safe !== 'about:blank';
+  return safe !== 'about:blank' && safe !== '';
 }
 
 function isIdentBoundaryBefore(str: string, idx: number): boolean {
@@ -416,8 +475,8 @@ const CSS_AT_RULE_STICKY_RE = /@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/iy
 const CSS_BAD_PROP_STICKY_RE = /(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/iy;
 const CSS_EXPR_STICKY_RE = /expression\s*\(/iy;
 const CSS_PROGID_STICKY_RE = /progid\s*:/iy;
-const CSS_URL_STICKY_RE = /url\s*\(/iy;
-const CSS_IMAGE_SET_STICKY_RE = /(?:-webkit-)?image-set\s*\(/iy;
+const CSS_URL_FN_STICKY_RE = /(url|src)\s*\(/iy;
+const CSS_IMAGE_LIST_FN_STICKY_RE = /(?:image|(?:-webkit-)?image-set)\s*\(/iy;
 
 function matchStickyAt(re: RegExp, str: string, index: number): RegExpExecArray | null {
   re.lastIndex = index;
@@ -430,26 +489,28 @@ function escapeStyleCloseInCss(css: string): string {
     .replace(/<!--/g, '\\3c !--');
 }
 
-function sanitizeNormalizedCss(str: string): string {
+function sanitizeNormalizedCss(str: string, validateQuotedStringsAsUrls = false, depth = 0): string {
+  if (depth > 16) return '';
   let out = '';
-  let quote: string | null = null;
   let i = 0;
 
   while (i < str.length) {
     const ch = str[i];
 
-    if (quote) {
-      const step = stepCssQuotedChar(str, i, quote);
-      out += step.consumed;
-      if (step.quoteClosed) quote = null;
-      i = step.nextIndex;
-      continue;
-    }
-
     if (ch === '"' || ch === "'") {
-      quote = ch;
-      out += ch;
-      i++;
+      const token = readCssQuotedStringToken(str, i);
+      if (validateQuotedStringsAsUrls) {
+        if (token.hitBadNewline) {
+          // Neutralize <bad-string-token>, preserve trailing newline outside quotes so subsequent args keep tokenizing cleanly
+          const newlineChar = token.rawToken.slice(-1);
+          out += '""' + (newlineChar === '\n' || newlineChar === '\r' || newlineChar === '\f' ? newlineChar : '');
+        } else {
+          out += sanitizeCssUrlArgument(token.rawToken) ? token.rawToken : '""';
+        }
+      } else {
+        out += token.rawToken;
+      }
+      i = token.nextIndex;
       continue;
     }
 
@@ -481,27 +542,27 @@ function sanitizeNormalizedCss(str: string): string {
         continue;
       }
 
-      const urlMatch = matchStickyAt(CSS_URL_STICKY_RE, str, i);
+      const urlMatch = matchStickyAt(CSS_URL_FN_STICKY_RE, str, i);
       if (urlMatch) {
+        const fnName = urlMatch[1].toLowerCase();
         const openIdx = i + urlMatch[0].length - 1;
-        const closeIdx = findMatchingParen(str, openIdx);
-        const inner = str.slice(openIdx + 1, closeIdx);
-        out += sanitizeCssUrlArgument(inner) ? str.slice(i, closeIdx + 1) : 'url("")';
-        i = closeIdx + 1;
+        const { endIdx, foundClose } = findMatchingParenEnd(str, openIdx);
+        const inner = str.slice(openIdx + 1, endIdx);
+        out += sanitizeCssUrlArgument(inner)
+          ? str.slice(i, foundClose ? endIdx + 1 : endIdx)
+          : `${fnName}("")`;
+        i = foundClose ? endIdx + 1 : endIdx;
         continue;
       }
 
-      const imgSetMatch = matchStickyAt(CSS_IMAGE_SET_STICKY_RE, str, i);
-      if (imgSetMatch) {
-        const openIdx = i + imgSetMatch[0].length - 1;
-        const closeIdx = findMatchingParen(str, openIdx);
-        const inner = str.slice(openIdx + 1, closeIdx);
-        let sanitizedInner = sanitizeNormalizedCss(inner);
-        sanitizedInner = sanitizedInner.replace(/(["'])((?:\\.|(?!\1)[^\\])*)\1/g, (qFull, _q, qVal: string) => {
-          return sanitizeCssUrlArgument(qVal) ? qFull : '""';
-        });
+      const imgListMatch = matchStickyAt(CSS_IMAGE_LIST_FN_STICKY_RE, str, i);
+      if (imgListMatch) {
+        const openIdx = i + imgListMatch[0].length - 1;
+        const { endIdx, foundClose } = findMatchingParenEnd(str, openIdx);
+        const inner = str.slice(openIdx + 1, endIdx);
+        const sanitizedInner = sanitizeNormalizedCss(inner, true, depth + 1);
         out += str.slice(i, openIdx + 1) + sanitizedInner + ')';
-        i = closeIdx + 1;
+        i = foundClose ? endIdx + 1 : endIdx;
         continue;
       }
     }
@@ -510,7 +571,7 @@ function sanitizeNormalizedCss(str: string): string {
     i++;
   }
 
-  return escapeStyleCloseInCss(out);
+  return depth === 0 ? escapeStyleCloseInCss(out) : out;
 }
 
 /**
@@ -920,6 +981,7 @@ const RAWTEXT_STRIP_TAGS: ReadonlySet<string> = new Set([
   'script',
   'style',
   'title',
+  'textarea',
   'xmp',
   'noembed',
   'noframes',
@@ -927,6 +989,16 @@ const RAWTEXT_STRIP_TAGS: ReadonlySet<string> = new Set([
   'iframe',
   'plaintext'
 ]);
+
+const HTML_FOREIGN_BREAKOUT_TAGS: ReadonlySet<string> = new Set([
+  'b', 'big', 'blockquote', 'body', 'br', 'center', 'code', 'dd', 'div', 'dl', 'dt',
+  'em', 'embed', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'i', 'img', 'li',
+  'listing', 'menu', 'meta', 'nobr', 'ol', 'p', 'pre', 'ruby', 's', 'small', 'span',
+  'strong', 'strike', 'sub', 'sup', 'table', 'tt', 'u', 'ul', 'var'
+]);
+
+const SVG_HTML_INTEGRATION_TAGS: ReadonlySet<string> = new Set(['desc']);
+const MATH_TEXT_INTEGRATION_TAGS: ReadonlySet<string> = new Set(['mi', 'mo', 'mn', 'ms', 'mtext']);
 
 const VOID_HTML_TAGS: ReadonlySet<string> = new Set([
   'area',
@@ -1141,6 +1213,24 @@ function sanitizeAttributeList(
   return parts.length > 0 ? ' ' + parts.join(' ') : '';
 }
 
+function findEndTagCloseGt(html: string, startAfterName: number): number {
+  const len = html.length;
+  let quote: string | null = null;
+  for (let k = startAfterName; k < len; k++) {
+    const ch = html[k];
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === '>') {
+      return k;
+    }
+  }
+  return -1;
+}
+
 function findRawtextClose(html: string, start: number, tagLower: string): number {
   const len = html.length;
   let i = start;
@@ -1153,7 +1243,7 @@ function findRawtextClose(html: string, start: number, tagLower: string): number
       html.slice(closeStart + 2, afterNameIdx).toLowerCase() === tagLower &&
       (afterNameIdx === len || /[\s/>]/.test(html[afterNameIdx]))
     ) {
-      const gt = html.indexOf('>', afterNameIdx);
+      const gt = findEndTagCloseGt(html, afterNameIdx);
       return gt === -1 ? len : gt + 1;
     }
     i = closeStart + 2;
@@ -1172,9 +1262,13 @@ function findStrippedElementEnd(html: string, start: number, tagLower: string): 
 
     if (html.startsWith('</', lt)) {
       let j = lt + 2;
-      while (j < len && !/[\s>]/.test(html[j])) j++;
+      while (j < len && !/[\s/>]/.test(html[j]) && html[j] !== '<') j++;
+      if (j < len && html[j] === '<') {
+        i = j;
+        continue;
+      }
       const closeName = html.slice(lt + 2, j).toLowerCase();
-      const gt = html.indexOf('>', j);
+      const gt = findEndTagCloseGt(html, j);
       i = gt === -1 ? len : gt + 1;
       if (closeName === tagLower) {
         depth--;
@@ -1209,6 +1303,12 @@ function findCommentEnd(html: string, startAfterBangDash: number): number {
   return len;
 }
 
+interface ForeignFrame {
+  tag: string;
+  namespace: 'svg' | 'math';
+  htmlIntegration: boolean;
+}
+
 function sanitizeHtmlWithTokenizer(
   html: string,
   options: { dangerousTags: ReadonlySet<string>; preserveCompilerSlots: boolean; preserveAllFormAttrs: boolean }
@@ -1216,7 +1316,21 @@ function sanitizeHtmlWithTokenizer(
   const len = html.length;
   let out = '';
   let i = 0;
-  const foreignStack: ('svg' | 'math')[] = [];
+  const foreignStack: ForeignFrame[] = [];
+
+  const isForeignContext = () =>
+    foreignStack.length > 0 && !foreignStack[foreignStack.length - 1].htmlIntegration;
+
+  const isHtmlForeignBreakout = (tagLower: string, attrs: ParsedAttr[]): boolean => {
+    if (HTML_FOREIGN_BREAKOUT_TAGS.has(tagLower)) return true;
+    if (tagLower === 'font') {
+      return attrs.some((a) => {
+        const name = a.name.toLowerCase();
+        return name === 'color' || name === 'face' || name === 'size';
+      });
+    }
+    return false;
+  };
 
   while (i < len) {
     const lt = html.indexOf('<', i);
@@ -1256,22 +1370,24 @@ function sanitizeHtmlWithTokenizer(
     // Closing tags
     if (html.startsWith('</', i)) {
       let j = i + 2;
-      while (j < len && !/[\s>]/.test(html[j]) && html[j] !== '<') j++;
+      while (j < len && !/[\s/>]/.test(html[j]) && html[j] !== '<') j++;
       if (j < len && html[j] === '<') {
         out += '&lt;' + html.slice(i + 1, j);
         i = j;
         continue;
       }
       const closeName = html.slice(i + 2, j).toLowerCase();
-      const gt = html.indexOf('>', j);
+      const gt = findEndTagCloseGt(html, j);
       i = gt === -1 ? len : gt + 1;
 
       if (!closeName || !/^[a-zA-Z][a-zA-Z0-9:-]*$/.test(closeName)) continue;
       if (options.dangerousTags.has(closeName)) continue;
 
-      if (closeName === 'svg' || closeName === 'math') {
-        const idx = foreignStack.lastIndexOf(closeName);
-        if (idx !== -1) foreignStack.splice(idx, 1);
+      for (let k = foreignStack.length - 1; k >= 0; k--) {
+        if (foreignStack[k].tag === closeName) {
+          foreignStack.splice(k);
+          break;
+        }
       }
       out += `</${closeName}>`;
       continue;
@@ -1294,8 +1410,16 @@ function sanitizeHtmlWithTokenizer(
     }
 
     const lowerTag = parsed.tagName.toLowerCase();
-    const inForeign = foreignStack.length > 0;
     i = parsed.nextIndex;
+
+    // HTML5 §13.2.6.5: HTML breakout tags inside non-integration foreign content pop foreign scope
+    if (isForeignContext() && isHtmlForeignBreakout(lowerTag, parsed.attrs)) {
+      while (foreignStack.length > 0 && !foreignStack[foreignStack.length - 1].htmlIntegration) {
+        foreignStack.pop();
+      }
+    }
+
+    const inForeign = isForeignContext();
 
     if (options.dangerousTags.has(lowerTag)) {
       if (lowerTag === 'plaintext') {
@@ -1305,7 +1429,7 @@ function sanitizeHtmlWithTokenizer(
       if (VOID_HTML_TAGS.has(lowerTag) || (inForeign && parsed.selfClosing)) {
         continue;
       }
-      if (RAWTEXT_STRIP_TAGS.has(lowerTag)) {
+      if (RAWTEXT_STRIP_TAGS.has(lowerTag) && !(lowerTag === 'textarea' && inForeign)) {
         i = findRawtextClose(html, i, lowerTag);
       } else {
         i = findStrippedElementEnd(html, i, lowerTag);
@@ -1314,8 +1438,18 @@ function sanitizeHtmlWithTokenizer(
     }
 
     const isForeignRoot = lowerTag === 'svg' || lowerTag === 'math';
-    if (!parsed.selfClosing && isForeignRoot) {
-      foreignStack.push(lowerTag);
+    if (!parsed.selfClosing) {
+      if (isForeignRoot) {
+        foreignStack.push({ tag: lowerTag, namespace: lowerTag as 'svg' | 'math', htmlIntegration: false });
+      } else if (inForeign) {
+        const currentNs = foreignStack[foreignStack.length - 1].namespace;
+        const isIntegration =
+          (currentNs === 'svg' && SVG_HTML_INTEGRATION_TAGS.has(lowerTag)) ||
+          (currentNs === 'math' && MATH_TEXT_INTEGRATION_TAGS.has(lowerTag));
+        if (isIntegration) {
+          foreignStack.push({ tag: lowerTag, namespace: currentNs, htmlIntegration: true });
+        }
+      }
     }
 
     // RCDATA textarea when preserved in template mode: escape body text up to </textarea>
@@ -1325,8 +1459,9 @@ function sanitizeHtmlWithTokenizer(
 
     if (lowerTag === 'textarea' && (!parsed.selfClosing || !inForeign)) {
       const closeEnd = findRawtextClose(html, i, 'textarea');
-      const closeTagIdx = html.slice(i, closeEnd).toLowerCase().lastIndexOf('</textarea');
-      const innerRaw = closeTagIdx === -1 ? html.slice(i, closeEnd) : html.slice(i, i + closeTagIdx);
+      const sliceToClose = html.slice(i, closeEnd);
+      const closeTagMatch = /<\/textarea(?:\s[^>]*)?>?$/i.exec(sliceToClose);
+      const innerRaw = closeTagMatch ? sliceToClose.slice(0, closeTagMatch.index) : sliceToClose;
       const safeTextareaText = innerRaw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       out += `<${parsed.tagName}${serializedAttrs}>${safeTextareaText}</textarea>`;
       i = closeEnd;

@@ -4,7 +4,7 @@
  */
 
 import { signal, ReadonlySignal } from '@samrey/reactivity';
-import { getSSRContext } from './context.js';
+import { getSSRContext, getSSRLoaderError } from './context.js';
 import { deserializeHydrationState } from './serializer.js';
 
 export interface ServerDataOptions<T> {
@@ -80,13 +80,47 @@ export function createServerData<T>(
       ];
     }
 
+    const existingErr = getSSRLoaderError(ssrContext, key);
+    if (existingErr) {
+      // Pass 2 after loader failure: reuse settled error without re-invoking loader
+      const dataSig = signal<T | undefined>(options.initialValue);
+      const loadingSig = signal(false);
+      const errorSig = signal<Error | null>(existingErr);
+
+      return [
+        dataSig,
+        {
+          loading: loadingSig,
+          error: errorSig,
+          refetch: async () => undefined,
+          mutate: (val: T) => dataSig.set(val)
+        }
+      ];
+    }
+
+    if (ssrContext.loaders.has(key)) {
+      const dataSig = signal<T | undefined>(options.initialValue);
+      const loadingSig = signal(true);
+      const errorSig = signal<Error | null>(null);
+      return [
+        dataSig,
+        {
+          loading: loadingSig,
+          error: errorSig,
+          refetch: async () => undefined,
+          mutate: (val: T) => dataSig.set(val)
+        }
+      ];
+    }
+
     const initialVal = options.initialValue;
     const dataSig = signal<T | undefined>(initialVal);
     const loadingSig = signal(true);
     const errorSig = signal<Error | null>(null);
 
     // Register loader promise in the request context (Pass 1)
-    const promise = loader()
+    const promise = Promise.resolve()
+      .then(() => loader())
       .then((res) => {
         dataSig.set(res);
         loadingSig.set(false);
@@ -100,6 +134,7 @@ export function createServerData<T>(
         if (options.onError) options.onError(errorObj);
         throw errorObj;
       });
+    promise.catch(() => {});
 
     ssrContext.registerLoader(key, promise);
 

@@ -5,6 +5,7 @@ import {
   samreyPlugin,
   auditSource,
   runCLI,
+  runAuditCommand,
   generateStarterProject,
   validateProjectName,
   scaffoldArtifact
@@ -436,5 +437,119 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
     assert.ok('ssg-build.ts' in ssgFiles);
     assert.ok(!ssgFiles['ssg-build.ts'].includes('renderRoute:'), 'SSG starter must not use invalid renderRoute API');
     assert.ok(ssgFiles['ssg-build.ts'].includes('generateStaticSite(\n    ['), 'SSG starter must pass StaticRouteConfig[] array');
+  });
+
+  it('Batch 1 regression: blocks internal-symlink dotfiles, untrusted Host headers, error path leakage, unsafe SVG headers, and read stream crashes in dev server', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const { Writable } = await import('node:stream');
+    const { createNativeDevHandler } = await import('../src/commands/dev.js');
+
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-dev-b1-'));
+    try {
+      fs.writeFileSync(path.join(tmpRoot, '.env'), 'SECRET=topsecret');
+      fs.mkdirSync(path.join(tmpRoot, 'sub'), { recursive: true });
+      fs.symlinkSync('../.env', path.join(tmpRoot, 'sub', 'public'));
+      fs.writeFileSync(path.join(tmpRoot, 'index.html'), '<h1>Home</h1>');
+      fs.writeFileSync(path.join(tmpRoot, 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+      fs.writeFileSync(path.join(tmpRoot, 'broken.samrey'), '<template><div>${unclosed</template>');
+      fs.writeFileSync(path.join(tmpRoot, 'unreadable.txt'), 'secret');
+      fs.chmodSync(path.join(tmpRoot, 'unreadable.txt'), 0o000);
+
+      const handler = createNativeDevHandler(tmpRoot);
+      const invoke = (url: string, headers: Record<string, string> = { host: 'localhost:3000' }) =>
+        new Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }>((resolve, reject) => {
+          const chunks: Buffer[] = [];
+          const respHeaders: Record<string, string | string[] | undefined> = {};
+          let status = 200;
+          let resolved = false;
+          const res = new Writable({
+            write(chunk, _enc, cb) {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+              cb();
+            }
+          }) as any;
+          res.writeHead = (code: number, hdrs: Record<string, string | string[]> = {}) => {
+            status = code;
+            for (const [k, v] of Object.entries(hdrs)) respHeaders[k.toLowerCase()] = v;
+            return res;
+          };
+          const finishResolve = () => {
+            if (resolved) return;
+            resolved = true;
+            resolve({ status, headers: respHeaders, body: Buffer.concat(chunks).toString('utf-8') });
+          };
+          res.on('finish', finishResolve);
+          res.on('close', finishResolve);
+          Promise.resolve(handler({ url, method: 'GET', headers } as any, res)).catch(reject);
+        });
+
+      // 1. Internal symlink to .env must be blocked (403)
+      const internalDotResp = await invoke('/sub/public');
+      assert.equal(internalDotResp.status, 403);
+      assert.ok(!internalDotResp.body.includes('SECRET'));
+
+      // 2. Untrusted Host header (DNS rebinding) must be rejected (403)
+      const rebindResp = await invoke('/index.html', { host: 'evil.com:3000' });
+      assert.equal(rebindResp.status, 403);
+
+      // 3. SVG must include X-Content-Type-Options: nosniff + sandboxed CSP
+      const svgResp = await invoke('/icon.svg');
+      assert.equal(svgResp.status, 200);
+      assert.equal(svgResp.headers['x-content-type-options'], 'nosniff');
+      assert.ok(String(svgResp.headers['content-security-policy'] || '').includes("default-src 'none'"));
+
+      // 4. 500 error responses must not leak full workspace filesystem path
+      const errResp = await invoke('/broken.samrey');
+      assert.equal(errResp.status, 500);
+      assert.ok(!errResp.body.includes(tmpRoot), `500 response leaked tmpRoot filesystem path: ${errResp.body}`);
+
+      // 5. Unreadable file stream error must be handled gracefully with 500/403 instead of unhandled crash
+      const unreadableResp = await invoke('/unreadable.txt');
+      assert.ok(unreadableResp.status === 403 || unreadableResp.status === 500);
+    } finally {
+      try { fs.chmodSync(path.join(tmpRoot, 'unreadable.txt'), 0o644); } catch {}
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('parses --ssr false cleanly in CLI build and handles audit glob anchoring & zero-segment ** patterns', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-cli-b3-'));
+    try {
+      const ssrFalseRes = await runCLI(['build', '--ssr', 'false', '--dry-run'], { cwd: tmpRoot });
+      assert.equal(ssrFalseRes.success, true);
+      assert.ok(!ssrFalseRes.message.includes('(SSR Bundle)'), `Expected non-SSR build, got: ${ssrFalseRes.message}`);
+
+      // Root file a.ts should match **/*.ts; nested/src/b.ts must NOT match anchored src/*.ts; f1.ts matches f?.ts
+      fs.writeFileSync(path.join(tmpRoot, 'a.ts'), 'const x = `<img src="x" onerror="alert(1)">`;\n');
+      fs.mkdirSync(path.join(tmpRoot, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpRoot, 'src', 'a.ts'), 'const x = `<img src="x" onerror="alert(1)">`;\n');
+      fs.mkdirSync(path.join(tmpRoot, 'nested', 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpRoot, 'nested', 'src', 'b.ts'), 'const x = `<img src="x" onerror="alert(1)">`;\n');
+      fs.writeFileSync(path.join(tmpRoot, 'f1.ts'), 'const x = `<img src="x" onerror="alert(1)">`;\n');
+
+      const auditRes = await runAuditCommand({
+        cwd: tmpRoot,
+        ignore: ['a.ts', 'src/**/a.ts', 'src/*.ts', 'f?.ts'],
+        strict: true
+      });
+      // Only nested/src/b.ts should be audited and trigger failure (not src/*.ts-matched)
+      assert.equal(auditRes.exitCode, 1);
+      assert.equal(auditRes.data?.filesScanned, 1);
+      assert.ok(auditRes.message.includes('nested/src/b.ts'));
+      assert.ok(!auditRes.message.includes('f1.ts'));
+
+      const zeroGlobRes = await runAuditCommand({
+        cwd: tmpRoot,
+        ignore: ['**/*.ts']
+      });
+      assert.equal(zeroGlobRes.exitCode, 0, `Expected **/*.ts to ignore root a.ts, got: ${zeroGlobRes.message}`);
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
   });
 });

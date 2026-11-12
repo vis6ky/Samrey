@@ -145,9 +145,11 @@ export interface TemplateFactory<S extends string = string> {
 
 const VALID_REF_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
+type PathStep = number | 'content';
+
 interface RefDescriptor {
   name: string;
-  path: number[];
+  path: PathStep[];
 }
 
 function getRefAttr(el: any): string | null {
@@ -178,7 +180,7 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
   const descriptors: RefDescriptor[] = [];
   const seenRefs = new Set<string>();
 
-  function collectFromNode(node: Node, path: number[]): void {
+  function collectFromNode(node: Node, path: PathStep[]): void {
     if (node.nodeType === 1) {
       const el = node as HTMLElement;
       const refName = getRefAttr(el);
@@ -200,6 +202,13 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
         }
         seenRefs.add(refName);
         descriptors.push({ name: refName, path });
+      }
+
+      const templateContent = (el as unknown as { content?: DocumentFragment }).content;
+      if (templateContent && templateContent.childNodes && templateContent.childNodes.length > 0) {
+        for (let i = 0; i < templateContent.childNodes.length; i++) {
+          collectFromNode(templateContent.childNodes[i], path.concat('content', i));
+        }
       }
     }
 
@@ -224,6 +233,12 @@ function extractRefDescriptors(content: DocumentFragment): RefDescriptor[] {
         }
         seenRefs.add(refName);
         descriptors.push({ name: refName, path: [] });
+      }
+      const rootContent = (el as unknown as { content?: DocumentFragment }).content;
+      if (rootContent && rootContent.childNodes && rootContent.childNodes.length > 0) {
+        for (let i = 0; i < rootContent.childNodes.length; i++) {
+          collectFromNode(rootContent.childNodes[i], ['content', i]);
+        }
       }
     }
     const children = rootNode.childNodes;
@@ -453,8 +468,16 @@ export function template<S extends string = string>(htmlString: S): TemplateFact
         let curr: any = root;
         const path = desc.path;
         for (let p = 0; p < path.length; p++) {
-          if (curr && curr.childNodes) {
-            curr = curr.childNodes[path[p]];
+          const step = path[p];
+          if (step === 'content') {
+            if (curr && curr.content) {
+              curr = curr.content;
+            } else {
+              curr = undefined;
+              break;
+            }
+          } else if (curr && curr.childNodes) {
+            curr = curr.childNodes[step];
           } else {
             curr = undefined;
             break;

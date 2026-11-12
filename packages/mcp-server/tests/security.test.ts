@@ -864,4 +864,71 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
       assert.equal(resErrorNotification, null, 'Must not return error response for notification');
     });
   });
+
+  describe('g. Batch 1 regression: glob+symlink execution, init/route tool hardening, and atomic safeWriteFile checks', () => {
+    it('rejects node --test and npm test glob patterns resolving through symlinks outside project root', async () => {
+      const outsideTestDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-mcp-glob-out-'));
+      const escapeLink = path.join(tempRoot, 'tests', 'escape-glob-link');
+      try {
+        fs.mkdirSync(path.join(tempRoot, 'tests'), { recursive: true });
+        fs.writeFileSync(path.join(outsideTestDir, 'pwn.test.mjs'), 'console.log("PWNED");\n');
+        fs.symlinkSync(outsideTestDir, escapeLink);
+
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', path.join(escapeLink, '*.test.mjs')], tempRoot),
+          /Security Exception|symlink|escapes|glob/i
+        );
+
+        await assert.rejects(
+          () => executeSafeCommand('npm', ['test', path.join(escapeLink, '*.test.mjs')], tempRoot),
+          /Security Exception|symlink|escapes|glob/i
+        );
+      } finally {
+        try { fs.unlinkSync(escapeLink); } catch {}
+        fs.rmSync(outsideTestDir, { recursive: true, force: true });
+      }
+    });
+
+    it('blocks symlink writes in samrey_init_project and safely serializes args.path in samrey_generate_route', async () => {
+      const initRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-mcp-init-'));
+      const outsideInitDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-mcp-init-out-'));
+      try {
+        fs.symlinkSync(outsideInitDir, path.join(initRoot, '.cursor'));
+        const initRes = await handleToolCall(
+          'samrey_init_project',
+          { force: true },
+          { projectRoot: initRoot, allowExec: false }
+        );
+        assert.equal(initRes.isError, true, 'samrey_init_project must fail if target directory is an escaping symlink');
+        assert.equal(
+          fs.existsSync(path.join(outsideInitDir, 'rules', 'samrey.mdc')),
+          false,
+          'samrey_init_project must never write outside projectRoot via symlink'
+        );
+
+        // Route snippet generation must neutralize/escape route path injection
+        const maliciousPath = "x', evil: (() => { throw new Error('pwn'); })(), y: '";
+        const routeRes = await handleToolCall(
+          'samrey_generate_route',
+          { path: maliciousPath, componentName: 'Home' },
+          { projectRoot: initRoot, allowExec: false }
+        );
+        const routeText = routeRes.content[0]?.text || '';
+        assert.ok(!routeText.includes("evil: ("), `samrey_generate_route must safely escape path literal: ${routeText}`);
+      } finally {
+        fs.rmSync(initRoot, { recursive: true, force: true });
+        fs.rmSync(outsideInitDir, { recursive: true, force: true });
+      }
+    });
+
+    it('rejects safeWriteFile(".", ...) cleanly without writing unexpected sibling paths', () => {
+      const isolatedRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-mcp-dot-')));
+      try {
+        assert.throws(() => safeWriteFile('.', 'oops', isolatedRoot, false), /Security Exception/i);
+        assert.deepEqual(fs.readdirSync(isolatedRoot), []);
+      } finally {
+        fs.rmSync(isolatedRoot, { recursive: true, force: true });
+      }
+    });
+  });
 });

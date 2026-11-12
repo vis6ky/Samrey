@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getDelegatedEventScript, replayCapturedEvents, hydrate } from '../src/index.js';
+import { signal } from '@samrey/reactivity';
+import { el } from '@samrey/runtime';
+import { getDelegatedEventScript, replayCapturedEvents, hydrate, deserializeHydrationState } from '../src/index.js';
 
 describe('@samrey/ssr - Client Hydration & Event Replay', () => {
   it('generates ultra-compact pre-hydration event listener script', () => {
@@ -331,5 +333,167 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
     assert.equal(ssrP.textContent, 'Hi Bob');
 
     res.dispose();
+  });
+
+  it('snapshots __SAMREY_EVENTS__ before dispatch, tolerates DOM-clobbered globals & forms, and creates text nodes in headless mode', () => {
+    const script = getDelegatedEventScript(['click']);
+    assert.ok(script.includes('Array.isArray(window.__SAMREY_EVENTS__)'), 'Delegated script must check Array.isArray');
+
+    const prevWindow = (globalThis as any).window;
+    const prevDocument = (globalThis as any).document;
+    try {
+      // 1. Re-entrant replayCapturedEvents must not double-dispatch queued events, and DOM-clobbered non-array returns 0
+      let dispatchCount = 0;
+      const target = {
+        dispatchEvent: () => {
+          dispatchCount++;
+          // Re-entrant call during dispatch must see empty queue
+          assert.equal(replayCapturedEvents(), 0);
+          return true;
+        }
+      };
+      (globalThis as any).window = { __SAMREY_EVENTS__: [{ type: 'click', target }] };
+      const replayed = replayCapturedEvents();
+      assert.equal(replayed, 1);
+      assert.equal(dispatchCount, 1);
+
+      (globalThis as any).window = { __SAMREY_EVENTS__: { length: 2 } };
+      assert.equal(replayCapturedEvents(), 0);
+
+      // 2. DOM-clobbered <form id="__SAMREY_STATE__"> before real state <script>
+      const realScript: any = {
+        tagName: 'SCRIPT',
+        nodeName: 'SCRIPT',
+        getAttribute: (name: string) => (name === 'type' ? 'application/json' : name === 'id' ? '__SAMREY_STATE__' : null),
+        textContent: '{"user":"alice"}'
+      };
+      const clobberForm: any = {
+        tagName: 'FORM',
+        nodeName: { value: 'SCRIPT' },
+        getAttribute: { value: 'application/json' },
+        textContent: '{"evil":true}'
+      };
+      (globalThis as any).document = {
+        getElementById: () => clobberForm,
+        querySelector: () => realScript,
+        querySelectorAll: () => [realScript]
+      };
+      // If form returned first in querySelector, filter must skip non-script tags and pick realScript
+      (globalThis as any).document.querySelector = () => clobberForm;
+      (globalThis as any).document.querySelectorAll = () => [clobberForm, realScript];
+      const state = deserializeHydrationState<{ user?: string; evil?: boolean }>();
+      assert.equal(state?.user, 'alice');
+      assert.equal(state?.evil, undefined);
+
+      // 3. Headless hydration: leading empty reactive text child before <span> must produce nodeType 3, never clone <span>
+      delete (globalThis as any).document;
+      const val = signal('');
+      const makeSpan = () => ({
+        nodeType: 1,
+        tagName: 'SPAN',
+        nodeName: 'SPAN',
+        childNodes: [] as any[],
+        nextSibling: null as any,
+        previousSibling: null as any,
+        parentNode: null as any,
+        cloneNode: () => ({ nodeType: 1, tagName: 'SPAN', nodeName: 'SPAN', textContent: '' })
+      });
+      const span = makeSpan();
+      const rootChildren: any[] = [span];
+      const divSsr: any = {
+        nodeType: 1,
+        tagName: 'DIV',
+        nodeName: 'DIV',
+        childNodes: rootChildren,
+        get firstChild() { return rootChildren[0] ?? null; },
+        appendChild: (n: any) => { rootChildren.push(n); n.parentNode = divSsr; return n; },
+        insertBefore: (n: any, ref: any) => {
+          const i = ref ? rootChildren.indexOf(ref) : -1;
+          if (i === -1) rootChildren.push(n);
+          else rootChildren.splice(i, 0, n);
+          n.parentNode = divSsr;
+          return n;
+        },
+        replaceChildren: (...nodes: any[]) => { rootChildren.splice(0, rootChildren.length, ...nodes); }
+      };
+      span.parentNode = divSsr;
+      const container: any = {
+        nodeType: 1,
+        childNodes: [divSsr],
+        get firstChild() { return divSsr; },
+        replaceChildren: (...nodes: any[]) => { container.childNodes = nodes; }
+      };
+      let mismatchCount = 0;
+      const hydrated = hydrate(
+        () => el('div', null, () => val.value, el('span', null)) as unknown as Node,
+        container,
+        { onMismatch: () => { mismatchCount++; } }
+      );
+      assert.equal(mismatchCount, 0);
+      const nonCommentChildren = rootChildren.filter((n) => n.nodeType !== 8);
+      assert.equal(nonCommentChildren.length, 2);
+      assert.equal(nonCommentChildren[0]?.nodeType, 3, `Expected inserted nodeType 3, got nodeType=${nonCommentChildren[0]?.nodeType} tagName=${nonCommentChildren[0]?.tagName}`);
+      assert.equal(nonCommentChildren[0]?.tagName, undefined);
+      val.value = 'hi';
+      assert.equal(nonCommentChildren[0]?.textContent, 'hi');
+      hydrated.dispose();
+
+      // 4. Multi-split Text.splitText in headless DOM when server text merges 3 client text nodes
+      const textNode: any = {
+        nodeType: 3,
+        nodeName: '#text',
+        textContent: 'ABC',
+        parentNode: null as any,
+        nextSibling: null as any,
+        previousSibling: null as any,
+        cloneNode: () => ({ nodeType: 3, nodeName: '#text', textContent: '', parentNode: null, nextSibling: null, previousSibling: null })
+      };
+      const pChildren: any[] = [textNode];
+      const syncSiblings = () => {
+        for (let i = 0; i < pChildren.length; i++) {
+          pChildren[i].previousSibling = i > 0 ? pChildren[i - 1] : null;
+          pChildren[i].nextSibling = i + 1 < pChildren.length ? pChildren[i + 1] : null;
+        }
+      };
+      const pSsr: any = {
+        nodeType: 1,
+        tagName: 'P',
+        nodeName: 'P',
+        childNodes: pChildren,
+        get firstChild() { return pChildren[0] ?? null; },
+        insertBefore: (n: any, ref: any) => {
+          const idx = ref ? pChildren.indexOf(ref) : -1;
+          if (idx === -1) pChildren.push(n);
+          else pChildren.splice(idx, 0, n);
+          n.parentNode = pSsr;
+          syncSiblings();
+          return n;
+        },
+        appendChild: (n: any) => pSsr.insertBefore(n, null),
+        replaceChildren: (...nodes: any[]) => { pChildren.splice(0, pChildren.length, ...nodes); syncSiblings(); }
+      };
+      textNode.parentNode = pSsr;
+      let pMismatch = 0;
+      const pContainer: any = { nodeType: 1, childNodes: [pSsr], replaceChildren: () => {} };
+      const pHyd = hydrate(
+        () => ({
+          nodeType: 1,
+          tagName: 'P',
+          childNodes: [
+            { nodeType: 3, textContent: 'A' },
+            { nodeType: 3, textContent: 'B' },
+            { nodeType: 3, textContent: 'C' }
+          ]
+        }) as unknown as Node,
+        pContainer,
+        { onMismatch: () => { pMismatch++; } }
+      );
+      assert.equal(pMismatch, 0);
+      assert.equal(pChildren.map((n) => n.textContent).join('|'), 'A|B|C');
+      pHyd.dispose();
+    } finally {
+      (globalThis as any).window = prevWindow;
+      (globalThis as any).document = prevDocument;
+    }
   });
 });

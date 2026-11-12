@@ -18,8 +18,19 @@ describe('Phase 24 — NPM Artifact Certification Gate', () => {
   ];
 
   it(`1. Packs all ${PACKAGES.length} packages and verifies SHA256 checksums`, () => {
+    const cliBundlePath = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');
+    const createdPlaceholder = !fs.existsSync(cliBundlePath);
+    if (createdPlaceholder) {
+      fs.writeFileSync(cliBundlePath, '#!/usr/bin/env node\n// pre-existing bundle sentinel\n', 'utf8');
+    }
+
     const tarballDir = path.join('/tmp', 'samrey-p24-tarballs');
     const packed = packAllPackages(tarballDir);
+
+    assert.ok(fs.existsSync(cliBundlePath), 'packAllPackages must preserve pre-existing samrey.bundle.js');
+    if (createdPlaceholder) {
+      try { fs.unlinkSync(cliBundlePath); } catch {}
+    }
 
     assert.strictEqual(packed.length, PACKAGES.length, `Must produce ${PACKAGES.length} tarballs`);
     for (const p of packed) {

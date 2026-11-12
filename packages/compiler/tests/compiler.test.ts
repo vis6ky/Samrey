@@ -6,8 +6,11 @@ import {
   classifyBindingContext, 
   lintA11y, 
   TemplateParser,
-  SamreyCompilerError
+  SamreyCompilerError,
+  isStaticSubtree
 } from '../src/index.js';
+import { signal } from '@samrey/reactivity';
+import { template, bindText, bindAttr } from '@samrey/runtime';
 
 describe('@samrey/compiler', () => {
   it('classifies security contexts accurately', () => {
@@ -231,5 +234,48 @@ describe('@samrey/compiler', () => {
     const noHelperImportLine = noHelperDirect.split('\n').find((l) => l.startsWith('import ')) || '';
     assert.ok(!/\bon\b/.test(noHelperImportLine));
     assert.ok(!noHelperImportLine.includes('bindText'));
+  });
+
+  it('Batch 2 regression: compiles <foreignObject>, <template> contents, and reactive {count()} expressions cleanly', () => {
+    // 1. <foreignObject> inside <svg> re-enters HTML content rules & accepts case-insensitive HTML/SVG closing
+    const svgForeign = compileTemplate('<svg><foreignObject><div /><span>{count()}</span></foreignobject></svg>');
+    assert.equal(svgForeign.diagnostics.length, 0);
+    const foreignHtml = svgForeign.templates[0].staticHtml;
+    assert.ok(foreignHtml.includes('<div></div><span><!-- dynamic-slot --></span>'), `Must expand non-void HTML <div /> inside <foreignObject>: ${foreignHtml}`);
+    assert.ok(!foreignHtml.includes('<div />'));
+    assert.ok(svgForeign.generatedCode.includes('bindText('));
+
+    // 2. <template> contents generate .content.childNodes traversal and bind live values cleanly
+    const nestedTemplate = compileTemplate('<div><template><span>{count()}</span></template></div>');
+    assert.ok(
+      nestedTemplate.generatedCode.includes('.content.childNodes[0].childNodes[0]'),
+      `Generated code for <template> must access .content.childNodes, got:\n${nestedTemplate.generatedCode}`
+    );
+
+    const rootTemplate = compileTemplate('<template><span ref="inner" data-n={count()}>{count()}</span></template>');
+    assert.ok(
+      rootTemplate.generatedCode.includes('root.content.childNodes[0]'),
+      `Root <template> binding must target root.content.childNodes, got:\n${rootTemplate.generatedCode}`
+    );
+
+    // Execute root <template> template + bindings against a live signal in headless DOM
+    const count = signal(1);
+    const tplRoot = template(rootTemplate.templates[0].staticHtml)() as any;
+    assert.ok(tplRoot.content, 'Headless <template> element must expose .content fragment');
+    assert.ok(tplRoot.refs.inner, '<template><span ref="inner"> must populate root.refs.inner via .content');
+    const spanEl = tplRoot.content.childNodes[0];
+    bindAttr(spanEl, 'data-n', () => count());
+    bindText(spanEl.childNodes[0], () => count());
+    assert.equal(spanEl.getAttribute('data-n'), '1');
+    assert.equal(spanEl.textContent, '1');
+    count.value = 42;
+    assert.equal(spanEl.getAttribute('data-n'), '42');
+    assert.equal(spanEl.textContent, '42');
+
+    // 3. Reactive function-call expression {count()} is not treated as static
+    const astRes = compileTemplate('<div data-v={count()}>{count()}</div>');
+    assert.equal(isStaticSubtree(astRes.ast!.children[0]), false);
+    assert.ok(astRes.generatedCode.includes('bindAttr(root, "data-v", () => (count()))'));
+    assert.ok(astRes.generatedCode.includes('bindText(root.childNodes[0], () => (count()))'));
   });
 });

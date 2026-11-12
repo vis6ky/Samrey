@@ -8,6 +8,8 @@ import { computeAriaAttributes, AriaBindingAttributes } from './aria.js';
 import { Validator } from './standard-schema.js';
 
 export interface FieldState<T> {
+  readonly name?: string;
+  readonly required?: boolean;
   value: ReadonlySignal<T>;
   error: ReadonlySignal<string | null>;
   touched: ReadonlySignal<boolean>;
@@ -133,6 +135,7 @@ export function createField<T>(
   });
 
   return {
+    name,
     value: computed(() => valueSignal.value),
     error: computed(() => errorSignal.value),
     touched: computed(() => touchedSignal.value),
@@ -146,7 +149,12 @@ export function createField<T>(
   };
 }
 
-export function bindField<T>(element: any, field: FieldState<T>): void {
+export interface BindFieldOptions {
+  errorElement?: any;
+  required?: boolean;
+}
+
+export function bindField<T>(element: any, field: FieldState<T>, options?: BindFieldOptions): void {
   if (!element) return;
   const isCheckbox = element.type === 'checkbox';
 
@@ -161,6 +169,35 @@ export function bindField<T>(element: any, field: FieldState<T>): void {
       }
     }
   });
+
+  if (typeof element.setAttribute === 'function') {
+    effect(() => {
+      const ariaAttrs = field.aria.value;
+      if (ariaAttrs['aria-invalid']) {
+        element.setAttribute('aria-invalid', 'true');
+        if (ariaAttrs['aria-errormessage']) {
+          element.setAttribute('aria-errormessage', ariaAttrs['aria-errormessage']);
+        }
+        if (ariaAttrs['aria-describedby']) {
+          element.setAttribute('aria-describedby', ariaAttrs['aria-describedby']);
+        }
+      } else if (typeof element.removeAttribute === 'function') {
+        element.removeAttribute('aria-invalid');
+        element.removeAttribute('aria-errormessage');
+        element.removeAttribute('aria-describedby');
+      }
+      if (options?.required || ariaAttrs['aria-required']) {
+        element.setAttribute('aria-required', 'true');
+      }
+    });
+  }
+
+  if (options?.errorElement) {
+    effect(() => {
+      const err = field.error.value;
+      options.errorElement.textContent = field.touched.value && err ? err : '';
+    });
+  }
 
   const onInput = (e: any) => {
     const val = isCheckbox ? e.target.checked : e.target.value;
@@ -193,5 +230,26 @@ export const validators = {
   required: (msg = 'Field is required') => (val: unknown) => (!val && val !== 0 ? msg : null),
   email: (msg = 'Invalid email address') => (val: string) => (!val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)) ? null : msg),
   minLength: (min: number, msg = `Minimum length is ${min}`) => (val: string) => (!val || String(val).length >= min ? null : msg),
-  maxLength: (max: number, msg = `Maximum length is ${max}`) => (val: string) => (!val || String(val).length <= max ? null : msg)
+  maxLength: (max: number, msg = `Maximum length is ${max}`) => (val: string) => (!val || String(val).length <= max ? null : msg),
+  pattern: (regex: RegExp, msg = 'Invalid format') => (val: string) => {
+    if (!val) return null;
+    if (regex.global || regex.sticky) {
+      regex.lastIndex = 0;
+    }
+    return regex.test(String(val)) ? null : msg;
+  },
+  custom: <T = unknown>(
+    fn: (val: T) => boolean | string | null | undefined | Promise<string | null | undefined>,
+    msg = 'Invalid value'
+  ) => (val: T): string | null | undefined | Promise<string | null | undefined> => {
+    const res = fn(val);
+    if (typeof res === 'boolean') return res ? null : msg;
+    if (res && typeof (res as Promise<unknown>).then === 'function') {
+      return (res as Promise<unknown>).then((resolved) => {
+        if (typeof resolved === 'boolean') return resolved ? null : msg;
+        return resolved ?? null;
+      }) as Promise<string | null | undefined>;
+    }
+    return res;
+  }
 };

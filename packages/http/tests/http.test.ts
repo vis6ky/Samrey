@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createResource, RequestCache, createHttpClient } from '../src/index.js';
+import { createResource, RequestCache, createHttpClient, httpClient } from '../src/index.js';
 import { createRoot, signal, SuspenseTrackerContext } from '@samrey/reactivity';
 
 describe('@samrey/http', () => {
@@ -95,7 +95,8 @@ describe('@samrey/http', () => {
 
     const clientNoBase = createHttpClient();
     assert.equal((clientNoBase as any).resolveUrl('/local/api'), '/local/api');
-    assert.equal((clientNoBase as any).resolveUrl('https://other.com/api'), 'https://other.com/api');
+    assert.throws(() => (clientNoBase as any).resolveUrl('https://other.com/api'), /cross-origin|Blocked/i);
+    assert.equal((clientNoBase as any).resolveUrl('https://other.com/api', true), 'https://other.com/api');
   });
 
   it('aborts in-flight fetches on mutate() and registers pending loads with SuspenseTrackerContext (Bug 8a)', async () => {
@@ -225,5 +226,108 @@ describe('@samrey/http', () => {
     assert.notEqual(resRef.status.value, 'success');
 
     await assert.rejects(() => resRef.refetch(), { name: 'AbortError' });
+  });
+
+  it('Batch 1 regression: blocks default httpClient cross-origin, backslash protocol-relative URLs, and cross-origin HTTP redirects unless allowCrossOrigin is true', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchedUrls: string[] = [];
+    globalThis.fetch = (async (u: unknown) => {
+      const target = String(u);
+      fetchedUrls.push(target);
+      if (target.endsWith('/redirect-evil')) {
+        return {
+          ok: false,
+          status: 302,
+          statusText: 'Found',
+          headers: new Headers({ location: 'https://evil.com/steal' })
+        } as any;
+      }
+      if (target.endsWith('/redirect-proto')) {
+        return {
+          ok: false,
+          status: 302,
+          statusText: 'Found',
+          headers: new Headers({ location: '//evil.com/steal' })
+        } as any;
+      }
+      if (target.endsWith('/redirect-same')) {
+        return {
+          ok: false,
+          status: 302,
+          statusText: 'Found',
+          headers: new Headers({ location: '/v2/ok' })
+        } as any;
+      }
+      if (target.endsWith('/followed-evil')) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          url: 'https://evil.com/leaked',
+          redirected: true,
+          text: async () => '{"ok":false}'
+        } as any;
+      }
+      return new Response('{"ok":true}', { status: 200 });
+    }) as any;
+
+    try {
+      // 1. Default httpClient and root '/' client must block cross-origin & backslash protocol-relative bypasses
+      await assert.rejects(() => httpClient.get('https://evil.com/leak'), /Blocked cross-origin URL/i);
+      await assert.rejects(() => httpClient.get('//evil.com/proto'), /Blocked protocol-relative URL/i);
+      await assert.rejects(() => httpClient.get('/\\\\evil.com/bs'), /Blocked protocol-relative URL/i);
+      await assert.rejects(() => createHttpClient('/').get('/\\\\evil.com/fsbs'), /Blocked protocol-relative URL/i);
+      await assert.rejects(() => createHttpClient('/').get('\\\\evil.com/bs'), /Blocked protocol-relative URL/i);
+      await assert.rejects(() => createHttpClient('https://api.example.com').get('/%5cevil.com'), /Blocked protocol-relative URL/i);
+      assert.equal(fetchedUrls.length, 0, 'Blocked URLs must never invoke fetch()');
+
+      // 2. Cross-origin redirects must be blocked before fetching the redirect target
+      const api = createHttpClient('https://api.example.com');
+      await assert.rejects(() => api.get('/redirect-evil'), /cross-origin|redirect|Blocked/i);
+      await assert.rejects(() => api.get('/redirect-proto'), /protocol-relative|redirect|Blocked/i);
+      await assert.rejects(() => api.get('/followed-evil'), /cross-origin|redirect|Blocked/i);
+      assert.ok(!fetchedUrls.some((u: string) => u.includes('evil.com')), `Must never fetch cross-origin redirect target: ${fetchedUrls}`);
+
+      // 3. Same-origin redirects and explicit allowCrossOrigin work properly
+      const sameOriginRes = await api.get<{ ok: boolean }>('/redirect-same');
+      assert.equal(sameOriginRes.ok, true);
+      assert.equal(Object.getPrototypeOf(sameOriginRes), null);
+      await httpClient.get('https://trusted.example.com/ok', { allowCrossOrigin: true });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('transitions createResource status to error on timeoutMs even for AbortError or non-aborting hanging fetchers', async () => {
+    const abortingRes = createResource(
+      async ({ abortSignal }) => {
+        return new Promise<string>((_resolve, reject) => {
+          abortSignal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      },
+      { timeoutMs: 15 }
+    );
+
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(abortingRes.status.value, 'error');
+    assert.ok(abortingRes.error.value instanceof Error);
+    await assert.rejects(() => abortingRes.refetch(), /timeout|abort/i);
+
+    const ignoringRes = createResource(
+      async () => {
+        return new Promise<string>((resolve) => {
+          setTimeout(() => resolve('too-late'), 200);
+        });
+      },
+      { timeoutMs: 15 }
+    );
+
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(ignoringRes.status.value, 'error');
+    assert.ok(ignoringRes.error.value instanceof Error);
   });
 });

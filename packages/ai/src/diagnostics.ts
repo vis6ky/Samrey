@@ -3,7 +3,7 @@
  * @samrey/ai - Diagnostic & Error Repair Engine
  */
 
-import { ERROR_REGISTRY, SamreyErrorCode } from '@samrey/compiler';
+import { ERROR_REGISTRY, type SamreyErrorCode } from '@samrey/compiler';
 
 export interface DiagnosticDiagnosis {
   code?: string;

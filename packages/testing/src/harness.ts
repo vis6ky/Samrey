@@ -5,12 +5,12 @@
 
 import { createRoot, signal, computed } from '@samrey/reactivity';
 
-export interface TestRenderResult<TNode = unknown> {
+export interface TestRenderResult<TNode = HTMLElement> {
   container: TNode;
   unmount: () => void;
 }
 
-export function renderTest(componentFactory: () => unknown): TestRenderResult {
+export function renderTest<TNode = HTMLElement>(componentFactory: () => unknown): TestRenderResult<TNode> {
   let disposeRoot: () => void;
 
   let container: HTMLElement | null = null;

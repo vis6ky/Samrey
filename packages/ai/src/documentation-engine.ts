@@ -488,11 +488,11 @@ export const SAMREY_API_REGISTRY: ApiReference[] = [
     name: 'createRouter',
     package: '@samrey/router',
     category: 'router',
-    signature: 'function createRouter(options: { routes: RouteConfig[]; mode?: "history" | "hash" }): SamreyRouter',
+    signature: 'function createRouter(routes: RouteRecord[]): RouterInstance',
     description: 'Instantiates client-side router.',
-    parameters: [{ name: 'options', type: 'RouterOptions', description: 'Route configuration array and routing mode.' }],
-    returns: { type: 'SamreyRouter', description: 'Active router instance.' },
-    example: `const router = createRouter({ routes: [{ path: '/', component: Home }] });`
+    parameters: [{ name: 'routes', type: 'RouteRecord[]', description: 'Route configuration array mapping paths to component factories and guards.' }],
+    returns: { type: 'RouterInstance', description: 'Active router instance.' },
+    example: `const router = createRouter([{ path: '/', component: Home }]);`
   },
   {
     name: 'createForm',
@@ -525,17 +525,16 @@ export const SAMREY_API_REGISTRY: ApiReference[] = [
     example: `const html = await renderToString(() => App());`
   },
   {
-    name: 'render',
+    name: 'renderTest',
     package: '@samrey/testing',
     category: 'testing',
-    signature: 'function render(componentFn: Function, props?: any): RenderResult',
-    description: 'Mounts a component in test DOM environment and provides querying helpers.',
+    signature: 'function renderTest<TNode = HTMLElement>(componentFactory: () => unknown): TestRenderResult<TNode>',
+    description: 'Mounts a component inside an isolated test root and container, returning the container and unmount function.',
     parameters: [
-      { name: 'componentFn', type: 'Function', description: 'Component function.' },
-      { name: 'props', type: 'any', description: 'Component props.', optional: true }
+      { name: 'componentFactory', type: '() => unknown', description: 'Component factory invoked once inside an isolated reactive root.' }
     ],
-    returns: { type: 'RenderResult', description: 'Container, query utilities, unmount function.' },
-    example: `const { container, findByText } = render(Counter, { initial: 1 });`
+    returns: { type: 'TestRenderResult<TNode>', description: 'Mounted DOM container and unmount cleanup function.' },
+    example: `const { container, unmount } = renderTest(() => Counter({ initial: 1 }));`
   }
 ];
 

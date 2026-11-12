@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderToStream, renderToString } from '../src/index.js';
+import { renderToStream, renderToString, getSSRContext, createServerData } from '../src/index.js';
 import { onCleanup } from '@samrey/reactivity';
 
 describe('@samrey/ssr - Streaming HTML Renderer', () => {
@@ -109,5 +109,93 @@ describe('@samrey/ssr - Streaming HTML Renderer', () => {
     });
     await cancelStream.getReader().cancel('aborted');
     assert.equal(cancelledDisposals, 1);
+  });
+
+  it('renders ctx.head links/scripts, blocks protocol-relative URLs, and handles rejected createServerData without unhandledRejection', async () => {
+    const html = await renderToString(() => {
+      const ctx = getSSRContext()!;
+      ctx.head.links.push(
+        { rel: 'canonical', href: 'https://samrey.dev/docs' },
+        { rel: 'stylesheet', href: '//evil.com/evil.css' }
+      );
+      ctx.head.scripts.push(
+        { src: '/hydrate.js', defer: true },
+        { src: '//evil.com/evil.js' },
+        { inline: 'console.log("safe-inline")' }
+      );
+      return '<main>OK</main>';
+    }, {
+      title: 'Sec Head Test',
+      clientScript: '//evil.com/pwn.js',
+      clientStyles: ['//evil.com/pwn.css', '/assets/app.css']
+    });
+    assert.ok(!html.includes('//evil.com/pwn.js'), 'Protocol-relative clientScript must be blocked');
+    assert.ok(!html.includes('//evil.com/pwn.css'), 'Protocol-relative clientStyles must be blocked');
+    assert.ok(html.includes('/assets/app.css'));
+    assert.ok(html.includes('rel="canonical"'));
+    assert.ok(html.includes('https://samrey.dev/docs'));
+    assert.ok(html.includes('src="/hydrate.js"'));
+    assert.ok(!html.includes('//evil.com/evil.css'));
+    assert.ok(!html.includes('//evil.com/evil.js'));
+
+    // Also verify ctx.head.links and ctx.head.scripts rendering in renderToStream
+    const headStream = renderToStream(() => {
+      const ctx = getSSRContext()!;
+      ctx.head.links.push(
+        { rel: 'canonical', href: 'https://samrey.dev/docs' },
+        { rel: 'stylesheet', href: '//evil.com/evil.css' }
+      );
+      ctx.head.scripts.push(
+        { src: '/hydrate.js', defer: true },
+        { src: '//evil.com/evil.js' }
+      );
+      return '<p>Head</p>';
+    });
+    let headOutput = '';
+    const r = headStream.getReader();
+    while (true) {
+      const { value, done } = await r.read();
+      if (done) break;
+      headOutput += new TextDecoder().decode(value);
+    }
+    assert.ok(headOutput.includes('rel="canonical"'));
+    assert.ok(headOutput.includes('https://samrey.dev/docs'));
+    assert.ok(headOutput.includes('src="/hydrate.js"'));
+    assert.ok(!headOutput.includes('//evil.com/evil.css'));
+    assert.ok(!headOutput.includes('//evil.com/evil.js'));
+
+    // Verify createServerData rejection inside renderToStream & cancelled stream emits zero unhandledRejection
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => { unhandled.push(reason); };
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const errStream = renderToStream(() => {
+        createServerData('failing-key', async () => {
+          throw new Error('backend boom');
+        });
+        return '<section>Body</section>';
+      });
+      let errOut = '';
+      const errReader = errStream.getReader();
+      while (true) {
+        const { value, done } = await errReader.read();
+        if (done) break;
+        errOut += new TextDecoder().decode(value);
+      }
+      assert.ok(errOut.includes('<section>Body</section>'));
+
+      const abortStream = renderToStream(() => {
+        createServerData('late-abort-key', async () => {
+          await new Promise((res) => setTimeout(res, 10));
+          throw new Error('late boom');
+        });
+        return '<section>Abort</section>';
+      });
+      await abortStream.getReader().cancel('stop early');
+      await new Promise((res) => setTimeout(res, 30));
+      assert.equal(unhandled.length, 0, `Unexpected unhandledRejection(s): ${unhandled.length}`);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
   });
 });

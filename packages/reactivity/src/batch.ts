@@ -21,9 +21,10 @@ function drainPendingEffects(): void {
     let cycles = 0;
     while (pendingEffects.size > 0) {
       if (++cycles > MAX_BATCH_CYCLES) {
+        const firstSubOwner = Array.from(pendingEffects)[0]?.owner ?? null;
         pendingEffects.clear();
         const err = new Error('[SAMREY-301] Maximum reactive batch update cycles (1000) exceeded. Detected cyclic dependency or infinite effect loop.');
-        handleError(err);
+        handleError(err, firstSubOwner, activeSubscriber?.owner ?? null);
         throw err;
       }
       const current = Array.from(pendingEffects);
@@ -35,7 +36,7 @@ function drainPendingEffects(): void {
           try {
             sub.update();
           } catch (err) {
-            handleError(err);
+            handleError(err, sub.owner ?? null);
           }
         }
       }
@@ -64,7 +65,7 @@ export function setActiveSubscriber(sub: Subscriber | null): Subscriber | null {
 }
 
 export function trackDependency(dep: Dependency): void {
-  if (activeSubscriber) {
+  if (activeSubscriber && !activeSubscriber.isDisposed) {
     dep.subscribers.add(activeSubscriber);
     activeSubscriber.sources.add(dep);
   }

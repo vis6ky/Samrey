@@ -67,9 +67,11 @@ function toOutputFilePath(routePath: string, outDir: string): string {
     throw new Error(`[Samrey SSG] Path traversal blocked for route: "${routePath}"`);
   }
 
-  const normalized = routePath === '/' ? 'index' : routePath.replace(/^\//, '');
+  const normalized = routePath.replace(/^\/+|\/+$/g, '');
   let relativeTarget: string;
-  if (normalized.endsWith('.html')) {
+  if (!normalized) {
+    relativeTarget = 'index.html';
+  } else if (normalized.endsWith('.html')) {
     relativeTarget = normalized;
   } else if (normalized === '404' || normalized === '500') {
     relativeTarget = `${normalized}.html`;

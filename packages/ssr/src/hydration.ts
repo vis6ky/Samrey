@@ -43,7 +43,7 @@ export interface HydrationResult {
 export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown'], nonce?: string): string {
   const eventsList = escapeForScriptPayload(JSON.stringify(events));
   const nonceAttr = nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : '';
-  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList},h=function(t){window.__SAMREY_EVENTS__&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){document.addEventListener(t,h,{capture:!0})});window.__SAMREY_EVENTS_CLEANUP__=function(){e.forEach(function(t){document.removeEventListener(t,h,{capture:!0})});delete window.__SAMREY_EVENTS_CLEANUP__}}();</script>`;
+  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList},h=function(t){Array.isArray(window.__SAMREY_EVENTS__)&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){document.addEventListener(t,h,{capture:!0})});window.__SAMREY_EVENTS_CLEANUP__=function(){e.forEach(function(t){document.removeEventListener(t,h,{capture:!0})});delete window.__SAMREY_EVENTS_CLEANUP__}}();</script>`;
 }
 
 /**
@@ -62,16 +62,19 @@ export function replayCapturedEvents(container?: HTMLElement): number {
     }
   }
 
-  if (!window.__SAMREY_EVENTS__) {
+  if (!Array.isArray(window.__SAMREY_EVENTS__)) {
     return 0;
   }
 
-  const queue = window.__SAMREY_EVENTS__;
+  // Snapshot and reset queue BEFORE dispatching to prevent re-entrant double replay
+  const queue = window.__SAMREY_EVENTS__.slice();
   const count = queue.length;
+  window.__SAMREY_EVENTS__ = [];
 
   if (count === 0) return 0;
 
   for (const event of queue) {
+    if (!event || typeof event !== 'object') continue;
     let target = event.target as Element | null;
     if (
       target &&
@@ -106,8 +109,6 @@ export function replayCapturedEvents(container?: HTMLElement): number {
     }
   }
 
-  // Clear event queue
-  window.__SAMREY_EVENTS__ = [];
   return count;
 }
 
@@ -264,13 +265,26 @@ function createHydrationTextNode(content: string, templateNode?: any): any {
   if (typeof document !== 'undefined' && typeof document.createTextNode === 'function') {
     return document.createTextNode(content);
   }
-  if (templateNode && typeof templateNode.cloneNode === 'function') {
+  if (templateNode?.ownerDocument && typeof templateNode.ownerDocument.createTextNode === 'function') {
+    return templateNode.ownerDocument.createTextNode(content);
+  }
+  if (templateNode && templateNode.nodeType === 3 && typeof templateNode.cloneNode === 'function') {
     const cloned = templateNode.cloneNode(false);
     cloned.textContent = content;
     cloned.parentNode = null;
     return cloned;
   }
-  return { nodeType: 3, nodeName: '#text', textContent: content, parentNode: null, nextSibling: null, previousSibling: null };
+  return {
+    nodeType: 3,
+    nodeName: '#text',
+    textContent: content,
+    parentNode: null,
+    nextSibling: null,
+    previousSibling: null,
+    cloneNode() {
+      return createHydrationTextNode(this.textContent);
+    }
+  };
 }
 
 function hasMoreClientTextInRun(clientList: any[], fromIdx: number): boolean {
@@ -357,7 +371,8 @@ function adoptNodeTrees(
           matchedServerNode.textContent = fullText.slice(0, splitOffset);
           remainderNode = createHydrationTextNode(fullText.slice(splitOffset), matchedServerNode);
           if (serverParent && typeof serverParent.insertBefore === 'function') {
-            serverParent.insertBefore(remainderNode, matchedServerNode.nextSibling ?? serverList[sIdx + 1] ?? null);
+            const nextRef = (sIdx + 1 < serverList.length ? serverList[sIdx + 1] : null) ?? matchedServerNode.nextSibling ?? null;
+            serverParent.insertBefore(remainderNode, nextRef);
           }
         }
         serverList.splice(sIdx + 1, 0, remainderNode);

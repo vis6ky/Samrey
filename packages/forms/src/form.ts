@@ -7,11 +7,52 @@ import { signal, computed, ReadonlySignal } from '@samrey/reactivity';
 import { createField, FieldState } from './field.js';
 import { StandardSchemaV1, Validator } from './standard-schema.js';
 
+export type FormValidateFn<TValues extends Record<string, any>> = (
+  values: TValues
+) =>
+  | Partial<Record<keyof TValues, string | null | undefined>>
+  | Record<string, string | null | undefined>
+  | void
+  | Promise<
+      | Partial<Record<keyof TValues, string | null | undefined>>
+      | Record<string, string | null | undefined>
+      | void
+    >;
+
 export interface FormConfig<TValues extends Record<string, any>> {
   initialValues: TValues;
   schema?: StandardSchemaV1<TValues>;
-  validators?: { [K in keyof TValues]?: Validator<TValues[K]> };
+  validators?: { [K in keyof TValues]?: Validator<TValues[K]> | readonly Validator<TValues[K]>[] };
+  validate?: FormValidateFn<TValues>;
   onSubmit: (values: TValues) => Promise<void> | void;
+}
+
+function composeValidators<T>(
+  spec?: Validator<T> | readonly Validator<T>[]
+): Validator<T> | undefined {
+  if (!spec) return undefined;
+  if (typeof spec === 'function') return spec;
+  const list = spec.filter((v): v is Validator<T> => typeof v === 'function');
+  if (list.length === 0) return undefined;
+  if (list.length === 1) return list[0];
+  return (value: T) => {
+    for (let i = 0; i < list.length; i++) {
+      const res = list[i](value);
+      if (res && typeof (res as Promise<unknown>).then === 'function') {
+        return (async () => {
+          const awaited = await res;
+          if (awaited) return awaited;
+          for (let j = i + 1; j < list.length; j++) {
+            const next = await list[j](value);
+            if (next) return next;
+          }
+          return null;
+        })();
+      }
+      if (res) return res;
+    }
+    return null;
+  };
 }
 
 export interface FormInstance<TValues extends Record<string, any>> {
@@ -29,12 +70,13 @@ export function createForm<TValues extends Record<string, any>>(
 ): FormInstance<TValues> {
   const isSubmittingSignal = signal<boolean>(false);
   const formErrorSignal = signal<string | null>(null);
+  let submitInFlight = false;
   const fields = Object.create(null) as { [K in keyof TValues]: FieldState<TValues[K]> };
 
   for (const key of Object.keys(config.initialValues) as (keyof TValues)[]) {
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
     const val = config.initialValues[key];
-    const validator = config.validators?.[key];
+    const validator = composeValidators(config.validators?.[key]);
     fields[key] = createField(String(key), val, validator);
   }
 
@@ -48,8 +90,9 @@ export function createForm<TValues extends Record<string, any>>(
     for (const key of Object.keys(fields) as (keyof TValues)[]) {
       const field = fields[key];
       if (!field) continue;
+      // Clear touched BEFORE restoring initialValue so validation does not re-fire during reset
+      field.setTouched(false, false);
       field.setValue(config.initialValues[key]);
-      field.setTouched(false);
       field.setError(null);
     }
   }
@@ -59,79 +102,110 @@ export function createForm<TValues extends Record<string, any>>(
       e.preventDefault();
     }
 
-    if (isSubmittingSignal.value) {
+    if (submitInFlight || isSubmittingSignal.value) {
       return false;
     }
 
+    submitInFlight = true;
+    isSubmittingSignal.value = true;
     formErrorSignal.value = null;
-    let allValid = true;
 
-    // 1. Mark fields as touched and run field-level validators
-    for (const key of Object.keys(fields) as (keyof TValues)[]) {
-      const f = fields[key];
-      f.setTouched(true, false);
-      f.setError(null);
-      const res = f.validate();
-      if (res instanceof Promise) {
-        const ok = await res;
-        if (!ok) allValid = false;
-      } else if (!res) {
-        allValid = false;
-      }
-    }
+    try {
+      let allValid = true;
 
-    // 2. Collect current form values
-    const values = {} as TValues;
-    for (const key of Object.keys(fields) as (keyof TValues)[]) {
-      values[key] = fields[key].value.value;
-    }
-
-    // 3. Execute Standard Schema (~v1) validation if provided
-    let finalValues = values;
-    if (config.schema && config.schema['~standard']) {
-      try {
-        const schemaResult = config.schema['~standard'].validate(values);
-        const result = schemaResult instanceof Promise ? await schemaResult : schemaResult;
-
-        if (result.issues && result.issues.length > 0) {
+      // 1. Mark fields as touched and run field-level validators
+      for (const key of Object.keys(fields) as (keyof TValues)[]) {
+        const f = fields[key];
+        f.setTouched(true, false);
+        f.setError(null);
+        const res = f.validate();
+        if (res instanceof Promise) {
+          const ok = await res;
+          if (!ok) allValid = false;
+        } else if (!res) {
           allValid = false;
-          for (const issue of result.issues) {
-            let fieldKey: string | null = null;
-            if (issue.path && issue.path.length > 0) {
-              const seg: any = issue.path[0];
-              if (seg != null) {
-                if (typeof seg === 'object' && 'key' in seg) {
-                  fieldKey = String(seg.key);
+        }
+      }
+
+      // 2. Collect current form values
+      const values = {} as TValues;
+      for (const key of Object.keys(fields) as (keyof TValues)[]) {
+        values[key] = fields[key].value.value;
+      }
+
+      // 2b. Execute form-level validate() callback if provided
+      if (typeof config.validate === 'function') {
+        try {
+          const validateRes = config.validate(values);
+          const errorsObj =
+            validateRes && typeof (validateRes as Promise<unknown>).then === 'function'
+              ? await validateRes
+              : validateRes;
+          if (errorsObj && typeof errorsObj === 'object') {
+            for (const errKey of Object.keys(errorsObj)) {
+              if (errKey === '__proto__' || errKey === 'constructor' || errKey === 'prototype') continue;
+              const msg = (errorsObj as Record<string, string | null | undefined>)[errKey];
+              if (msg) {
+                allValid = false;
+                if (Object.prototype.hasOwnProperty.call(fields, errKey)) {
+                  fields[errKey as keyof TValues].setError(String(msg));
                 } else {
-                  fieldKey = String(seg);
+                  formErrorSignal.value = String(msg);
                 }
               }
             }
-            if (fieldKey && fieldKey in fields) {
-              fields[fieldKey as keyof TValues].setError(issue.message);
-            } else {
-              formErrorSignal.value = issue.message;
-            }
           }
-        } else if ('value' in result && result.value !== undefined) {
-          finalValues = result.value as TValues;
+        } catch (err: any) {
+          allValid = false;
+          formErrorSignal.value = err?.message || 'Validation error';
         }
-      } catch (err: any) {
-        allValid = false;
-        formErrorSignal.value = err?.message || 'Validation error';
       }
-    }
 
-    if (!allValid) {
-      return false;
-    }
+      // 3. Execute Standard Schema (~v1) validation if provided
+      let finalValues = values;
+      if (config.schema && config.schema['~standard']) {
+        try {
+          const schemaResult = config.schema['~standard'].validate(values);
+          const result = schemaResult instanceof Promise ? await schemaResult : schemaResult;
 
-    // 4. Run onSubmit
-    isSubmittingSignal.value = true;
-    try {
+          if (result.issues && result.issues.length > 0) {
+            allValid = false;
+            for (const issue of result.issues) {
+              let fieldKey: string | null = null;
+              if (issue.path && issue.path.length > 0) {
+                const seg: any = issue.path[0];
+                if (seg != null) {
+                  if (typeof seg === 'object' && 'key' in seg) {
+                    fieldKey = String(seg.key);
+                  } else {
+                    fieldKey = String(seg);
+                  }
+                }
+              }
+              if (fieldKey && Object.prototype.hasOwnProperty.call(fields, fieldKey)) {
+                fields[fieldKey as keyof TValues].setError(issue.message);
+              } else {
+                formErrorSignal.value = issue.message;
+              }
+            }
+          } else if ('value' in result && result.value !== undefined) {
+            finalValues = result.value as TValues;
+          }
+        } catch (err: any) {
+          allValid = false;
+          formErrorSignal.value = err?.message || 'Validation error';
+        }
+      }
+
+      if (!allValid) {
+        return false;
+      }
+
+      // 4. Run onSubmit
       await config.onSubmit(finalValues);
       return true;
     } finally {
+      submitInFlight = false;
       isSubmittingSignal.value = false;
     }
   }

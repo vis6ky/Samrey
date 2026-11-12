@@ -266,4 +266,115 @@ export const count = signal(0);
     assert.equal(benignAsyncRes.success, true, benignAsyncRes.error);
   });
 
+  it('16. Enforces Batch 3 AST sandbox boundaries, async step budget, try/catch non-bypass, async operators, and PlaygroundModal safety', async () => {
+    const { executeSamreyCode, sanitizeSandboxErrorMessage } = await import('../../src/lib/runtimeSandbox.js');
+    const { evaluateSandboxedProgram } = await import('../../src/lib/sandboxInterpreter.js');
+    const { PlaygroundModal } = await import('../../src/components/PlaygroundModal.js');
+
+    // 1. Dangerous tags & attrs via el()/svgEl() must be blocked
+    for (const snippet of [
+      'el("script", null, "alert(1)")',
+      'el("iframe", { srcdoc: "<script>alert(1)</script>" })',
+      'el("img", { src: "x", onerror: "alert(1)" })',
+      'svgEl("script", null, "alert(1)")',
+      'const d = el("div"); d["inner" + "HTML"] = "<b>x</b>"; d',
+      'const d = el("div"); d["outer" + "HTML"] = "<b>x</b>"; d',
+      'const d = el("div"); const p = d["parent" + "Node"]; el("div")',
+      'const d = el("div"); d["getRoot" + "Node"](); el("div")',
+      'delete Math.max; el("div")',
+      'Map.prototype.pwned = true; el("div")',
+      'Array.prototype.pwned = true; el("div")',
+      'try { while (true) {} } catch (e) {} el("div")',
+      'try { function r() { return r(); } r(); } catch (e) {} finally {} el("div")',
+      '(async () => { try { while (true) { await Promise.resolve(); } } catch (e) {} })'
+    ]) {
+      if (snippet.startsWith('(async')) {
+        const asyncFn = evaluateSandboxedProgram(`return ${snippet};`, {}, []) as () => Promise<unknown>;
+        await assert.rejects(() => asyncFn(), /step limit|SandboxAbortError/i);
+      } else {
+        const res = executeSamreyCode(snippet);
+        assert.equal(res.success, false, `Sandbox must block payload: ${snippet}`);
+      }
+    }
+
+    // 2. Async microtask/Promise chain must NOT reset cumulative step budget across await points
+    const asyncStepBombFn = evaluateSandboxedProgram(`
+      return async function burn() {
+        let s = 0;
+        for (let j = 0; j < 6; j++) {
+          for (let i = 0; i < 40000; i++) {
+            s += i;
+          }
+          await Promise.resolve();
+        }
+        return s;
+      };
+    `, {}, []) as () => Promise<number>;
+    await assert.rejects(() => asyncStepBombFn(), /Execution step limit exceeded/i);
+
+    // 3. Sandbox exposes validators, bindField, createForm, createHttpClient AND handles circular console args
+    const logs: string[] = [];
+    const validFeatures = executeSamreyCode(`
+      const circ = { a: 1 };
+      circ.ref = circ;
+      console.log(circ);
+      const f = createForm({ initialValues: { email: '' }, validators: { email: [validators.required('Need email')] } });
+      const reqErr = validators.required('Req')('');
+      const hasBind = typeof bindField === 'function';
+      const client = createHttpClient('/');
+      let forInKeys = [];
+      let loopKey;
+      for (loopKey in { a: 1, b: 2 }) { forInKeys.push(loopKey); }
+      el("div", {
+        "data-req": String(reqErr),
+        "data-bind": String(hasBind),
+        "data-client": String(typeof client.get === 'function'),
+        "data-keys": forInKeys.join(',')
+      }, f.fields.email ? "ok" : "no")
+    `, (m) => logs.push(m));
+    assert.equal(validFeatures.success, true, validFeatures.error);
+    assert.ok(logs.some((l) => l.includes('[Circular]')));
+    assert.equal((validFeatures.node as any).getAttribute('data-req'), 'Req');
+    assert.equal((validFeatures.node as any).getAttribute('data-bind'), 'true');
+    assert.equal((validFeatures.node as any).getAttribute('data-client'), 'true');
+    assert.equal((validFeatures.node as any).getAttribute('data-keys'), 'a,b');
+
+    // 4. Async Unary (!), Update (++obj[await k]), and Sequence ((await 1, await 2)) work accurately
+    const asyncOpsFn = evaluateSandboxedProgram(`
+      return async () => {
+        let o = { x: 4 };
+        const a = !(await Promise.resolve(false));
+        const b = ++o[await Promise.resolve('x')];
+        const c = (await Promise.resolve(10), await Promise.resolve(20));
+        return { a, b, c };
+      };
+    `, {}, []) as () => Promise<{ a: boolean; b: number; c: number }>;
+    const asyncOpsResult = await asyncOpsFn();
+    assert.deepEqual(asyncOpsResult, { a: true, b: 5, c: 20 });
+
+    // 5. PlaygroundModal sanitizes host stack paths and error output cleanly
+    assert.ok(!sanitizeSandboxErrorMessage('boom at /Users/dev/secret/app.ts:42:9').includes('/Users/dev/secret'));
+    const { createRoot } = await import('@samrey/reactivity');
+    createRoot((dispose) => {
+      const isOpen = { value: true };
+      const code = { value: 'throw new Error("boom at /Users/dev/secret/app.ts:42:9");' };
+      const modal = PlaygroundModal({ isOpen, code }) as any;
+      assert.ok(modal);
+      const seen = new WeakSet<object>();
+      const collectText = (n: any): string => {
+        if (!n || typeof n !== 'object') return String(n ?? '');
+        if (seen.has(n)) return '';
+        seen.add(n);
+        let txt = typeof n.textContent === 'string' ? n.textContent : '';
+        if (Array.isArray(n.childNodes)) {
+          for (const c of n.childNodes) txt += collectText(c);
+        }
+        return txt;
+      };
+      const renderedText = collectText(modal);
+      assert.ok(!renderedText.includes('/Users/dev/secret/app.ts'), 'PlaygroundModal must not expose host file paths in rendered error');
+      dispose();
+    });
+  });
+
 });

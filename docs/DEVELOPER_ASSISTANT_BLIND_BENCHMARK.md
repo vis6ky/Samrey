@@ -1003,7 +1003,7 @@ export async function generateStaticProductPages(): Promise<Record<string, strin
 #### Assistant's Recommended Implementation:
 ```typescript
 import { el, For } from '@samrey/runtime';
-import { signal, Signal } from '@samrey/reactivity';
+import { signal, type Signal } from '@samrey/reactivity';
 
 interface StockRow {
   id: string;
@@ -1080,7 +1080,7 @@ export function HighScaleStockTicker(): HTMLElement {
 #### Assistant's Recommended Implementation:
 ```typescript
 import { el, onMount, onCleanup } from '@samrey/runtime';
-import { Signal, signal } from '@samrey/reactivity';
+import { type Signal, signal } from '@samrey/reactivity';
 
 export interface CardProps {
   title: string;
@@ -1175,7 +1175,7 @@ export function Card(props: CardProps): HTMLElement {
 #### Assistant's Recommended Implementation:
 ```typescript
 import { el, onMount, onCleanup } from '@samrey/runtime';
-import { Signal, signal } from '@samrey/reactivity';
+import { type Signal, signal } from '@samrey/reactivity';
 
 export interface CardProps {
   title: string;
@@ -1438,7 +1438,7 @@ export function ModernCounter(): HTMLElement {
 
   return el('div', { class: 'p-4 space-y-2' },
     el('p', null, () => `Count: ${count.value} | Double: ${doubleCount.value}`),
-    el('button', { onClick: () => count.set(c => c + 1) }, 'Increment')
+    el('button', { type: 'button', onClick: () => count.update(c => c + 1) }, 'Increment')
   );
 }
 ```

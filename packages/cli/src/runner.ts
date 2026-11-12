@@ -140,14 +140,22 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         const arg = args[i]!;
         if (arg === '--ssr') {
           const next = args[i + 1];
-          if (next && !next.startsWith('-')) {
+          if (next === 'false') {
+            ssr = false;
+            i++;
+          } else if (next === 'true') {
+            ssr = true;
+            i++;
+          } else if (next && !next.startsWith('-')) {
             ssr = next;
             i++;
           } else {
             ssr = true;
           }
         } else if (arg.startsWith('--ssr=')) {
-          ssr = arg.slice('--ssr='.length) || true;
+          const val = arg.slice('--ssr='.length);
+          if (val === 'false') ssr = false;
+          else ssr = val || true;
         } else if (arg === '--outDir' && args[i + 1]) {
           outDir = args[i + 1]!;
           i++;

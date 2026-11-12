@@ -71,6 +71,99 @@ const GIT_BRANCH_ALLOWED_READ_ONLY_FLAGS = new Set([
 ]);
 
 const NPM_ALLOWED_RUN_SCRIPTS = new Set(['build', 'typecheck']);
+const GLOB_META_RE = /[*?[\]{}]|[?!+*@]\(/;
+
+function getRealPath(targetPath: string): string {
+  return fs.realpathSync.native ? fs.realpathSync.native(targetPath) : fs.realpathSync(targetPath);
+}
+
+function assertSubtreeContainsNoEscapingSymlinks(
+  dirPath: string,
+  realRoot: string,
+  includeInternalDirs: boolean,
+  visited = new Set<string>()
+): void {
+  if (!fs.existsSync(dirPath)) return;
+  const realDir = getRealPath(dirPath);
+  if (visited.has(realDir)) return;
+  visited.add(realDir);
+
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(realDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (!includeInternalDirs && (entry.name === 'node_modules' || entry.name === '.git')) {
+      continue;
+    }
+    const fullPath = path.join(realDir, entry.name);
+    if (entry.isSymbolicLink()) {
+      // Resolves symlink target realpath and throws if it escapes realRoot
+      const safeTarget = resolveSafePath(realRoot, fullPath);
+      try {
+        if (fs.statSync(safeTarget).isDirectory()) {
+          assertSubtreeContainsNoEscapingSymlinks(safeTarget, realRoot, includeInternalDirs, visited);
+        }
+      } catch {
+        // Broken symlink still got checked via resolveSafePath above if resolvable/unresolvable
+      }
+    } else if (entry.isDirectory()) {
+      assertSubtreeContainsNoEscapingSymlinks(fullPath, realRoot, includeInternalDirs, visited);
+    }
+  }
+}
+
+function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: string): void {
+  if (!rawArg || rawArg.includes('\0') || rawArg === '--' || rawArg.startsWith('-')) {
+    throw new Error(
+      `Security Exception: ${cmdLabel} test path argument cannot be empty or a flag, received "${rawArg}".`
+    );
+  }
+  if (!path.isAbsolute(rawArg)) {
+    throw new Error(
+      `Security Exception: ${cmdLabel} test path must be an absolute path inside project root (got relative "${rawArg}").`
+    );
+  }
+
+  const normalized = rawArg.replace(/\\/g, '/');
+  const realRoot = getRealPath(cwd);
+  const candidate = normalized;
+
+  if (!GLOB_META_RE.test(candidate)) {
+    resolveSafePath(realRoot, candidate);
+    return;
+  }
+
+  // Validate the longest concrete directory prefix before any glob metacharacter
+  const firstGlobIdx = candidate.search(GLOB_META_RE);
+  const slashBeforeGlob = candidate.lastIndexOf('/', firstGlobIdx);
+  const concretePrefix = slashBeforeGlob > 0 ? candidate.slice(0, slashBeforeGlob) : '/';
+  const safePrefix = resolveSafePath(realRoot, concretePrefix);
+  const includeInternalDirs = normalized.includes('node_modules') || normalized.includes('.git');
+
+  assertSubtreeContainsNoEscapingSymlinks(safePrefix, realRoot, includeInternalDirs);
+
+  const globSyncFn = (fs as unknown as {
+    globSync?: (pattern: string | string[], options?: { cwd?: string }) => string[];
+  }).globSync;
+  if (typeof globSyncFn !== 'function') {
+    throw new Error(
+      `Security Exception: Glob test pattern "${rawArg}" cannot be verified cleanly without fs.globSync support.`
+    );
+  }
+
+  const globPattern = slashBeforeGlob >= 0
+    ? path.join(safePrefix, candidate.slice(slashBeforeGlob + 1))
+    : candidate;
+  const matches = globSyncFn(globPattern, { cwd: realRoot });
+  for (const match of matches) {
+    const absMatch = path.isAbsolute(match) ? match : path.resolve(realRoot, match);
+    resolveSafePath(realRoot, absMatch);
+  }
+}
 
 export function redactSecrets(text: string): string {
   if (!text) return text;
@@ -273,12 +366,20 @@ export function safeWriteFile(
   projectRoot: string,
   overwrite = false
 ): void {
+  if (typeof filePath !== 'string' || !filePath || filePath.includes('\0')) {
+    throw new Error('Security Exception: File path contains invalid or NUL bytes.');
+  }
+
   const resolvedRoot = path.resolve(projectRoot);
+  if (!fs.existsSync(resolvedRoot)) {
+    throw new Error(`Security Exception: Project root "${resolvedRoot}" does not exist.`);
+  }
   const realRoot = fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
 
-  const absTarget = path.isAbsolute(filePath)
-    ? path.resolve(filePath)
-    : path.resolve(resolvedRoot, filePath);
+  const normalizedInput = filePath.replace(/\\/g, '/').normalize('NFC');
+  const absTarget = path.isAbsolute(normalizedInput)
+    ? path.resolve(normalizedInput)
+    : path.resolve(resolvedRoot, normalizedInput);
 
   const relFromResolved = path.relative(resolvedRoot, absTarget);
   const relFromReal = path.relative(realRoot, absTarget);
@@ -290,6 +391,9 @@ export function safeWriteFile(
   }
 
   const normalizedRelTarget = inRealRoot ? relFromReal : relFromResolved;
+  if (!normalizedRelTarget || normalizedRelTarget === '.') {
+    throw new Error(`Security Exception: Target "${filePath}" must refer to a file inside project root.`);
+  }
   const parentRelFromRoot = path.dirname(normalizedRelTarget);
 
   // Walk existing ancestors before creating directories so symlinks cannot hijack mkdirSync
@@ -319,53 +423,72 @@ export function safeWriteFile(
     fs.mkdirSync(safeParentDir, { recursive: true });
   }
 
-  // 1. Verify parent directory with O_DIRECTORY | O_NOFOLLOW if practical
+  // 1. Open and hold parent directory fd with O_DIRECTORY | O_NOFOLLOW across the destination open
   const dirFlags = (fs.constants.O_RDONLY || 0) | (fs.constants.O_DIRECTORY || 0) | (fs.constants.O_NOFOLLOW || 0);
-  let parentFd: number | null = null;
+  const parentFd = fs.openSync(safeParentDir, dirFlags);
   try {
-    parentFd = fs.openSync(safeParentDir, dirFlags);
-  } catch (err: any) {
-    throw new Error(`Security Exception: Cannot open parent directory securely (${err.message}).`);
-  } finally {
-    if (parentFd !== null) {
-      try { fs.closeSync(parentFd); } catch {}
+    const parentFdStat = fs.fstatSync(parentFd);
+    const parentPathLstat = fs.lstatSync(safeParentDir);
+    if (parentPathLstat.isSymbolicLink() || parentFdStat.dev !== parentPathLstat.dev || parentFdStat.ino !== parentPathLstat.ino) {
+      throw new Error(`Security Exception: Parent directory "${safeParentDir}" changed or is a symlink.`);
     }
-  }
 
-  // 2. Re-run realpath check on parent directory immediately before opening
-  const realParent = fs.realpathSync.native ? fs.realpathSync.native(safeParentDir) : fs.realpathSync(safeParentDir);
-  const parentRel = path.relative(realRoot, realParent);
-  if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
-    throw new Error(`Security Exception: Parent directory escapes project root boundary "${realRoot}".`);
-  }
+    // 2. Verify realpath of parent directory remains strictly inside realRoot
+    const realParent = fs.realpathSync.native ? fs.realpathSync.native(safeParentDir) : fs.realpathSync(safeParentDir);
+    const parentRel = path.relative(realRoot, realParent);
+    if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
+      throw new Error(`Security Exception: Parent directory escapes project root boundary "${realRoot}".`);
+    }
 
-  // 3. Check destination file
-  let destStat: fs.Stats | null = null;
-  try {
-    destStat = fs.lstatSync(safeTargetPath);
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') throw err;
-  }
+    // 3. Check destination file
+    let destStat: fs.Stats | null = null;
+    try {
+      destStat = fs.lstatSync(safeTargetPath);
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') throw err;
+    }
 
-  // A symlink at the final component can NEVER be followed
-  if (destStat && destStat.isSymbolicLink()) {
-    throw new Error(`Security Exception: Destination "${filePath}" is a symlink and cannot be written.`);
-  }
+    if (destStat && destStat.isSymbolicLink()) {
+      throw new Error(`Security Exception: Destination "${filePath}" is a symlink and cannot be written.`);
+    }
 
-  if (destStat && !overwrite) {
-    throw new Error(`Security Exception: Refusing to overwrite existing file "${filePath}". Pass overwrite: true to allow.`);
-  }
+    if (destStat && !overwrite) {
+      throw new Error(`Security Exception: Refusing to overwrite existing file "${filePath}". Pass overwrite: true to allow.`);
+    }
 
-  // 4. Open file securely with O_NOFOLLOW
-  const fileFlags = destStat
-    ? fs.constants.O_WRONLY | fs.constants.O_TRUNC | (fs.constants.O_NOFOLLOW || 0)
-    : fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0);
+    // 4. Open destination file with O_NOFOLLOW and re-verify parent/file identity while holding both fds
+    const fileFlags = destStat
+      ? fs.constants.O_WRONLY | fs.constants.O_TRUNC | (fs.constants.O_NOFOLLOW || 0)
+      : fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0);
 
-  const fd = fs.openSync(safeTargetPath, fileFlags);
-  try {
-    fs.writeFileSync(fd, content, 'utf8');
+    const fd = fs.openSync(safeTargetPath, fileFlags);
+    let createdNewFile = !destStat;
+    try {
+      const postParentLstat = fs.lstatSync(safeParentDir);
+      const postFileStat = fs.fstatSync(fd);
+      const postFileLstat = fs.lstatSync(safeTargetPath);
+      if (
+        postParentLstat.isSymbolicLink() ||
+        postParentLstat.dev !== parentFdStat.dev ||
+        postParentLstat.ino !== parentFdStat.ino ||
+        postFileLstat.isSymbolicLink() ||
+        postFileStat.dev !== postFileLstat.dev ||
+        postFileStat.ino !== postFileLstat.ino
+      ) {
+        throw new Error(`Security Exception: Detected concurrent path modification while opening "${filePath}".`);
+      }
+      fs.writeFileSync(fd, content, 'utf8');
+      createdNewFile = false;
+    } catch (err) {
+      if (createdNewFile) {
+        try { fs.unlinkSync(safeTargetPath); } catch {}
+      }
+      throw err;
+    } finally {
+      try { fs.closeSync(fd); } catch {}
+    }
   } finally {
-    try { fs.closeSync(fd); } catch {}
+    try { fs.closeSync(parentFd); } catch {}
   }
 }
 
@@ -421,20 +544,7 @@ export function executeSafeCommand(
               new Error(`Security Exception: npm test extra argument must be an absolute path inside project root, received "${extra}".`)
             );
           }
-          const resolvedRoot = path.resolve(cwd);
-          const realRoot = fs.existsSync(resolvedRoot)
-            ? (fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot))
-            : resolvedRoot;
-          let realExtra = path.resolve(extra);
-          if (fs.existsSync(realExtra)) {
-            realExtra = fs.realpathSync.native ? fs.realpathSync.native(realExtra) : fs.realpathSync(realExtra);
-          }
-          const rel = path.relative(realRoot, realExtra);
-          if (rel.startsWith('..') || path.isAbsolute(rel)) {
-            return reject(
-              new Error(`Security Exception: npm test argument "${extra}" escapes project root boundary "${realRoot}".`)
-            );
-          }
+          validateSafeCommandTestPath(extra, cwd, 'npm test');
         }
       } else if (sub === 'run') {
         const script = args[1];
@@ -485,31 +595,7 @@ export function executeSafeCommand(
         );
       }
       if (args.length === 2) {
-        const testPath = args[1];
-        if (testPath.startsWith('-')) {
-          return reject(
-            new Error(`Security Exception: node --test path argument cannot be a flag, received "${testPath}".`)
-          );
-        }
-        if (!path.isAbsolute(testPath)) {
-          return reject(
-            new Error(`Security Exception: node --test path argument must be an absolute path inside project root, received "${testPath}".`)
-          );
-        }
-        const resolvedRoot = path.resolve(cwd);
-        const realRoot = fs.existsSync(resolvedRoot)
-          ? (fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot))
-          : resolvedRoot;
-        let realTarget = path.resolve(testPath);
-        if (fs.existsSync(realTarget)) {
-          realTarget = fs.realpathSync.native ? fs.realpathSync.native(realTarget) : fs.realpathSync(realTarget);
-        }
-        const rel = path.relative(realRoot, realTarget);
-        if (rel.startsWith('..') || path.isAbsolute(rel)) {
-          return reject(
-            new Error(`Security Exception: node --test path "${testPath}" escapes project root boundary "${realRoot}".`)
-          );
-        }
+        validateSafeCommandTestPath(args[1], cwd, 'node --test');
       }
     }
 

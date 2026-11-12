@@ -9,6 +9,7 @@ Common issues, diagnostics, and step-by-step resolution steps when developing Sa
 ### Symptom:
 The AI generates code with:
 ```ts
+// ❌ Symptom: Foreign React hook instead of @samrey/reactivity signal()
 import { useState } from 'react'; // or calls useState(0)
 ```
 

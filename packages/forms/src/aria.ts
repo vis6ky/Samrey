@@ -31,7 +31,14 @@ export function computeAriaAttributes(
 }
 
 export function getAccessibleFieldProps(field: any): AriaBindingAttributes {
-  const hasError = !!(field?.error?.value || field?.error);
-  const name = field?.name || 'field';
-  return computeAriaAttributes(name, hasError, false);
+  const errObj = field?.error;
+  const errVal =
+    typeof errObj === 'function' && 'value' in errObj
+      ? errObj.value
+      : typeof errObj === 'object' && errObj !== null && 'value' in errObj
+        ? errObj.value
+        : errObj;
+  const hasError = Boolean(errVal);
+  const name = typeof field?.name === 'string' && field.name ? field.name : 'field';
+  return computeAriaAttributes(name, hasError, Boolean(field?.required));
 }

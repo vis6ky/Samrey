@@ -28,12 +28,18 @@ export interface SSRContext {
 
 const asyncLocalStorage = new AsyncLocalStorage<SSRContext>();
 let fallbackContext: SSRContext | null = null;
+const loaderErrorsMap = new WeakMap<SSRContext, Map<string, Error>>();
+
+export function getSSRLoaderError(ctx: SSRContext, key: string): Error | undefined {
+  return loaderErrorsMap.get(ctx)?.get(key);
+}
 
 /**
  * Creates a fresh, isolated SSR context for a single server request.
  */
 export function createSSRContext(initialState: Record<string, unknown> = {}): SSRContext {
   const loaders = new Map<string, Promise<unknown>>();
+  const loaderErrors = new Map<string, Error>();
   const state: Record<string, unknown> = { ...initialState };
   const errors: Error[] = [];
 
@@ -50,18 +56,19 @@ export function createSSRContext(initialState: Record<string, unknown> = {}): SS
       scripts: []
     },
     registerLoader: <T>(key: string, promise: Promise<T>) => {
-      loaders.set(
-        key,
-        promise
-          .then((val) => {
-            state[key] = val;
-            return val;
-          })
-          .catch((err) => {
-            errors.push(err instanceof Error ? err : new Error(String(err)));
-            throw err;
-          })
+      const tracked = promise.then(
+        (val) => {
+          state[key] = val;
+          return val;
+        },
+        (err) => {
+          const errorObj = err instanceof Error ? err : new Error(String(err));
+          errors.push(errorObj);
+          loaderErrors.set(key, errorObj);
+          return undefined;
+        }
       );
+      loaders.set(key, tracked);
     },
     setError: (err: Error, status = 500) => {
       errors.push(err);
@@ -82,6 +89,7 @@ export function createSSRContext(initialState: Record<string, unknown> = {}): SS
     }
   };
 
+  loaderErrorsMap.set(context, loaderErrors);
   return context;
 }
 

@@ -136,8 +136,8 @@ export function onError(fn: (err: unknown) => void): void {
   }
 }
 
-export function handleError(err: unknown, owner: Owner | null = currentOwner): void {
-  let curr = owner;
+function tryErrorHandlerChain(err: unknown, startOwner: Owner | null): boolean {
+  let curr = startOwner;
   while (curr) {
     if (curr.errorHandlers && curr.errorHandlers.length > 0) {
       for (let i = 0; i < curr.errorHandlers.length; i++) {
@@ -148,9 +148,23 @@ export function handleError(err: unknown, owner: Owner | null = currentOwner): v
           console.error('[Samrey Reactivity] Original unhandled error:', err);
         }
       }
-      return;
+      return true;
     }
     curr = curr.parent;
+  }
+  return false;
+}
+
+export function handleError(
+  err: unknown,
+  owner: Owner | null = currentOwner,
+  fallbackOwner: Owner | null = null
+): void {
+  if (tryErrorHandlerChain(err, owner)) {
+    return;
+  }
+  if (fallbackOwner && fallbackOwner !== owner && tryErrorHandlerChain(err, fallbackOwner)) {
+    return;
   }
 
   if (globalErrorHandler) {

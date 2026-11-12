@@ -78,6 +78,9 @@ export function packAllPackages(
   }
   fs.mkdirSync(outDir, { recursive: true });
 
+  const cliBundle = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');
+  const cliBundleExistedBefore = fs.existsSync(cliBundle);
+
   const { topologicalOrder } = validateDependencyTopology();
   const packed: PackedTarball[] = [];
 
@@ -107,8 +110,7 @@ export function packAllPackages(
     });
   }
 
-  if (!options?.keepCliBin) {
-    const cliBundle = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');
+  if (!options?.keepCliBin && !cliBundleExistedBefore) {
     if (fs.existsSync(cliBundle)) {
       fs.rmSync(cliBundle, { force: true });
     }
@@ -125,6 +127,9 @@ if (process.argv[1]?.endsWith('pack.ts') || process.argv[1]?.endsWith('pack.js')
     console.log(`  • ${t.packageName.padEnd(22)}: ${t.filename} (${(t.sizeBytes / 1024).toFixed(2)} kB)`);
     console.log(`      SHA256: ${t.sha256}`);
   }
+  const cliBundle = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');
+  const cliBundleExistedBefore = fs.existsSync(cliBundle);
+
   const { topologicalOrder } = validateDependencyTopology();
   console.log(`\nPackaging Status: PASSED (${tarballs.length}/${topologicalOrder.length} Archives Ready)`);
 }

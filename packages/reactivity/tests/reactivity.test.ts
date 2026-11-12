@@ -9,6 +9,7 @@ import {
   runWithOwner,
   createRoot, 
   onCleanup,
+  onError,
   createStore
 } from '../src/index.js';
 
@@ -378,5 +379,94 @@ describe('@samrey/reactivity', () => {
     assert.equal(clampedEvals, 3);
     assert.equal(downstreamEvals, 2);
     assert.equal(effectRuns, 2);
+  });
+
+  it('Batch 2 regression: recovers computed from thrown error without sticky isDirty deadlock, prevents zombie resurrection on disposal, and routes effect/batch errors to onError', () => {
+    // 1. Direct computed throw recovery
+    const num = signal(2);
+    const derived = computed(() => {
+      const v = num.value;
+      if (v < 0) throw new Error('negative');
+      return v * 10;
+    });
+
+    assert.equal(derived.value, 20);
+    num.value = -1;
+    assert.throws(() => derived.value, /negative/);
+    assert.throws(() => derived.value, /negative/);
+    num.value = 3;
+    assert.equal(derived.value, 30, 'computed must recover cleanly after source updates past thrown error');
+
+    // 2. Effect + computed + batch + onError recovery (outside createRoot trigger)
+    const shouldThrow = signal(false);
+    const safeVal = signal(1);
+    const checked = computed(() => {
+      if (shouldThrow.value) throw new Error('boom-computed');
+      return safeVal.value * 5;
+    });
+    const caughtErrors: string[] = [];
+    const seen: number[] = [];
+
+    createRoot(() => {
+      onError((err) => {
+        caughtErrors.push(err instanceof Error ? err.message : String(err));
+      });
+      effect(() => {
+        seen.push(checked.value);
+      });
+    });
+
+    assert.deepEqual(seen, [5]);
+    assert.deepEqual(caughtErrors, []);
+
+    // Trigger throwing computed via batch() outside createRoot
+    batch(() => {
+      shouldThrow.value = true;
+    });
+    assert.deepEqual(caughtErrors, ['boom-computed'], 'onError in effect owner must catch computed error inside batch()');
+
+    // Recover and ensure effect is NOT stuck with isDirty=true deadlock
+    batch(() => {
+      shouldThrow.value = false;
+      safeVal.value = 4;
+    });
+    assert.deepEqual(seen, [5, 20], 'Effect and computed must recover and re-run after error');
+
+    // 3. No zombie computed or effect resurrection after disposal
+    let compEvals = 0;
+    let effectEvals = 0;
+    const zSrc = signal(1);
+    let leakedComputed!: () => number;
+
+    const disposeZombie = createRoot((dispose) => {
+      leakedComputed = computed(() => {
+        compEvals++;
+        return zSrc.value * 2;
+      });
+      effect(() => {
+        effectEvals++;
+        if (zSrc.value > 1) {
+          dispose();
+          void zSrc.value;
+        }
+      });
+      assert.equal(leakedComputed(), 2);
+      return dispose;
+    });
+
+    assert.equal(compEvals, 1);
+    assert.equal(effectEvals, 1);
+
+    // Trigger self/owner disposal mid-effect
+    zSrc.value = 2;
+    assert.equal(effectEvals, 2);
+
+    // Mutate after disposal and read leaked computed: neither may re-evaluate or re-subscribe
+    disposeZombie();
+    zSrc.value = 10;
+    void leakedComputed();
+    zSrc.value = 20;
+    assert.equal(compEvals, 1, 'Disposed computed must not re-evaluate or resurrect on read/update');
+    assert.equal(effectEvals, 2, 'Disposed effect must not re-subscribe or re-run');
   });
 });

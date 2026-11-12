@@ -50,7 +50,7 @@ export function serializeStateForHydration(state: unknown, options: SerializeOpt
   // Strictly validate script ID token to prevent attribute breakout or script termination
   const scriptId = /^[a-zA-Z0-9_\-:]+$/.test(rawId) ? rawId : '__SAMREY_STATE__';
   const cleanState = stripSecrets(state, options);
-  const rawJson = JSON.stringify(cleanState);
+  const rawJson = JSON.stringify(cleanState) ?? 'null';
   const safePayload = escapeForScriptPayload(rawJson);
   const nonceAttr = options.nonce ? ` nonce="${escapeHtmlAttribute(options.nonce)}"` : '';
 
@@ -84,43 +84,111 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
     return fallback;
   }
 
-  let script: Element | null = null;
-  if (typeof document.querySelector === 'function') {
-    try {
-      const selector = `script[type="application/json"]#${escapeCssIdentifier(scriptId)}`;
-      script = document.querySelector(selector);
-    } catch {
-      script = typeof document.getElementById === 'function' ? document.getElementById(scriptId) : null;
+  const getSafeTagName = (el: any): string => {
+    if (typeof Element !== 'undefined' && el instanceof Element) {
+      return Object.getOwnPropertyDescriptor(Element.prototype, 'tagName')?.get?.call(el) ?? el.tagName ?? '';
     }
-  } else if (typeof document.getElementById === 'function') {
-    script = document.getElementById(scriptId);
+    return typeof el?.nodeName === 'string' ? el.nodeName : (typeof el?.tagName === 'string' ? el.tagName : '');
+  };
+
+  const getSafeAttr = (el: any, attrName: string): string | null => {
+    if (typeof Element !== 'undefined' && el instanceof Element) {
+      return Element.prototype.getAttribute.call(el, attrName);
+    }
+    return typeof el?.getAttribute === 'function' ? el.getAttribute(attrName) : null;
+  };
+
+  const getSafeTextContent = (el: any): string | null => {
+    if (typeof Node !== 'undefined' && el instanceof Node) {
+      return Object.getOwnPropertyDescriptor(Node.prototype, 'textContent')?.get?.call(el) ?? null;
+    }
+    return typeof el?.textContent === 'string' ? el.textContent : null;
+  };
+
+  const isValidStateScript = (node: any): boolean => {
+    if (!node || typeof node !== 'object') return false;
+    if (typeof Element !== 'undefined' && node instanceof Element) {
+      if (typeof HTMLScriptElement !== 'undefined' && !(node instanceof HTMLScriptElement)) {
+        return false;
+      }
+      const elId = getSafeAttr(node, 'id');
+      if (elId !== null && elId !== scriptId) return false;
+    } else if (typeof HTMLScriptElement !== 'undefined' && typeof HTMLElement !== 'undefined' && node instanceof HTMLElement) {
+      return false;
+    }
+    if (getSafeTagName(node).toUpperCase() !== 'SCRIPT') {
+      return false;
+    }
+    const hasGetAttr = (typeof Element !== 'undefined' && node instanceof Element) || typeof node.getAttribute === 'function';
+    if (hasGetAttr) {
+      const typeAttr = getSafeAttr(node, 'type');
+      if (typeAttr !== 'application/json') return false;
+    }
+    return true;
+  };
+
+  const candidates: Element[] = [];
+  const selector = `script[type="application/json"]#${escapeCssIdentifier(scriptId)}`;
+  if (typeof document.querySelectorAll === 'function') {
+    try {
+      for (const match of Array.from(document.querySelectorAll(selector))) {
+        if (isValidStateScript(match)) candidates.push(match);
+      }
+    } catch {
+      // Fall through to querySelector / getElementById fallback
+    }
+  }
+  if (candidates.length === 0 && typeof document.querySelector === 'function') {
+    try {
+      const first = document.querySelector(selector);
+      if (first && isValidStateScript(first)) candidates.push(first);
+    } catch {
+      // Fall through to getElementById fallback
+    }
+  }
+  if (candidates.length === 0 && typeof document.getElementById === 'function') {
+    const byId = document.getElementById(scriptId);
+    if (byId && isValidStateScript(byId)) candidates.push(byId);
   }
 
-  // Defend against DOM clobbering: ensure target is an actual SCRIPT element with JSON type
-  if (!script) {
+  if (candidates.length === 0) {
     return fallback;
   }
-  if (typeof HTMLScriptElement !== 'undefined' && typeof HTMLElement !== 'undefined' && script instanceof HTMLElement && !(script instanceof HTMLScriptElement)) {
-    return fallback;
-  }
-  if (script.nodeName !== 'SCRIPT') {
-    return fallback;
-  }
-  if (typeof script.getAttribute === 'function') {
-    const typeAttr = script.getAttribute('type');
-    if (typeAttr !== 'application/json') {
+
+  const parsedPayloads: unknown[] = [];
+  for (const script of candidates) {
+    const rawContent = getSafeTextContent(script);
+    if (!rawContent) continue;
+    try {
+      parsedPayloads.push(safeJsonParse<unknown>(rawContent));
+    } catch (err) {
+      console.error('[Samrey SSR] Failed to parse hydration state payload (malformed or corrupted JSON):', err);
       return fallback;
     }
   }
 
-  const rawContent = script.textContent;
-  if (!rawContent) {
+  if (parsedPayloads.length === 0) {
     return fallback;
   }
 
-  try {
-    const parsed = safeJsonParse<T>(rawContent);
+  let parsed: T;
+  if (
+    parsedPayloads.length > 1 &&
+    parsedPayloads.every((p) => p !== null && typeof p === 'object' && !Array.isArray(p))
+  ) {
+    const merged: Record<string, unknown> = Object.create(null);
+    for (const chunk of parsedPayloads) {
+      for (const [k, v] of Object.entries(chunk as Record<string, unknown>)) {
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+        merged[k] = v;
+      }
+    }
+    parsed = merged as unknown as T;
+  } else {
+    parsed = parsedPayloads[0] as T;
+  }
 
+  try {
     if (options.validator) {
       const res = options.validator(parsed);
       if (typeof res === 'boolean') {
@@ -142,7 +210,7 @@ export function deserializeHydrationState<T = unknown>(options: DeserializeOptio
 
     return parsed;
   } catch (err) {
-    console.error('[Samrey SSR] Failed to parse hydration state payload (malformed or corrupted JSON):', err);
+    console.error('[Samrey SSR] Failed to validate hydration state payload:', err);
     return fallback;
   }
 }
