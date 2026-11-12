@@ -621,6 +621,23 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       assert.equal((await runHostReq('[::1]@evil.com')).status, 403);
       assert.equal((await runHostReq('localhost:3000')).status, 200);
 
+      // Invalid entries in allowedHosts must never allow empty/malformed Host headers
+      const customHostHandler = createNativeDevHandler(tmpRoot, ['https://bad host', 'dev.local']);
+      const runCustomHostReq = (hostVal: string | string[]) =>
+        new Promise<{ status: number }>((resolve) => {
+          let status = 0;
+          const req = { method: 'GET', url: '/clean.ts', headers: { host: hostVal } } as any;
+          const res = {
+            writeHead(code: number) { status = code; },
+            end() { resolve({ status }); },
+            setHeader() {}
+          } as any;
+          customHostHandler(req, res);
+        });
+      assert.equal((await runCustomHostReq('localhost:@evil.com')).status, 403);
+      assert.equal((await runCustomHostReq('dev.local')).status, 200);
+      assert.equal((await runCustomHostReq(['localhost', 'evil.com'])).status, 400);
+
       // 6. Batch 3 red-team: audit --json on 0 files/--fix, strict port/minify/sourcemap validation, cwd forwarding, and auditSource escapes/comments
       const emptyAuditDir = path.join(tmpRoot, 'empty-dir');
       fs.mkdirSync(emptyAuditDir);
@@ -651,6 +668,61 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       assert.ok(escReport.messages.some((m) => m.includes('onclick')), 'Must not terminate tag early on escaped > inside JS string attribute');
       const trailCommentReport = auditSource('const x = 1 // <script>alert(1)</script>', 'App.ts');
       assert.equal(trailCommentReport.messages.length, 0, 'Must skip trailing JS line comment after numeric/identifier expression');
+
+      // 7. Batch 3 fixes: space-separated --minify/--sourcemap validation, unknown flags, and auditSource HTML/JS comment/string boundaries
+      assert.equal((await runCLI(['build', '--minify', 'bad', '--dry-run'])).exitCode, 1, 'build --minify bad must fail');
+      assert.equal((await runCLI(['build', '--sourcemap', 'bad', '--dry-run'])).exitCode, 1, 'build --sourcemap bad must fail');
+      assert.equal((await runCLI(['build', '--unknown-flag', '--dry-run'])).exitCode, 1, 'unknown flag on build must fail');
+      assert.equal((await runCLI(['dev', '--bogus-flag', '--dry-run'])).exitCode, 1, 'unknown flag on dev must fail');
+      assert.equal((await runCLI(['preview', '--bogus-flag', '--dry-run'])).exitCode, 1, 'unknown flag on preview must fail');
+      assert.equal((await runCLI(['audit', emptyAuditDir, '--bogus-flag'])).exitCode, 1, 'unknown flag on audit must fail');
+
+      // HTML files: backslash before quote inside attribute value must NOT escape the closing quote
+      const htmlBackslashReport = auditSource('<img src="a.png" alt="x\\" onclick="alert(1)">', 'index.html');
+      assert.ok(
+        htmlBackslashReport.messages.some((m) => m.includes('onclick')),
+        `HTML attribute ending with backslash before closing quote must still flag following onclick, got: ${JSON.stringify(htmlBackslashReport.messages)}`
+      );
+
+      // JS/TS files: block comments / regex literals inside JS string literals must NOT swallow subsequent markup
+      const jsStringSlashReport = auditSource(
+        'const a = "/*"; const s = "a = /<script>alert(1)</script>"; const b = "<script>alert(2)</script>"; /* */',
+        'App.ts'
+      );
+      assert.equal(
+        jsStringSlashReport.violationsCount,
+        2,
+        `JS string containing /* or /... must not hide <script> tags, got ${jsStringSlashReport.violationsCount}: ${JSON.stringify(jsStringSlashReport.messages)}`
+      );
+
+      // JS/TS files: // inside multiline template literal is NOT a JS line comment
+      const tplNewlineCommentReport = auditSource('const tpl = `hello\n// <script>alert(1)</script>`;', 'App.ts');
+      assert.equal(
+        tplNewlineCommentReport.violationsCount,
+        1,
+        `// on second line of template literal must not hide <script>, got: ${JSON.stringify(tplNewlineCommentReport.messages)}`
+      );
+
+      // Vite dev server options must forward cwd as Vite root
+      const { buildViteServerOptions } = await import('../src/commands/dev.js');
+      const customAppRoot = path.join(tmpRoot, 'vite-app');
+      const viteCfg = buildViteServerOptions({ cwd: customAppRoot, port: 4321, host: true });
+      assert.equal(viteCfg.root, path.resolve(customAppRoot));
+      assert.deepEqual(viteCfg.server, { port: 4321, host: true });
+
+      // Red-team edge cases: empty string option values, JSX text // /* '99, and regex literals inside JSX {expr}
+      assert.equal((await runCLI(['build', '--minify', '', '--dry-run'])).exitCode, 1);
+      assert.equal((await runCLI(['build', '--sourcemap', '', '--dry-run'])).exitCode, 1);
+      assert.equal((await runCLI(['build', '--ssr', '', '--dry-run'])).exitCode, 1);
+
+      assert.equal(auditSource('<div>Note: // <script>alert(1)</script></div>', 'App.tsx').violationsCount, 1);
+      assert.equal(auditSource('<div>a /* <script>alert(1)</script> */</div>', 'App.tsx').violationsCount, 1);
+      assert.equal(auditSource("<p>Back in '99</p>\n// <script>alert(1)</script>", 'App.tsx').violationsCount, 0);
+      assert.equal(auditSource('<div data-re={/{/} onclick="alert(1)"></div>', 'App.tsx').violationsCount, 1);
+      assert.equal(auditSource('<div data-re={/"/} onclick="alert(1)"></div>', 'App.tsx').violationsCount, 1);
+      assert.equal(auditSource('<img src={x + /{/} alt="ok" onerror="alert(1)" />', 'App.tsx').violationsCount, 1);
+      assert.equal(auditSource('const id = <T extends object>(x: T) => x;\n// <script>alert(1)</script>', 'App.tsx').violationsCount, 0);
+      assert.equal(auditSource('<UI.Box>"Welcome</UI.Box>\n// <script>alert(1)</script>', 'App.tsx').violationsCount, 0);
     } finally {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

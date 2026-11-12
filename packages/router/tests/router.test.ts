@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { onCleanup, createRoot } from '@samrey/reactivity';
-import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, useLocation, useRouter, Link, createLink, setRouterInstance } from '../src/index.js';
+import { matchPath, createRouter, matchRoutes, Router, Route, RouterOutlet, useNavigate, useLocation, useSearchParams, useRouter, Link, createLink, setRouterInstance } from '../src/index.js';
 
 describe('@samrey/router', () => {
   it('matches static and parameterized routes correctly', () => {
@@ -379,6 +379,86 @@ describe('@samrey/router', () => {
     } finally {
       setRouterInstance(null as any);
       (globalThis as any).document = prevDocument;
+    }
+  });
+
+  it('Batch 3 regression: useSearchParams ignores query tokens inside hash, Link skips download links, and relative links resolve safely', async () => {
+    const { resolveLinkTarget } = await import('../src/link-helpers.js');
+
+    // 1. Hash before '?' must NOT leak into search params
+    await createRoot(async (dispose) => {
+      const router = createRouter([{ path: '/page', component: () => ({ nodeType: 1 }) as any }], '/page#section?a=1');
+      const [params, setParams] = useSearchParams();
+      assert.equal(params.value.get('a'), null, 'useSearchParams must ignore ?a=1 after #hash');
+      assert.equal(params.value.toString(), '');
+
+      router.navigate('/page?b=2#section?a=1');
+      assert.equal(params.value.get('b'), '2');
+      assert.equal(params.value.get('a'), null);
+      void setParams;
+      dispose();
+    });
+
+    // 2. resolveLinkTarget resolves relative paths cleanly while blocking unsafe schemes & protocol-relative URLs
+    assert.deepEqual(resolveLinkTarget('settings'), { isExternal: false, safeHref: '/settings' });
+    assert.deepEqual(resolveLinkTarget('settings', '/app/users/'), { isExternal: false, safeHref: '/app/users/settings' });
+    assert.deepEqual(resolveLinkTarget('../about', '/app/users/profile'), { isExternal: false, safeHref: '/app/about' });
+    assert.deepEqual(resolveLinkTarget('?tab=security', '/app/users'), { isExternal: false, safeHref: '/app/users?tab=security' });
+    assert.deepEqual(resolveLinkTarget('//evil.com/phish'), { isExternal: false, safeHref: '/' });
+    assert.deepEqual(resolveLinkTarget('javascript:alert(1)'), { isExternal: false, safeHref: '/' });
+    assert.deepEqual(resolveLinkTarget('java\tscript:alert(1)'), { isExternal: false, safeHref: '/' });
+
+    await createRoot(async (dispose) => {
+      const router = createRouter([{ path: '/', component: () => ({ nodeType: 1 }) as any }], '/');
+      router.navigate('https\t://evil.com/admin');
+      assert.equal(router.currentPath.value, '/', 'Obfuscated scheme navigate("https\\t://evil.com/admin") must not change path');
+      dispose();
+    });
+
+    // 3. Link with download attribute must not hijack navigation
+    const prevDoc = (globalThis as any).document;
+    const clickHandlers: Array<(e: any) => void> = [];
+    (globalThis as any).document = {
+      createElement: () => {
+        const node: any = {
+          nodeType: 1,
+          attributes: {},
+          childNodes: [],
+          setAttribute(k: string, v: string) { node.attributes[k] = v; },
+          getAttribute(k: string) { return node.attributes[k] ?? null; },
+          addEventListener(type: string, fn: (e: any) => void) { if (type === 'click') clickHandlers.push(fn); },
+          removeEventListener() {},
+          appendChild() {}
+        };
+        return node;
+      },
+      createTextNode: (t: string) => ({ nodeType: 3, textContent: t })
+    };
+    try {
+      await createRoot(async (dispose) => {
+        const router = createRouter([
+          { path: '/', component: () => ({ nodeType: 1 }) as any },
+          { path: '/report.pdf', component: () => ({ nodeType: 1 }) as any }
+        ], '/');
+        Link({ href: '/report.pdf', download: true, children: 'Download' });
+        assert.equal(clickHandlers.length, 1);
+        let prevented = false;
+        clickHandlers[0]!({
+          button: 0,
+          metaKey: false,
+          ctrlKey: false,
+          shiftKey: false,
+          altKey: false,
+          defaultPrevented: false,
+          preventDefault() { prevented = true; }
+        });
+        assert.equal(prevented, false, 'Download link must not preventDefault() or hijack SPA navigation');
+        assert.equal(router.currentPath.value, '/');
+        dispose();
+      });
+    } finally {
+      setRouterInstance(null as any);
+      (globalThis as any).document = prevDoc;
     }
   });
 });

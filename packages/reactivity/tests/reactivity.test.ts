@@ -483,6 +483,70 @@ describe('@samrey/reactivity', () => {
     postDisposeSig.value = 2;
     assert.equal(postDisposeRuns, 0, 'Effect created under an already-disposed owner must not run or remain subscribed');
 
+    // 4b. Disposing parent owner mid-initial effect execution and synchronously writing a tracked signal must NOT resurrect the effect
+    const syncDisposeSig = signal(0);
+    let syncDisposeRuns = 0;
+    createRoot((disposeRoot) => {
+      effect(() => {
+        syncDisposeRuns++;
+        void syncDisposeSig.value;
+        disposeRoot();
+        syncDisposeSig.value = 1;
+      });
+    });
+    assert.equal(syncDisposeRuns, 1, 'Disposing owner mid-initial-effect and synchronously writing tracked signal must not re-run effect');
+
+    // 4c. computed() created under an already-disposed owner must stay disposed (no evaluation or subscription)
+    const deadCompSrc = signal(1);
+    let deadCompEvals = 0;
+    let deadComp!: () => number;
+    createRoot((dispose) => {
+      dispose();
+      deadComp = computed(() => {
+        deadCompEvals++;
+        return deadCompSrc.value * 2;
+      });
+    });
+    void deadComp();
+    deadCompSrc.value = 2;
+    void deadComp();
+    assert.equal(deadCompEvals, 0, 'computed() created under an already-disposed owner must not evaluate or subscribe');
+
+    // 4d. Disposing root inside an effect re-run cleanup must NOT double-run cleanup or execute fn() on the disposed effect
+    const reRunCleanupSig = signal(0);
+    let reRunRuns = 0;
+    let reRunCleanups = 0;
+    createRoot((dispose) => {
+      effect(() => {
+        reRunRuns++;
+        void reRunCleanupSig.value;
+        return () => {
+          reRunCleanups++;
+          if (reRunRuns === 1) dispose();
+        };
+      });
+    });
+    reRunCleanupSig.value = 1;
+    assert.equal(reRunRuns, 1, 'Effect disposed during re-run cleanup must not execute fn() again');
+    assert.equal(reRunCleanups, 1, 'Effect cleanup that calls dispose() must run exactly once');
+
+    // 4e. Accessing computed() inside an earlier onCleanup() during owner disposal must not evaluate fn()
+    const disposingCompSrc = signal(5);
+    let disposingCompEvals = 0;
+    const disposeDuringCleanup = createRoot((dispose) => {
+      let c!: () => number;
+      onCleanup(() => {
+        void c();
+      });
+      c = computed(() => {
+        disposingCompEvals++;
+        return disposingCompSrc.value * 3;
+      });
+      return dispose;
+    });
+    disposeDuringCleanup();
+    assert.equal(disposingCompEvals, 0, 'computed() read during owner disposal must not evaluate');
+
     // 5. Infinite effect loop (SAMREY-301) caught by onError handler must allow recovery signal/effect updates to flush
     const loopSig = signal(0);
     const recoverySig = signal('idle');

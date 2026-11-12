@@ -528,5 +528,70 @@ describe('@samrey/forms', () => {
       }
     });
     assert.equal(await selfResetForm.submit(), true, 'submit() completing onSubmit that calls reset() must still return true');
+
+    // 6. Batch 2 red-team: StandardSchema { key } path segments + async boolean validators.custom + bindField errorElement consistency
+    const keySegSchema: StandardSchemaV1<{ email: string }> = {
+      '~standard': {
+        version: 1,
+        vendor: 'object-key-path',
+        validate: (input: unknown) => {
+          const v = input as { email: string };
+          return v.email.includes('@')
+            ? { value: v }
+            : { issues: [{ message: 'Email key error', path: [{ key: 'email' }] }] };
+        }
+      }
+    };
+    const keySegForm = createForm({
+      initialValues: { email: 'bad' },
+      schema: keySegSchema,
+      onSubmit: () => {}
+    });
+    assert.equal(await keySegForm.submit(), false);
+    assert.equal(keySegForm.fields.email.error.value, 'Email key error');
+
+    const asyncBoolField = createField(
+      'code',
+      'ab',
+      validators.custom(async (v: string) => v.length >= 3, 'Too short')
+    );
+    assert.equal(await asyncBoolField.validate(), false);
+    assert.equal(asyncBoolField.error.value, 'Too short');
+
+    const ariaBoundField = createField('username', 'alice');
+    const mockErrEl = { textContent: '' };
+    const mockBoundInput: any = {
+      type: 'text',
+      value: '',
+      attrs: {} as Record<string, string>,
+      setAttribute(k: string, v: string) { this.attrs[k] = v; },
+      removeAttribute(k: string) { delete this.attrs[k]; },
+      addEventListener() {},
+      removeEventListener() {}
+    };
+    bindField(mockBoundInput, ariaBoundField, { errorElement: mockErrEl });
+    ariaBoundField.setError('Server rejected username');
+    assert.equal(mockBoundInput.attrs['aria-invalid'], 'true');
+    assert.equal(mockErrEl.textContent, 'Server rejected username', 'errorElement must match aria-invalid/aria-describedby on programmatic error');
+
+    // Non-Promise custom thenable in Standard Schema must still be awaited
+    const thenableSchemaForm = createForm({
+      initialValues: { email: 'bad' },
+      schema: {
+        '~standard': {
+          version: 1,
+          vendor: 'custom-thenable',
+          validate: () =>
+            ({
+              then(resolve: (res: any) => void) {
+                resolve({ issues: [{ message: 'Thenable rejected email', path: [{ key: 'email' }] }] });
+              }
+            }) as any
+        }
+      },
+      onSubmit: () => {}
+    });
+    assert.equal(await thenableSchemaForm.submit(), false);
+    assert.equal(thenableSchemaForm.fields.email.error.value, 'Thenable rejected email');
   });
 });

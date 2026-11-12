@@ -5,7 +5,7 @@
 
 import { Dependency, ReadonlySignal, Subscriber } from './types.js';
 import { trackDependency, setActiveSubscriber, incrementClock } from './batch.js';
-import { onCleanup } from './owner.js';
+import { getOwner, onCleanup } from './owner.js';
 
 export function computed<T>(fn: () => T): ReadonlySignal<T> {
   let cachedValue: T;
@@ -14,6 +14,27 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   let lastError: unknown;
   const trackedVersions: number[] = [];
 
+  const owner = getOwner();
+
+  const disposeComputedNode = () => {
+    node.isDisposed = true;
+    for (const source of node.sources) {
+      source.subscribers.delete(node);
+    }
+    node.sources.clear();
+    node.subscribers.clear();
+    trackedVersions.length = 0;
+  };
+
+  const isDead = () => {
+    if (node.isDisposed) return true;
+    if (owner && (owner.isDisposed || (owner as any).isDisposing)) {
+      disposeComputedNode();
+      return true;
+    }
+    return false;
+  };
+
   const node: Subscriber & Dependency = {
     version: 0,
     isDirty: true,
@@ -21,7 +42,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     sources: new Set<Dependency>(),
     subscribers: new Set<Subscriber>(),
     notify() {
-      if (this.isDisposed) return;
+      if (isDead()) return;
       if (!this.isDirty) {
         this.isDirty = true;
         for (const sub of [...this.subscribers]) {
@@ -30,15 +51,17 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
       }
     },
     update() {
-      if (this.isDisposed) return;
+      if (isDead()) return;
       if (this.isDirty) {
         evaluate();
       }
     }
   };
 
+  isDead();
+
   function evaluate(): T {
-    if (node.isDisposed) {
+    if (isDead()) {
       return cachedValue;
     }
 
@@ -122,7 +145,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   }
 
   function read(): T {
-    if (node.isDisposed) {
+    if (isDead()) {
       return cachedValue;
     }
     trackDependency(node);
@@ -138,15 +161,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     enumerable: true
   });
 
-  onCleanup(() => {
-    node.isDisposed = true;
-    for (const source of node.sources) {
-      source.subscribers.delete(node);
-    }
-    node.sources.clear();
-    node.subscribers.clear();
-    trackedVersions.length = 0;
-  });
+  onCleanup(disposeComputedNode);
 
   return accessor;
 }

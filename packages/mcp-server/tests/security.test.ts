@@ -1022,6 +1022,33 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
           () => executeSafeCommand('node', ['--test', `${realProj}/tests/{..,tests}/*.test.mjs`], realProj),
           /Security Exception/i
         );
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', `${realProj}/[n]ode_modules/*/*.mjs`], realProj),
+          /Security Exception/i
+        );
+
+        // 5. Dangling symlink pointing through an escaping directory symlink must be rejected;
+        //    valid dangling symlink inside a subdir must resolve from realRoot without doubling sub/
+        fs.symlinkSync(outDir, path.join(realProj, 'dirlink'));
+        fs.mkdirSync(path.join(realProj, 'sub'), { recursive: true });
+        fs.mkdirSync(path.join(realProj, 'target_dir'), { recursive: true });
+        fs.symlinkSync('../dirlink/nonexistent.txt', path.join(realProj, 'sub', 'bad-dangling'));
+        fs.symlinkSync('../target_dir/missing.txt', path.join(realProj, 'sub', 'ok-dangling'));
+        assert.throws(
+          () => resolveSafePath(realProj, 'sub/bad-dangling'),
+          /Security Exception/i
+        );
+        assert.equal(
+          resolveSafePath(realProj, 'sub/ok-dangling'),
+          path.join(realProj, 'target_dir', 'missing.txt')
+        );
+        // 6. Symlink with intermediate symlinked dir followed by .. must resolve intermediate symlink before collapsing ..
+        fs.symlinkSync('sub', path.join(realProj, 'subalias'));
+        fs.symlinkSync('../dirlink/../outside.txt', path.join(realProj, 'sub', 'via-raw-dotdot'));
+        assert.throws(
+          () => resolveSafePath(realProj, 'subalias/via-raw-dotdot'),
+          /Security Exception/i
+        );
       } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
       }

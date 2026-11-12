@@ -12,19 +12,40 @@ const EXPLICIT_EXTERNAL_SCHEME_RE = /^\s*(https?:|mailto:|tel:)/i;
  * Protocol-relative URLs (`//...`) and obfuscated bypasses are treated as non-external
  * and sanitized strictly to same-origin paths.
  */
-export function resolveLinkTarget(rawHref: string): { isExternal: boolean; safeHref: string } {
-  if (EXPLICIT_EXTERNAL_SCHEME_RE.test(rawHref)) {
-    const safeHref = sanitizeUri(rawHref, { allowProtocolRelative: false });
+export function resolveLinkTarget(rawHref: string, currentPath = '/'): { isExternal: boolean; safeHref: string } {
+  const trimmed = rawHref.trim();
+  if (EXPLICIT_EXTERNAL_SCHEME_RE.test(trimmed)) {
+    const safeHref = sanitizeUri(trimmed, { allowProtocolRelative: false });
     if (safeHref === 'about:blank') {
       return { isExternal: false, safeHref: 'about:blank' };
     }
     return { isExternal: true, safeHref };
   }
 
-  return {
-    isExternal: false,
-    safeHref: sanitizeRedirectUri(rawHref, '/')
-  };
+  if (!trimmed || /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/[\\/]|\\)/i.test(trimmed)) {
+    return {
+      isExternal: false,
+      safeHref: sanitizeRedirectUri(rawHref, '/')
+    };
+  }
+
+  try {
+    const safeBase = sanitizeRedirectUri(currentPath, '/');
+    const resolved = new URL(trimmed, 'http://localhost' + (safeBase.startsWith('/') ? safeBase : '/' + safeBase));
+    if (resolved.origin !== 'http://localhost' || resolved.host !== 'localhost') {
+      return { isExternal: false, safeHref: sanitizeRedirectUri(rawHref, '/') };
+    }
+    const normalized = resolved.pathname + resolved.search + resolved.hash;
+    return {
+      isExternal: false,
+      safeHref: sanitizeRedirectUri(normalized, '/')
+    };
+  } catch {
+    return {
+      isExternal: false,
+      safeHref: sanitizeRedirectUri(rawHref, '/')
+    };
+  }
 }
 
 /**

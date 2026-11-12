@@ -68,6 +68,8 @@ function getSafeElementAttribute(el: unknown, attrName: string): string | null {
 
 function getSafeElementTagName(el: unknown): string | null {
   if (!el || typeof el !== 'object') return null;
+  const nt = (el as { nodeType?: unknown }).nodeType;
+  if (nt !== undefined && nt !== 1) return null;
   try {
     if (typeof Element !== 'undefined' && el instanceof Element) {
       const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'tagName');
@@ -261,14 +263,14 @@ function matchNodeTrees(
     }
 
     if (!sNode) {
-      onMismatch?.(cNode.tagName?.toUpperCase() || `NodeType: ${cNode.nodeType}`, 'missing', parentForError);
+      onMismatch?.(getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cNode.nodeType}`, 'missing', parentForError);
       return false;
     }
 
     if (cNode.nodeType !== sNode.nodeType) {
       onMismatch?.(
-        cNode.tagName?.toUpperCase() || `NodeType: ${cNode.nodeType}`,
-        sNode.tagName?.toUpperCase() || `NodeType: ${sNode.nodeType}`,
+        getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cNode.nodeType}`,
+        getSafeElementTagName(sNode)?.toUpperCase() || `NodeType: ${sNode.nodeType}`,
         sNode
       );
       return false;
@@ -297,10 +299,10 @@ function matchNodeTrees(
     }
 
     if (cNode.nodeType === 1) {
-      const cTag = cNode.tagName?.toUpperCase();
-      const sTag = sNode.tagName?.toUpperCase();
-      if (cTag && sTag && cTag !== sTag) {
-        onMismatch?.(cTag, sTag, sNode);
+      const cTag = getSafeElementTagName(cNode)?.toUpperCase();
+      const sTag = getSafeElementTagName(sNode)?.toUpperCase();
+      if (!cTag || !sTag || cTag !== sTag) {
+        onMismatch?.(cTag || `NodeType: ${cNode.nodeType}`, sTag || `NodeType: ${sNode.nodeType}`, sNode);
         return false;
       }
 
@@ -320,7 +322,7 @@ function matchNodeTrees(
   while (sIdx < serverList.length) {
     const sRem = serverList[sIdx];
     if (sRem && sRem.nodeType !== 8) {
-      onMismatch?.('missing', sRem.tagName?.toUpperCase() || `NodeType: ${sRem.nodeType}`, sRem);
+      onMismatch?.('missing', getSafeElementTagName(sRem)?.toUpperCase() || `NodeType: ${sRem.nodeType}`, sRem);
       return false;
     }
     sIdx++;

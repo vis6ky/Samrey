@@ -5,7 +5,7 @@
 
 export interface StandardSchemaIssue {
   message: string;
-  path?: (string | number)[];
+  path?: readonly (PropertyKey | { readonly key: PropertyKey })[];
 }
 
 export interface StandardSchemaSuccess<T> {

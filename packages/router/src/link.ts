@@ -7,7 +7,7 @@ import { RouterInstance } from './types.js';
 import { isPlainLeftClick, resolveLinkTarget } from './link-helpers.js';
 
 export function createLink(router: RouterInstance, to: string) {
-  const { isExternal, safeHref: safeTo } = resolveLinkTarget(to);
+  const { isExternal, safeHref: safeTo } = resolveLinkTarget(to, router.currentPath.value);
   const isActive = () => {
     if (isExternal) return false;
     const current = router.currentPath.value.split(/[?#]/)[0];

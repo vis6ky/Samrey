@@ -14,7 +14,7 @@ import * as Security from '@samrey/security';
 import * as Http from '@samrey/http';
 import { icon } from './icons.js';
 
-import { evaluateSandboxedProgram } from './sandboxInterpreter.js';
+import { evaluateSandboxedProgram, sanitizeSafeStyleValue } from './sandboxInterpreter.js';
 
 export interface SandboxLog {
   time: string;
@@ -772,12 +772,19 @@ function createSafeSandboxHttpClient(_baseUrl?: string, _options?: unknown) {
   });
 }
 
-function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, unknown> | null): Record<string, unknown> | null | undefined {
-  const lowerTag = String(tagName ?? '').trim().toLowerCase();
+function assertSafeSandboxElementArgs(
+  tagName: unknown,
+  attrs?: Record<string, unknown> | null
+): { safeTag: string; safeAttrs: Record<string, unknown> | null | undefined } {
+  if (typeof tagName !== 'string') {
+    throw new TypeError('[Sandbox Security] Element tag name must be a string.');
+  }
+  const safeTag = tagName.trim();
+  const lowerTag = safeTag.toLowerCase();
   if (!lowerTag || DANGEROUS_SANDBOX_TAGS.has(lowerTag)) {
     throw new TypeError(`[Sandbox Security] Creating <${lowerTag || 'unknown'}> elements inside the sandbox is prohibited.`);
   }
-  if (!attrs || typeof attrs !== 'object') return attrs;
+  if (!attrs || typeof attrs !== 'object') return { safeTag, safeAttrs: attrs };
 
   const cleanAttrs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(attrs)) {
@@ -825,21 +832,12 @@ function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, u
       continue;
     }
     if (lk === 'style' && rawVal.trim()) {
-      const sanitized = Security.sanitizeCssStyle(rawVal);
-      if (
-        sanitized === '' ||
-        sanitized.includes('/*blocked*/') ||
-        (sanitized.includes('url("")') && !/url\(\s*(?:""|'')?\s*\)/i.test(rawVal)) ||
-        (sanitized.includes('image-set("")') && !/image-set\(\s*(?:""|'')?\s*\)/i.test(rawVal))
-      ) {
-        throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited inside the sandbox.');
-      }
-      cleanAttrs[k] = sanitized;
+      cleanAttrs[k] = sanitizeSafeStyleValue(rawVal, 'style attribute');
       continue;
     }
     cleanAttrs[k] = rawVal;
   }
-  return cleanAttrs;
+  return { safeTag, safeAttrs: cleanAttrs };
 }
 
 export function validateSandboxCodeSafety(source: string): string | null {
@@ -935,12 +933,12 @@ export function executeSamreyCode(
 
       // Runtime DOM & Control Flow
       el: (tagName: any, attrs?: any, ...children: any[]) => {
-        const safeAttrs = assertSafeSandboxElementArgs(tagName, attrs);
-        return Runtime.el(tagName, safeAttrs, ...children);
+        const { safeTag, safeAttrs } = assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.el(safeTag as any, safeAttrs, ...children);
       },
       svgEl: (tagName: string, attrs?: any, ...children: any[]) => {
-        const safeAttrs = assertSafeSandboxElementArgs(tagName, attrs);
-        return Runtime.svgEl(tagName, safeAttrs, ...children);
+        const { safeTag, safeAttrs } = assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.svgEl(safeTag, safeAttrs, ...children);
       },
       text: Runtime.text,
       frag: Runtime.frag,

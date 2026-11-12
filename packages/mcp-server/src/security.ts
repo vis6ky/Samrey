@@ -123,7 +123,7 @@ function globMightMatchInternalDir(normalizedPattern: string): boolean {
   const segs = normalizedPattern.split('/').filter(Boolean);
   return segs.some((seg) => {
     if (!GLOB_META_RE.test(seg)) return false;
-    return /^(\*|n|node|\.|{\s*node|\{\s*\.|\?)/i.test(seg) || seg.includes('**');
+    return /^(\*|n|node|\.|{|\?|\[|@|\+|\(|!)/i.test(seg) || seg.includes('**');
   });
 }
 
@@ -150,7 +150,7 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
 
   // Reject any literal ".." segment or brace/delimiter variant like "{..,tests}" anywhere in glob pattern
   const hasTraversalToken = candidate.split('/').some((seg) =>
-    seg === '..' || /(?:^|[{,!\s])\.\.(?:$|[},\s])/.test(seg)
+    seg === '..' || /(?:^|[{,(!\s])\.\.(?:$|[}),\s])/.test(seg)
   );
   if (hasTraversalToken) {
     throw new Error(
@@ -306,12 +306,15 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
     rawRelSegments = cleanRel.split('/').filter(Boolean);
   }
 
-  // Walk segments sequentially from realRoot, resolving symlinks BEFORE applying ".."
+  // Walk segments sequentially from realRoot, resolving every symlink segment
+  // (including dangling targets) before interpreting subsequent segments or "..".
   let currentReal = realRoot;
   const missingSegments: string[] = [];
+  let workSegments = [...rawRelSegments];
+  let symlinkHops = 0;
 
-  for (let i = 0; i < rawRelSegments.length; i++) {
-    const seg = rawRelSegments[i]!;
+  for (let i = 0; i < workSegments.length; i++) {
+    const seg = workSegments[i]!;
     if (seg === '.') continue;
     if (seg === '..') {
       if (missingSegments.length > 0) {
@@ -345,59 +348,31 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
     }
 
     if (stat.isSymbolicLink()) {
-      let linkTarget = nextPath;
-      let depth = 0;
-      while (depth < 40) {
-        let linkStat: fs.Stats | null = null;
-        try {
-          linkStat = fs.lstatSync(linkTarget);
-        } catch (err: any) {
-          if (err.code !== 'ENOENT') throw err;
-          break;
-        }
-        if (!linkStat || !linkStat.isSymbolicLink()) {
-          break;
-        }
-        depth++;
-        const rawTarget = fs.readlinkSync(linkTarget);
-        linkTarget = path.resolve(path.dirname(linkTarget), rawTarget);
-
-        const relCheck = path.relative(realRoot, linkTarget);
-        if (relCheck.startsWith('..') || path.isAbsolute(relCheck)) {
-          throw new Error(
-            `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
-          );
-        }
-      }
-
-      if (depth >= 40) {
+      symlinkHops++;
+      if (symlinkHops > 40) {
         throw new Error(`Security Exception: Symlink loop detected.`);
       }
-
-      const finalRel = path.relative(realRoot, linkTarget);
-      if (finalRel.startsWith('..') || path.isAbsolute(finalRel)) {
-        throw new Error(
-          `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
-        );
-      }
-
-      if (fs.existsSync(linkTarget)) {
-        const realLinkTarget = fs.realpathSync.native
-          ? fs.realpathSync.native(linkTarget)
-          : fs.realpathSync(linkTarget);
-        const realRel = path.relative(realRoot, realLinkTarget);
-        if (realRel.startsWith('..') || path.isAbsolute(realRel)) {
+      const rawTarget = fs.readlinkSync(nextPath);
+      const remaining = workSegments.slice(i + 1);
+      if (path.isAbsolute(rawTarget)) {
+        const resolvedAbs = path.resolve(rawTarget);
+        const absRel = path.relative(realRoot, resolvedAbs);
+        if (absRel.startsWith('..') || path.isAbsolute(absRel)) {
           throw new Error(
             `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
           );
         }
-        currentReal = realLinkTarget;
+        const targetSegs = absRel ? absRel.split(path.sep).filter(Boolean) : [];
+        workSegments = [...targetSegs, ...remaining];
       } else {
-        // Dangling link whose target is inside realRoot: treat unresolved suffix relative to realRoot
-        const danglingRel = path.relative(realRoot, linkTarget);
-        const danglingSegs = danglingRel.split(path.sep).filter(Boolean);
-        missingSegments.push(...danglingSegs);
+        const currentRel = path.relative(realRoot, currentReal);
+        const currentSegs = currentRel ? currentRel.split(path.sep).filter(Boolean) : [];
+        const rawTargetSegs = rawTarget.replace(/\\/g, '/').split('/').filter(Boolean);
+        workSegments = [...currentSegs, ...rawTargetSegs, ...remaining];
       }
+      currentReal = realRoot;
+      missingSegments.length = 0;
+      i = -1;
     } else {
       currentReal = nextPath;
     }

@@ -15,12 +15,15 @@ function resolvePath(to: string, current: string): string {
   const trimmed = to.trim();
   if (!trimmed) return current;
   // Preserve explicit URI schemes, protocol-relative prefixes, and backslash tricks so sanitizeRedirectUri rejects them explicitly
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/[\\/]|\\)/i.test(trimmed)) {
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/[\\/]|\\)/i.test(trimmed) || /[\u0000-\u001f\u007f]/.test(trimmed)) {
     return trimmed;
   }
   try {
     const base = 'http://localhost' + (current.startsWith('/') ? current : '/' + current);
     const resolved = new URL(trimmed, base);
+    if (resolved.origin !== 'http://localhost' || resolved.host !== 'localhost') {
+      return trimmed;
+    }
     return resolved.pathname + resolved.search + resolved.hash;
   } catch {
     return trimmed.startsWith('/') ? trimmed : '/' + trimmed;
@@ -141,11 +144,11 @@ export function useSearchParams() {
   const router = useRouter();
   const searchSignal = computed(() => {
     const p = router.currentPath.value;
-    const qIdx = p.indexOf('?');
+    const hIdx = p.indexOf('#');
+    const pathAndSearch = hIdx === -1 ? p : p.slice(0, hIdx);
+    const qIdx = pathAndSearch.indexOf('?');
     if (qIdx === -1) return new URLSearchParams();
-    const hIdx = p.indexOf('#', qIdx);
-    const searchStr = hIdx === -1 ? p.slice(qIdx) : p.slice(qIdx, hIdx);
-    return new URLSearchParams(searchStr);
+    return new URLSearchParams(pathAndSearch.slice(qIdx));
   });
 
   const setSearch = (nextParams: Record<string, string> | URLSearchParams | string) => {
@@ -359,10 +362,11 @@ export interface LinkProps {
 
 export function Link(props: LinkProps) {
   const router = tryUseRouter();
-  const { isExternal, safeHref: safeTo } = resolveLinkTarget(props.href);
+  const { isExternal, safeHref: safeTo } = resolveLinkTarget(props.href, router?.currentPath.value);
+  const hasDownload = props.download !== undefined && props.download !== false && props.download !== null;
 
   const handleClick = (e: MouseEvent) => {
-    if (!isPlainLeftClick(e) || isExternal || (props.target && props.target !== '_self') || !router) {
+    if (!isPlainLeftClick(e) || isExternal || hasDownload || (props.target && props.target !== '_self') || !router) {
       return;
     }
     e.preventDefault();

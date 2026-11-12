@@ -492,7 +492,7 @@ function isDeclBoundaryBefore(str: string, idx: number): boolean {
 }
 
 const CSS_AT_RULE_STICKY_RE = /@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/iy;
-const CSS_BAD_PROP_STICKY_RE = /(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/iy;
+const CSS_BAD_PROP_STICKY_RE = /(?:[*_]+)?(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/iy;
 const CSS_EXPR_STICKY_RE = /expression\s*\(/iy;
 const CSS_PROGID_STICKY_RE = /progid\s*:/iy;
 const CSS_ANY_FN_STICKY_RE = /([a-zA-Z_-][a-zA-Z0-9_-]*)\s*\(/iy;
@@ -1012,7 +1012,7 @@ const HTML_FOREIGN_BREAKOUT_TAGS: ReadonlySet<string> = new Set([
   'strong', 'strike', 'sub', 'sup', 'table', 'tt', 'u', 'ul', 'var'
 ]);
 
-const SVG_HTML_INTEGRATION_TAGS: ReadonlySet<string> = new Set(['desc']);
+const SVG_HTML_INTEGRATION_TAGS: ReadonlySet<string> = new Set(['desc', 'foreignobject']);
 const MATH_TEXT_INTEGRATION_TAGS: ReadonlySet<string> = new Set(['mi', 'mo', 'mn', 'ms', 'mtext']);
 
 const VOID_HTML_TAGS: ReadonlySet<string> = new Set([
@@ -1230,17 +1230,25 @@ function sanitizeAttributeList(
 
 function findEndTagCloseGt(html: string, startAfterName: number): number {
   const len = html.length;
-  let quote: string | null = null;
-  for (let k = startAfterName; k < len; k++) {
-    const ch = html[k];
-    if (quote) {
-      if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      quote = ch;
-    } else if (ch === '>') {
-      return k;
+  let k = startAfterName;
+  while (k < len) {
+    while (k < len && (/\s/.test(html[k]) || html[k] === '/')) k++;
+    if (k >= len) return -1;
+    if (html[k] === '>') return k;
+    // Attribute name up to delimiter
+    while (k < len && !/[\s=/>]/.test(html[k])) k++;
+    while (k < len && /\s/.test(html[k])) k++;
+    if (k < len && html[k] === '=') {
+      k++;
+      while (k < len && /\s/.test(html[k])) k++;
+      if (k >= len) return -1;
+      if (html[k] === '"' || html[k] === "'") {
+        const quote = html[k++];
+        while (k < len && html[k] !== quote) k++;
+        if (k < len && html[k] === quote) k++;
+      } else {
+        while (k < len && !/[\s>]/.test(html[k])) k++;
+      }
     }
   }
   return -1;

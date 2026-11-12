@@ -252,7 +252,7 @@ function applyAttributes(elem: Element, attrs?: ElementProps | null): void {
       } else {
         elem.setAttribute('class', String(val));
       }
-    } else if (key === 'style') {
+    } else if (lowerKey === 'style') {
       if (typeof val === 'function') {
         bindAttr(elem, 'style', val as () => unknown);
       } else {

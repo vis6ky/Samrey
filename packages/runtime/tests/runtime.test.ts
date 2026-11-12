@@ -885,5 +885,27 @@ describe('@samrey/runtime', () => {
       s.value = 1;
       assert.equal(postThrowRuns, runsAtThrow, 'mount() must dispose effects created before componentFn threw');
     });
+
+    it('Batch 3 regression: el() sanitizes uppercase STYLE attribute uniformly even on real browser Element', () => {
+      const prevDoc = (globalThis as any).document;
+      const attrs = new Map<string, string>();
+      (globalThis as any).document = {
+        createElement: () => ({
+          nodeType: 1,
+          setAttribute(k: string, v: string) { attrs.set(k.toLowerCase(), v); },
+          getAttribute(k: string) { return attrs.get(k.toLowerCase()) ?? null; },
+          appendChild() {}
+        }),
+        createTextNode: (t: string) => ({ nodeType: 3, textContent: t })
+      };
+      try {
+        const node = el('div', { STYLE: 'background: url(javascript:alert(1)); color: red' }) as unknown as HTMLElement;
+        const applied = node.getAttribute('style') ?? '';
+        assert.ok(!applied.includes('javascript:'), `Uppercase STYLE attr must be sanitized, got: ${applied}`);
+        assert.ok(applied.includes('color'), `Safe color rule should remain, got: ${applied}`);
+      } finally {
+        (globalThis as any).document = prevDoc;
+      }
+    });
   });
 });

@@ -599,4 +599,79 @@ export const count = signal(0);
       globalThis.clearInterval = origClearInterval;
     }
   });
+
+  it('Batch 3 regression: blocks Object.assign style/attributes bypasses, multi-url & expression() CSS bypasses, and el() tagName TOCTOU', async () => {
+    const { executeSamreyCode } = await import('../../src/lib/runtimeSandbox.js');
+    const attacks = [
+      // Object.assign into style / attributes
+      `const d = el("div"); Object.assign(d.style, { cssText: "background: url(javascript:alert(1))" }); d`,
+      `const d = el("div"); Object.assign(d.style, { background: "expression(alert(1))" }); d`,
+      `const a = el("a"); Object.assign(a.attributes, { href: "javascript:alert(1)" }); a`,
+      `const a = el("a"); Object.assign(a.attributes, { onclick: "alert(1)" }); a`,
+      // Headless element attributes property mutation
+      `const a = el("a"); a.attributes.href = "javascript:alert(1)"; a`,
+      `const d = el("div"); d.attributes.onclick = "alert(1)"; d`,
+      // style.<prop> and el({ style }) CSS bypasses (multi-url with empty url("") and expression())
+      `const d = el("div"); d.style.background = 'url(""), url(javascript:alert(1))'; d`,
+      `const d = el("div"); d.style.background = 'expression(alert(1))'; d`,
+      `const d = el("div"); d.style.cssText = 'color: red; background: expression(alert(1))'; d`,
+      `el("div", { style: 'background: url(""), url(javascript:alert(1))' })`,
+      `el("div", { style: 'background: expression(alert(1))' })`,
+      // TOCTOU object tagName coerced twice
+      `let calls = 0; el({ toString() { calls++; return calls === 1 ? 'div' : 'script'; } });`,
+      // Bypass via rest/spread/Object.entries/Object.values/Object.assign read bypassing readSafeProp
+      `const d = el("a"); const { ...copy } = d; copy.attributes.href = "javascript:alert(1)"; d`,
+      `const d = el("a"); const { ...copy } = d; copy.attributes.onclick = "alert(1)"; d`,
+      `const d = el("a"); const { ...copy } = d; copy.style.background = "url(javascript:alert(1))"; d`,
+      `const d = el("a"); Object.entries(d).find(([k]) => k === "attributes")[1].onclick = "alert(1)"; d`,
+      `const d = el("a"); const idx = Object.keys(d).indexOf("style"); Object.values(d)[idx].background = "expression(alert(1))"; d`,
+      `const d = el("a"); ({ ...d }).attributes.href = "javascript:alert(1)"; d`,
+      `const d = el("a"); Object.assign({}, { s: d.style }).s.background = "expression(alert(1))"; d`,
+      `const d = el("a"); Object.assign({}, { a: d.attributes }).a.href = "javascript:alert(1)"; d`,
+      // Commented url("") masking real url(javascript:...) + src(...)
+      `el("div", { style: 'background: /* url("") */ url(javascript:alert(1))' })`,
+      `el("div", { style: 'background: src(javascript:alert(1))' })`
+    ];
+
+    for (const code of attacks) {
+      const res = executeSamreyCode(code);
+      assert.equal(res.success, false, `Expected sandbox attack to fail, but succeeded for: ${code}`);
+      assert.match(res.error ?? '', /Sandbox Security/, `Expected Sandbox Security error for: ${code}, got: ${res.error}`);
+    }
+
+    // Exercise style.setProperty() against a DOM-like CSSStyleDeclaration
+    const origDoc = (globalThis as any).document;
+    (globalThis as any).document = {
+      createElement: (tag: string) => {
+        const appliedProps: Record<string, string> = {};
+        return {
+          nodeType: 1,
+          tagName: tag.toUpperCase(),
+          attributes: {},
+          style: {
+            setProperty(prop: string, val: string) { appliedProps[prop] = val; },
+            getPropertyValue(prop: string) { return appliedProps[prop] ?? ''; }
+          },
+          setAttribute() {},
+          appendChild() {}
+        };
+      },
+      createTextNode: (t: string) => ({ nodeType: 3, textContent: t })
+    };
+    try {
+      for (const propAttack of [
+        `const d = el("div"); d.style.setProperty('background', 'url(""), url(javascript:alert(1))'); d`,
+        `const d = el("div"); d.style.setProperty('background', 'expression(alert(1))'); d`
+      ]) {
+        const res = executeSamreyCode(propAttack);
+        assert.equal(res.success, false, `Expected setProperty attack to fail: ${propAttack}`);
+        assert.match(res.error ?? '', /Sandbox Security/);
+      }
+      const safePropRes = executeSamreyCode(`const d = el("div"); d.style.setProperty('color', 'red'); d`);
+      assert.equal(safePropRes.success, true, safePropRes.error);
+      assert.equal((safePropRes.node as any).style.getPropertyValue('color'), 'red');
+    } finally {
+      (globalThis as any).document = origDoc;
+    }
+  });
 });

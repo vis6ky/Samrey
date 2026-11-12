@@ -212,7 +212,7 @@ export function bindField<T>(element: any, field: FieldState<T>, options?: BindF
   if (options?.errorElement) {
     effect(() => {
       const err = field.error.value;
-      options.errorElement.textContent = field.touched.value && err ? err : '';
+      options.errorElement.textContent = err ? err : '';
     });
   }
 
@@ -260,7 +260,7 @@ export const validators = {
     return regex.test(String(val)) ? null : msg;
   },
   custom: <T = unknown>(
-    fn: (val: T) => boolean | string | null | undefined | Promise<string | null | undefined>,
+    fn: (val: T) => boolean | string | null | undefined | Promise<boolean | string | null | undefined>,
     msg = 'Invalid value'
   ) => (val: T): string | null | undefined | Promise<string | null | undefined> => {
     const res = fn(val);
@@ -271,6 +271,6 @@ export const validators = {
         return resolved ?? null;
       }) as Promise<string | null | undefined>;
     }
-    return res;
+    return res as string | null | undefined;
   }
 };

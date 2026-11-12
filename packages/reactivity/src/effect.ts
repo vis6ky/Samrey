@@ -20,14 +20,14 @@ export function effect(fn: () => void | (() => void)): () => void {
     owner: effectOwner,
     sources: new Set<Dependency>(),
     notify() {
-      if (this.isDisposed) return;
+      if (this.isDisposed || this.owner?.isDisposed) return;
       if (!this.isDirty) {
         this.isDirty = true;
         queueEffect(this);
       }
     },
     update() {
-      if (this.isDisposed || !this.isDirty) return;
+      if (this.isDisposed || this.owner?.isDisposed || !this.isDirty) return;
 
       if (hasRun) {
         let hasComputeds = false;
@@ -59,12 +59,13 @@ export function effect(fn: () => void | (() => void)): () => void {
 
       // Run previous cleanup
       if (typeof userCleanup === 'function') {
+        const prevCleanup = userCleanup;
+        userCleanup = undefined;
         try {
-          userCleanup();
+          prevCleanup();
         } catch (err) {
           handleError(err, effectOwner);
         }
-        userCleanup = undefined;
       }
 
       // Dispose child owners and cleanups inside effectOwner between re-runs
@@ -96,6 +97,16 @@ export function effect(fn: () => void | (() => void)): () => void {
 
       if (effectOwner.errorHandlers && effectOwner.errorHandlers.length > 0) {
         effectOwner.errorHandlers.length = 0;
+      }
+
+      if (this.isDisposed || effectOwner.isDisposed) {
+        this.isDisposed = true;
+        for (const source of this.sources) {
+          source.subscribers.delete(this);
+        }
+        this.sources.clear();
+        sourceVersions.clear();
+        return;
       }
 
       // Reset dirty flag BEFORE executing fn so any signal write inside fn sets dirty and re-queues
@@ -143,26 +154,19 @@ export function effect(fn: () => void | (() => void)): () => void {
     }
   };
 
-  if (effectOwner.isDisposed) {
-    node.isDisposed = true;
-    return () => {};
-  }
-
-  // Initial execution
-  node.update();
-
   const dispose = () => {
     if (node.isDisposed) return;
     node.isDisposed = true;
     cancelPendingEffect(node);
 
     if (typeof userCleanup === 'function') {
+      const prevCleanup = userCleanup;
+      userCleanup = undefined;
       try {
-        userCleanup();
+        prevCleanup();
       } catch (err) {
         handleError(err, effectOwner);
       }
-      userCleanup = undefined;
     }
     for (const source of node.sources) {
       source.subscribers.delete(node);
@@ -171,7 +175,19 @@ export function effect(fn: () => void | (() => void)): () => void {
     effectOwner.dispose();
   };
 
+  if (effectOwner.isDisposed) {
+    node.isDisposed = true;
+    return dispose;
+  }
+
   onCleanup(dispose);
+
+  // Initial execution
+  node.update();
+
+  if (effectOwner.isDisposed && !node.isDisposed) {
+    dispose();
+  }
 
   return dispose;
 }

@@ -67,6 +67,14 @@ function optionValueError(flagName: string): CommandResult {
   };
 }
 
+function unknownOptionError(commandName: string, flagName: string): CommandResult {
+  return {
+    success: false,
+    message: `[Samrey ${commandName} Error] Unknown option "${flagName}".`,
+    exitCode: 1
+  };
+}
+
 function parseStrictPort(raw: string): number | null {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) return null;
@@ -140,6 +148,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if ('error' in res) return res.error;
           targetDirVal = res.value;
           i = res.nextIndex;
+        } else if (arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Create', arg);
         } else if (!arg.startsWith('-')) {
           positionalArgs.push(arg);
         }
@@ -186,6 +198,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           }
           port = parsedPort;
           i = res.nextIndex;
+        } else if (arg === '--host' || arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Dev', arg);
         }
       }
       return runDevCommand({ cwd, port, host, dryRun });
@@ -202,7 +218,9 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         const arg = args[i]!;
         if (arg === '--ssr') {
           const next = args[i + 1];
-          if (next === 'false') {
+          if (next === '') {
+            return optionValueError('--ssr');
+          } else if (next === 'false') {
             ssr = false;
             i++;
           } else if (next === 'true') {
@@ -234,12 +252,20 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           minify = false;
         } else if (arg === '--minify') {
           const next = args[i + 1];
-          if (next === 'false') {
+          if (next === '') {
+            return optionValueError('--minify');
+          } else if (next === 'false') {
             minify = false;
             i++;
           } else if (next === 'esbuild' || next === 'terser' || next === 'true') {
             minify = next === 'true' ? true : next;
             i++;
+          } else if (next && !isFlagToken(next)) {
+            return {
+              success: false,
+              message: `[Samrey Build Error] Invalid --minify value "${next}". Expected true, false, esbuild, or terser.`,
+              exitCode: 1
+            };
           } else {
             minify = true;
           }
@@ -258,15 +284,25 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           }
         } else if (arg === '--sourcemap') {
           const next = args[i + 1];
-          if (next === 'inline' || next === 'hidden') {
+          if (next === '') {
+            return optionValueError('--sourcemap');
+          } else if (next === 'inline' || next === 'hidden') {
             sourcemap = next;
             i++;
           } else if (next === 'false') {
             sourcemap = false;
             i++;
+          } else if (next === 'true') {
+            sourcemap = true;
+            i++;
+          } else if (next && !isFlagToken(next)) {
+            return {
+              success: false,
+              message: `[Samrey Build Error] Invalid --sourcemap value "${next}". Expected true, false, inline, or hidden.`,
+              exitCode: 1
+            };
           } else {
             sourcemap = true;
-            if (next === 'true') i++;
           }
         } else if (arg.startsWith('--sourcemap=')) {
           const val = arg.slice('--sourcemap='.length);
@@ -281,6 +317,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
               exitCode: 1
             };
           }
+        } else if (arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Build', arg);
         }
       }
 
@@ -311,12 +351,22 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if ('error' in res) return res.error;
           outDir = res.value;
           i = res.nextIndex;
+        } else if (arg === '--host' || arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Preview', arg);
         }
       }
       return runPreviewCommand({ cwd, port, host, outDir, dryRun });
     }
 
     case 'test': {
+      for (let i = 1; i < args.length; i++) {
+        const arg = args[i]!;
+        if (arg !== '--watch' && arg !== '--coverage' && arg !== '--dry-run' && arg.startsWith('-')) {
+          return unknownOptionError('Test', arg);
+        }
+      }
       const watch = args.includes('--watch');
       const coverage = args.includes('--coverage');
       return runTestCommand({ cwd, watch, coverage, dryRun });
@@ -339,7 +389,11 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if ('error' in res) return res.error;
           ignore.push(res.value);
           i = res.nextIndex;
-        } else if (!arg.startsWith('-') && !seenPositional) {
+        } else if (arg === '--strict' || arg === '--warn-only' || arg === '--fix' || arg === '--json' || arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Audit', arg);
+        } else if (!seenPositional) {
           auditCwd = path.resolve(cwd, arg);
           seenPositional = true;
         }
@@ -358,6 +412,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if ('error' in res) return res.error;
           outDir = res.value;
           i = res.nextIndex;
+        } else if (arg === '--json' || arg === '--dry-run') {
+          continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Analyze', arg);
         }
       }
       return runAnalyzeCommand({ cwd, outDir, json });
@@ -373,8 +431,10 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if ('error' in res) return res.error;
           targetDir = path.resolve(cwd, res.value);
           i = res.nextIndex;
-        } else if (arg.startsWith('-')) {
+        } else if (arg === '--dry-run') {
           continue;
+        } else if (arg.startsWith('-')) {
+          return unknownOptionError('Generate', arg);
         } else {
           positionals.push(arg);
         }

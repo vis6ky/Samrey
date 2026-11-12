@@ -181,7 +181,13 @@ function assertMutableSandboxTarget(target: unknown, action: string): void {
   }
 }
 
-function sanitizeSafeStyleValue(strVal: string, label: string): string {
+function stripCssStringsAndUrls(cssText: string): string {
+  return cssText
+    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""')
+    .replace(/url\((?:[^()\\]|\\.)*\)/gi, 'url()');
+}
+
+export function sanitizeSafeStyleValue(strVal: string, label: string): string {
   const trimmed = strVal.trim();
   if (!trimmed) return '';
   const sanitized = sanitizeCssStyle(trimmed);
@@ -191,13 +197,48 @@ function sanitizeSafeStyleValue(strVal: string, label: string): string {
   if (sanitized.includes('/*blocked*/')) {
     throw new TypeError(`[Sandbox Security] Unsafe CSS in "${label}" is prohibited.`);
   }
-  if (sanitized.includes('url("")') && !/url\(\s*(?:""|'')?\s*\)/i.test(trimmed)) {
+  const commentStrippedRaw = trimmed.replace(/\/\*[\s\S]*?\*\//g, '');
+  const rawEmptyUrls = (commentStrippedRaw.match(/url\(\s*(?:""|'')?\s*\)/gi) ?? []).length;
+  const sanitizedEmptyUrls = (sanitized.match(/url\(""\)/gi) ?? []).length;
+  if (sanitizedEmptyUrls > rawEmptyUrls) {
     throw new TypeError(`[Sandbox Security] Unsafe CSS URL in "${label}" is prohibited.`);
   }
-  if (sanitized.includes('image-set("")') && !/image-set\(\s*(?:""|'')?\s*\)/i.test(trimmed)) {
+  const rawEmptySrcs = (commentStrippedRaw.match(/\bsrc\(\s*(?:""|'')?\s*\)/gi) ?? []).length;
+  const sanitizedEmptySrcs = (sanitized.match(/\bsrc\(""\)/gi) ?? []).length;
+  if (sanitizedEmptySrcs > rawEmptySrcs) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS src() in "${label}" is prohibited.`);
+  }
+  const rawEmptyImageSets = (commentStrippedRaw.match(/image-set\(\s*(?:""|'')?\s*\)/gi) ?? []).length;
+  const sanitizedEmptyImageSets = (sanitized.match(/image-set\(""\)/gi) ?? []).length;
+  if (sanitizedEmptyImageSets > rawEmptyImageSets) {
     throw new TypeError(`[Sandbox Security] Unsafe CSS image-set in "${label}" is prohibited.`);
   }
+  const stripped = stripCssStringsAndUrls(sanitized);
+  if (/(?:^|;)\s*[-a-zA-Z_][-\w]*\s*:\s*(?:$|;)/.test(stripped)) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS declaration in "${label}" is prohibited.`);
+  }
   return sanitized;
+}
+
+function sanitizeSafeStyleDeclaration(propName: string, rawVal: string, label: string): string {
+  const cleanProp = propName.trim();
+  if (!/^[a-zA-Z-][a-zA-Z0-9-]*$/.test(cleanProp)) {
+    throw new TypeError(`[Sandbox Security] Invalid CSS property "${propName}" in "${label}".`);
+  }
+  const cssProp = cleanProp.startsWith('--')
+    ? cleanProp
+    : cleanProp.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+  const sanitized = sanitizeSafeStyleValue(`${cssProp}: ${rawVal}`, label);
+  const colonIdx = sanitized.indexOf(':');
+  if (colonIdx === -1 || sanitized.slice(0, colonIdx).trim().toLowerCase() !== cssProp.toLowerCase()) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS in "${label}" is prohibited.`);
+  }
+  const declVal = sanitized.slice(colonIdx + 1).trim();
+  const strippedVal = stripCssStringsAndUrls(declVal);
+  if (!declVal || strippedVal.includes(';')) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS in "${label}" is prohibited.`);
+  }
+  return declVal;
 }
 
 function sanitizeSafeDomAttrWrite(attrName: unknown, attrVal: unknown): { key: string; value: string } {
@@ -244,16 +285,8 @@ function sanitizeSafeDomAttrWrite(attrName: unknown, attrVal: unknown): { key: s
 function createSafeObjectNamespace() {
   const safeObject = Object.freeze({
     keys: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)),
-    values: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)).map((k) => {
-      const val = (obj as Record<string, unknown>)[k];
-      assertSafeValue(val);
-      return val;
-    }),
-    entries: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)).map((k) => {
-      const val = (obj as Record<string, unknown>)[k];
-      assertSafeValue(val);
-      return [k, val];
-    }),
+    values: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)).map((k) => readSafeProp(obj, k)),
+    entries: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)).map((k) => [k, readSafeProp(obj, k)]),
     fromEntries: (entries: Iterable<[PropertyKey, unknown]>) => {
       const out: Record<string, unknown> = {};
       for (const [k, v] of entries) {
@@ -272,9 +305,7 @@ function createSafeObjectNamespace() {
         if (!src || typeof src !== 'object') continue;
         for (const k of Object.keys(src)) {
           if (BLOCKED_PROPERTY_KEYS.has(k)) continue;
-          const val = src[k];
-          assertSafeValue(val);
-          target[k] = val;
+          writeSafeProp(target, k, readSafeProp(src, k));
         }
       }
       return target;
@@ -1749,10 +1780,10 @@ function readSafeProp(obj: unknown, keyRaw: unknown): unknown {
       wrapped = function safeSetProperty(propName: unknown, propVal: unknown, priority?: unknown) {
         const cleanProp = String(propName ?? '').trim();
         const rawVal = propVal === undefined || propVal === null ? '' : String(propVal);
-        if (cleanProp && rawVal.trim()) {
-          sanitizeSafeStyleValue(`${cleanProp}: ${rawVal}`, `style.${cleanProp}`);
-        }
-        return (origFn as (...a: unknown[]) => unknown).call(obj, cleanProp, rawVal, priority);
+        const safeVal = cleanProp && rawVal.trim()
+          ? sanitizeSafeStyleDeclaration(cleanProp, rawVal, `style.${cleanProp}`)
+          : rawVal;
+        return (origFn as (...a: unknown[]) => unknown).call(obj, cleanProp, safeVal, priority);
       };
       cached.set(key, wrapped);
     }
@@ -1796,9 +1827,10 @@ function writeSafeProp(obj: unknown, keyRaw: unknown, value: unknown): unknown {
     if (key === 'cssText') {
       writeVal = rawStr.trim() ? sanitizeSafeStyleValue(rawStr, 'style.cssText') : '';
     } else if (rawStr.trim()) {
-      sanitizeSafeStyleValue(`${key}: ${rawStr}`, `style.${key}`);
-      writeVal = rawStr;
+      writeVal = sanitizeSafeStyleDeclaration(key, rawStr, `style.${key}`);
     }
+  } else if (SANDBOX_DOM_ATTR_MAPS.has(obj)) {
+    writeVal = sanitizeSafeDomAttrWrite(key, value).value;
   } else if (isDomNode(obj)) {
     const lk = key.toLowerCase();
     if (lk.startsWith('on')) {
@@ -2046,9 +2078,7 @@ class SandboxEvaluator {
         const restObj: Record<string, unknown> = {};
         for (const k of Object.keys(obj)) {
           if (!usedKeys.has(k) && !BLOCKED_PROPERTY_KEYS.has(k)) {
-            const v = obj[k];
-            assertSafeValue(v);
-            restObj[k] = v;
+            restObj[k] = readSafeProp(obj, k);
           }
         }
         this.bindPattern({ kind: 'IdentPat', name: pat.rest }, declKind, restObj, env);
@@ -2298,9 +2328,7 @@ class SandboxEvaluator {
             if (src && typeof src === 'object') {
               for (const k of Object.keys(src)) {
                 if (BLOCKED_PROPERTY_KEYS.has(k)) continue;
-                const val = (src as Record<string, unknown>)[k];
-                assertSafeValue(val);
-                out[k] = val;
+                out[k] = readSafeProp(src, k);
               }
             }
           } else {
@@ -2696,9 +2724,7 @@ class SandboxEvaluator {
             if (src && typeof src === 'object') {
               for (const k of Object.keys(src)) {
                 if (BLOCKED_PROPERTY_KEYS.has(k)) continue;
-                const val = (src as Record<string, unknown>)[k];
-                assertSafeValue(val);
-                out[k] = val;
+                out[k] = readSafeProp(src, k);
               }
             }
           } else {

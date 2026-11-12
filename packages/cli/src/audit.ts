@@ -107,6 +107,13 @@ function skipBalancedBraces(source: string, pos: number, end: number): number {
       pos = close === -1 ? end : close + 2;
       continue;
     }
+    if (ch === '/') {
+      const skippedRegex = trySkipJsRegexLiteral(source, pos, end);
+      if (skippedRegex !== -1) {
+        pos = skippedRegex;
+        continue;
+      }
+    }
     if (ch === '{') {
       depth++;
     } else if (ch === '}') {
@@ -183,7 +190,7 @@ function trySkipJsRegexLiteral(source: string, pos: number, len: number): number
   while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
     j--;
   }
-  let canStartRegex = j < 0 || '=([,:?!&|^~;{}\n\r'.includes(source[j]!);
+  let canStartRegex = j < 0 || '=([,:?!&|^~;{}\n\r+-*%<>'.includes(source[j]!);
   if (!canStartRegex && /[a-zA-Z]/.test(source[j]!)) {
     let wordStart = j;
     while (wordStart > 0 && /[a-zA-Z0-9_$]/.test(source[wordStart - 1]!)) {
@@ -229,13 +236,49 @@ function trySkipJsRegexLiteral(source: string, pos: number, len: number): number
  * and template-literal awareness so comments, regexes, and `>` inside attributes
  * never split tags or produce false-positive HTML matches.
  */
-function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag[] {
+function isJsStringOpener(source: string, pos: number): boolean {
+  if (pos === 0) return true;
+  const prev = source[pos - 1]!;
+  if (!/[a-zA-Z0-9_$]/.test(prev)) return true;
+  let start = pos - 1;
+  while (start > 0 && /[a-zA-Z0-9_$]/.test(source[start - 1]!)) {
+    start--;
+  }
+  const word = source.slice(start, pos);
+  return REGEX_PRECEDING_KEYWORDS.has(word);
+}
+
+const VOID_HTML_TAGS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'
+]);
+
+function hasMatchingClosingTag(lowerSource: string, fromOffset: number, lowerTag: string): boolean {
+  const needle = `</${lowerTag}`;
+  let idx = lowerSource.indexOf(needle, fromOffset);
+  while (idx !== -1) {
+    const next = lowerSource[idx + needle.length];
+    if (next === '>' || (next !== undefined && /\s/.test(next))) {
+      return true;
+    }
+    idx = lowerSource.indexOf(needle, idx + 1);
+  }
+  return false;
+}
+
+function scanOpeningTags(source: string, scriptLike: boolean, isJsxMarkup: boolean): ScannedOpeningTag[] {
   const tags: ScannedOpeningTag[] = [];
   const len = source.length;
+  const lowerSource = isJsxMarkup ? source.toLowerCase() : '';
   let i = 0;
+  let jsQuote: "'" | '"' | null = null;
+  const ctxStack: Array<'tpl' | { kind: 'expr'; depth: number } | { kind: 'jsx'; tag: string }> = [];
 
   while (i < len) {
     const ch = source[i]!;
+    const topCtx = ctxStack.length > 0 ? ctxStack[ctxStack.length - 1] : undefined;
+    const inTemplateText = topCtx === 'tpl';
+    const inJsxChildren = typeof topCtx === 'object' && topCtx.kind === 'jsx';
+    const inJsLiteralText = jsQuote !== null || inTemplateText;
 
     if (ch === '<') {
       if (source.startsWith('<!--', i)) {
@@ -243,6 +286,82 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
         i = endComment === -1 ? len : endComment + 3;
         continue;
       }
+      if (isJsxMarkup && !inJsLiteralText && source[i + 1] === '>') {
+        if (hasMatchingClosingTag(lowerSource, i + 2, '')) {
+          ctxStack.push({ kind: 'jsx', tag: '' });
+        }
+        i += 2;
+        continue;
+      }
+      if (inJsxChildren && jsQuote === null && source.startsWith('</', i)) {
+        let p = i + 2;
+        while (p < len && /[a-zA-Z0-9.-]/.test(source[p]!)) p++;
+        const closeTag = source.slice(i + 2, p).toLowerCase();
+        while (p < len && /\s/.test(source[p]!)) p++;
+        if (source[p] === '>') {
+          for (let s = ctxStack.length - 1; s >= 0; s--) {
+            const frame = ctxStack[s]!;
+            if (typeof frame !== 'object' || frame.kind !== 'jsx') break;
+            if (frame.tag === closeTag) {
+              ctxStack.length = s;
+              break;
+            }
+          }
+          i = p + 1;
+          continue;
+        }
+      }
+    } else if (scriptLike && jsQuote !== null) {
+      if (ch === '\\' && i + 1 < len) {
+        i += 2;
+        continue;
+      }
+      if (ch === jsQuote) {
+        jsQuote = null;
+      }
+      i++;
+      continue;
+    } else if (scriptLike && inTemplateText) {
+      if (ch === '\\' && i + 1 < len) {
+        i += 2;
+        continue;
+      }
+      if (ch === '$' && source[i + 1] === '{') {
+        ctxStack.push({ kind: 'expr', depth: 1 });
+        i += 2;
+        continue;
+      }
+      if (ch === '`') {
+        ctxStack.pop();
+      }
+      i++;
+      continue;
+    } else if (inJsxChildren) {
+      if (ch === '{') {
+        ctxStack.push({ kind: 'expr', depth: 1 });
+      }
+      i++;
+      continue;
+    } else if (scriptLike && ch === '`') {
+      ctxStack.push('tpl');
+      i++;
+      continue;
+    } else if (scriptLike && (ch === '"' || ch === "'")) {
+      if (isJsStringOpener(source, i)) {
+        jsQuote = ch;
+      }
+      i++;
+      continue;
+    } else if (scriptLike && typeof topCtx === 'object' && topCtx.kind === 'expr' && (ch === '{' || ch === '}')) {
+      if (ch === '{') {
+        topCtx.depth++;
+      } else if (topCtx.depth <= 1) {
+        ctxStack.pop();
+      } else {
+        topCtx.depth--;
+      }
+      i++;
+      continue;
     } else if (scriptLike && ch === '/') {
       const next = source[i + 1];
       if (next === '/') {
@@ -277,7 +396,7 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
     }
 
     let nameEnd = lt + 2;
-    while (nameEnd < len && /[a-zA-Z0-9-]/.test(source[nameEnd]!)) {
+    while (nameEnd < len && /[a-zA-Z0-9.-]/.test(source[nameEnd]!)) {
       nameEnd++;
     }
 
@@ -339,7 +458,7 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
             let closed = false;
             while (qPos < len) {
               const qc = source[qPos]!;
-              if (qc === '\\' && qPos + 1 < len) {
+              if (inJsLiteralText && qc === '\\' && source[qPos + 1] === '\\' && qPos + 1 < len) {
                 qPos += 2;
                 continue;
               }
@@ -428,6 +547,18 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
       selfClosing,
       attrs
     });
+    if (
+      isJsxMarkup &&
+      !inJsLiteralText &&
+      !selfClosing &&
+      !VOID_HTML_TAGS.has(tag) &&
+      tag !== 'script' &&
+      tag !== 'style' &&
+      (lt === 0 || !/[a-zA-Z0-9_$]/.test(source[lt - 1]!)) &&
+      hasMatchingClosingTag(lowerSource, closedAt, tag)
+    ) {
+      ctxStack.push({ kind: 'jsx', tag });
+    }
     i = closedAt;
   }
 
@@ -437,8 +568,9 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
 export function auditSource(source: string, filename = 'Component.tsx'): AuditReport {
   const messages: string[] = [];
   const scriptLike = isScriptLikeFile(filename);
+  const isJsxMarkup = /\.(?:[jt]sx)$/i.test(filename);
   const rawHtml = isRawHtmlFile(filename);
-  const openingTags = scanOpeningTags(source, scriptLike);
+  const openingTags = scanOpeningTags(source, scriptLike, isJsxMarkup);
 
   for (const tagInfo of openingTags) {
     const { tag, offset: tagOffset, endOffset, selfClosing, attrs } = tagInfo;

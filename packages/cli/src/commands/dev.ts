@@ -126,7 +126,10 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
   if (allowedHosts) {
     for (const h of allowedHosts) {
       if (h && h !== '0.0.0.0' && h !== '::') {
-        trustedHostSet.add(normalizeHostHeader(h));
+        const normalizedHost = normalizeHostHeader(h);
+        if (normalizedHost) {
+          trustedHostSet.add(normalizedHost);
+        }
       }
     }
   }
@@ -151,12 +154,12 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
     const rawHost = req.headers?.host;
     if (typeof rawHost === 'string') {
       const hostName = normalizeHostHeader(rawHost);
-      if (!trustedHostSet.has(hostName)) {
+      if (!hostName || !trustedHostSet.has(hostName)) {
         res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('403 Forbidden: Untrusted Host header');
         return;
       }
-    } else if ((req as any).socket) {
+    } else if (Array.isArray(rawHost) || (req as any).socket) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('400 Bad Request');
       return;
@@ -326,7 +329,7 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
           res.writeHead(200, respHeaders);
           res.end();
         } catch (err: any) {
-          const code = err?.code === 'EACCES' ? 403 : 500;
+          const code = err?.code === 'ENOENT' ? 404 : err?.code === 'EACCES' ? 403 : 500;
           res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end();
         }
@@ -349,10 +352,10 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
           stream.pipe(res);
         });
         stream.once('error', (err: any) => {
-          const code = err?.code === 'EACCES' ? 403 : 500;
+          const code = err?.code === 'ENOENT' ? 404 : err?.code === 'EACCES' ? 403 : 500;
           if (!res.headersSent) {
             res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end(code === 403 ? '403 Forbidden' : '500 Internal Server Error');
+            res.end(code === 404 ? '404 Not Found' : code === 403 ? '403 Forbidden' : '500 Internal Server Error');
           } else {
             res.end();
           }
@@ -364,6 +367,16 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end(method === 'HEAD' ? undefined : '404 Not Found');
+    }
+  };
+}
+
+export function buildViteServerOptions(options: { cwd?: string; port: number; host?: string | boolean }) {
+  return {
+    root: path.resolve(options.cwd || process.cwd()),
+    server: {
+      port: options.port,
+      host: typeof options.host === 'string' ? options.host : (options.host ? true : undefined)
     }
   };
 }
@@ -402,12 +415,9 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   try {
     const viteModule = await import('vite').catch(() => null);
     if (viteModule && typeof viteModule.createServer === 'function') {
-      const server = await viteModule.createServer({
-        server: {
-          port,
-          host: typeof options.host === 'string' ? options.host : (options.host ? true : undefined)
-        }
-      });
+      const server = await viteModule.createServer(
+        buildViteServerOptions({ cwd: options.cwd, port, host: options.host })
+      );
       await server.listen();
       console.log(banner);
       server.printUrls();

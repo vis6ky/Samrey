@@ -505,9 +505,32 @@ describe('@samrey/security', () => {
     assert.ok(!svgBreakout.includes('<textarea />'), `Must not emit self-closing <textarea /> after HTML breakout: ${svgBreakout}`);
     assert.ok(svgBreakout.includes('</textarea>'), `Must close <textarea> properly in HTML mode: ${svgBreakout}`);
 
+    // 4b. <svg><foreignObject> HTML integration point must preserve SVG outer scope across HTML breakout tags & expand HTML textarea cleanly
+    const foreignObjUnclosedTextarea = sanitizeTemplateHtml('<svg><foreignObject><textarea /><b>hi</b></foreignObject></svg>');
+    assert.ok(!foreignObjUnclosedTextarea.includes('<textarea />'), `Must not emit self-closing <textarea /> inside <foreignObject>: ${foreignObjUnclosedTextarea}`);
+    assert.ok(foreignObjUnclosedTextarea.includes('</textarea>'), `Must close <textarea> properly inside <foreignObject>: ${foreignObjUnclosedTextarea}`);
+
+    const foreignObjTextarea = sanitizeTemplateHtml(
+      '<svg><foreignObject><p>hi</p><textarea />safe</textarea><b>after</b></foreignObject><animate href="javascript:alert(1)" /><circle cx="5" cy="5" r="4" /></svg>'
+    );
+    assert.ok(foreignObjTextarea.includes('<textarea>safe</textarea>'), `Must close <textarea> inside <foreignObject>: ${foreignObjTextarea}`);
+    assert.ok(foreignObjTextarea.includes('<b>after</b>'), `Must preserve children after </textarea> in <foreignObject>: ${foreignObjTextarea}`);
+    assert.ok(!foreignObjTextarea.includes('animate'), `Must strip dangerous <animate /> after </foreignObject>: ${foreignObjTextarea}`);
+    assert.ok(foreignObjTextarea.includes('<circle'), `Must NOT eat trailing <circle /> after </foreignObject>: ${foreignObjTextarea}`);
+    const nestedForeignSvg = sanitizeTemplateHtml(
+      '<svg><foreignObject><svg><rect /></svg><p>hi</p></foreignObject><animate href="javascript:alert(1)" /><circle cx="5" cy="5" r="4" /></svg>'
+    );
+    assert.ok(nestedForeignSvg.includes('<rect />') && nestedForeignSvg.includes('<p>hi</p>') && !nestedForeignSvg.includes('animate') && nestedForeignSvg.includes('<circle'));
+
+    // 4c. CSS IE *behavior:/_behavior: property hacks must be stripped
+    const ieHackCss = sanitizeCssStyle('div { *behavior: url(https://evil.com/a.htc); _behavior: url(https://evil.com/b.htc); color: red }');
+    assert.ok(!/behavior/i.test(ieHackCss), `Must strip *behavior:/_behavior: hacks: ${ieHackCss}`);
+    assert.ok(ieHackCss.includes('color: red'), `Must keep benign CSS rules: ${ieHackCss}`);
+
     // 5. Closing tags & rawtext strip tags must parse quoted '>' without leaving trailing fragments
     assert.equal(sanitizeHtmlString('</div title="><script>alert(1)</script>">'), '</div>');
     assert.equal(sanitizeHtmlString('</div/title="><script>alert(1)</script>">'), '</div>');
+    assert.equal(sanitizeHtmlString('</div x"><img src="x" onerror="alert(1)">'), '</div><img src="x">');
     const textareaEndAttr = sanitizeHtmlString('<textarea>safe</textarea title="><img src=x onerror=alert(1)>">');
     assert.equal(textareaEndAttr, '', `Must strip rawtext textarea with quoted > in end tag cleanly: ${textareaEndAttr}`);
     const styleEndAttr = sanitizeHtmlString('<style>a{}</style title="><img src=x onerror=alert(1)>">');

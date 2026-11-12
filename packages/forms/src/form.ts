@@ -129,7 +129,7 @@ export function createForm<TValues extends Record<string, any>>(
         f.setTouched(true, false);
         f.setError(null);
         const res = f.validate();
-        if (res instanceof Promise) {
+        if (res && typeof (res as Promise<unknown>).then === 'function') {
           const ok = await res;
           if (epoch !== resetEpoch) return false;
           if (!ok) allValid = false;
@@ -184,7 +184,11 @@ export function createForm<TValues extends Record<string, any>>(
       if (config.schema && config.schema['~standard']) {
         try {
           const schemaResult = config.schema['~standard'].validate(values);
-          const result = schemaResult instanceof Promise ? await schemaResult : schemaResult;
+          const result = (
+            schemaResult && typeof (schemaResult as Promise<unknown>).then === 'function'
+              ? await schemaResult
+              : schemaResult
+          ) as Awaited<typeof schemaResult>;
           if (epoch !== resetEpoch) return false;
 
           if (result.issues && result.issues.length > 0) {

@@ -657,4 +657,88 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
       else (globalThis as any).Element = origElement;
     }
   });
+
+  it('Batch 3 regression: matchNodeTrees safely handles DOM-clobbered form.tagName during hydrate()', () => {
+    const prevDocument = (globalThis as any).document;
+    const prevElement = (globalThis as any).Element;
+    class FakeEl {
+      nodeType = 1;
+      childNodes: any[] = [];
+      get firstChild() { return this.childNodes[0] ?? null; }
+      attributes: Record<string, string> = {};
+      setAttribute(k: string, v: string) { this.attributes[k] = v; }
+      getAttribute(k: string) { return this.attributes[k] ?? null; }
+      addEventListener() {}
+      removeEventListener() {}
+      replaceChildren(...nodes: any[]) { this.childNodes = nodes; }
+    }
+    const tags = new WeakMap<object, string>();
+    Object.defineProperty(FakeEl.prototype, 'tagName', {
+      get() { return tags.get(this) ?? 'DIV'; }
+    });
+    (globalThis as any).Element = FakeEl;
+
+    const clobberedForm: any = new FakeEl();
+    tags.set(clobberedForm, 'FORM');
+    clobberedForm.nodeName = 'FORM';
+    const childInput: any = new FakeEl();
+    tags.set(childInput, 'INPUT');
+    childInput.nodeName = 'INPUT';
+    clobberedForm.childNodes.push(childInput);
+    // Simulate <form><input name="tagName"></form> clobbering form.tagName with an Element
+    Object.defineProperty(clobberedForm, 'tagName', {
+      value: childInput,
+      configurable: true
+    });
+
+    const container: any = new FakeEl();
+    tags.set(container, 'DIV');
+    container.childNodes.push(clobberedForm);
+
+    (globalThis as any).document = {
+      createElement: (tag: string) => {
+        const node = new FakeEl();
+        tags.set(node, tag.toUpperCase());
+        (node as any).nodeName = tag.toUpperCase();
+        return node;
+      },
+      createTextNode: (t: string) => ({ nodeType: 3, textContent: t }),
+      createComment: (t: string) => ({ nodeType: 8, textContent: t }),
+      createDocumentFragment: () => ({ nodeType: 11, childNodes: [] as any[], appendChild(c: any) { this.childNodes.push(c); return c; } })
+    };
+
+    try {
+      let mismatches = 0;
+      const res = hydrate(() => {
+        const f = new FakeEl();
+        tags.set(f, 'FORM');
+        (f as any).nodeName = 'FORM';
+        const inp = new FakeEl();
+        tags.set(inp, 'INPUT');
+        (inp as any).nodeName = 'INPUT';
+        f.childNodes.push(inp);
+        return f as unknown as Node;
+      }, container, { onMismatch: () => { mismatches++; }, repairMismatch: false });
+      assert.equal(mismatches, 0, 'Clobbered form.tagName must still match FORM element via safe getter');
+      res.dispose();
+
+      // Cross-realm / unidentifiable element tagName+nodeName must fail closed (mismatch), not match blindly
+      const opaqueServer: any = { nodeType: 1, tagName: { nodeType: 1 }, nodeName: { nodeType: 1 }, childNodes: [], setAttribute() {} };
+      const opaqueContainer: any = new FakeEl();
+      tags.set(opaqueContainer, 'DIV');
+      opaqueContainer.childNodes.push(opaqueServer);
+      let opaqueMismatches = 0;
+      const resOpaque = hydrate(() => {
+        const div = new FakeEl();
+        tags.set(div, 'DIV');
+        (div as any).nodeName = 'DIV';
+        return div as unknown as Node;
+      }, opaqueContainer, { onMismatch: () => { opaqueMismatches++; }, repairMismatch: false });
+      assert.equal(opaqueMismatches, 1, 'Unidentifiable element tag must fail closed as mismatch');
+      resOpaque.dispose();
+    } finally {
+      (globalThis as any).document = prevDocument;
+      (globalThis as any).Element = prevElement;
+    }
+  });
 });
