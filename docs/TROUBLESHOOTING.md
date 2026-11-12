@@ -7,21 +7,21 @@
 
 ## 1. Common Diagnostics & Solutions
 
-### Issue: "AETH-SEC-001: Potential XSS in HTML string"
+### Issue: "SAMREY-201: Security Violation — Potential XSS in HTML string"
 - **Cause:** Raw unsanitized HTML passed into innerHTML or template binding without explicit escaping.
 - **Solution:** Pass the HTML through `sanitizeHtml(rawHtml)` from `@samrey/security`.
 
-### Issue: "AETH-REC-002: Circular signal computation detected"
+### Issue: "SAMREY-301: Circular signal computation detected"
 - **Cause:** A computed property or effect is writing to a signal that it synchronously reads.
 - **Solution:** Use `untrack(() => signal.value)` or separate the write phase into a batch transaction using `batch(() => ...)`.
 
-### Issue: "AETH-RTR-004: No matching route found"
+### Issue: "SAMREY-401: Route not found"
 - **Cause:** Requested URL path does not match any route definition and no fallback `*` (wildcard) route is defined.
 - **Solution:** Add a catch-all route `{ path: '*', component: NotFoundComponent }` to your route tree.
 
-### Issue: "AETH-SSR-003: Hydration mismatch between server and client"
+### Issue: "SAMREY-303: Hydration mismatch between server and client"
 - **Cause:** Dynamic non-deterministic state (e.g. `Date.now()`, `Math.random()`) differed between server render and client mount.
-- **Solution:** Serialize server state using `serializeStateForHydration()` and deserialize using `hydrateFromSSR()`.
+- **Solution:** Serialize server state using `serializeStateForHydration()` and deserialize using `deserializeHydrationState()` / `hydrateFromSSR()`.
 
 ---
 

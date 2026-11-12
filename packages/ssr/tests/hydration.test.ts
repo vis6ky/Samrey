@@ -270,6 +270,7 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
     let mismatchCalls = 0;
 
     // Server HTML merges adjacent text into a single Text("HelloAlice") node inside <p>
+    let splitTextCalls = 0;
     const createMockText = (txt: string): any => {
       const node: any = {
         nodeType: 3,
@@ -278,6 +279,17 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
         parentNode: null,
         nextSibling: null,
         previousSibling: null,
+        splitText: (offset: number) => {
+          splitTextCalls++;
+          const full = String(node.textContent ?? '');
+          const clamped = Math.max(0, Math.min(offset, full.length));
+          node.textContent = full.slice(0, clamped);
+          const remainder = createMockText(full.slice(clamped));
+          if (node.parentNode && typeof node.parentNode.insertBefore === 'function') {
+            node.parentNode.insertBefore(remainder, node.nextSibling ?? null);
+          }
+          return remainder;
+        },
         cloneNode: () => createMockText(node.textContent)
       };
       return node;
@@ -439,15 +451,31 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
       hydrated.dispose();
 
       // 4. Multi-split Text.splitText in headless DOM when server text merges 3 client text nodes
-      const textNode: any = {
-        nodeType: 3,
-        nodeName: '#text',
-        textContent: 'ABC',
-        parentNode: null as any,
-        nextSibling: null as any,
-        previousSibling: null as any,
-        cloneNode: () => ({ nodeType: 3, nodeName: '#text', textContent: '', parentNode: null, nextSibling: null, previousSibling: null })
+      let multiSplitCalls = 0;
+      const makeRealSplitText = (txt: string): any => {
+        const tNode: any = {
+          nodeType: 3,
+          nodeName: '#text',
+          textContent: txt,
+          parentNode: null as any,
+          nextSibling: null as any,
+          previousSibling: null as any,
+          splitText: (offset: number) => {
+            multiSplitCalls++;
+            const full = String(tNode.textContent ?? '');
+            const clamped = Math.max(0, Math.min(offset, full.length));
+            tNode.textContent = full.slice(0, clamped);
+            const remainder = makeRealSplitText(full.slice(clamped));
+            if (tNode.parentNode && typeof tNode.parentNode.insertBefore === 'function') {
+              tNode.parentNode.insertBefore(remainder, tNode.nextSibling ?? null);
+            }
+            return remainder;
+          },
+          cloneNode: () => makeRealSplitText('')
+        };
+        return tNode;
       };
+      const textNode: any = makeRealSplitText('ABC');
       const pChildren: any[] = [textNode];
       const syncSiblings = () => {
         for (let i = 0; i < pChildren.length; i++) {
@@ -490,10 +518,143 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
       );
       assert.equal(pMismatch, 0);
       assert.equal(pChildren.map((n) => n.textContent).join('|'), 'A|B|C');
+      assert.equal(multiSplitCalls, 2, 'Real DOM Text.splitText must be used to split merged ABC into A|B|C');
       pHyd.dispose();
     } finally {
       (globalThis as any).window = prevWindow;
       (globalThis as any).document = prevDocument;
+    }
+  });
+
+  it('Item 6 regression: preserves events across multiple getDelegatedEventScript tags, cleans all listeners, and handles SVGAnimatedString & DOM-clobbered form targets', async () => {
+    const origWindow = (globalThis as any).window;
+    const origDocument = (globalThis as any).document;
+    const origElement = (globalThis as any).Element;
+
+    try {
+      const listeners = new Map<string, Set<Function>>();
+      const mockDocument: any = {
+        addEventListener: (type: string, fn: Function) => {
+          if (!listeners.has(type)) listeners.set(type, new Set());
+          listeners.get(type)!.add(fn);
+        },
+        removeEventListener: (type: string, fn: Function) => {
+          listeners.get(type)?.delete(fn);
+        },
+        contains: () => false
+      };
+      const mockWindow: any = {};
+      (globalThis as any).window = mockWindow;
+      (globalThis as any).document = mockDocument;
+
+      const execScriptTag = (tagHtml: string) => {
+        const match = /^<script[^>]*>([\s\S]*)<\/script>$/.exec(tagHtml.trim());
+        assert.ok(match, 'Expected <script> wrapper');
+        const runner = new Function('window', 'document', match![1]);
+        runner(mockWindow, mockDocument);
+      };
+
+      const dispatchToDoc = (type: string, ev: any) => {
+        for (const fn of Array.from(listeners.get(type) ?? [])) {
+          fn(ev);
+        }
+      };
+
+      // 1. Multiple delegated event script tags must NOT wipe queued events or leak listeners
+      execScriptTag(getDelegatedEventScript(['click']));
+      const preEv = { type: 'click', target: null };
+      dispatchToDoc('click', preEv);
+      assert.equal(mockWindow.__SAMREY_EVENTS__.length, 1);
+
+      execScriptTag(getDelegatedEventScript(['click', 'keydown']));
+      assert.equal(mockWindow.__SAMREY_EVENTS__.length, 1, 'Second getDelegatedEventScript must preserve already-queued events');
+
+      const postClickEv = { type: 'click', target: null };
+      const keyEv = { type: 'keydown', target: null };
+      dispatchToDoc('click', postClickEv);
+      dispatchToDoc('keydown', keyEv);
+      assert.equal(mockWindow.__SAMREY_EVENTS__.length, 3, 'Duplicate event types across script tags must not double-push');
+
+      const replayedCount = replayCapturedEvents();
+      assert.equal(replayedCount, 3);
+      assert.equal(listeners.get('click')?.size ?? 0, 0, 'All click listeners must be removed on replay cleanup');
+      assert.equal(listeners.get('keydown')?.size ?? 0, 0, 'All keydown listeners must be removed on replay cleanup');
+
+      // 2. SVGAnimatedString className and DOM-clobbered form properties (id/tagName/className as child inputs)
+      const svgDispatched: any[] = [];
+      const svgTargetReplacement = {
+        dispatchEvent: (e: any) => { svgDispatched.push(e); return true; }
+      };
+      const clobberedFormDispatched: any[] = [];
+      const clobberedFormReplacement = {
+        dispatchEvent: (e: any) => { clobberedFormDispatched.push(e); return true; }
+      };
+      const clobberedInputStub = { nodeType: 1, tagName: 'INPUT', name: 'clobbered' };
+
+      class FakeElement {}
+      const fakeAttrs = new WeakMap<object, Record<string, string>>();
+      const fakeTags = new WeakMap<object, string>();
+      Object.defineProperty(FakeElement.prototype, 'tagName', {
+        get() { return fakeTags.get(this) || ''; }
+      });
+      (FakeElement.prototype as any).getAttribute = function (name: string) {
+        return fakeAttrs.get(this)?.[name] ?? null;
+      };
+      (globalThis as any).Element = FakeElement;
+
+      const detachedSvg: any = new FakeElement();
+      fakeTags.set(detachedSvg, 'svg');
+      fakeAttrs.set(detachedSvg, { class: 'svg-btn icon' });
+      // Real browsers expose SVGElement.className as SVGAnimatedString { baseVal }
+      detachedSvg.className = { baseVal: 'svg-btn icon', animVal: 'svg-btn icon' };
+      detachedSvg.dispatchEvent = () => { throw new Error('Should retarget to replacement'); };
+
+      const detachedClobberedForm: any = new FakeElement();
+      fakeTags.set(detachedClobberedForm, 'FORM');
+      fakeAttrs.set(detachedClobberedForm, { id: 'real-form', class: 'form-cls' });
+      // Simulate <form id="real-form"><input name="id"><input name="tagName"><input name="className"><input name="getAttribute">
+      Object.defineProperties(detachedClobberedForm, {
+        id: { value: clobberedInputStub, configurable: true },
+        tagName: { value: clobberedInputStub, configurable: true },
+        className: { value: clobberedInputStub, configurable: true },
+        getAttribute: { value: clobberedInputStub, configurable: true }
+      });
+
+      const detachedClobberedTagOnlyForm: any = new FakeElement();
+      fakeTags.set(detachedClobberedTagOnlyForm, 'FORM');
+      fakeAttrs.set(detachedClobberedTagOnlyForm, {});
+      Object.defineProperty(detachedClobberedTagOnlyForm, 'tagName', { value: clobberedInputStub, configurable: true });
+
+      const queriesSeen: string[] = [];
+      const mockContainer: any = {
+        querySelector: (sel: string) => {
+          queriesSeen.push(sel);
+          if (sel === '.svg-btn.icon') return svgTargetReplacement;
+          if (sel === '#real-form') return clobberedFormReplacement;
+          if (sel === 'form') return clobberedFormReplacement;
+          return null;
+        }
+      };
+
+      mockWindow.__SAMREY_EVENTS__ = [
+        { type: 'click', target: detachedSvg },
+        { type: 'submit', target: detachedClobberedForm },
+        { type: 'submit', target: detachedClobberedTagOnlyForm }
+      ];
+      const total = replayCapturedEvents(mockContainer);
+      assert.equal(total, 3);
+      assert.equal(svgDispatched.length, 1, 'SVGAnimatedString target must retarget via .svg-btn.icon selector, not fallback to tag');
+      assert.equal(clobberedFormDispatched.length, 2, 'DOM-clobbered form targets must still retarget via #real-form and form safely');
+      assert.ok(queriesSeen.includes('.svg-btn.icon'), `Expected .svg-btn.icon query, got ${JSON.stringify(queriesSeen)}`);
+      assert.ok(queriesSeen.includes('#real-form'), `Expected #real-form query, got ${JSON.stringify(queriesSeen)}`);
+      assert.ok(queriesSeen.includes('form'), `Expected lowercase form query, got ${JSON.stringify(queriesSeen)}`);
+    } finally {
+      if (origWindow === undefined) delete (globalThis as any).window;
+      else (globalThis as any).window = origWindow;
+      if (origDocument === undefined) delete (globalThis as any).document;
+      else (globalThis as any).document = origDocument;
+      if (origElement === undefined) delete (globalThis as any).Element;
+      else (globalThis as any).Element = origElement;
     }
   });
 });

@@ -20,8 +20,6 @@ const TRUSTED_TYPES_REALM_CACHE_KEY = Symbol.for('samrey.trustedTypes.realmPolic
 interface RealmPolicyCache {
   html?: SamreyTrustedPolicy;
   template?: SamreyTrustedPolicy;
-  htmlAllowedOrigins?: string[];
-  templateAllowedOrigins?: string[];
 }
 
 function getRealmPolicyCache(): WeakMap<object, RealmPolicyCache> {
@@ -43,6 +41,7 @@ type NativeTrustedTypesFactory = {
 };
 
 let defaultAllowedOrigins: string[] = [];
+let activeScopedOrigins: string[] | null = null;
 let fallbackHtmlPolicy: SamreyTrustedPolicy | null = null;
 let fallbackTemplatePolicy: SamreyTrustedPolicy | null = null;
 
@@ -54,6 +53,7 @@ export function resetTrustedPolicyForTest(): void {
   fallbackHtmlPolicy = null;
   fallbackTemplatePolicy = null;
   defaultAllowedOrigins = [];
+  activeScopedOrigins = null;
   const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: NativeTrustedTypesFactory }).trustedTypes;
   if (tt && typeof tt === 'object') {
     getRealmPolicyCache().delete(tt);
@@ -127,6 +127,38 @@ function validateScriptUrl(url: string, allowedOrigins: string[]): string {
   throw new Error(`[Samrey Security] Insecure or non-allowlisted script URL blocked: ${url}`);
 }
 
+function wrapScopedPolicy(
+  basePolicy: SamreyTrustedPolicy,
+  scopedOrigins: string[]
+): SamreyTrustedPolicy {
+  return new Proxy(basePolicy, {
+    get(target, prop) {
+      if (prop === 'createHTML') {
+        return (input: string) => target.createHTML(input);
+      }
+      if (prop === 'createScript') {
+        return () => {
+          throw new Error('[Samrey Security] Dynamic script creation is prohibited under zero-eval policy.');
+        };
+      }
+      if (prop === 'createScriptURL') {
+        return (url: string) => {
+          const safe = validateScriptUrl(url, scopedOrigins);
+          const prev = activeScopedOrigins;
+          activeScopedOrigins = scopedOrigins;
+          try {
+            return target.createScriptURL(safe);
+          } finally {
+            activeScopedOrigins = prev;
+          }
+        };
+      }
+      const value = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  });
+}
+
 function createNativeOrFallbackPolicy(
   policyName: 'samrey#html' | 'samrey#template',
   sanitizeFn: (input: string) => string,
@@ -134,6 +166,7 @@ function createNativeOrFallbackPolicy(
 ): SamreyTrustedPolicy {
   const tt = typeof window !== 'undefined' && (window as unknown as { trustedTypes?: NativeTrustedTypesFactory }).trustedTypes;
   const isTemplate = policyName === 'samrey#template';
+  const scopedOrigins = options?.allowedScriptOrigins ? [...options.allowedScriptOrigins] : null;
 
   if (tt && typeof tt === 'object') {
     const realmCache = getRealmPolicyCache();
@@ -143,64 +176,51 @@ function createNativeOrFallbackPolicy(
       realmCache.set(tt, entry);
     }
 
-    const originsKey = isTemplate ? 'templateAllowedOrigins' : 'htmlAllowedOrigins';
-    if (options?.allowedScriptOrigins) {
-      entry[originsKey] = [...options.allowedScriptOrigins];
-    } else if (!entry[originsKey]) {
-      entry[originsKey] = [...defaultAllowedOrigins];
-    }
-
-    const getEffectiveOrigins = (): string[] =>
-      options?.allowedScriptOrigins ? [...options.allowedScriptOrigins] : (entry![originsKey] ?? defaultAllowedOrigins);
-
-    const existing = isTemplate ? entry.template : entry.html;
-    if (existing) {
-      return existing;
-    }
-
-    try {
-      const created = tt.createPolicy(policyName, {
-        createHTML: (input: string) => sanitizeFn(input),
-        createScript: () => {
-          throw new Error('[Samrey Security] Dynamic script creation is prohibited under zero-eval policy.');
-        },
-        createScriptURL: (url: string) => validateScriptUrl(url, getEffectiveOrigins())
-      });
-      if (isTemplate) entry.template = created;
-      else entry.html = created;
-      return created;
-    } catch (err) {
-      const def = tt.defaultPolicy;
-      if (def && typeof def.createHTML === 'function') {
-        const delegated: SamreyTrustedPolicy = {
-          createHTML: (input: string) => def.createHTML!(sanitizeFn(input)) as string,
+    let basePolicy = isTemplate ? entry.template : entry.html;
+    if (!basePolicy) {
+      try {
+        basePolicy = tt.createPolicy(policyName, {
+          createHTML: (input: string) => sanitizeFn(input),
           createScript: () => {
-            throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+            throw new Error('[Samrey Security] Dynamic script creation is prohibited under zero-eval policy.');
           },
-          createScriptURL: (url: string) => {
-            const safe = validateScriptUrl(url, getEffectiveOrigins());
-            if (typeof def.createScriptURL !== 'function') {
-              throw new Error(
-                `[Samrey Security] Trusted Types policy "${policyName}" collision: defaultPolicy.createScriptURL is unavailable.`
-              );
+          createScriptURL: (url: string) => validateScriptUrl(url, activeScopedOrigins ?? defaultAllowedOrigins)
+        });
+      } catch (err) {
+        const def = tt.defaultPolicy;
+        if (def && typeof def.createHTML === 'function') {
+          basePolicy = {
+            createHTML: (input: string) => def.createHTML!(sanitizeFn(input)) as string,
+            createScript: () => {
+              throw new Error('[Samrey Security] Dynamic script creation is prohibited.');
+            },
+            createScriptURL: (url: string) => {
+              const safe = validateScriptUrl(url, activeScopedOrigins ?? defaultAllowedOrigins);
+              if (typeof def.createScriptURL !== 'function') {
+                throw new Error(
+                  `[Samrey Security] Trusted Types policy "${policyName}" collision: defaultPolicy.createScriptURL is unavailable.`
+                );
+              }
+              return def.createScriptURL(safe) as string;
             }
-            return def.createScriptURL(safe) as string;
-          }
-        };
-        if (isTemplate) entry.template = delegated;
-        else entry.html = delegated;
-        return delegated;
+          };
+        } else {
+          throw new Error(
+            `[Samrey Security] Trusted Types policy "${policyName}" initialization failed: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
       }
-      throw new Error(
-        `[Samrey Security] Trusted Types policy "${policyName}" initialization failed: ${err instanceof Error ? err.message : String(err)}`
-      );
+
+      if (isTemplate) entry.template = basePolicy;
+      else entry.html = basePolicy;
     }
+
+    return scopedOrigins ? wrapScopedPolicy(basePolicy, scopedOrigins) : basePolicy;
   }
 
   // Programmatic fallback when browser Trusted Types API is absent:
   // explicit per-call options create an isolated policy without mutating global origins
-  if (options?.allowedScriptOrigins) {
-    const scopedOrigins = [...options.allowedScriptOrigins];
+  if (scopedOrigins) {
     return {
       createHTML: (input: string) => sanitizeFn(input),
       createScript: () => {

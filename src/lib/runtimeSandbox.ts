@@ -26,6 +26,7 @@ export interface ExecutionResult {
   success: boolean;
   error?: string;
   node?: Node;
+  dispose?: () => void;
 }
 
 export interface PlaygroundPreset {
@@ -742,6 +743,35 @@ function safeFormatSandboxArg(arg: unknown, indent = 0): string {
   }
 }
 
+const URI_SANDBOX_ATTRS = new Set([
+  'href',
+  'xlink:href',
+  'src',
+  'action',
+  'formaction',
+  'poster',
+  'data',
+  'codebase',
+  'background',
+  'cite',
+  'longdesc'
+]);
+
+function createSafeSandboxHttpClient(_baseUrl?: string, _options?: unknown) {
+  const blockedRequest = () =>
+    Promise.reject(
+      new Error('[Sandbox Security] Live network requests via createHttpClient are disabled inside the playground sandbox; use createResource with mock data.')
+    );
+  return Object.freeze({
+    get: blockedRequest,
+    post: blockedRequest,
+    put: blockedRequest,
+    patch: blockedRequest,
+    delete: blockedRequest,
+    request: blockedRequest
+  });
+}
+
 function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, unknown> | null): void {
   const lowerTag = String(tagName ?? '').trim().toLowerCase();
   if (!lowerTag || DANGEROUS_SANDBOX_TAGS.has(lowerTag)) {
@@ -755,6 +785,22 @@ function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, u
       }
       if (lk.startsWith('on') && v !== undefined && v !== null && typeof v !== 'function') {
         throw new TypeError(`[Sandbox Security] String inline event handler "${k}" is prohibited inside the sandbox.`);
+      }
+      const rawVal = v === undefined || v === null ? '' : String(v);
+      if (URI_SANDBOX_ATTRS.has(lk) && typeof v !== 'function' && rawVal.trim()) {
+        const safe = Security.sanitizeUri(rawVal, {
+          allowImageDataUri: lk === 'src' || lk === 'poster',
+          allowProtocolRelative: false
+        });
+        if (safe === 'about:blank' || safe === '') {
+          throw new TypeError(`[Sandbox Security] Unsafe URI in "${k}" attribute is prohibited inside the sandbox.`);
+        }
+      }
+      if (lk === 'style' && typeof v !== 'function' && rawVal.trim()) {
+        const sanitized = Security.sanitizeCssStyle(rawVal);
+        if (sanitized === '' && /(?:javascript|vbscript|expression|url\s*\()/i.test(rawVal)) {
+          throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited inside the sandbox.');
+        }
       }
     }
   }
@@ -805,6 +851,15 @@ export function executeSamreyCode(
     }
 
     log('[AST Transpiler] Stripped TypeScript type signatures. Preparing reactive scope...', 'info');
+
+    const activeTimeouts = new Set<ReturnType<typeof setTimeout>>();
+    const activeIntervals = new Set<ReturnType<typeof setInterval>>();
+    const cleanupTimers = () => {
+      for (const t of activeTimeouts) clearTimeout(t);
+      activeTimeouts.clear();
+      for (const iv of activeIntervals) clearInterval(iv);
+      activeIntervals.clear();
+    };
 
     // Create execution scope with all @samrey/* primitives and explicit global isolation
     const scope = {
@@ -865,7 +920,7 @@ export function executeSamreyCode(
       // Forms
       createForm: Forms.createForm,
       createField: Forms.createField,
-      validators: Forms.validators,
+      validators: Object.freeze({ ...Forms.validators }),
       bindField: Forms.bindField,
       computeAriaAttributes: Forms.computeAriaAttributes,
       getAccessibleFieldProps: Forms.getAccessibleFieldProps,
@@ -881,7 +936,7 @@ export function executeSamreyCode(
 
       // HTTP
       createResource: Http.createResource,
-      createHttpClient: Http.createHttpClient,
+      createHttpClient: createSafeSandboxHttpClient,
       createHttpCache: Http.createHttpCache,
       RequestCache: Http.RequestCache,
 
@@ -891,15 +946,34 @@ export function executeSamreyCode(
         if (typeof fn !== 'function') {
           throw new TypeError('[Sandbox Security] setTimeout requires a function callback.');
         }
-        return setTimeout(fn as (...a: unknown[]) => void, delay, ...args);
+        const handle = setTimeout((...cbArgs: unknown[]) => {
+          activeTimeouts.delete(handle);
+          (fn as (...a: unknown[]) => void)(...cbArgs);
+        }, delay, ...args);
+        activeTimeouts.add(handle);
+        return handle;
+      },
+      clearTimeout: (handle: unknown) => {
+        if (handle !== undefined && handle !== null) {
+          clearTimeout(handle as ReturnType<typeof setTimeout>);
+          activeTimeouts.delete(handle as ReturnType<typeof setTimeout>);
+        }
       },
       setInterval: (fn: unknown, delay?: number, ...args: unknown[]) => {
         if (typeof fn !== 'function') {
           throw new TypeError('[Sandbox Security] setInterval requires a function callback.');
         }
-        return setInterval(fn as (...a: unknown[]) => void, delay, ...args);
+        const handle = setInterval(fn as (...a: unknown[]) => void, delay, ...args);
+        activeIntervals.add(handle);
+        return handle;
       },
-      console: {
+      clearInterval: (handle: unknown) => {
+        if (handle !== undefined && handle !== null) {
+          clearInterval(handle as ReturnType<typeof setInterval>);
+          activeIntervals.delete(handle as ReturnType<typeof setInterval>);
+        }
+      },
+      console: Object.freeze({
         log: (...args: any[]) => {
           log(args.map((a) => safeFormatSandboxArg(a)).join(' '), 'info');
         },
@@ -909,22 +983,34 @@ export function executeSamreyCode(
         error: (...args: any[]) => {
           log(args.map((a) => safeFormatSandboxArg(a)).join(' '), 'error');
         }
-      }
+      })
     };
 
     log('[Runtime] Executing component entry function via zero-eval AST sandbox...', 'info');
 
-    // Run inside reactive owner via zero-Function AST interpreter
-    const owner = Reactivity.createOwner();
+    // Run inside reactive root via zero-Function AST interpreter so timers & effects clean up cleanly on disposal
     let renderedResult: any = null;
+    let rootDispose: (() => void) | undefined;
 
-    Reactivity.runWithOwner(owner, () => {
-      renderedResult = evaluateSandboxedProgram(cleanCode, scope, []);
-    });
+    try {
+      Reactivity.createRoot((dispose) => {
+        rootDispose = dispose;
+        Reactivity.onCleanup(cleanupTimers);
+        renderedResult = evaluateSandboxedProgram(cleanCode, scope, []);
+      });
+    } catch (innerErr) {
+      cleanupTimers();
+      try {
+        rootDispose?.();
+      } catch {
+        // Ignore secondary cleanup error
+      }
+      throw innerErr;
+    }
 
     if (renderedResult && typeof renderedResult === 'object' && ('nodeType' in renderedResult || renderedResult instanceof Node)) {
       log('[Runtime] Component tree mounted successfully. Active reactive bindings registered.', 'success');
-      return { success: true, node: renderedResult as Node };
+      return { success: true, node: renderedResult as Node, dispose: rootDispose };
     }
 
     // Fallback: If code returned primitive or object or nothing (pure logic)
@@ -939,7 +1025,7 @@ export function executeSamreyCode(
     );
 
     log('[Runtime] Script evaluated without fatal errors.', 'success');
-    return { success: true, node: fallbackNode };
+    return { success: true, node: fallbackNode, dispose: rootDispose };
   } catch (err: any) {
     const errMsg = sanitizeSandboxErrorMessage(err?.message || String(err));
     log(`[Execution Error] ${errMsg}`, 'error');

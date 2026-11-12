@@ -43,7 +43,70 @@ export interface HydrationResult {
 export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'keydown'], nonce?: string): string {
   const eventsList = escapeForScriptPayload(JSON.stringify(events));
   const nonceAttr = nonce ? ` nonce="${escapeHtmlAttribute(nonce)}"` : '';
-  return `<script${nonceAttr}>!function(){window.__SAMREY_EVENTS__=[];var e=${eventsList},h=function(t){Array.isArray(window.__SAMREY_EVENTS__)&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){document.addEventListener(t,h,{capture:!0})});window.__SAMREY_EVENTS_CLEANUP__=function(){e.forEach(function(t){document.removeEventListener(t,h,{capture:!0})});delete window.__SAMREY_EVENTS_CLEANUP__}}();</script>`;
+  return `<script${nonceAttr}>!function(){Array.isArray(window.__SAMREY_EVENTS__)||(window.__SAMREY_EVENTS__=[]);var a=window.__SAMREY_ACTIVE_EVENTS__=window.__SAMREY_ACTIVE_EVENTS__&&typeof window.__SAMREY_ACTIVE_EVENTS__==="object"?window.__SAMREY_ACTIVE_EVENTS__:{},r=window.__SAMREY_EVENT_REGS__=Array.isArray(window.__SAMREY_EVENT_REGS__)?window.__SAMREY_EVENT_REGS__:[],e=${eventsList},h=function(t){Array.isArray(window.__SAMREY_EVENTS__)&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){if(!Object.prototype.hasOwnProperty.call(a,t)){a[t]=1;document.addEventListener(t,h,{capture:!0});r.push([t,h])}});var c=function(){r.forEach(function(x){document.removeEventListener(x[0],x[1],{capture:!0});delete a[x[0]]});r.length=0;if(window.__SAMREY_EVENTS_CLEANUP__===c)delete window.__SAMREY_EVENTS_CLEANUP__;delete window.__SAMREY_ACTIVE_EVENTS__;delete window.__SAMREY_EVENT_REGS__};window.__SAMREY_EVENTS_CLEANUP__=c}();</script>`;
+}
+
+function getSafeElementAttribute(el: unknown, attrName: string): string | null {
+  if (!el || typeof el !== 'object') return null;
+  try {
+    if (
+      typeof Element !== 'undefined' &&
+      el instanceof Element &&
+      typeof Element.prototype.getAttribute === 'function'
+    ) {
+      return Element.prototype.getAttribute.call(el, attrName);
+    }
+    const rawFn = (el as { getAttribute?: unknown }).getAttribute;
+    if (typeof rawFn === 'function') {
+      return rawFn.call(el, attrName);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function getSafeElementTagName(el: unknown): string | null {
+  if (!el || typeof el !== 'object') return null;
+  try {
+    if (typeof Element !== 'undefined' && el instanceof Element) {
+      const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'tagName');
+      if (desc && typeof desc.get === 'function') {
+        const tag = desc.get.call(el);
+        if (typeof tag === 'string' && tag.length > 0) return tag;
+      }
+    }
+    const rawTag = (el as { tagName?: unknown }).tagName;
+    if (typeof rawTag === 'string' && rawTag.length > 0) return rawTag;
+    if (typeof Node !== 'undefined' && el instanceof Node) {
+      const nodeDesc = Object.getOwnPropertyDescriptor(Node.prototype, 'nodeName');
+      if (nodeDesc && typeof nodeDesc.get === 'function') {
+        const nodeName = nodeDesc.get.call(el);
+        if (typeof nodeName === 'string' && nodeName.length > 0 && !nodeName.startsWith('#')) {
+          return nodeName;
+        }
+      }
+    }
+    const rawNodeName = (el as { nodeName?: unknown }).nodeName;
+    if (typeof rawNodeName === 'string' && rawNodeName.length > 0 && !rawNodeName.startsWith('#')) {
+      return rawNodeName;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function getSafeElementClassName(el: unknown): string | null {
+  if (!el || typeof el !== 'object') return null;
+  const attrClass = getSafeElementAttribute(el, 'class');
+  if (typeof attrClass === 'string') return attrClass;
+  const cls = (el as { className?: unknown }).className;
+  if (typeof cls === 'string') return cls;
+  if (cls && typeof cls === 'object' && typeof (cls as { baseVal?: unknown }).baseVal === 'string') {
+    return (cls as { baseVal: string }).baseVal;
+  }
+  return null;
 }
 
 /**
@@ -85,24 +148,37 @@ export function replayCapturedEvents(container?: HTMLElement): number {
       typeof container.querySelector === 'function'
     ) {
       try {
-        if (target.id) {
-          target = container.querySelector(`#${escapeCssIdentifier(target.id)}`) || target;
-        } else if (target.className && typeof target.className === 'string') {
-          const classes = target.className.trim().split(/\s+/).filter(Boolean);
+        const safeId =
+          getSafeElementAttribute(target, 'id') ??
+          (typeof (target as { id?: unknown }).id === 'string' ? (target as { id: string }).id : null);
+        const safeClass = getSafeElementClassName(target);
+        const safeTag = getSafeElementTagName(target);
+        if (safeId) {
+          target = container.querySelector(`#${escapeCssIdentifier(safeId)}`) || target;
+        } else if (safeClass && safeClass.trim()) {
+          const classes = safeClass.trim().split(/\s+/).filter(Boolean);
           if (classes.length > 0) {
             const selector = classes.map((c) => `.${escapeCssIdentifier(c)}`).join('');
             target = container.querySelector(selector) || target;
           }
-        } else if (target.tagName) {
-          target = container.querySelector(target.tagName.toLowerCase()) || target;
+        } else if (safeTag) {
+          target = container.querySelector(escapeCssIdentifier(safeTag.toLowerCase())) || target;
         }
       } catch {
         // Preserve original target if fallback selector cannot be queried
       }
     }
-    if (target && typeof target.dispatchEvent === 'function') {
+    const dispatchFn =
+      typeof EventTarget !== 'undefined' &&
+      target instanceof EventTarget &&
+      typeof EventTarget.prototype.dispatchEvent === 'function'
+        ? EventTarget.prototype.dispatchEvent
+        : target && typeof (target as { dispatchEvent?: unknown }).dispatchEvent === 'function'
+          ? (target as { dispatchEvent: (e: Event) => boolean }).dispatchEvent
+          : null;
+    if (target && dispatchFn) {
       try {
-        target.dispatchEvent(event);
+        dispatchFn.call(target, event);
       } catch (err) {
         console.warn('[Samrey Hydration] Failed to replay captured event:', err);
       }

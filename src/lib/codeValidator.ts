@@ -229,6 +229,32 @@ const FOREIGN_API_MAP: Array<{ regex: RegExp; name: string; framework: string; a
 function stripCommentsAndStrings(code: string, keepStrings = false): string {
   let out = '';
   let i = 0;
+  const templateBraceStack: number[] = [];
+
+  const consumeTemplateSegment = () => {
+    while (i < code.length) {
+      const cur = code[i];
+      if (cur === '\\' && i + 1 < code.length) {
+        out += keepStrings ? cur + code[i + 1] : (code[i + 1] === '\n' ? ' \n' : '  ');
+        i += 2;
+        continue;
+      }
+      if (cur === '$' && code[i + 1] === '{') {
+        out += keepStrings ? '${' : '  ';
+        i += 2;
+        templateBraceStack.push(1);
+        return;
+      }
+      if (cur === '`') {
+        out += keepStrings ? '`' : ' ';
+        i++;
+        return;
+      }
+      out += keepStrings ? cur : (cur === '\n' ? '\n' : ' ');
+      i++;
+    }
+  };
+
   while (i < code.length) {
     const ch = code[i];
     const next = code[i + 1];
@@ -254,7 +280,7 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
       }
       continue;
     }
-    if (ch === "'" || ch === '"' || ch === '`') {
+    if (ch === "'" || ch === '"') {
       const quote = ch;
       out += keepStrings ? ch : ' ';
       i++;
@@ -273,6 +299,31 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         out += keepStrings ? cur : (cur === '\n' ? '\n' : ' ');
         i++;
       }
+      continue;
+    }
+    if (ch === '`') {
+      out += keepStrings ? '`' : ' ';
+      i++;
+      consumeTemplateSegment();
+      continue;
+    }
+    if (templateBraceStack.length > 0 && ch === '{') {
+      templateBraceStack[templateBraceStack.length - 1]++;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (templateBraceStack.length > 0 && ch === '}') {
+      templateBraceStack[templateBraceStack.length - 1]--;
+      if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+        templateBraceStack.pop();
+        out += keepStrings ? '}' : ' ';
+        i++;
+        consumeTemplateSegment();
+        continue;
+      }
+      out += ch;
+      i++;
       continue;
     }
     out += ch;
@@ -309,13 +360,14 @@ export function validateSamreyCode(
 
   const trimmed = code.trim();
 
-  // 1. Structural Balance Check (Parentheses, Braces, Brackets, String Quotes)
+  // 1. Structural Balance Check (Parentheses, Braces, Brackets, String Quotes, Nested Templates)
   let parenCount = 0;
   let braceCount = 0;
   let bracketCount = 0;
   let inSingleQuote = false;
   let inDoubleQuote = false;
   let inBacktick = false;
+  const templateBraceStack: number[] = [];
   let inLineComment = false;
   let inBlockComment = false;
 
@@ -346,6 +398,12 @@ export function validateSamreyCode(
     }
     if (inBacktick) {
       if (char === '\\') { i++; continue; }
+      if (char === '$' && nextChar === '{') {
+        templateBraceStack.push(1);
+        inBacktick = false;
+        i++;
+        continue;
+      }
       if (char === '`') inBacktick = false;
       continue;
     }
@@ -367,6 +425,17 @@ export function validateSamreyCode(
     if (char === '"') { inDoubleQuote = true; continue; }
     if (char === '`') { inBacktick = true; continue; }
 
+    if (templateBraceStack.length > 0 && char === '{') {
+      templateBraceStack[templateBraceStack.length - 1]++;
+    } else if (templateBraceStack.length > 0 && char === '}') {
+      templateBraceStack[templateBraceStack.length - 1]--;
+      if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+        templateBraceStack.pop();
+        inBacktick = true;
+        continue;
+      }
+    }
+
     // Delimiters
     if (char === '(') parenCount++;
     else if (char === ')') parenCount--;
@@ -383,7 +452,7 @@ export function validateSamreyCode(
   if (parenCount > 0) errors.push(`Syntax error: ${parenCount} unclosed parenthesis \`(\``);
   if (braceCount > 0) errors.push(`Syntax error: ${braceCount} unclosed brace \`{\``);
   if (bracketCount > 0) errors.push(`Syntax error: ${bracketCount} unclosed bracket \`[\``);
-  if (inSingleQuote || inDoubleQuote || inBacktick) errors.push('Syntax error: Unclosed string literal');
+  if (inSingleQuote || inDoubleQuote || inBacktick || templateBraceStack.length > 0) errors.push('Syntax error: Unclosed string literal');
 
   if (errors.length === 0) {
     passedChecks.push('AST & Bracket Structure Balanced');

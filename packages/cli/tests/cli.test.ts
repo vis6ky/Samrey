@@ -552,4 +552,58 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   });
+
+  it('Item 7 regression: rejects missing/flag-swallowing option values and supports --flag=value across CLI subcommands', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-cli-i7-'));
+    try {
+      // 1. audit --ignore --json must fail cleanly instead of swallowing --json as an ignore pattern
+      const auditMissingIgnore = await runCLI(['audit', tmpRoot, '--ignore', '--json']);
+      assert.equal(auditMissingIgnore.exitCode, 1, 'Expected missing value error when --ignore is followed by --json');
+      assert.ok(auditMissingIgnore.message.includes('requires a value'));
+
+      // 2. build --outDir --ssr must fail cleanly instead of setting outDir="--ssr" and dropping --ssr
+      const buildMissingOutDir = await runCLI(['build', '--targetDir', tmpRoot, '--outDir', '--ssr', '--dry-run']);
+      assert.equal(buildMissingOutDir.exitCode, 1, 'Expected missing value error when --outDir is followed by --ssr');
+      assert.ok(buildMissingOutDir.message.includes('requires a value'));
+
+      // 3. Trailing value flag & create/dev/preview/analyze flag swallowing checks
+      const createMissingTemplate = await runCLI(['create', 'demo', '--template', '--dry-run']);
+      assert.equal(createMissingTemplate.exitCode, 1);
+      assert.ok(createMissingTemplate.message.includes('requires a value'));
+
+      const devMissingPort = await runCLI(['dev', '--port', '--host', '--dry-run']);
+      assert.equal(devMissingPort.exitCode, 1);
+      assert.ok(devMissingPort.message.includes('requires a value'));
+
+      const analyzeTrailingOutDir = await runCLI(['analyze', '--outDir'], { cwd: tmpRoot });
+      assert.equal(analyzeTrailingOutDir.exitCode, 1);
+      assert.ok(analyzeTrailingOutDir.message.includes('requires a value'));
+
+      // 4. --flag=value syntax works uniformly across subcommands + valid audit --json
+      fs.writeFileSync(path.join(tmpRoot, 'clean.ts'), 'export const ok = 1;\n');
+      const auditJson = await runCLI(['audit', tmpRoot, '--ignore=*.bak', '--json']);
+      assert.equal(auditJson.exitCode, 0);
+      const parsedAudit = JSON.parse(auditJson.message);
+      assert.equal(parsedAudit.violationsCount, 0);
+
+      const createEq = await runCLI(['create', 'eq-app', '--template=minimal', `--targetDir=${path.join(tmpRoot, 'out-app')}`, '--dry-run']);
+      assert.equal(createEq.exitCode, 0);
+      assert.ok(createEq.message.includes('eq-app'));
+
+      const buildEq = await runCLI(['build', `--targetDir=${tmpRoot}`, '--outDir=custom-dist', '--ssr=entry.ts', '--dry-run']);
+      assert.equal(buildEq.exitCode, 0);
+      assert.equal(buildEq.data?.outDir, 'custom-dist');
+      assert.equal(buildEq.data?.ssr, 'entry.ts');
+
+      const buildSsrBool = await runCLI(['build', '--targetDir', tmpRoot, '--outDir', 'custom-dist', '--ssr', '--dry-run']);
+      assert.equal(buildSsrBool.exitCode, 0);
+      assert.equal(buildSsrBool.data?.outDir, 'custom-dist');
+      assert.equal(buildSsrBool.data?.ssr, 'src/entry-server.ts');
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
 });

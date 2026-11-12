@@ -12,7 +12,7 @@
  * - Code debugging & AST repair
  * - Code conversion from foreign frameworks (React, Vue, Svelte, Solid, Redux, etc.)
  * - API questions
- * - Error messages & AETH-xxxx diagnostics
+ * - Error messages & SAMREY-xxxx diagnostics
  * - Architecture & structural questions
  *
  * Standardized Response Schema:
@@ -513,7 +513,7 @@ export function AssistantView(): HTMLElement {
   const actionBar = el('div', { class: 'flex flex-wrap items-center justify-between gap-3' },
     el('div', { class: 'flex items-center space-x-2 text-xs text-slate-500 font-mono' },
       icon('shield-check', 'w-4 h-4 text-emerald-600'),
-      el('span', null, 'Auto-detects Concepts, Requirements, Bugs, Foreign APIs & AETH Errors · Zero-Eval Safe')
+      el('span', null, 'Auto-detects Concepts, Requirements, Bugs, Foreign APIs & SAMREY Errors · Zero-Eval Safe')
     ),
     el('div', { class: 'flex items-center space-x-2' },
       Show({
@@ -647,7 +647,7 @@ export function Broken() {
   useEffect(() => { console.log('Count:', count); }, [count]);
   return <button onClick={() => setCount(count + 1)}>{count}</button>;
 }` },
-    { label: '🚨 Error Code: AETH-301', query: 'AETH-301' },
+    { label: '🚨 Error Code: SAMREY-301', query: 'SAMREY-301' },
     { label: '🏗️ Full Component Architecture', query: 'How should I structure a full Samrey component with local signals and lifecycle?' },
     { label: '🌐 Fetch API & Loading States', query: 'How do I fetch API data?' }
   ];

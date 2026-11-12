@@ -18,6 +18,7 @@ import {
 } from '../../src/lib/assistantProvider.js';
 import { AssistantAnswer } from '../../src/data/assistantKnowledge.js';
 import { VALID_SAMREY_PACKAGES, detectUnsupportedApis } from '../../src/lib/codeHelpEngine.js';
+import { OFFICIAL_PACKAGE_EXPORTS, KNOWN_TYPE_EXPORTS } from '../../packages/ai/src/code-validator.js';
 
 export interface ChallengeScore {
   conceptAccuracy: number;          // 0-5
@@ -63,52 +64,14 @@ export interface BenchmarkReport {
 }
 
 /**
- * Public exports of official @samrey/* packages in v2.0.0
+ * Authoritative runtime + type exports of official @samrey/* packages.
  */
-export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
-  '@samrey/reactivity': [
-    'signal', 'computed', 'effect', 'batch', 'untrack', 'createRoot',
-    'createContext', 'useContext', 'createStore', 'produce', 'reconcile',
-    'onCleanup', 'getOwner', 'runWithOwner', 'isSignal', 'Signal', 'ReadonlySignal', 'Store'
-  ],
-  '@samrey/runtime': [
-    'el', 'text', 'Show', 'For', 'Switch', 'Match', 'ErrorBoundary',
-    'Suspense', 'mount', 'hydrate', 'onMount', 'onCleanup', 'onError',
-    'createComponent', 'deriveAriaAttributes'
-  ],
-  '@samrey/router': [
-    'createRouter', 'Router', 'Route', 'Link', 'useRouter', 'useParams',
-    'useNavigate', 'useLocation', 'RouterView', 'createMemoryHistory', 'createBrowserHistory'
-  ],
-  '@samrey/forms': [
-    'createForm', 'createField', 'standardSchemaValidator', 'deriveAriaAttributes',
-    'bindField', 'validateField', 'validateForm'
-  ],
-  '@samrey/http': [
-    'createHttpClient', 'resource', 'createCache', 'fetchResource', 'HttpClient'
-  ],
-  '@samrey/security': [
-    'sanitizeHtml', 'sanitizeUri', 'escapeHtmlText', 'escapeHtmlAttribute',
-    'createCsrfToken', 'validateCsrfToken', 'stripSecrets', 'safeJsonParse'
-  ],
-  '@samrey/ssr': [
-    'renderToString', 'renderToStream', 'serializeState', 'hydrateState',
-    'createSsrContext', 'renderToPipeableStream'
-  ],
-  '@samrey/testing': [
-    'renderTest', 'renderTestComponent', 'fireEvent', 'waitFor', 'flushReactivity',
-    'createMockResource', 'waitForNextUpdate', 'cleanupAllTestContainers'
-  ],
-  '@samrey/devtools': [
-    'initDevTools', 'ReactiveGraphInspector', 'PerfInspector', 'SamreyDevToolsBridge'
-  ],
-  '@samrey/compiler': [
-    'compile', 'compileToRuntime', 'transformTsx', 'parseTemplate'
-  ],
-  '@samrey/cli': [
-    'runCli', 'createProject', 'buildProject'
-  ]
-};
+export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(OFFICIAL_PACKAGE_EXPORTS).map(([pkg, syms]) => [
+    pkg,
+    Array.from(new Set([...syms, ...(KNOWN_TYPE_EXPORTS[pkg] || [])]))
+  ])
+);
 
 /**
  * Extracts TypeScript code block from an AssistantAnswer.

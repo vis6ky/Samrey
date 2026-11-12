@@ -439,26 +439,46 @@ function readCssQuotedStringToken(
   };
 }
 
-function sanitizeCssUrlArgument(rawArg: string): boolean {
+function closeCssStringSafely(rawToken: string, quote: string): string {
+  // If rawToken ends with an odd number of backslashes, strip the trailing backslash so it won't escape the closing quote.
+  let safe = rawToken;
+  let trailingSlashes = 0;
+  for (let idx = safe.length - 1; idx >= 0 && safe[idx] === '\\'; idx--) {
+    trailingSlashes++;
+  }
+  if (trailingSlashes % 2 === 1) {
+    safe = safe.slice(0, -1);
+  }
+  return `${safe}${quote}`;
+}
+
+function validateCssUrlValue(rawArg: string): { valid: boolean; normalized: string } {
   const trimmed = rawArg.trim();
-  if (!trimmed) return false;
+  if (!trimmed) return { valid: false, normalized: '""' };
 
   let candidate = trimmed;
+  let normalizedOut = trimmed;
   if (trimmed[0] === '"' || trimmed[0] === "'") {
+    const quote = trimmed[0];
     const parsed = readCssQuotedStringToken(trimmed, 0);
-    if (parsed.hitBadNewline) return false;
+    if (parsed.hitBadNewline) return { valid: false, normalized: '""' };
     const trailing = trimmed.slice(parsed.nextIndex).trim();
     // Reject unexpected extra quoted/paren/colon fragments after a CSS string URL token
     if (trailing && !/^[a-zA-Z0-9_-]+(?:\s+[a-zA-Z0-9_-]+)*$/.test(trailing)) {
-      return false;
+      return { valid: false, normalized: '""' };
     }
     candidate = parsed.inner.trim();
+    const closedToken = parsed.closedValidly ? parsed.rawToken : closeCssStringSafely(parsed.rawToken, quote);
+    normalizedOut = trailing ? `${closedToken} ${trailing}` : closedToken;
   }
 
-  if (!candidate) return false;
+  if (!candidate) return { valid: false, normalized: '""' };
   const decoded = decodeCssEscapes(decodeHtmlEntitiesDeep(candidate));
-  const safe = sanitizeUri(decoded, { allowImageDataUri: true });
-  return safe !== 'about:blank' && safe !== '';
+  const safe = sanitizeUri(decoded, { allowImageDataUri: true, allowProtocolRelative: false });
+  if (safe === 'about:blank' || safe === '') {
+    return { valid: false, normalized: '""' };
+  }
+  return { valid: true, normalized: normalizedOut };
 }
 
 function isIdentBoundaryBefore(str: string, idx: number): boolean {
@@ -475,8 +495,7 @@ const CSS_AT_RULE_STICKY_RE = /@(?:import|charset|namespace)(?![a-zA-Z0-9_-])/iy
 const CSS_BAD_PROP_STICKY_RE = /(?:behavior|-moz-binding|-webkit-binding|binding|-o-link|-o-link-source)\s*:/iy;
 const CSS_EXPR_STICKY_RE = /expression\s*\(/iy;
 const CSS_PROGID_STICKY_RE = /progid\s*:/iy;
-const CSS_URL_FN_STICKY_RE = /(url|src)\s*\(/iy;
-const CSS_IMAGE_LIST_FN_STICKY_RE = /(?:image|(?:-webkit-)?image-set)\s*\(/iy;
+const CSS_ANY_FN_STICKY_RE = /([a-zA-Z_-][a-zA-Z0-9_-]*)\s*\(/iy;
 
 function matchStickyAt(re: RegExp, str: string, index: number): RegExpExecArray | null {
   re.lastIndex = index;
@@ -505,10 +524,13 @@ function sanitizeNormalizedCss(str: string, validateQuotedStringsAsUrls = false,
           const newlineChar = token.rawToken.slice(-1);
           out += '""' + (newlineChar === '\n' || newlineChar === '\r' || newlineChar === '\f' ? newlineChar : '');
         } else {
-          out += sanitizeCssUrlArgument(token.rawToken) ? token.rawToken : '""';
+          const urlRes = validateCssUrlValue(token.rawToken);
+          out += urlRes.valid ? urlRes.normalized : '""';
         }
       } else {
-        out += token.rawToken;
+        out += token.closedValidly || token.hitBadNewline
+          ? token.rawToken
+          : closeCssStringSafely(token.rawToken, ch);
       }
       i = token.nextIndex;
       continue;
@@ -542,26 +564,20 @@ function sanitizeNormalizedCss(str: string, validateQuotedStringsAsUrls = false,
         continue;
       }
 
-      const urlMatch = matchStickyAt(CSS_URL_FN_STICKY_RE, str, i);
-      if (urlMatch) {
-        const fnName = urlMatch[1].toLowerCase();
-        const openIdx = i + urlMatch[0].length - 1;
+      const fnMatch = matchStickyAt(CSS_ANY_FN_STICKY_RE, str, i);
+      if (fnMatch) {
+        const fnName = fnMatch[1].toLowerCase();
+        const openIdx = i + fnMatch[0].length - 1;
         const { endIdx, foundClose } = findMatchingParenEnd(str, openIdx);
         const inner = str.slice(openIdx + 1, endIdx);
-        out += sanitizeCssUrlArgument(inner)
-          ? str.slice(i, foundClose ? endIdx + 1 : endIdx)
-          : `${fnName}("")`;
-        i = foundClose ? endIdx + 1 : endIdx;
-        continue;
-      }
 
-      const imgListMatch = matchStickyAt(CSS_IMAGE_LIST_FN_STICKY_RE, str, i);
-      if (imgListMatch) {
-        const openIdx = i + imgListMatch[0].length - 1;
-        const { endIdx, foundClose } = findMatchingParenEnd(str, openIdx);
-        const inner = str.slice(openIdx + 1, endIdx);
-        const sanitizedInner = sanitizeNormalizedCss(inner, true, depth + 1);
-        out += str.slice(i, openIdx + 1) + sanitizedInner + ')';
+        if (fnName === 'url' || fnName === 'src') {
+          const urlRes = validateCssUrlValue(inner);
+          out += urlRes.valid ? `${str.slice(i, openIdx + 1)}${urlRes.normalized})` : `${fnName}("")`;
+        } else {
+          const sanitizedInner = sanitizeNormalizedCss(inner, true, depth + 1);
+          out += str.slice(i, openIdx + 1) + sanitizedInner + ')';
+        }
         i = foundClose ? endIdx + 1 : endIdx;
         continue;
       }
@@ -1231,12 +1247,16 @@ function findEndTagCloseGt(html: string, startAfterName: number): number {
   return -1;
 }
 
-function findRawtextClose(html: string, start: number, tagLower: string): number {
+function findRawtextCloseSpan(
+  html: string,
+  start: number,
+  tagLower: string
+): { closeTagStart: number; closeTagEnd: number; hasCloseTag: boolean } {
   const len = html.length;
   let i = start;
   while (i < len) {
     const closeStart = html.indexOf('</', i);
-    if (closeStart === -1) return len;
+    if (closeStart === -1) return { closeTagStart: len, closeTagEnd: len, hasCloseTag: false };
     const afterNameIdx = closeStart + 2 + tagLower.length;
     if (
       afterNameIdx <= len &&
@@ -1244,11 +1264,19 @@ function findRawtextClose(html: string, start: number, tagLower: string): number
       (afterNameIdx === len || /[\s/>]/.test(html[afterNameIdx]))
     ) {
       const gt = findEndTagCloseGt(html, afterNameIdx);
-      return gt === -1 ? len : gt + 1;
+      return {
+        closeTagStart: closeStart,
+        closeTagEnd: gt === -1 ? len : gt + 1,
+        hasCloseTag: true
+      };
     }
     i = closeStart + 2;
   }
-  return len;
+  return { closeTagStart: len, closeTagEnd: len, hasCloseTag: false };
+}
+
+function findRawtextClose(html: string, start: number, tagLower: string): number {
+  return findRawtextCloseSpan(html, start, tagLower).closeTagEnd;
 }
 
 function findStrippedElementEnd(html: string, start: number, tagLower: string): number {
@@ -1458,13 +1486,11 @@ function sanitizeHtmlWithTokenizer(
     });
 
     if (lowerTag === 'textarea' && (!parsed.selfClosing || !inForeign)) {
-      const closeEnd = findRawtextClose(html, i, 'textarea');
-      const sliceToClose = html.slice(i, closeEnd);
-      const closeTagMatch = /<\/textarea(?:\s[^>]*)?>?$/i.exec(sliceToClose);
-      const innerRaw = closeTagMatch ? sliceToClose.slice(0, closeTagMatch.index) : sliceToClose;
+      const { closeTagStart, closeTagEnd, hasCloseTag } = findRawtextCloseSpan(html, i, 'textarea');
+      const innerRaw = hasCloseTag ? html.slice(i, closeTagStart) : html.slice(i);
       const safeTextareaText = innerRaw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       out += `<${parsed.tagName}${serializedAttrs}>${safeTextareaText}</textarea>`;
-      i = closeEnd;
+      i = closeTagEnd;
       continue;
     }
 

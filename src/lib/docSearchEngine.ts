@@ -96,11 +96,11 @@ export function normalizeQuestion(rawQuery: string): NormalizedQuery {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Normalize error codes (e.g. "aeth101", "aeth-101", "aeth 101" -> "AETH-101")
+  // Normalize error codes (e.g. "samrey-101", "aeth-101", "error 301" -> "SAMREY-101")
   let detectedErrorCode: string | undefined;
-  const errorCodeMatch = raw.match(/\b(?:AETH[-_ ]?|error\s+)(\d{3})\b/i);
+  const errorCodeMatch = raw.match(/\b(?:(?:SAMREY|AETH)[-_ ]?|error\s+)(\d{3})\b/i);
   if (errorCodeMatch) {
-    detectedErrorCode = `AETH-${errorCodeMatch[1]}`;
+    detectedErrorCode = `SAMREY-${errorCodeMatch[1]}`;
     cleaned += ` ${detectedErrorCode.toLowerCase()}`;
   }
 
@@ -223,8 +223,8 @@ export function normalizeQuestion(rawQuery: string): NormalizedQuery {
 export function detectIntent(normalized: NormalizedQuery): UserIntent {
   const { raw, cleaned, detectedErrorCode, detectedApi, isForeignFramework, foreignFrameworkName } = normalized;
 
-  // 1. Error intent: AETH-xxx or error message
-  if (detectedErrorCode || /\b(aeth|error\s*\d+|typeerror|referenceerror|stack\s*trace|failed\s*to\s*mount)\b/i.test(raw)) {
+  // 1. Error intent: SAMREY-xxx (or legacy AETH-xxx) or error message
+  if (detectedErrorCode || /\b(samrey-\d{3}|aeth|error\s*\d+|typeerror|referenceerror|stack\s*trace|failed\s*to\s*mount)\b/i.test(raw)) {
     return {
       type: 'ERROR_DIAGNOSTICS',
       category: 'errors',

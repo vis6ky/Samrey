@@ -425,4 +425,86 @@ describe('@samrey/forms', () => {
     assert.equal(docForm.fields.username.error.value, 'Min 3');
     assert.equal(docForm.fields.email.error.value, 'Valid email is required');
   });
+
+  it('Item 5 regression: cancels in-flight async submit validation on form.reset() and wires FieldConfig.required into ARIA', async () => {
+    // 1. reset() called while async form.validate() is pending (rejects with error later)
+    let resolveValidateErr!: (errs: Record<string, string>) => void;
+    let errSubmitCalls = 0;
+    const errRaceForm = createForm({
+      initialValues: { email: 'alice@samrey.dev' },
+      validate: () => new Promise<Record<string, string>>((r) => { resolveValidateErr = r; }),
+      onSubmit: () => { errSubmitCalls++; }
+    });
+    const pendingErrSubmit = errRaceForm.submit();
+    assert.equal(errRaceForm.isSubmitting.value, true);
+    errRaceForm.reset();
+    assert.equal(errRaceForm.isSubmitting.value, false, 'reset() must clear isSubmitting immediately');
+    resolveValidateErr({ email: 'Late validation error' });
+    const errResult = await pendingErrSubmit;
+    assert.equal(errResult, false);
+    assert.equal(errSubmitCalls, 0);
+    assert.equal(errRaceForm.fields.email.error.value, null, 'Late async validate() result after reset() must not write field errors');
+    assert.equal(errRaceForm.formError.value, null);
+
+    // 2. reset() called while async field validator is pending (resolves valid later -> must NOT run onSubmit)
+    let resolveFieldValid!: (err: string | null) => void;
+    let validSubmitCalls = 0;
+    const validRaceForm = createForm({
+      initialValues: { username: 'alice' },
+      validators: {
+        username: () => new Promise<string | null>((r) => { resolveFieldValid = r; })
+      },
+      onSubmit: () => { validSubmitCalls++; }
+    });
+    const pendingValidSubmit = validRaceForm.submit();
+    validRaceForm.reset();
+    resolveFieldValid(null);
+    const validResult = await pendingValidSubmit;
+    assert.equal(validResult, false, 'Reset during async field validation must abort submission even when validator passes');
+    assert.equal(validSubmitCalls, 0, 'onSubmit must NOT run after form.reset()');
+
+    // 3. FieldConfig.required reflected in field.required, ariaSignal, and getAccessibleFieldProps
+    const reqField = createField('apiKey', '', { required: true });
+    assert.equal(reqField.required, true);
+    assert.equal(reqField.aria.value['aria-required'], true);
+    assert.equal(getAccessibleFieldProps(reqField)['aria-required'], true);
+
+    const reqForm = createForm({
+      initialValues: { title: '', subtitle: '' },
+      validators: { subtitle: validators.required('Subtitle required') },
+      required: { title: true },
+      onSubmit: () => {}
+    });
+    assert.equal(reqForm.fields.title.required, true);
+    assert.equal(reqForm.fields.title.aria.value['aria-required'], true);
+    assert.equal(reqForm.fields.subtitle.required, true);
+    assert.equal(reqForm.fields.subtitle.aria.value['aria-required'], true);
+
+    // 4. Starting a new submit immediately after reset() while prior async submit is still pending
+    let resolveFirstVal!: (errs: Record<string, string>) => void;
+    let resolveSecondVal!: (errs: Record<string, string>) => void;
+    let valCall = 0;
+    let secondSubmitCount = 0;
+    const overlapForm = createForm({
+      initialValues: { name: 'bob' },
+      validate: () => new Promise<Record<string, string>>((r) => {
+        valCall++;
+        if (valCall === 1) resolveFirstVal = r;
+        else resolveSecondVal = r;
+      }),
+      onSubmit: () => { secondSubmitCount++; }
+    });
+    const overlap1 = overlapForm.submit();
+    overlapForm.reset();
+    const overlap2 = overlapForm.submit();
+    assert.equal(overlapForm.isSubmitting.value, true);
+    resolveFirstVal({ name: 'Stale first submit error' });
+    assert.equal(await overlap1, false);
+    assert.equal(overlapForm.isSubmitting.value, true, 'Stale first submit finally must NOT clear isSubmitting of second submit');
+    assert.equal(overlapForm.fields.name.error.value, null);
+    resolveSecondVal({});
+    assert.equal(await overlap2, true);
+    assert.equal(secondSubmitCount, 1);
+    assert.equal(overlapForm.isSubmitting.value, false);
+  });
 });

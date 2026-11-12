@@ -27,12 +27,15 @@ import {
 describe('Hybrid Documentation Search & AI Engine', () => {
 
   it('1. Verifies question normalization (synonyms, abbreviations, error code parsing)', () => {
-    // A. Error code extraction
-    const normErr1 = normalizeQuestion('What is aeth-101 and how to fix it?');
-    assert.equal(normErr1.detectedErrorCode, 'AETH-101');
+    // A. Error code extraction (SAMREY-xxx + legacy aeth-xxx normalization)
+    const normErr1 = normalizeQuestion('What is samrey-101 and how to fix it?');
+    assert.equal(normErr1.detectedErrorCode, 'SAMREY-101');
+
+    const normLegacyErr = normalizeQuestion('What is aeth-101 and how to fix it?');
+    assert.equal(normLegacyErr.detectedErrorCode, 'SAMREY-101');
 
     const normErr2 = normalizeQuestion('error 301 in computed signal');
-    assert.equal(normErr2.detectedErrorCode, 'AETH-301');
+    assert.equal(normErr2.detectedErrorCode, 'SAMREY-301');
 
     // B. Synonym / acronym expansion
     const normSSR = normalizeQuestion('how does SSR work in samrey?');
@@ -58,10 +61,10 @@ describe('Hybrid Documentation Search & AI Engine', () => {
     assert.equal(intentApi.matchedEntity, 'createStore');
 
     // Error Code
-    const intentErr = detectIntent(normalizeQuestion('troubleshoot AETH-501 error'));
+    const intentErr = detectIntent(normalizeQuestion('troubleshoot SAMREY-501 error'));
     assert.equal(intentErr.type, 'ERROR_DIAGNOSTICS');
     assert.equal(intentErr.category, 'errors');
-    assert.equal(intentErr.matchedEntity, 'AETH-501');
+    assert.equal(intentErr.matchedEntity, 'SAMREY-501');
 
     // Foreign Migration
     const intentMig = detectIntent(normalizeQuestion('how do I migrate from React useState to Samrey?'));
@@ -115,12 +118,12 @@ describe('Hybrid Documentation Search & AI Engine', () => {
     assert.equal(resultsSanitize[0].chunk.category, 'security');
   });
 
-  it('5. Verifies search relevance for deterministic error code lookup (AETH-xxx)', () => {
-    const resultsErr = searchDocumentation('AETH-101');
-    assert.ok(resultsErr.length > 0, 'Must return error doc for AETH-101');
+  it('5. Verifies search relevance for deterministic error code lookup (SAMREY-xxx)', () => {
+    const resultsErr = searchDocumentation('SAMREY-101');
+    assert.ok(resultsErr.length > 0, 'Must return error doc for SAMREY-101');
     assert.equal(resultsErr[0].chunk.id, 'doc-error-codes');
     assert.ok(resultsErr[0].isExactMatch, 'Error code lookup must be exact match');
-    assert.ok(resultsErr[0].chunk.errorCodes.includes('AETH-101'), 'Must match AETH-101 code');
+    assert.ok(resultsErr[0].chunk.errorCodes.includes('SAMREY-101'), 'Must match SAMREY-101 code');
   });
 
   it('6. Verifies grounded context builder compiles concise documentation context', () => {

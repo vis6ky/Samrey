@@ -372,7 +372,7 @@ export function ContactForm() {
     }
   });
 
-  const nameField = createField(form, 'name');
+  const nameField = createField('name', '');
 
   return el('form', {
     onSubmit: (e: Event) => {
@@ -463,7 +463,7 @@ export function LoginForm() {
       'Validating only on client submit without displaying field-level blur errors.',
       'Neglecting accessible ARIA labels for screen readers when displaying error messages.'
     ],
-    relatedApis: ['createForm', 'createField', 'standardSchemaValidator', 'deriveAriaAttributes'],
+    relatedApis: ['createForm', 'createField', 'validateSchema', 'computeAriaAttributes', 'getAccessibleFieldProps'],
     documentation: [
       { label: 'Forms and Validation', url: '#docs', sourcePath: 'docs/FORMS_AND_VALIDATION.md' }
     ]
@@ -598,8 +598,8 @@ export function AppRouter() {
     ],
     problem: 'Rendering components to static HTML strings or streams on Node.js / edge servers and hydrating on the client',
     samreyConcept: 'Isomorphic component rendering with state dehydration and client-side hydration',
-    recommendedApi: '@samrey/ssr -> renderToString(), renderToStream(), serializeState()',
-    implementation: `import { renderToString, serializeState } from '@samrey/ssr';
+    recommendedApi: '@samrey/ssr -> renderToString(), renderToStream(), serializeStateForHydration()',
+    implementation: `import { renderToString, serializeStateForHydration } from '@samrey/ssr';
 import { signal } from '@samrey/reactivity';
 import { el, hydrate } from '@samrey/runtime';
 
@@ -615,24 +615,24 @@ function App(props: { initialCount: number }) {
 export async function handleRequest() {
   const initialData = { initialCount: 42 };
   const html = await renderToString(() => App(initialData));
-  const safeState = serializeState(initialData);
+  const stateTag = serializeStateForHydration(initialData);
 
   return \`<!DOCTYPE html>
 <html>
   <head><title>Samrey SSR</title></head>
   <body>
     <div id="root">\${html}</div>
-    <script id="__SAMREY_STATE__" type="application/json">\${safeState}</script>
+    \${stateTag}
   </body>
 </html>\`;
 }`,
-    howItWorks: 'renderToString() executes the component tree in Node, evaluates initial signal values, and emits semantic HTML. serializeState() securely serializes state while stripping private keys before embedding into the client HTML payload.',
+    howItWorks: 'renderToString() executes the component tree in Node, evaluates initial signal values, and emits semantic HTML. serializeStateForHydration() securely serializes state into a Unicode-escaped <script> element while stripping private keys before embedding into the client HTML payload.',
     whenToUse: 'For SEO-sensitive websites, fast First Contentful Paint (FCP), and content-heavy applications.',
     alternative: 'renderToStream() for chunked web streams and fast Time to First Byte (TTFB)',
     commonMistakes: [
       'Accessing browser globals (window, document, localStorage) during top-level SSR component setup.'
     ],
-    relatedApis: ['renderToString', 'renderToStream', 'serializeState', 'hydrateState', 'hydrate'],
+    relatedApis: ['renderToString', 'renderToStream', 'serializeStateForHydration', 'deserializeHydrationState', 'hydrate'],
     documentation: [
       { label: 'SSR & Hydration Guide', url: '#docs', sourcePath: 'docs/SSR_AND_HYDRATION.md' }
     ]
@@ -676,7 +676,7 @@ export async function buildStaticSite(): Promise<Record<string, string>> {
     commonMistakes: [
       'Relying on request headers or user session cookies during static build time.'
     ],
-    relatedApis: ['renderToString', 'serializeState', 'createSsrContext'],
+    relatedApis: ['renderToString', 'serializeStateForHydration', 'createSSRContext'],
     documentation: [
       { label: 'SSR and SSG Guide', url: '#docs', sourcePath: 'docs/SSR_AND_HYDRATION.md' },
       { label: 'CLI & Tooling', url: '#docs', sourcePath: 'docs/CLI_AND_TOOLING.md' }
@@ -726,10 +726,10 @@ const safeData = safeJsonParse(untrustedJson);`,
     category: 'error-handling',
     categoryLabel: 'Error Handling & Boundaries',
     keywords: [
-      'error handling', 'error boundary', 'aeth error', 'catch component error',
+      'error handling', 'error boundary', 'samrey error', 'aeth error', 'catch component error',
       'error fallback', 'onError hook'
     ],
-    problem: 'Catching runtime errors in component subtrees and diagnosing Samrey framework error codes (AETH-xxx)',
+    problem: 'Catching runtime errors in component subtrees and diagnosing Samrey framework error codes (SAMREY-xxx)',
     samreyConcept: 'Declarative error boundaries isolating subtree failures',
     recommendedApi: '@samrey/runtime -> ErrorBoundary, onError',
     implementation: `import { ErrorBoundary, onError, el } from '@samrey/runtime';
@@ -738,7 +738,7 @@ import { signal } from '@samrey/reactivity';
 function BuggyWidget() {
   const trigger = signal(false);
   if (trigger.value) {
-    throw new Error('AETH-301: Circular computed dependency detected');
+    throw new Error('SAMREY-301: Circular computed dependency detected');
   }
   return el('button', {
     onClick: () => { trigger.value = true; },

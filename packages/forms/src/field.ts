@@ -6,6 +6,7 @@
 import { signal, computed, effect, onCleanup, ReadonlySignal } from '@samrey/reactivity';
 import { computeAriaAttributes, AriaBindingAttributes } from './aria.js';
 import { Validator } from './standard-schema.js';
+import { REQUIRED_VALIDATOR_MARKER, isRequiredValidator } from './required-marker.js';
 
 export interface FieldState<T> {
   readonly name?: string;
@@ -52,8 +53,16 @@ function isPromise(val: unknown): val is Promise<string | null | undefined> {
 export function createField<T>(
   name: string,
   initialValue: T,
-  validator?: Validator<T>
+  validatorOrConfig?: Validator<T> | { validator?: Validator<T>; required?: boolean },
+  options?: { required?: boolean }
 ): FieldState<T> {
+  const isFnOrUndefined = validatorOrConfig === undefined || typeof validatorOrConfig === 'function';
+  const validator = isFnOrUndefined ? (validatorOrConfig as Validator<T> | undefined) : validatorOrConfig.validator;
+  const required = Boolean(
+    (!isFnOrUndefined ? validatorOrConfig.required : undefined) ??
+      options?.required ??
+      isRequiredValidator(validator)
+  );
   const valueSignal = signal<T>(initialValue);
   const errorSignal = signal<string | null>(null);
   const touchedSignal = signal<boolean>(false);
@@ -131,11 +140,12 @@ export function createField<T>(
 
   const dirtySignal = computed(() => !areValuesEqual(valueSignal.value, initial));
   const ariaSignal = computed(() => {
-    return computeAriaAttributes(name, !!errorSignal.value && touchedSignal.value);
+    return computeAriaAttributes(name, !!errorSignal.value && touchedSignal.value, required);
   });
 
   return {
     name,
+    required,
     value: computed(() => valueSignal.value),
     error: computed(() => errorSignal.value),
     touched: computed(() => touchedSignal.value),
@@ -227,7 +237,11 @@ export function bindField<T>(element: any, field: FieldState<T>, options?: BindF
 }
 
 export const validators = {
-  required: (msg = 'Field is required') => (val: unknown) => (!val && val !== 0 ? msg : null),
+  required: (msg = 'Field is required') => {
+    const fn = (val: unknown) => (!val && val !== 0 ? msg : null);
+    (fn as unknown as Record<symbol, unknown>)[REQUIRED_VALIDATOR_MARKER] = true;
+    return fn;
+  },
   email: (msg = 'Invalid email address') => (val: string) => (!val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)) ? null : msg),
   minLength: (min: number, msg = `Minimum length is ${min}`) => (val: string) => (!val || String(val).length >= min ? null : msg),
   maxLength: (max: number, msg = `Maximum length is ${max}`) => (val: string) => (!val || String(val).length <= max ? null : msg),

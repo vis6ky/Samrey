@@ -581,6 +581,29 @@ const JS_KEYWORDS = new Set([
 export function stripComments(code: string): string {
   let result = '';
   let i = 0;
+  const templateBraceStack: number[] = [];
+
+  const consumeTemplateSegment = () => {
+    while (i < code.length) {
+      if (code[i] === '\\' && i + 1 < code.length) {
+        result += code[i] + code[i + 1];
+        i += 2;
+      } else if (code[i] === '$' && code[i + 1] === '{') {
+        result += '${';
+        i += 2;
+        templateBraceStack.push(1);
+        return;
+      } else if (code[i] === '`') {
+        result += '`';
+        i++;
+        return;
+      } else {
+        result += code[i];
+        i++;
+      }
+    }
+  };
+
   while (i < code.length) {
     if (code[i] === '/' && code[i + 1] === '/') {
       result += '  ';
@@ -604,7 +627,7 @@ export function stripComments(code: string): string {
         result += '  ';
         i += 2;
       }
-    } else if (code[i] === "'" || code[i] === '"' || code[i] === '`') {
+    } else if (code[i] === "'" || code[i] === '"') {
       const quote = code[i];
       result += quote;
       i++;
@@ -620,6 +643,22 @@ export function stripComments(code: string): string {
       if (i < code.length) {
         result += code[i];
         i++;
+      }
+    } else if (code[i] === '`') {
+      result += '`';
+      i++;
+      consumeTemplateSegment();
+    } else if (templateBraceStack.length > 0 && code[i] === '{') {
+      templateBraceStack[templateBraceStack.length - 1]++;
+      result += '{';
+      i++;
+    } else if (templateBraceStack.length > 0 && code[i] === '}') {
+      templateBraceStack[templateBraceStack.length - 1]--;
+      result += '}';
+      i++;
+      if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+        templateBraceStack.pop();
+        consumeTemplateSegment();
       }
     } else {
       result += code[i];
@@ -933,7 +972,10 @@ export function validateSamreyCode(
         } else {
           if (!validExports.has(symbol)) {
             if (validTypes && validTypes.has(symbol)) {
-              // Imported type without type keyword
+              errors.push({
+                message: `Symbol "${symbol}" is a TypeScript type-only export from ${pkg}. Use "import type { ${symbol} }" or "type ${symbol}".`,
+                suggestion: `Change import to: import { type ${symbol} } from '${pkg}';`
+              });
               continue;
             }
 

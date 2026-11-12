@@ -15,6 +15,7 @@ export interface AuditCommandOptions {
   warnOnly?: boolean;
   fix?: boolean;
   ignore?: string[];
+  json?: boolean;
 }
 
 const AUDIT_FILE_REGEX = /\.(ts|tsx|js|jsx|samrey|html)$/;
@@ -191,14 +192,16 @@ export async function runAuditCommand(options: AuditCommandOptions = {}): Promis
       : `  ✖ Static check failed with ${totalViolations} violation(s).`
   ].join('\n');
 
+  const payload = {
+    filesScanned: discoveredFiles.length,
+    violationsCount: totalViolations,
+    messages: allMessages
+  };
+
   return {
     success: passed,
-    message: reportText,
+    message: options.json ? JSON.stringify({ success: passed, ...payload }, null, 2) : reportText,
     exitCode: passed ? 0 : 1,
-    data: {
-      filesScanned: discoveredFiles.length,
-      violationsCount: totalViolations,
-      messages: allMessages
-    }
+    data: payload
   };
 }

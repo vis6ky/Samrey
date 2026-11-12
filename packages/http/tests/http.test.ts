@@ -330,4 +330,65 @@ describe('@samrey/http', () => {
     assert.equal(ignoringRes.status.value, 'error');
     assert.ok(ignoringRes.error.value instanceof Error);
   });
+
+  it('enforces manual cross-origin redirect protection in browser environments and avoids double-prefixing relative baseUrl redirects', async () => {
+    const originalFetch = globalThis.fetch;
+    const hadDoc = 'document' in globalThis;
+    const origDoc = (globalThis as any).document;
+    const hadWin = 'window' in globalThis;
+    const origWin = (globalThis as any).window;
+
+    const calls: Array<{ url: string; redirect?: string; headers: Headers }> = [];
+    globalThis.fetch = (async (u: unknown, init?: RequestInit) => {
+      const target = String(u);
+      const headers = new Headers(init?.headers);
+      calls.push({ url: target, redirect: init?.redirect, headers });
+
+      if (target === '/api/opaque') {
+        return { type: 'opaqueredirect', ok: false, status: 0, statusText: '', url: '' } as any;
+      }
+      if (target === '/api/redir-evil') {
+        return { ok: false, status: 302, statusText: 'Found', headers: new Headers({ location: 'https://evil.com/steal' }) } as any;
+      }
+      if (target === '/api/users') {
+        return { ok: false, status: 302, statusText: 'Found', headers: new Headers({ location: '/v2/users' }) } as any;
+      }
+      if (target === 'https://api.example.com/cross-redir') {
+        return { ok: false, status: 302, statusText: 'Found', headers: new Headers({ location: 'https://cdn.example.com/data' }) } as any;
+      }
+      return new Response('{"ok":true}', { status: 200 });
+    }) as any;
+
+    try {
+      (globalThis as any).document = {};
+      (globalThis as any).window = { location: { origin: 'https://app.example' } };
+
+      const relClient = createHttpClient('/api');
+      await assert.rejects(() => relClient.get('/opaque'), /opaque|redirect|Blocked/i);
+      await assert.rejects(() => relClient.get('/redir-evil'), /cross-origin|redirect|Blocked/i);
+      assert.ok(calls.every((c) => c.redirect === 'manual'), 'Must pass redirect: manual when allowCrossOrigin is false even in browsers');
+      assert.ok(!calls.some((c) => c.url.includes('evil.com')), 'Must never send redirect request to evil.com');
+
+      const redirRes = await relClient.get<{ ok: boolean }>('/users');
+      assert.equal(redirRes.ok, true);
+      assert.ok(calls.some((c) => c.url === '/v2/users'), `Relative Location /v2/users must not double-prefix /api: ${calls.map((c) => c.url)}`);
+      assert.ok(!calls.some((c) => c.url === '/api/v2/users'), 'Must not prepend baseUrl /api a second time');
+
+      const api = createHttpClient('https://api.example.com');
+      await api.get('/cross-redir', {
+        allowCrossOrigin: true,
+        headers: { Authorization: 'Bearer secret-token', 'X-Custom': 'keep' }
+      });
+      const secondHop = calls.find((c) => c.url === 'https://cdn.example.com/data');
+      assert.ok(secondHop, 'Expected cross-origin redirect hop when allowCrossOrigin: true');
+      assert.equal(secondHop!.headers.get('authorization'), null, 'Must strip Authorization header on cross-origin redirect');
+      assert.equal(secondHop!.headers.get('x-custom'), 'keep');
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (hadDoc) (globalThis as any).document = origDoc;
+      else delete (globalThis as any).document;
+      if (hadWin) (globalThis as any).window = origWin;
+      else delete (globalThis as any).window;
+    }
+  });
 });

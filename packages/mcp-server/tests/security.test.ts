@@ -930,5 +930,68 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
         fs.rmSync(isolatedRoot, { recursive: true, force: true });
       }
     });
+
+    it('supports symlinked cwd for valid internal paths/globs while rejecting trailing .. globs and never uses O_TRUNC pre-check on safeWriteFile', async () => {
+      const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-mcp-symcwd-')));
+      const realProj = path.join(tmp, 'real-proj');
+      const symCwd = path.join(tmp, 'sym-cwd');
+      const outDir = path.join(tmp, 'outside');
+      try {
+        fs.mkdirSync(path.join(realProj, 'tests', 'sub'), { recursive: true });
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.writeFileSync(path.join(realProj, 'tests', 'ok.test.mjs'), 'console.log("OK");\n');
+        fs.writeFileSync(path.join(outDir, 'evil.test.mjs'), 'console.log("EVIL");\n');
+        fs.symlinkSync(realProj, symCwd);
+
+        // 1. Valid path & glob via symlinked cwd must resolve cleanly
+        const okRes = await executeSafeCommand('node', ['--test', path.join(symCwd, 'tests', 'ok.test.mjs')], symCwd);
+        assert.equal(okRes.exitCode, 0);
+        const globOkRes = await executeSafeCommand('node', ['--test', path.join(symCwd, 'tests', '*.mjs')], symCwd);
+        assert.equal(globOkRes.exitCode, 0);
+
+        // 2. Trailing .. after glob metacharacter must be rejected even if 0 files match
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', path.join(symCwd, 'tests') + '/*/../../outside/*.mjs'], symCwd),
+          /Security Exception/i
+        );
+
+        // 3. safeWriteFile must preserve target bytes before post-open identity verification (no O_TRUNC on openSync)
+        const target = path.join(realProj, 'existing.txt');
+        fs.writeFileSync(target, 'keep-content');
+        const { createRequire, syncBuiltinESMExports } = await import('node:module');
+        const req = createRequire(import.meta.url);
+        const cjsFs = req('node:fs');
+        const origOpenSync = cjsFs.openSync;
+        let sawOTrunc = false;
+        let replacedTargetOnOpen = false;
+        const decoy = path.join(realProj, 'decoy.txt');
+        fs.writeFileSync(decoy, 'decoy-content');
+        cjsFs.openSync = (p: any, flags: any, ...rest: any[]) => {
+          if (typeof flags === 'number' && String(p).endsWith('existing.txt')) {
+            if ((flags & fs.constants.O_TRUNC) !== 0) {
+              sawOTrunc = true;
+            }
+            const fd = origOpenSync(p, flags, ...rest);
+            // Simulate concurrent replacement immediately after open before post-open verification runs
+            if (!replacedTargetOnOpen) {
+              replacedTargetOnOpen = true;
+              fs.renameSync(decoy, target);
+            }
+            return fd;
+          }
+          return origOpenSync(p, flags, ...rest);
+        };
+        syncBuiltinESMExports();
+        try {
+          assert.throws(() => safeWriteFile('existing.txt', 'updated-content', realProj, true), /concurrent|Security Exception/i);
+        } finally {
+          cjsFs.openSync = origOpenSync;
+          syncBuiltinESMExports();
+        }
+        assert.equal(sawOTrunc, false, 'safeWriteFile must verify fd identity before ftruncateSync instead of passing O_TRUNC to openSync');
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
   });
 });

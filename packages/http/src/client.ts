@@ -187,7 +187,6 @@ export class HttpClient {
       signal = controller.signal;
     }
 
-    const canManualRedirect = typeof document === 'undefined';
     const maxRedirects = 5;
 
     try {
@@ -195,7 +194,7 @@ export class HttpClient {
       for (let hop = 0; hop <= maxRedirects; hop++) {
         res = await fetch(currentUrl, {
           ...options,
-          redirect: options.redirect ?? (!allowCrossOrigin && canManualRedirect ? 'manual' : 'follow'),
+          redirect: options.redirect ?? (!allowCrossOrigin ? 'manual' : 'follow'),
           method: currentMethod,
           headers,
           body: requestBody,
@@ -229,16 +228,46 @@ export class HttpClient {
           throw new Error(`[Samrey HTTP] Blocked protocol-relative redirect "${locationHeader}"`);
         }
 
+        const prevOrigin = /^https?:\/\//i.test(currentUrl)
+          ? new URL(currentUrl).origin
+          : this.getExpectedOrigin();
+
         let nextTarget: string;
         if (/^https?:\/\//i.test(trimmedLoc)) {
           this.assertOriginAllowed(trimmedLoc, allowCrossOrigin, 'redirect');
-          nextTarget = this.resolveUrl(trimmedLoc, allowCrossOrigin);
+          const safe = sanitizeUri(trimmedLoc);
+          if (safe === 'about:blank') {
+            throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${trimmedLoc}"`);
+          }
+          nextTarget = safe;
         } else if (/^https?:\/\//i.test(currentUrl)) {
           const resolvedLoc = new URL(trimmedLoc, currentUrl).href;
           this.assertOriginAllowed(resolvedLoc, allowCrossOrigin, 'redirect');
-          nextTarget = this.resolveUrl(resolvedLoc, allowCrossOrigin);
+          const safe = sanitizeUri(resolvedLoc);
+          if (safe === 'about:blank') {
+            throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${resolvedLoc}"`);
+          }
+          nextTarget = safe;
         } else {
-          nextTarget = this.resolveUrl(trimmedLoc, allowCrossOrigin);
+          const sentinelBase = 'https://__samrey_self__.invalid';
+          const resolved = new URL(trimmedLoc, new URL(currentUrl || '/', sentinelBase));
+          if (!allowCrossOrigin && resolved.origin !== sentinelBase) {
+            throw new Error(`[Samrey HTTP] Blocked cross-origin redirect "${locationHeader}" (allowCrossOrigin is false)`);
+          }
+          const relTarget = `${resolved.pathname}${resolved.search}${resolved.hash}`;
+          const safe = sanitizeUri(relTarget);
+          if (safe === 'about:blank' || (!allowCrossOrigin && isProtocolRelativeUrl(safe))) {
+            throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${locationHeader}"`);
+          }
+          nextTarget = safe;
+        }
+
+        if (/^https?:\/\//i.test(nextTarget)) {
+          const nextOrigin = new URL(nextTarget).origin;
+          if (!prevOrigin || nextOrigin !== prevOrigin) {
+            headers.delete('authorization');
+            headers.delete('cookie');
+          }
         }
 
         if (res.status === 303 || ((res.status === 301 || res.status === 302) && currentMethod === 'POST')) {

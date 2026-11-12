@@ -103,7 +103,7 @@ export function UserProfile() {
 ## 4. Documentation Index
 
 - 📖 **[Public API Contract](./PUBLIC_API.md)** — Complete authoritative exports & type specifications for all 11 packages.
-- 🚨 **[Error Codes Reference](./ERROR_CODES.md)** — Comprehensive diagnostic codes (`AETH-xxx`), explanations, and recovery guides.
+- 🚨 **[Error Codes Reference](./ERROR_CODES.md)** — Comprehensive diagnostic codes (`SAMREY-xxx`), explanations, and recovery guides.
 - ⚡ **[Reactivity & Control Flow](./REACTIVITY_AND_CONTROL_FLOW.md)** — Deep dive into signals, effects, computed derivations, stores, `<Show>`, `<For>`, `<Switch>`.
 - 🌐 **[Router & HTTP](./ROUTER_AND_HTTP.md)** — Routing, parameter signals, async resource management, and HTTP caching.
 - 📝 **[Forms & Validation](./FORMS_AND_VALIDATION.md)** — Schema-driven reactive forms with Standard Schema (`~standard` v1).

@@ -60,31 +60,32 @@ Contract for all 13 packages comprising the Samrey Framework:
   // 2. ERROR_CODES.md
   {
     id: 'doc-error-codes',
-    title: 'Deterministic Error Codes Reference (SAMREY-xxx / AETH-xxx)',
+    title: 'Deterministic Error Codes Reference (SAMREY-xxx)',
     sourcePath: 'docs/ERROR_CODES.md',
     category: 'errors',
     headings: ['CLI & Tooling (SAMREY-001 - SAMREY-099)', 'Compiler & Parsing (SAMREY-101 - SAMREY-199)', 'Security & A11y (SAMREY-201 - SAMREY-299)', 'Reactivity & Runtime (SAMREY-301 - SAMREY-399)', 'Router & Navigation (SAMREY-401 - SAMREY-499)', 'Forms & Validation (SAMREY-501 - SAMREY-599)', 'HTTP & Data Fetching (SAMREY-601 - SAMREY-699)', 'SSR & Hydration (SAMREY-701 - SAMREY-799)', 'DevTools & Testing (SAMREY-801 - SAMREY-899)'],
-    keywords: ['error codes', 'samrey', 'aeth', 'diagnostics', 'troubleshooting', 'error handling', 'samrey-101', 'samrey-108', 'aeth-101', 'aeth-201', 'aeth-301', 'aeth-401', 'aeth-501', 'aeth-601', 'aeth-701', 'aeth-801', 'recovery', 'stack trace'],
+    keywords: ['error codes', 'samrey', 'aeth', 'diagnostics', 'troubleshooting', 'error handling', 'samrey-001', 'samrey-101', 'samrey-108', 'samrey-201', 'samrey-301', 'samrey-401', 'samrey-501', 'samrey-601', 'samrey-701', 'samrey-801', 'recovery', 'stack trace'],
     apis: ['SamreyCompilerError', 'formatSamreyDiagnostic', 'ERROR_REGISTRY'],
-    errorCodes: ['SAMREY-101', 'SAMREY-108', 'SAMREY-109', 'SAMREY-110', 'SAMREY-111', 'AETH-001', 'AETH-002', 'AETH-003', 'AETH-004', 'AETH-005', 'AETH-101', 'AETH-102', 'AETH-103', 'AETH-104', 'AETH-105', 'AETH-106', 'AETH-201', 'AETH-202', 'AETH-203', 'AETH-204', 'AETH-205', 'AETH-301', 'AETH-302', 'AETH-303', 'AETH-304', 'AETH-305', 'AETH-306', 'AETH-401', 'AETH-402', 'AETH-403', 'AETH-404', 'AETH-501', 'AETH-502', 'AETH-503', 'AETH-504', 'AETH-601', 'AETH-602', 'AETH-603', 'AETH-604', 'AETH-701', 'AETH-702', 'AETH-703', 'AETH-704', 'AETH-705', 'AETH-801', 'AETH-802', 'AETH-803'],
-    summary: 'Complete diagnostic error code catalog from AETH-001 to AETH-899 with exact root-cause analysis and recovery suggestions.',
-    content: `# Samrey Error Codes Catalog (AETH-xxx)
-- AETH-101: Template Syntax Error. Unclosed tag or invalid JSX/template expression. Fix: ensure matching tags.
-- AETH-102: Forbidden Dynamic Evaluation. Use of eval() or dynamic Function() detected at compile time.
-- AETH-201: Insecure URI Protocol. Detected javascript: or vbscript: protocol in href/src. Fix: use safe URL.
-- AETH-202: Unescaped Raw HTML Injection. Dynamic string passed to innerHTML without Trusted Type sanitization. Fix: use sanitizeHtml().
-- AETH-203: Missing Accessibility Label. Interactive element missing aria-label or accessible text.
-- AETH-301: Circular Dependency in Computed Signal. A computed signal reads a value that directly depends on itself. Fix: break cycle with untrack().
-- AETH-302: Signal Mutation Inside Pure Derivation. Attempted to mutate a signal inside a computed() or memoized getter.
-- AETH-303: Missing Key in <For> Control Flow. <For> collection missing unique key extractor function.
-- AETH-401: Unmatched Route Path. Navigation to a route path with no registered handler or 404 fallback.
-- AETH-402: Invalid Route Parameter Definition. Route parameter missing name or contains illegal characters.
-- AETH-501: Form Schema Validation Failure. Field value violates Standard Schema (Zod/Valibot) constraint.
-- AETH-502: Missing CSRF Token in Form Submission. Form submitted without required CSRF verification token.
-- AETH-601: HTTP Network Timeout. Request exceeded configured timeout threshold. Fix: check network or retry with backoff.
-- AETH-602: Invalid HTTP Response Status (4xx/5xx). Server returned an unhandled HTTP error code.
-- AETH-701: SSR Hydration Mismatch. Server markup differs structurally from client initial render. Fix: avoid non-deterministic browser APIs during SSR.
-- AETH-702: Secret Leakage in SSR State. Server environment variable or secret credential detected in client serialization payload. Fix: use stripSecrets().`,
+    errorCodes: ['SAMREY-001', 'SAMREY-002', 'SAMREY-003', 'SAMREY-004', 'SAMREY-005', 'SAMREY-101', 'SAMREY-102', 'SAMREY-103', 'SAMREY-104', 'SAMREY-105', 'SAMREY-106', 'SAMREY-108', 'SAMREY-109', 'SAMREY-110', 'SAMREY-111', 'SAMREY-201', 'SAMREY-202', 'SAMREY-203', 'SAMREY-204', 'SAMREY-205', 'SAMREY-301', 'SAMREY-302', 'SAMREY-303', 'SAMREY-304', 'SAMREY-305', 'SAMREY-306', 'SAMREY-401', 'SAMREY-402', 'SAMREY-403', 'SAMREY-404', 'SAMREY-501', 'SAMREY-502', 'SAMREY-503', 'SAMREY-504', 'SAMREY-601', 'SAMREY-602', 'SAMREY-603', 'SAMREY-604', 'SAMREY-701', 'SAMREY-702', 'SAMREY-703', 'SAMREY-704', 'SAMREY-705', 'SAMREY-801', 'SAMREY-802', 'SAMREY-803'],
+    summary: 'Complete diagnostic error code catalog from SAMREY-001 to SAMREY-899 with exact root-cause analysis and recovery suggestions.',
+    content: `# Samrey Error Codes Catalog (SAMREY-xxx)
+- SAMREY-101: Template Syntax Error. Unclosed tag or invalid JSX/template expression. Fix: ensure matching tags.
+- SAMREY-102: Invalid Expression / Unclosed Interpolation.
+- SAMREY-108: Unsupported Template-Level Control Flow or Custom Component Tag. Compose with Show()/For() in TypeScript.
+- SAMREY-201: Insecure URI Protocol. Detected javascript: or vbscript: protocol in href/src. Fix: use safe URL.
+- SAMREY-202: Accessibility Non-Conformance. Element missing alt, aria-label, or label association.
+- SAMREY-203: Prototype Pollution Detected. Deserialized payload contains dangerous keys. Fix: use safeJsonParse().
+- SAMREY-301: Circular Dependency in Computed Signal / Effect. Break cycle with untrack().
+- SAMREY-302: Duplicate Key in <For> Control Flow. Supply unique key callback.
+- SAMREY-303: Hydration Mismatch / Lifecycle Hook Error.
+- SAMREY-401: Unmatched Route Path. Register catch-all '*' route or check navigation URL.
+- SAMREY-402: HTTP Resource Error. Handle request failure via ErrorBoundary or error handler.
+- SAMREY-501: Form Schema Validation Failure. Field value violates Standard Schema constraint.
+- SAMREY-502: Unregistered Field Access / Missing CSRF verification.
+- SAMREY-601: HTTP Network Timeout. Check network or retry with backoff.
+- SAMREY-602: Invalid HTTP Response Status (4xx/5xx).
+- SAMREY-701: SSR Hydration Mismatch. Defer browser APIs to onMount().
+- SAMREY-702: Secret Leakage in SSR State. Secret credentials scrubbed by stripSecrets().`,
     docUrl: '#docs'
   },
 
@@ -97,11 +98,11 @@ Contract for all 13 packages comprising the Samrey Framework:
     headings: ['Topological Push-Pull Signal Engine', 'Key Reactive Primitives', 'Memory Management & Owner Lifecycle', 'Deep Reactive Stores', 'Atomic Batching'],
     keywords: ['reactivity', 'signal', 'computed', 'effect', 'batch', 'untrack', 'createStore', 'produce', 'reconcile', 'createMemo', 'createRoot', 'onCleanup', 'globalClock', 'push pull', 'signals', 'state management'],
     apis: ['signal', 'computed', 'effect', 'batch', 'untrack', 'createStore', 'produce', 'reconcile', 'createMemo', 'createRoot', 'onCleanup', 'createContext', 'useContext'],
-    errorCodes: ['AETH-301', 'AETH-302'],
+    errorCodes: ['SAMREY-301', 'SAMREY-302'],
     summary: 'Fine-grained push-pull topological signal engine with monotonic transaction clock, automatic batching, deep reactive proxy stores, and Owner memory disposal.',
     content: `# Reactivity & State in Samrey (@samrey/reactivity)
 Samrey uses a topological push-pull signal graph. Components run ONCE during setup.
-- signal(initialValue): Creates a read-write reactive atom. Read via .value (or peek()), mutate via .value = next.
+- signal(initialValue): Creates a read-write reactive atom. Read via .value, mutate via .value = next, .set(), or .update().
 - computed(fn): Memoized derived calculation lazily evaluated on pull and cached until upstream dependencies change.
 - effect(fn): Side-effect subscriber running immediately and re-executing when read signals mutate. Returns cleanup function.
 - batch(fn): Groups multiple signal writes into a single atomic notification transaction.
@@ -122,7 +123,7 @@ Samrey uses a topological push-pull signal graph. Components run ONCE during set
     headings: ['The Template Cloning Model', 'Component Composition', 'Native el() Factory', 'Declarative Control Flow: Show & For', 'Mount and Hydration'],
     keywords: ['runtime', 'dom', 'el', 'template', 'cloneNode', 'show', 'for', 'switch', 'match', 'mount', 'hydrate', 'components', 'fragment', 'svg', 'errorBoundary', 'dynamic', 'zero vdom'],
     apis: ['el', 'svg', 'fragment', 'mount', 'hydrate', 'Show', 'For', 'Switch', 'Match', 'Dynamic', 'ErrorBoundary', 'template', 'bindText'],
-    errorCodes: ['AETH-303'],
+    errorCodes: ['SAMREY-303'],
     summary: 'Direct DOM creation via native <template> cloneNode(true) hoisting and fine-grained reactive attribute and text bindings with zero Virtual DOM overhead.',
     content: `# Runtime & DOM Components (@samrey/runtime)
 Samrey completely avoids Virtual DOM reconciliation.
@@ -144,8 +145,8 @@ Samrey completely avoids Virtual DOM reconciliation.
     category: 'forms',
     headings: ['Standard Schema Integration', 'Creating a Reactive Form', 'Automated ARIA & Accessibility Bindings', 'Prototype Pollution Defense', 'bindField Helper'],
     keywords: ['forms', 'form validation', 'createForm', 'createField', 'bindField', 'schema', 'zod', 'valibot', 'arktype', 'standard schema', 'aria', 'accessibility', 'csrf', 'prototype pollution'],
-    apis: ['createForm', 'createField', 'bindField', 'validateStandardSchema'],
-    errorCodes: ['AETH-501', 'AETH-502', 'AETH-503', 'AETH-504'],
+    apis: ['createForm', 'createField', 'bindField', 'validateSchema', 'computeAriaAttributes', 'getAccessibleFieldProps'],
+    errorCodes: ['SAMREY-501', 'SAMREY-502', 'SAMREY-503', 'SAMREY-504'],
     summary: 'First-class form management with Standard Schema (Zod/Valibot/ArkType) validation, automated ARIA state derivation (aria-invalid, aria-describedby), and prototype pollution scrubbing.',
     content: `# Forms & Validation in Samrey (@samrey/forms)
 - createForm({ initialValues, validators, onSubmit }): Creates a reactive form instance with typed field signals, errors, dirty, and touched states.
@@ -164,7 +165,7 @@ Samrey completely avoids Virtual DOM reconciliation.
     headings: ['Reactive Routing (@samrey/router)', 'Defining Routes & Router Instance', 'Open-Redirect Protection', 'Reactive Data Fetching (@samrey/http)', 'createResource Primitive', 'HttpClient'],
     keywords: ['router', 'routing', 'createRouter', 'useParams', 'useLocation', 'useNavigate', 'Link', 'http', 'fetch', 'api', 'createResource', 'HttpClient', 'createHttpClient', 'resource', 'caching', 'sanitizeRedirectUri'],
     apis: ['createRouter', 'useParams', 'useLocation', 'useNavigate', 'Link', 'HttpClient', 'createHttpClient', 'createResource', 'resource', 'sanitizeRedirectUri'],
-    errorCodes: ['AETH-401', 'AETH-402', 'AETH-403', 'AETH-601', 'AETH-602', 'AETH-603'],
+    errorCodes: ['SAMREY-401', 'SAMREY-402', 'SAMREY-403', 'SAMREY-601', 'SAMREY-602', 'SAMREY-603'],
     summary: 'Type-safe signal-driven router with parameterized route matching and open-redirect defense, paired with @samrey/http reactive resources and deduplicated HTTP fetching.',
     content: `# Router & HTTP in Samrey
 1. @samrey/router:
@@ -188,7 +189,7 @@ Samrey completely avoids Virtual DOM reconciliation.
     headings: ['SSR & Hydration Overview', 'Direct Template Hoisting', 'Zero-Waterfall Data Hydration', 'Zero-Overhead Event Delegator', 'renderToString', 'renderToStream', 'hydrate', 'Secret Stripping'],
     keywords: ['ssr', 'hydration', 'server side rendering', 'renderToString', 'renderToStream', 'hydrate', 'createSSRContext', 'streaming', 'micro-hydration', 'secret stripping', 'stripSecrets', 'event delegation', 'state serialization'],
     apis: ['renderToString', 'renderToStream', 'hydrate', 'createSSRContext', 'stripSecrets', 'escapeJsonState', 'getDelegatedEventScript'],
-    errorCodes: ['AETH-701', 'AETH-702', 'AETH-703', 'AETH-704'],
+    errorCodes: ['SAMREY-701', 'SAMREY-702', 'SAMREY-703', 'SAMREY-704'],
     summary: 'Isomorphic rendering engine supporting full HTML renderToString, chunked streaming renderToStream (Web Streams), pre-hydration micro-event replay, and automatic secret credential stripping.',
     content: `# SSR & Hydration Architecture (@samrey/ssr)
 - renderToString(App, options): Renders component tree to full HTML string on server.
@@ -208,7 +209,7 @@ Samrey completely avoids Virtual DOM reconciliation.
     headings: ['Executive Summary & Security Principles', 'Context-Aware Sanitization Pipeline', 'Trusted Types Enforcement', 'Zero-eval Guarantee', 'CSRF Protection', 'Prototype Pollution Defense'],
     keywords: ['security', 'xss', 'sanitizeHtml', 'sanitizeUri', 'sanitizeUrl', 'trusted types', 'zero eval', 'csrf', 'prototype pollution', 'safeJsonParse', 'escapeJsonState', 'csp', 'defense in depth'],
     apis: ['sanitizeHtml', 'sanitizeHtmlString', 'sanitizeUri', 'sanitizeUrl', 'sanitizeRedirectUri', 'sanitizeCssStyle', 'escapeForScriptPayload', 'serializeStateForHydration', 'escapeJsonState', 'safeJsonParse', 'generateCsrfToken', 'verifyCsrfToken', 'getSamreyTrustedPolicy', 'getSamreyTemplateTrustedPolicy'],
-    errorCodes: ['AETH-201', 'AETH-202', 'AETH-203', 'AETH-204', 'AETH-205', 'AETH-502'],
+    errorCodes: ['SAMREY-201', 'SAMREY-202', 'SAMREY-203', 'SAMREY-204', 'SAMREY-205', 'SAMREY-502'],
     summary: 'Zero-trust architecture with context-aware sanitization (HTML, attributes, URIs, CSS), W3C Trusted Types, zero-eval runtime, timing-safe CSRF tokens, and prototype pollution scrubbing.',
     content: `# Security Architecture (@samrey/security)
 - Zero-eval runtime: No eval() or new Function(). Full CSP script-src 'self' compatibility.
@@ -252,7 +253,7 @@ Mental Model: Components run ONCE. State updates directly mutate DOM nodes witho
     headings: ['Creating a New Project', 'Starter Templates (ssr, spa, minimal, ssg)', 'Development Scripts', 'Core Mental Model'],
     keywords: ['getting started', 'cli', 'samrey create', 'templates', 'ssr', 'spa', 'minimal', 'ssg', 'npm run dev', 'build', 'scaffolding', 'tooling'],
     apis: ['create', 'dev', 'build', 'preview', 'test', 'audit', 'analyze', 'generate'],
-    errorCodes: ['AETH-001', 'AETH-002', 'AETH-003', 'AETH-004', 'AETH-005'],
+    errorCodes: ['SAMREY-001', 'SAMREY-002', 'SAMREY-003', 'SAMREY-004', 'SAMREY-005'],
     summary: 'Quick start guide for creating new Samrey projects with the CLI, choosing templates (SSR, SPA, Minimal, SSG), and understanding the zero-VDOM mental model.',
     content: `# Getting Started with Samrey (@samrey/cli)
 - samrey create my-app --template ssr (Server-Side Rendering starter)
@@ -277,7 +278,7 @@ Available scripts:
     headings: ['Headless Test Harness', 'Simulating User Events', 'Reactive Assertions', 'Testing Components & Stores'],
     keywords: ['testing', 'renderTest', 'renderTestComponent', 'fireEvent', 'flushReactivity', 'waitFor', 'assertions', 'unit tests', 'integration tests', 'mock dom'],
     apis: ['renderTest', 'renderTestComponent', 'fireEvent', 'flushReactivity', 'waitFor', 'cleanupAllTestContainers'],
-    errorCodes: ['AETH-801', 'AETH-802', 'AETH-803'],
+    errorCodes: ['SAMREY-801', 'SAMREY-802', 'SAMREY-803'],
     summary: 'Headless reactive test harness for asserting signal updates, simulated user events (click, input, submit), and component lifecycle validation without heavy browser runners.',
     content: `# Testing Samrey Applications (@samrey/testing)
 - renderTest(component): Mounts a component into an isolated container with reactive root cleanup.

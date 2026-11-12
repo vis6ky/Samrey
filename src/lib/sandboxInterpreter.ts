@@ -8,6 +8,8 @@
  * all host globals (`window`, `document`, `globalThis`, `process`, `Function`).
  */
 
+import { sanitizeUri, sanitizeCssStyle } from '@samrey/security';
+
 const BLOCKED_PROPERTY_KEYS = new Set([
   'constructor',
   '__proto__',
@@ -22,6 +24,12 @@ const BLOCKED_PROPERTY_KEYS = new Set([
   'outerHTML',
   'insertAdjacentHTML',
   'srcdoc',
+  'setHTMLUnsafe',
+  'attachShadow',
+  'shadowRoot',
+  'setAttributeNode',
+  'setAttributeNodeNS',
+  'createContextualFragment',
   'getRootNode',
   'parentNode',
   'parentElement',
@@ -109,9 +117,77 @@ const IMMUTABLE_HOST_OBJECTS = new Set<unknown>([
 ].filter((v) => v !== undefined));
 
 const SANDBOX_CLOSURE_FUNCTIONS = new WeakSet<Function>();
+const SANDBOX_USER_FROZEN = new WeakSet<object>();
+
+const RESTRICTED_DOM_ATTRS = new Set([
+  'srcdoc',
+  'innerhtml',
+  'outerhtml',
+  'sethtmlunsafe',
+  '__proto__',
+  'constructor',
+  'prototype'
+]);
+
+const URI_DOM_ATTRS = new Set([
+  'href',
+  'xlink:href',
+  'src',
+  'action',
+  'formaction',
+  'poster',
+  'data',
+  'codebase',
+  'background',
+  'cite',
+  'longdesc'
+]);
+
+function isDomNode(val: unknown): val is Record<string, any> {
+  if (!val || typeof val !== 'object') return false;
+  if (typeof Node !== 'undefined' && val instanceof Node) return true;
+  return typeof (val as { nodeType?: unknown }).nodeType === 'number';
+}
+
+function assertMutableSandboxTarget(target: unknown, action: string): void {
+  if (
+    IMMUTABLE_HOST_OBJECTS.has(target) ||
+    SAFE_CONSTRUCTORS.has(target) ||
+    BLOCKED_HOST_VALUES.has(target) ||
+    isDomNode(target) ||
+    (typeof target === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(target)) ||
+    (typeof target === 'object' && target !== null && Object.isFrozen(target) && !SANDBOX_USER_FROZEN.has(target))
+  ) {
+    throw new TypeError(`[Sandbox Security] Cannot ${action} built-in or host objects.`);
+  }
+}
+
+function assertSafeDomAttrWrite(attrName: unknown, attrVal: unknown): void {
+  const key = String(attrName ?? '').trim();
+  const lk = key.toLowerCase();
+  if (!key || RESTRICTED_DOM_ATTRS.has(lk)) {
+    throw new TypeError(`[Sandbox Security] Restricted DOM attribute "${key}" is prohibited.`);
+  }
+  if (lk.startsWith('on')) {
+    throw new TypeError(`[Sandbox Security] Inline DOM event attribute "${key}" is prohibited inside the sandbox.`);
+  }
+  const strVal = attrVal === undefined || attrVal === null ? '' : String(attrVal);
+  if (URI_DOM_ATTRS.has(lk) && strVal.trim()) {
+    const safe = sanitizeUri(strVal, { allowImageDataUri: lk === 'src' || lk === 'poster', allowProtocolRelative: false });
+    if (safe === 'about:blank' || safe === '') {
+      throw new TypeError(`[Sandbox Security] Unsafe URI in "${key}" attribute is prohibited.`);
+    }
+  }
+  if (lk === 'style' && strVal.trim()) {
+    const sanitized = sanitizeCssStyle(strVal);
+    if (sanitized === '' && /(?:javascript|vbscript|expression|url\s*\()/i.test(strVal)) {
+      throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited.');
+    }
+  }
+}
 
 function createSafeObjectNamespace() {
-  return Object.freeze({
+  const safeObject = Object.freeze({
     keys: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)),
     values: (obj: object) => Object.keys(obj).filter((k) => !BLOCKED_PROPERTY_KEYS.has(k)).map((k) => {
       const val = (obj as Record<string, unknown>)[k];
@@ -136,12 +212,7 @@ function createSafeObjectNamespace() {
       if (!target || (typeof target !== 'object' && typeof target !== 'function')) {
         throw new TypeError('[Sandbox] Object.assign target must be an object.');
       }
-      if (
-        IMMUTABLE_HOST_OBJECTS.has(target) ||
-        (typeof target === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(target))
-      ) {
-        throw new TypeError('[Sandbox Security] Cannot mutate built-in or host objects.');
-      }
+      assertMutableSandboxTarget(target, 'mutate');
       for (const src of sources) {
         if (!src || typeof src !== 'object') continue;
         for (const k of Object.keys(src)) {
@@ -157,9 +228,19 @@ function createSafeObjectNamespace() {
       const key = assertSafePropertyKey(prop);
       return Object.prototype.hasOwnProperty.call(obj, key);
     },
-    freeze: Object.freeze,
+    freeze: <T>(target: T): T => {
+      if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
+        return target;
+      }
+      assertMutableSandboxTarget(target, 'freeze');
+      SANDBOX_USER_FROZEN.add(target as object);
+      return Object.freeze(target);
+    },
+    isFrozen: Object.isFrozen,
     is: Object.is
   });
+  IMMUTABLE_HOST_OBJECTS.add(safeObject);
+  return safeObject;
 }
 
 function createSafeIntrinsics(): Record<string, unknown> {
@@ -1490,10 +1571,12 @@ class Env {
   readonly vars = new Map<string, BindingSlot>();
   readonly parent: Env | null;
   readonly isFunctionScope: boolean;
+  readonly frameDepth: number;
 
-  constructor(parent: Env | null, isFunctionScope = false) {
+  constructor(parent: Env | null, isFunctionScope = false, frameDepth?: number) {
     this.parent = parent;
     this.isFunctionScope = isFunctionScope;
+    this.frameDepth = frameDepth ?? (parent ? parent.frameDepth : 0);
   }
 
   define(name: string, kind: 'const' | 'let' | 'var', value: unknown): void {
@@ -1564,11 +1647,37 @@ function tickStep(budget: ExecBudget): void {
   }
 }
 
+const SAFE_DOM_METHOD_CACHE = new WeakMap<object, Map<string, Function>>();
+
 function readSafeProp(obj: unknown, keyRaw: unknown): unknown {
   if (obj === null || obj === undefined) {
     throw new TypeError(`Cannot read properties of ${String(obj)} (reading '${String(keyRaw)}')`);
   }
   const key = assertSafePropertyKey(keyRaw);
+  if (isDomNode(obj) && (key === 'setAttribute' || key === 'setAttributeNS')) {
+    const origFn = (obj as Record<string, unknown>)[key];
+    if (typeof origFn !== 'function') return origFn;
+    let cached = SAFE_DOM_METHOD_CACHE.get(obj);
+    if (!cached) {
+      cached = new Map();
+      SAFE_DOM_METHOD_CACHE.set(obj, cached);
+    }
+    let wrapped = cached.get(key);
+    if (!wrapped) {
+      wrapped =
+        key === 'setAttribute'
+          ? function safeSetAttribute(attrName: unknown, attrVal: unknown) {
+              assertSafeDomAttrWrite(attrName, attrVal);
+              return (origFn as (...a: unknown[]) => unknown).call(obj, attrName, attrVal);
+            }
+          : function safeSetAttributeNS(ns: unknown, attrName: unknown, attrVal: unknown) {
+              assertSafeDomAttrWrite(attrName, attrVal);
+              return (origFn as (...a: unknown[]) => unknown).call(obj, ns, attrName, attrVal);
+            };
+      cached.set(key, wrapped);
+    }
+    return wrapped;
+  }
   const val = (obj as Record<string, unknown>)[key];
   assertSafeValue(val);
   return val;
@@ -1581,9 +1690,21 @@ function writeSafeProp(obj: unknown, keyRaw: unknown, value: unknown): unknown {
   const key = assertSafePropertyKey(keyRaw);
   if (
     IMMUTABLE_HOST_OBJECTS.has(obj) ||
-    (typeof obj === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(obj))
+    SAFE_CONSTRUCTORS.has(obj) ||
+    BLOCKED_HOST_VALUES.has(obj) ||
+    (typeof obj === 'function' && !SANDBOX_CLOSURE_FUNCTIONS.has(obj)) ||
+    (typeof obj === 'object' && obj !== null && Object.isFrozen(obj) && !SANDBOX_USER_FROZEN.has(obj))
   ) {
     throw new TypeError(`[Sandbox Security] Mutating host or intrinsic property "${key}" is prohibited.`);
+  }
+  if (isDomNode(obj)) {
+    const lk = key.toLowerCase();
+    if (lk.startsWith('on')) {
+      throw new TypeError(`[Sandbox Security] Direct DOM event property "${key}" assignment is prohibited.`);
+    }
+    if (URI_DOM_ATTRS.has(lk) || RESTRICTED_DOM_ATTRS.has(lk)) {
+      assertSafeDomAttrWrite(key, value);
+    }
   }
   assertSafeValue(value);
   (obj as Record<string, unknown>)[key] = value;
@@ -1653,11 +1774,22 @@ class SandboxEvaluator {
 
   /** Runs a top-level evaluation inside an elevated depth frame so closures share the step budget. */
   runWithDepthFrame<T>(fn: () => T): T {
-    this.budget.depth++;
+    const prev = this.budget.depth;
+    this.budget.depth = prev + 1;
     try {
       return fn();
     } finally {
-      this.budget.depth--;
+      this.budget.depth = prev;
+    }
+  }
+
+  runAtDepth<T>(depth: number, fn: () => T): T {
+    const prev = this.budget.depth;
+    this.budget.depth = depth;
+    try {
+      return fn();
+    } finally {
+      this.budget.depth = prev;
     }
   }
 
@@ -1707,47 +1839,46 @@ class SandboxEvaluator {
     const evaluator = this;
     if (isAsync) {
       const asyncFn = async function (this: unknown, ...args: unknown[]) {
-        if (evaluator.budget.depth >= MAX_CALL_DEPTH) {
+        const callerDepth = evaluator.budget.depth;
+        if (callerDepth >= MAX_CALL_DEPTH) {
           throw new SandboxAbortError('[Sandbox Security] Maximum call stack depth exceeded.');
         }
-        evaluator.budget.depth++;
-        try {
-          const callEnv = new Env(closureEnv, true);
-          if (fnName) callEnv.define(fnName, 'const', asyncFn); // allow recursive lookup
-          if (!isArrow) callEnv.define('this', 'const', this);
-          for (let idx = 0; idx < params.length; idx++) {
-            const param = params[idx];
-            if (param.isRest) {
-              evaluator.bindPattern(param.pattern, 'let', args.slice(idx), callEnv);
-              break;
-            }
-            const rawVal = idx < args.length ? args[idx] : undefined;
-            const resolvedVal = rawVal === undefined && param.defaultExpr
-              ? await evaluator.evalExprAsync(param.defaultExpr, callEnv)
-              : rawVal;
-            evaluator.bindPattern(param.pattern, 'let', resolvedVal, callEnv);
+        const myDepth = callerDepth + 1;
+        const callEnv = new Env(closureEnv, true, myDepth);
+        if (fnName) callEnv.define(fnName, 'const', asyncFn); // allow recursive lookup
+        if (!isArrow) callEnv.define('this', 'const', this);
+        for (let idx = 0; idx < params.length; idx++) {
+          const param = params[idx];
+          if (param.isRest) {
+            evaluator.runAtDepth(myDepth, () => evaluator.bindPattern(param.pattern, 'let', args.slice(idx), callEnv));
+            break;
           }
-          if (exprBody) {
-            return await evaluator.evalExprAsync(exprBody, callEnv);
-          }
-          evaluator.hoistStatements(body, callEnv);
-          const res = await evaluator.execStmtListAsync(body, callEnv);
-          return res.type === 'return' ? res.value : undefined;
-        } finally {
-          evaluator.budget.depth--;
+          const rawVal = idx < args.length ? args[idx] : undefined;
+          const resolvedVal = rawVal === undefined && param.defaultExpr
+            ? await evaluator.evalExprAsync(param.defaultExpr, callEnv)
+            : rawVal;
+          evaluator.runAtDepth(myDepth, () => evaluator.bindPattern(param.pattern, 'let', resolvedVal, callEnv));
         }
+        if (exprBody) {
+          return await evaluator.evalExprAsync(exprBody, callEnv);
+        }
+        evaluator.runAtDepth(myDepth, () => evaluator.hoistStatements(body, callEnv));
+        const res = await evaluator.execStmtListAsync(body, callEnv);
+        return res.type === 'return' ? res.value : undefined;
       };
       SANDBOX_CLOSURE_FUNCTIONS.add(asyncFn);
       return asyncFn;
     }
 
     const syncFn = function (this: unknown, ...args: unknown[]) {
-      if (evaluator.budget.depth >= MAX_CALL_DEPTH) {
+      const prevDepth = evaluator.budget.depth;
+      if (prevDepth >= MAX_CALL_DEPTH) {
         throw new SandboxAbortError('[Sandbox Security] Maximum call stack depth exceeded.');
       }
-      evaluator.budget.depth++;
+      const myDepth = prevDepth + 1;
+      evaluator.budget.depth = myDepth;
       try {
-        const callEnv = new Env(closureEnv, true);
+        const callEnv = new Env(closureEnv, true, myDepth);
         if (fnName) callEnv.define(fnName, 'const', syncFn);
         if (!isArrow) callEnv.define('this', 'const', this);
         for (let idx = 0; idx < params.length; idx++) {
@@ -1769,7 +1900,7 @@ class SandboxEvaluator {
         const res = evaluator.execStmtListSync(body, callEnv);
         return res.type === 'return' ? res.value : undefined;
       } finally {
-        evaluator.budget.depth--;
+        evaluator.budget.depth = prevDepth;
       }
     };
     SANDBOX_CLOSURE_FUNCTIONS.add(syncFn);
@@ -2581,7 +2712,7 @@ class SandboxEvaluator {
       case 'Chain':
         return await this.evalChainPrefixAsync(expr.base, expr.steps, env);
       default:
-        return this.evalExprSync(expr, env);
+        return this.runAtDepth(env.frameDepth, () => this.evalExprSync(expr, env));
     }
   }
 
@@ -2620,7 +2751,7 @@ class SandboxEvaluator {
           throw new TypeError('Target is not a callable function in sandbox');
         }
         const callArgs = await this.evalArgsAsync(step.args, env);
-        const result = (current as (...a: unknown[]) => unknown).apply(thisArg, callArgs);
+        const result = this.runAtDepth(env.frameDepth, () => (current as (...a: unknown[]) => unknown).apply(thisArg, callArgs));
         assertSafeValue(result);
         current = result;
         thisArg = undefined;

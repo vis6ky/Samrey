@@ -2,7 +2,7 @@
  * @license Apache-2.0
  * @samrey/doc - Authoritative Samrey v2.1.0 Developer Knowledge Base & Retrieval Engine
  *
- * Grounded exclusively on official @samrey/* packages, APIs, error codes (AETH-xxx),
+ * Grounded exclusively on official @samrey/* packages, APIs, error codes (SAMREY-xxx),
  * and architectural specifications. Adheres strictly to the 12-section answer schema.
  */
 
@@ -127,9 +127,9 @@ export const FAQ_ENTRIES: Array<{ question: string; category: string; summary: s
     summary: 'Use renderTest() from @samrey/testing to mount components in isolated reactive roots, fireEvent() to trigger interactions, and waitFor() / flushReactivity() to assert state.'
   },
   {
-    question: 'How do I handle an AETH error?',
+    question: 'How do I handle a SAMREY error?',
     category: 'errors',
-    summary: 'Identify the deterministic error code (e.g. AETH-101 to AETH-899), examine the actionable explanation, and apply the recommended syntax or architectural fix.'
+    summary: 'Identify the deterministic error code (e.g. SAMREY-101 to SAMREY-899), examine the actionable explanation, and apply the recommended syntax or architectural fix.'
   },
   {
     question: 'How do I create a reusable component?',
@@ -313,13 +313,13 @@ export function DynamicCounter(): HTMLElement {
     whenToUse: 'Use `createStore()` for complex nested data structures, lists of domain objects, application-wide global settings, or state trees requiring granular updates.',
     implementationSteps: [
       'Define the TypeScript interface for your store state.',
-      'Initialize the store with `const [state, setState] = createStore<T>(initialData)`.',
+      'Initialize the store with `const state = createStore<T>(initialData)`.',
       'Read properties directly in components using accessor functions: `() => state.user.name`.',
-      'Update nested state surgically using path setters `setState("user", "name", "New Name")` or `produce()`.',
-      'Merge remote API responses using `reconcile()`, preserving unchanged object identities.'
+      'Update nested state surgically via proxy assignment `state.user.name = "New Name"` or `produce(state, (draft) => ...)`.',
+      'Merge remote API responses using `reconcile(state, nextData)`, preserving unchanged object identities.'
     ],
     tsCodeExample: `import { el, For } from '@samrey/runtime';
-import { createStore, produce, reconcile } from '@samrey/reactivity';
+import { createStore, produce } from '@samrey/reactivity';
 
 interface Task {
   id: string;
@@ -333,7 +333,7 @@ interface AppState {
 }
 
 // 1. Initialize deep reactive store
-export const [appStore, setAppStore] = createStore<AppState>({
+export const appStore = createStore<AppState>({
   tasks: [
     { id: '1', title: 'Adopt Samrey Framework', completed: true },
     { id: '2', title: 'Build Zero-Eval App', completed: false }
@@ -343,16 +343,16 @@ export const [appStore, setAppStore] = createStore<AppState>({
 
 // 2. Store mutation helpers
 export function addTask(title: string) {
-  setAppStore('tasks', produce(tasks => {
-    tasks.push({ id: String(Date.now()), title, completed: false });
-  }));
+  produce(appStore, (draft) => {
+    draft.tasks = [...draft.tasks, { id: String(Date.now()), title, completed: false }];
+  });
 }
 
 export function toggleTask(id: string) {
-  setAppStore('tasks', produce(tasks => {
-    const task = tasks.find(t => t.id === id);
+  produce(appStore, (draft) => {
+    const task = draft.tasks.find(t => t.id === id);
     if (task) task.completed = !task.completed;
-  }));
+  });
 }
 
 // 3. UI Component subscribing to granular store properties
@@ -377,7 +377,7 @@ export function TaskList(): HTMLElement {
     codeExplanation: '`createStore` wraps `AppState` in fine-grained proxy nodes. In `TaskList`, `<For>` keys each task by its ID and only reconciles items when the list changes. Clicking the checkbox modifies only that task’s `completed` boolean property, notifying only the checkbox and span for that specific row.',
     alternativeApproach: 'For simple independent state variables, multiple individual `signal()` instances can be combined with `computed()` signals.',
     commonMistakes: [
-      'Mutating `appStore.tasks[0].completed = true` directly without using `setAppStore` or `produce` (direct assignment bypasses proxy change notifications).',
+      'Re-wrapping a store or replacing the entire state object when only a single nested field needs updating.',
       'Over-reconciling entire lists without specifying a unique key function in `<For>`.',
       'Using external state libraries like Redux or Zustand, which introduce unnecessary bundle bloat and VDOM patterns.'
     ],
@@ -490,7 +490,7 @@ export function ProjectExplorer(): HTMLElement {
     title: 'Form Handling & Standard Schema Validation',
     shortAnswer: 'Use `createForm()` and `createField()` from `@samrey/forms` with Standard Schema (Zod/Valibot/ArkType) validators. Samrey automatically derives `aria-invalid`, `aria-describedby`, touch states, and CSRF protection.',
     concept: 'Samrey forms are schema-driven and accessible by default. Instead of manually synchronizing input values, error messages, and ARIA attributes, `@samrey/forms` manages bidirectional signal bindings, tracks field dirtiness/touch states, validates against standard schema contracts, and attaches accessible ARIA attributes automatically.',
-    recommendedApi: '`createForm(config)` and `createField(config)` from `@samrey/forms` with `standardSchemaValidator()`.',
+    recommendedApi: '`createForm(config)` and `createField(name, initialValue)` from `@samrey/forms` with `validateSchema()`.',
     whenToUse: 'Use for all user inputs, login/registration forms, complex data editors, and multi-step validation flows.',
     implementationSteps: [
       'Define a validation schema using any Standard Schema library (e.g. Zod, Valibot, or custom schema).',
@@ -580,7 +580,7 @@ export function RegistrationForm(): HTMLElement {
       'Displaying error messages before the user has touched the field (`touched === false`), resulting in jarring initial error states.',
       'Manual regex validation instead of declarative schema contracts.'
     ],
-    relatedApis: ['createForm', 'createField', 'standardSchemaValidator', 'deriveAriaAttributes'],
+    relatedApis: ['createForm', 'createField', 'validateSchema', 'computeAriaAttributes', 'getAccessibleFieldProps'],
     docLinks: [
       { label: 'Forms & Validation Specification', url: '#architecture' },
       { label: 'Public API Reference', url: '#docs' }
@@ -679,12 +679,12 @@ export function AppRouter(): HTMLElement {
     whenToUse: 'Use when building high-performance, SEO-critical applications, fast First Contentful Paint (FCP) experiences, or streaming dynamic server content.',
     implementationSteps: [
       'On Server: Call `await renderToString(() => App())` to generate HTML.',
-      'Serialize initial server state using `serializeState(initialData)`.',
-      'Inject the rendered HTML and state script tag into your HTML document shell.',
+      'Serialize initial server state using `serializeStateForHydration(initialData)` (returns the safe `<script>` tag).',
+      'Embed the rendered HTML and serialized state script tag into your HTML document shell.',
       'On Client: Call `hydrate(() => App(), document.getElementById("root"))` to activate reactive signal bindings.'
     ],
     tsCodeExample: `// --- SERVER (server.ts) ---
-import { renderToString, serializeState } from '@samrey/ssr';
+import { renderToString, serializeStateForHydration } from '@samrey/ssr';
 import { App } from './src/App.js';
 
 export async function handleRequest(req: any): Promise<string> {
@@ -693,8 +693,8 @@ export async function handleRequest(req: any): Promise<string> {
   // Render component tree to static HTML string
   const appHtml = await renderToString(() => App());
 
-  // Securely serialize state (auto-strips passwords and private keys)
-  const stateJson = serializeState(initialData);
+  // Securely serialize state into a safe <script> element (auto-strips passwords and private keys)
+  const stateTag = serializeStateForHydration(initialData);
 
   return \`<!DOCTYPE html>
 <html lang="en">
@@ -704,7 +704,7 @@ export async function handleRequest(req: any): Promise<string> {
 </head>
 <body>
   <div id="root">\${appHtml}</div>
-  <script id="__SAMREY_STATE__" type="application/json">\${stateJson}</script>
+  \${stateTag}
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>\`;
@@ -717,14 +717,14 @@ import { App } from './App.js';
 const rootContainer = document.getElementById('root')!;
 // Resume client reactivity without re-creating DOM elements
 hydrate(() => App(), rootContainer);`,
-    codeExplanation: '`renderToString` walks the component hierarchy in SSR context, emitting sanitized HTML markup. `serializeState` escapes characters (`<`, `>`, `&`, `\u2028`, `\u2029`) to prevent `<script>` breakout attacks. On the client, `hydrate` resumes listeners and signal subscriptions against the pre-existing DOM nodes.',
+    codeExplanation: '`renderToString` walks the component hierarchy in SSR context, emitting sanitized HTML markup. `serializeStateForHydration` escapes characters (`<`, `>`, `&`, `\u2028`, `\u2029`) to prevent `<script>` breakout attacks. On the client, `hydrate` resumes listeners and signal subscriptions against the pre-existing DOM nodes.',
     alternativeApproach: 'For large datasets or progressive response delivery, use `renderToStream()` to pipe HTML chunks via HTTP chunked transfer encoding as asynchronous data resolves.',
     commonMistakes: [
       'Accessing `window`, `document`, or `navigator` at module scope or in component bodies during SSR execution.',
       'Using `mount()` instead of `hydrate()` on pre-rendered server markup, causing duplicate DOM element instantiation and flicker.',
       'Including un-sanitized sensitive credentials in server state payloads.'
     ],
-    relatedApis: ['renderToString', 'renderToStream', 'hydrate', 'createSsrContext', 'serializeState', 'hydrateState'],
+    relatedApis: ['renderToString', 'renderToStream', 'hydrate', 'createSSRContext', 'serializeStateForHydration', 'deserializeHydrationState'],
     docLinks: [
       { label: 'SSR & Hydration Specification', url: '#architecture' },
       { label: 'Security Model & Secret Guard', url: '#security' }
@@ -794,20 +794,20 @@ export function SafeUserComment(props: { author: string; rawCommentHtml: string;
     ]
   },
 
-  // 9. Handling AETH Diagnostic Errors
+  // 9. Handling SAMREY Diagnostic Errors
   {
-    id: 'handling-aeth-errors',
-    keywords: ['handle an aeth error', 'aeth error', 'error codes', 'aeth-101', 'aeth-201', 'aeth-301', 'diagnostic', 'troubleshoot'],
+    id: 'handling-samrey-errors',
+    keywords: ['handle a samrey error', 'handle an aeth error', 'samrey error', 'aeth error', 'error codes', 'samrey-101', 'samrey-201', 'samrey-301', 'diagnostic', 'troubleshoot'],
     categories: ['errors'],
-    title: 'Diagnosing and Handling AETH Errors',
-    shortAnswer: 'Samrey provides deterministic error codes formatted as `AETH-xxx` across 8 subsystem ranges. Locate the specific error code in the Diagnostic Reference, check the source location frame, and apply the standardized recovery pattern.',
-    concept: 'Every runtime, compiler, security, and router exception in Samrey is tagged with an immutable code `[AETH-xxx]`. Ranges: `001–099` (CLI), `101–199` (Compiler), `201–299` (Security), `301–399` (Reactivity/Runtime), `401–499` (Router), `501–599` (Forms), `601–699` (HTTP), `701–799` (SSR), `801–899` (DevTools/Testing).',
+    title: 'Diagnosing and Handling SAMREY Errors',
+    shortAnswer: 'Samrey provides deterministic error codes formatted as `SAMREY-xxx` across 9 subsystem ranges. Locate the specific error code in the Diagnostic Reference, check the source location frame, and apply the standardized recovery pattern.',
+    concept: 'Every runtime, compiler, security, and router exception in Samrey is tagged with an immutable code `[SAMREY-xxx]`. Ranges: `001–099` (CLI), `101–199` (Compiler), `201–299` (Security), `301–399` (Reactivity/Runtime), `401–499` (Router), `501–599` (Forms), `601–699` (HTTP), `701–799` (SSR), `801–899` (DevTools/Testing).',
     recommendedApi: '`ErrorBoundary` and `onError(fn)` from `@samrey/runtime` for runtime exceptions, and the compiler diagnostic logger for AOT build errors.',
-    whenToUse: 'Use during build or runtime troubleshooting whenever an `AETH-xxx` exception is logged in the terminal or browser console.',
+    whenToUse: 'Use during build or runtime troubleshooting whenever a `SAMREY-xxx` exception is logged in the terminal or browser console.',
     implementationSteps: [
-      'Read the error code from the console (e.g. `[AETH-301] Circular reactive dependency detected`).',
+      'Read the error code from the console (e.g. `[SAMREY-301] Circular reactive dependency detected`).',
       'Wrap volatile UI component subtrees in `<ErrorBoundary>` to catch runtime errors gracefully.',
-      'For compiler errors (like `AETH-101` or `AETH-103`), inspect the indicated file and line frame.',
+      'For compiler errors (like `SAMREY-101` or `SAMREY-103`), inspect the indicated file and line frame.',
       'Apply the recommended fix from the error catalog.'
     ],
     tsCodeExample: `import { el, ErrorBoundary, onError } from '@samrey/runtime';
@@ -843,10 +843,10 @@ function FragileSubtreeComponent(): HTMLElement {
     alternativeApproach: 'For build-time compiler errors, run `npx samrey audit` or `npx samrey analyze` to perform ahead-of-time static analysis on all template and signal dependencies.',
     commonMistakes: [
       'Silently swallowing errors in empty `try...catch` blocks, masking underlying state bugs.',
-      'Creating circular signal evaluations (e.g. setting `signalA` inside an effect that reads `signalA`), triggering `AETH-301`.',
-      'Omitting `key` props in `<For>`, which triggers `AETH-103`.'
+      'Creating circular signal evaluations (e.g. setting `signalA` inside an effect that reads `signalA`), triggering `SAMREY-301`.',
+      'Omitting `key` props in `<For>`, which triggers `SAMREY-103`.'
     ],
-    relatedApis: ['ErrorBoundary', 'onError', 'onCleanup', 'createTestHarness'],
+    relatedApis: ['ErrorBoundary', 'onError', 'onCleanup', 'renderTest'],
     docLinks: [
       { label: 'Error Codes Reference Catalog', url: '#docs' },
       { label: 'Architecture & Troubleshooting', url: '#architecture' }
@@ -1768,7 +1768,7 @@ export async function generateStaticProductPages(): Promise<Record<string, strin
       'Relying on browser-only globals (`window.localStorage`) inside the SSG component body.',
       'Generating pages without setting `<meta charset="utf-8">` or viewport meta tags.'
     ],
-    relatedApis: ['renderToString', 'serializeState', 'createSsrContext'],
+    relatedApis: ['renderToString', 'serializeStateForHydration', 'createSSRContext'],
     docLinks: [
       { label: 'SSR & Static Generation Specification', url: '#architecture' },
       { label: 'CLI & Build Commands', url: '#docs' }
@@ -1838,7 +1838,7 @@ export function HighScaleStockTicker(): HTMLElement {
   );
 }`,
     codeExplanation: '`stocks` contains 10,000 items. `<For>` keys each item by `stock.id` and creates the `li` once. Because `stock.price` is a distinct `Signal`, calling `updateSingleItem(42, ...)` triggers notifications exclusively to the O(1) subscriber for row #42. Zero diffing occurs across the other 9,999 items.',
-    alternativeApproach: 'You can also use `createStore` where proxy path setters (`setStore("items", 42, "price", newPrice)`) achieve identical O(1) path notification.',
+    alternativeApproach: 'You can also use `createStore` with nested proxy updates or `produce(store, draft => { draft.items[42].price = newPrice; })` for O(1) path notifications.',
     commonMistakes: [
       'Storing all 10,000 items in a single primitive array signal and re-assigning the whole array on a single change without fine-grained item signals.',
       'Omitting the `key` function in `<For>`, which forces full list re-instantiation.'
@@ -2113,10 +2113,10 @@ export function TwoWayInput(): HTMLElement {
     };
   }
 
-  // Check specific AETH error queries
-  const aethMatch = normalized.match(/aeth-?(\d{3})/i);
-  if (aethMatch) {
-    const code = `AETH-${aethMatch[1]}`;
+  // Check specific SAMREY (or legacy AETH) error queries
+  const errorCodeMatch = normalized.match(/(?:samrey|aeth)-?(\d{3})/i);
+  if (errorCodeMatch) {
+    const code = `SAMREY-${errorCodeMatch[1]}`;
     return {
       id: `error-${code.toLowerCase()}`,
       query: rawQuery,

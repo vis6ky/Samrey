@@ -15,7 +15,7 @@ npm install @samrey/ssr @samrey/runtime @samrey/reactivity
 ## Quick Example
 
 ```ts
-import { renderToString, renderToStream, serializeState } from '@samrey/ssr';
+import { renderToString, renderToStream, serializeStateForHydration } from '@samrey/ssr';
 import { el } from '@samrey/runtime';
 
 function App() {
@@ -28,13 +28,13 @@ function App() {
 // 1. String rendering
 const html = await renderToString(App);
 
-// 2. State Serialization
-const scriptTag = serializeState('__SAMREY_STATE__', { user: 'Alice', theme: 'dark' });
+// 2. State Serialization (id defaults to '__SAMREY_STATE__')
+const scriptTag = serializeStateForHydration({ user: 'Alice', theme: 'dark' }, { id: '__SAMREY_STATE__' });
 ```
 
 ### State Serializability (`Map`, `Set`, and non-JSON structures)
 
-Hydration state serialized via `serializeState` / `serializeStateForHydration` must be RFC 8259 JSON-serializable (plain objects, arrays, strings, numbers, booleans, and `Date`).
+Hydration state serialized via `serializeStateForHydration` (also aliased as `serializeState`) must be RFC 8259 JSON-serializable (plain objects, arrays, strings, numbers, booleans, and `Date`).
 
 Non-JSON collections like `Map` and `Set` serialize to empty objects `{}` in standard JSON. Always convert them to plain arrays or entries before serialization:
 
@@ -48,7 +48,7 @@ const serializableState = {
   tags: Array.from(activeTags)                         // ["announcements", "updates"]
 };
 
-const stateTag = serializeState('__SAMREY_STATE__', serializableState);
+const stateTag = serializeStateForHydration(serializableState, { id: '__SAMREY_STATE__' });
 ```
 
 In development (`NODE_ENV !== 'production'`), passing unconverted `Map` or `Set` triggers a diagnostic warning detailing the exact property path. Passing `{ strict: true }` throws an error to catch non-serializable state early.
@@ -58,9 +58,10 @@ In development (`NODE_ENV !== 'production'`), passing unconverted `Map` or `Set`
 
 - `renderToString(component: () => HTMLElement | Promise<HTMLElement>, options?: SsrOptions): Promise<string>` — Renders an Samrey component tree into an HTML string.
 - `renderToStream(component: () => HTMLElement, options?: StreamOptions): ReadableStream` — Streams HTML chunks with suspense boundary support.
-- `serializeState(key: string, data: unknown): string` — Serializes JavaScript state into a safe `<script>` tag preventing XSS breakout.
-- `generateHydrationScript(): string` — Generates client bootstrap hydration script for event replay.
-- `createStaticCollector()` — Collects static assets (head meta, links, styles) during server rendering.
+- `serializeStateForHydration(state: unknown, options?: SerializeOptions): string` — Serializes JavaScript state into a safe `<script>` tag preventing XSS breakout (aliased as `serializeState`).
+- `deserializeHydrationState(options?: DeserializeOptions): T | null` — Safely parses and optionally schema-validates serialized client hydration state.
+- `getDelegatedEventScript(events?: string[], nonce?: string): string` — Generates pre-hydration delegated event capture script.
+- `createSSRContext(initialState?: Record<string, unknown>): SSRContext` — Creates an isolated request-scoped SSR context with head metadata and async data loaders.
 
 ## Environment
 

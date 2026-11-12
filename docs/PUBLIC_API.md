@@ -43,22 +43,23 @@ Fine-grained reactive foundation and state management.
 
 ```ts
 export interface Signal<T> {
+  (): T;
   value: T;
-  peek(): T;
-  subscribe(fn: (val: T) => void): () => void;
+  set(newValue: T | ((prev: T) => T)): void;
+  update(updater: (prev: T) => T): void;
 }
 
 export interface ReadonlySignal<T> {
+  (): T;
   readonly value: T;
-  peek(): T;
-  subscribe(fn: (val: T) => void): () => void;
 }
 
 export interface Owner {
   parent: Owner | null;
   children: Owner[];
   cleanups: (() => void)[];
-  context?: Map<symbol, unknown>;
+  errorHandlers?: ((err: unknown) => void)[];
+  context?: Record<string | symbol, unknown>;
   dispose(): void;
 }
 
@@ -182,12 +183,16 @@ Declarative asynchronous resource management and typed HTTP client.
 ### Key TypeScript Types
 
 ```ts
-export interface ResourceReturn<T> {
+export type ResourceStatus = 'idle' | 'pending' | 'success' | 'error';
+
+export interface Resource<T> extends Iterable<any> {
   data: ReadonlySignal<T | undefined>;
-  loading: ReadonlySignal<boolean>;
   error: ReadonlySignal<Error | null>;
-  refetch: () => Promise<T>;
-  mutate: (updater: T | ((prev: T | undefined) => T)) => void;
+  status: ReadonlySignal<ResourceStatus>;
+  loading: ReadonlySignal<boolean>;
+  refetch: (explicitSource?: any) => Promise<T>;
+  mutate: (optimisticValue: T | ((prev: T | undefined) => T)) => void;
+  [Symbol.iterator](): Iterator<any>;
 }
 ```
 
@@ -202,7 +207,7 @@ Standard Schema (`~standard` v1) form state, dirty tracking, and accessible ARIA
 | Export | Type | Description | Target |
 | :--- | :--- | :--- | :--- |
 | `createForm<T>(options)` | Function | Creates a reactive form manager with validation, dirty states, and submit handling. | Universal |
-| `createField<T, K>(form, name, options?)` | Function | Creates a reactive field controller with input bindings (`value`, `error`, `dirty`, `touched`). | Universal |
+| `createField<T>(name, initialValue, validatorOrConfig?, options?)` | Function | Creates a reactive field controller with input bindings (`value`, `error`, `dirty`, `touched`, `required`). | Universal |
 | `validateSchema(schema, data)` | Function | Executes Standard Schema (`~standard`) validation on arbitrary data. | Universal |
 | `getAccessibleFieldProps(field)` | Function | Generates `aria-invalid`, `aria-describedby`, and `aria-required` attribute bags. | Universal |
 

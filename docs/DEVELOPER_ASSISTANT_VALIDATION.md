@@ -41,7 +41,7 @@ The assistant operates a deterministic hybrid query resolution pipeline engineer
                  | - Normalizes casing and whitespace          |
                  | - Identifies Foreign Framework patterns     |
                  | - Identifies Non-Existent API inquiries     |
-                 | - Checks Structured AETH Diagnostic Codes   |
+                 | - Checks Structured SAMREY Diagnostic Codes |
                  +----------------------+----------------------+
                                         |
                  +----------------------+----------------------+
@@ -193,7 +193,7 @@ When developers bring idioms from other UI ecosystems, the assistant intercepts 
 | *"How do I use useEffect in Samrey?"* | Explains that automatic dependency tracking replaces manual dependency lists; effects run automatically when read signals change. | `effect(() => { ... })` from `@samrey/reactivity` |
 | *"How do I create a React component in Samrey?"* | Explains that Samrey components are plain TypeScript functions returning real DOM nodes via `el()`, without a Virtual DOM reconciler. | `export function MyComponent(props): HTMLElement` |
 | *"How do I use Vue ref() / v-model?"* | Explains that Samrey uses pure TypeScript functions and fine-grained signals without proprietary template directives. | `signal()` for state; `createField()` or `onInput: e => sig.set(e.target.value)` |
-| *"How do I use Redux with Samrey?"* | Explains that Samrey's built-in `createStore()` provides fine-grained proxy state tracking with `produce()`, eliminating the need for external reducers and selectors. | `const [state, setState] = createStore(...)` |
+| *"How do I use Redux with Samrey?"* | Explains that Samrey's built-in `createStore()` provides fine-grained proxy state tracking with `produce()`, eliminating the need for external reducers and selectors. | `const state = createStore(...)` |
 | *"How do I use Angular services in Samrey?"* | Explains that dependency injection in Samrey is achieved cleanly via `createContext()` / `useContext()` or module-level reactive singleton stores. | `createContext<Service>()` and `useContext(Service)` |
 
 ---
@@ -218,13 +218,13 @@ All code samples emitted by the Developer Assistant strictly import from the off
 ```
 @samrey/reactivity -> signal, computed, effect, batch, untrack, createStore, produce, reconcile, createContext, useContext, onCleanup, createRoot
 @samrey/runtime    -> el, svg, fragment, text, mount, hydrate, Show, For, Switch, Match, Dynamic, ErrorBoundary, onMount, onCleanup, onError
-@samrey/forms      -> createForm, createField, standardSchemaValidator, deriveAriaAttributes, getAccessibleFieldProps
-@samrey/http       -> createHttpClient, httpClient, resource, createResource, createCache, createHttpCache, HttpError
+@samrey/forms      -> createForm, createField, validateSchema, computeAriaAttributes, getAccessibleFieldProps
+@samrey/http       -> createHttpClient, httpClient, createResource, createHttpCache, HttpError
 @samrey/router     -> createRouter, Router, Route, Link, useRouter, useParams, useLocation, useNavigate
-@samrey/ssr        -> renderToString, renderToStream, serializeState, escapeJsonState, sanitizeSsrState, generateStaticSite
+@samrey/ssr        -> renderToString, renderToStream, serializeStateForHydration, deserializeHydrationState, escapeJsonState, sanitizeSsrState, generateStaticSite
 @samrey/security   -> sanitizeHtml, sanitizeUri, sanitizeUrl, escapeHtmlText, createCsrfToken, validateCsrfToken, safeJsonParse
 @samrey/testing    -> renderTest, renderTestComponent, fireEvent, waitFor, flushReactivity, waitForNextUpdate, createMockResource, cleanupAllTestContainers
-@samrey/compiler   -> compile, transformTemplate, parse
+@samrey/compiler   -> compileTemplate, parseTemplate, buildAIR, generateCode, classifySecurityNode, lintAccessibility
 @samrey/devtools   -> initDevTools, ReactiveGraphInspector, PerfInspector
 @samrey/cli        -> runBuildCommand, runDevCommand, runAuditCommand
 ```
@@ -242,20 +242,20 @@ Every code example produced by the Developer Assistant satisfies the following e
 
 ---
 
-## 9. Error Handling & Diagnostic Code (AETH) Resolution
+## 9. Error Handling & Diagnostic Code (SAMREY) Resolution
 
 When developers encounter structured framework error codes, the assistant provides immediate diagnostic explanations, source frame context, and remediation code:
 
 | Error Code | Subsystem | Cause Identified by Assistant | Corrective Action Guided |
 |:---|:---|:---|:---|
-| `AETH-101` | Compiler | Unclosed template tag or malformed JSX syntax | Inspect compiler source location; verify closing tags |
-| `AETH-103` | Compiler | Missing unique `key` function in `<For>` control flow | Supply `key: (item) => item.id` to enable keyed DOM reconciliation |
-| `AETH-201` | Security | Injection attempt or disallowed script protocol | Wrap untrusted HTML in `sanitizeHtml()` or URLs in `sanitizeUri()` |
-| `AETH-301` | Reactivity | Circular reactive dependency detected | Break circular effect loop using `untrack()` or separate signals |
-| `AETH-401` | Router | Unmatched route path with no fallback route | Add catch-all `Route({ path: '*', component: NotFound })` |
-| `AETH-501` | Forms | Form submission attempted with invalid schema data | Check `form.errors` signal and verify required field inputs |
-| `AETH-601` | HTTP | Network request timeout or HTTP client abort | Adjust `timeout` option in `createHttpClient` or catch `HttpError` |
-| `AETH-701` | SSR | Browser global (`window`/`document`) accessed during SSR | Defer browser global access to `onMount()` lifecycle hook |
+| `SAMREY-101` | Compiler | Unclosed template tag or malformed JSX syntax | Inspect compiler source location; verify closing tags |
+| `SAMREY-103` | Compiler | Missing unique `key` function in `<For>` control flow | Supply `key: (item) => item.id` to enable keyed DOM reconciliation |
+| `SAMREY-201` | Security | Injection attempt or disallowed script protocol | Wrap untrusted HTML in `sanitizeHtml()` or URLs in `sanitizeUri()` |
+| `SAMREY-301` | Reactivity | Circular reactive dependency detected | Break circular effect loop using `untrack()` or separate signals |
+| `SAMREY-401` | Router | Unmatched route path with no fallback route | Add catch-all `Route({ path: '*', component: NotFound })` |
+| `SAMREY-501` | Forms | Form submission attempted with invalid schema data | Check `form.errors` signal and verify required field inputs |
+| `SAMREY-601` | HTTP | Network request timeout or HTTP client abort | Adjust `timeout` option in `createHttpClient` or catch `HttpError` |
+| `SAMREY-701` | SSR | Browser global (`window`/`document`) accessed during SSR | Defer browser global access to `onMount()` lifecycle hook |
 
 ---
 
@@ -299,7 +299,7 @@ Step 7: "How do I show loading and errors and update the DOM when response arriv
   --> Assistant uses resource() and Show({ when: () => loading.value }), Show({ when: () => error.value }), and For({ each: () => tasks.value }).
 
 Step 8: "How do I make this work with SSR?"
-  --> Assistant implements server.ts with renderToString(() => App()) and serializeState(initialTasks), hydrated via hydrate() in main.ts.
+  --> Assistant implements server.ts with renderToString(() => App()) and serializeStateForHydration(initialTasks), hydrated via hydrate() in main.ts.
 ```
 
 **Result**: Across all 8 progressive steps, the Developer Assistant maintained 100% architectural consistency, never mixed foreign paradigms, and generated modular code that assembled cleanly into a functioning application.

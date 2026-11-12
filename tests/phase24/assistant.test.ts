@@ -126,13 +126,16 @@ describe('Phase 24 — Samrey Developer Assistant', () => {
     assert.ok(answer.tsCodeExample.includes('@samrey/security'), 'Code imports @samrey/security');
   });
 
-  it('10. Verifies deterministic knowledge provider answers AETH error diagnostics', async () => {
+  it('10. Verifies deterministic knowledge provider answers SAMREY error diagnostics', async () => {
     const provider = new DeterministicKnowledgeProvider();
-    const answer = await provider.askQuestion('How do I handle an AETH-301 error?');
+    const answer = await provider.askQuestion('How do I handle a SAMREY-301 error?');
 
-    assert.ok(answer.title.includes('AETH-301'), 'Identifies AETH-301 error code');
+    assert.ok(answer.title.includes('SAMREY-301'), 'Identifies SAMREY-301 error code');
     assert.ok(answer.category === 'errors', 'Classified under errors category');
     assert.ok(answer.recommendedApi.includes('ErrorBoundary'), 'Recommends ErrorBoundary');
+
+    const legacyAnswer = await provider.askQuestion('How do I handle an AETH-301 error?');
+    assert.ok(legacyAnswer.title.includes('SAMREY-301'), 'Normalizes legacy AETH-301 error code to SAMREY-301');
   });
 
   it('11. Verifies graceful handling of foreign framework questions (useState/useCallback)', async () => {
@@ -377,4 +380,151 @@ export const count = signal(0);
     });
   });
 
+  it('17. Item 8 regression: guards Object.freeze intrinsics, mocks createHttpClient, blocks DOM sink mutations, scopes async depth, and cleans up timers', async () => {
+    const { executeSamreyCode } = await import('../../src/lib/runtimeSandbox.js');
+    const { evaluateSandboxedProgram } = await import('../../src/lib/sandboxInterpreter.js');
+    const { validators } = await import('@samrey/forms');
+
+    // 1. Object.freeze cannot freeze host intrinsics or shared namespaces
+    for (const freezePayload of [
+      'Object.freeze(Error); el("div")',
+      'Object.freeze(Array.prototype); el("div")',
+      'Object.freeze(Object); el("div")',
+      'Object.freeze(validators); el("div")'
+    ]) {
+      const res = executeSamreyCode(freezePayload);
+      assert.equal(res.success, false, `Expected failure for: ${freezePayload}`);
+    }
+    assert.equal(Object.isFrozen(Error), false, 'Host Error must never be frozen by sandbox');
+    assert.equal(Object.isFrozen(Array.prototype), false, 'Host Array.prototype must never be frozen by sandbox');
+    assert.equal(Object.isFrozen(validators), false, 'Shared @samrey/forms validators must never be frozen by sandbox');
+    // User-created object freeze inside sandbox still works
+    const freezeUserObj = executeSamreyCode('const o = Object.freeze({ x: 1 }); el("div", { "data-f": String(Object.isFrozen(o)) })');
+    assert.equal(freezeUserObj.success, true, freezeUserObj.error);
+    assert.equal((freezeUserObj.node as any).getAttribute('data-f'), 'true');
+
+    // 2. createHttpClient in sandbox is mocked and NEVER hits global fetch
+    let realFetchCalls = 0;
+    const origFetch = globalThis.fetch;
+    (globalThis as any).fetch = async () => {
+      realFetchCalls++;
+      return new Response('{}', { status: 200 });
+    };
+    try {
+      const httpMockFn = evaluateSandboxedProgram(`
+        return async (createClient) => {
+          const client = createClient('/');
+          try {
+            await client.get('/api/secret');
+            return 'leaked';
+          } catch (err) {
+            return String(err && err.message || err);
+          }
+        };
+      `, {}, []) as (createClient: unknown) => Promise<string>;
+      const sandboxCreateClient = await (async () => {
+        // Capture the sandbox's own createHttpClient via executeSamreyCode log side-channel or run full snippet:
+        const probe = executeSamreyCode(`
+          const c = createHttpClient('/');
+          c.get('/api/secret').catch((e) => console.warn(e.message));
+          el("div", { "data-has-get": String(typeof c.get === 'function') })
+        `);
+        assert.equal(probe.success, true, probe.error);
+        await new Promise((r) => setTimeout(r, 15));
+        assert.equal(realFetchCalls, 0, 'Sandbox createHttpClient must NEVER invoke host fetch()');
+        return httpMockFn;
+      })();
+      assert.ok(sandboxCreateClient);
+    } finally {
+      (globalThis as any).fetch = origFetch;
+    }
+
+    // 3. Post-creation DOM mutations via setAttribute / setAttributeNS / write / blocked sinks are rejected even with real DOM document.createElement
+    const origDocument = (globalThis as any).document;
+    const makeDomDoc = () => {
+      const makeElem = (tag: string): any => {
+        const attrs: Record<string, string> = {};
+        return {
+          nodeType: 1,
+          tagName: tag.toUpperCase(),
+          style: {},
+          attrs,
+          setAttribute: (k: string, v: string) => { attrs[k] = String(v); },
+          setAttributeNS: (_ns: string | null, k: string, v: string) => { attrs[k] = String(v); },
+          getAttribute: (k: string) => attrs[k] ?? null,
+          appendChild: () => {},
+          addEventListener: () => {}
+        };
+      };
+      return {
+        createElement: makeElem,
+        createElementNS: (_ns: string, tag: string) => makeElem(tag),
+        createTextNode: (t: string) => ({ nodeType: 3, textContent: t }),
+        createComment: (t: string) => ({ nodeType: 8, textContent: t }),
+        createDocumentFragment: () => ({ nodeType: 11, childNodes: [], appendChild: () => {} })
+      };
+    };
+    (globalThis as any).document = makeDomDoc();
+    try {
+      for (const domAttack of [
+        'const d = el("div"); d.setAttribute("onclick", "alert(1)"); d',
+        'const d = el("div"); d.setAttribute("srcdoc", "<script>alert(1)</script>"); d',
+        'const d = el("a"); d.setAttribute("href", "javascript:alert(1)"); d',
+        'const d = el("div"); d.setAttributeNS(null, "onload", "alert(1)"); d',
+        'const d = el("div"); d.setHTMLUnsafe("<b>x</b>"); d',
+        'const d = el("div"); d.attachShadow({ mode: "open" }); d'
+      ]) {
+        const attackRes = executeSamreyCode(domAttack);
+        assert.equal(attackRes.success, false, `Must block DOM post-creation attack: ${domAttack}`);
+      }
+      const safeDomRes = executeSamreyCode('const d = el("a"); d.setAttribute("href", "https://samrey.dev"); d.setAttribute("data-ok", "1"); d');
+      assert.equal(safeDomRes.success, true, safeDomRes.error);
+      assert.equal((safeDomRes.node as any).getAttribute('data-ok'), '1');
+    } finally {
+      if (origDocument === undefined) delete (globalThis as any).document;
+      else (globalThis as any).document = origDocument;
+    }
+
+    // 4. Promise.all of 15 concurrent depth-15 async calls succeeds, while single depth-200 async recursion aborts
+    const concurrentAsyncRes = await (evaluateSandboxedProgram(`
+      async function dive(n) {
+        if (n <= 0) return 1;
+        await Promise.resolve();
+        return await dive(n - 1);
+      }
+      return async () => {
+        const branchResults = await Promise.all(
+          Array.from({ length: 15 }, () => dive(15))
+        );
+        return branchResults.length;
+      };
+    `, {}, []) as () => Promise<number>)();
+    assert.equal(concurrentAsyncRes, 15, '15 concurrent depth-15 async chains must NOT exhaust MAX_CALL_DEPTH');
+
+    const deepAsyncRecursionFn = evaluateSandboxedProgram(`
+      async function inf(n) {
+        if (n <= 0) return 0;
+        await Promise.resolve();
+        return await inf(n - 1);
+      }
+      return () => inf(200);
+    `, {}, []) as () => Promise<number>;
+    await assert.rejects(() => deepAsyncRecursionFn(), /Maximum call stack depth exceeded/);
+
+    // 5. Timers: clearTimeout & clearInterval work, and active timers are cleared on owner dispose()
+    const timerLogs: string[] = [];
+    const timerRes = executeSamreyCode(`
+      const to = setTimeout(() => { console.log('timeout-fired'); }, 5);
+      clearTimeout(to);
+      const iv = setInterval(() => { console.log('cleared-interval-fired'); }, 5);
+      clearInterval(iv);
+      setInterval(() => { console.log('leaked-interval-tick'); }, 5);
+      el("div", null, "timer-test")
+    `, (msg) => timerLogs.push(msg));
+    assert.equal(timerRes.success, true, timerRes.error);
+    assert.equal(typeof timerRes.dispose, 'function', 'executeSamreyCode must expose dispose() for timer cleanup');
+    timerRes.dispose!();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal(timerLogs.filter((l) => l.includes('-fired') || l.includes('-tick')).length, 0, `Disposed timers must not fire, got: ${JSON.stringify(timerLogs)}`);
+  });
 });

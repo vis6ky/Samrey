@@ -327,4 +327,131 @@ describe('AI Docs, Skills & Example Engine API Accuracy Audit', () => {
       `Found ${issues.length} issue(s) in positive documentation TS code fences:\n  - ${issues.join('\n  - ')}`
     );
   });
+
+  it('Item 10 regression: ensures active docs, package READMEs, and src/data contain zero stale AETH-*/removed APIs and PUBLIC_API.md matches real TS exports', async () => {
+    const activeDocFiles = [
+      'docs/ERROR_CODES.md',
+      'docs/PUBLIC_API.md',
+      'docs/SECURITY_MODEL.md',
+      'docs/TROUBLESHOOTING.md',
+      'docs/GETTING_STARTED.md',
+      'docs/DEVELOPER_ASSISTANT_VALIDATION.md',
+      'docs/REACTIVITY_AND_CONTROL_FLOW.md',
+      'docs/TEMPLATES_AND_COMPONENTS.md',
+      'docs/FORMS_AND_VALIDATION.md',
+      'docs/ROUTER_AND_HTTP.md',
+      'docs/SSR_AND_HYDRATION.md',
+      'docs/TESTING_AND_TOOLING.md',
+      'docs/CLI_AND_TOOLING.md',
+      'docs/MIGRATION_GUIDE.md',
+      'docs/DEPLOYMENT_AND_PACKAGING.md',
+      'docs/SECURITY.md'
+    ].filter(f => fs.existsSync(f));
+
+    const activeFiles = [...new Set([
+      ...activeDocFiles,
+      ...findFiles('skills', ['.md']),
+      ...findFiles('docs/ai', ['.md']),
+      ...PACKAGES.map(p => path.join('packages', p, 'README.md')),
+      'README.md',
+      'AGENTS.md',
+      'GEMINI.md',
+      'CLAUDE.md',
+      '.github/copilot-instructions.md',
+      '.cursor/rules/samrey.mdc',
+      'src/data/searchIndex.ts',
+      'src/data/assistantKnowledge.ts',
+      'src/data/recipeCatalog.ts',
+      'src/data/packagesData.ts',
+      'src/components/AssistantView.ts',
+      'src/lib/assistantProvider.ts'
+    ])].filter(f => fs.existsSync(f));
+
+    const forbiddenPatterns: Array<{ label: string; regex: RegExp }> = [
+      { label: 'removed peek() API', regex: /(?:\.peek\s*\(|\bpeek\s*\(\))/ },
+      { label: 'removed .subscribe() API', regex: /\.subscribe\s*\(/ },
+      { label: 'removed getAriaProps API', regex: /\bgetAriaProps\b/ },
+      { label: 'removed deriveAriaAttributes API', regex: /\bderiveAriaAttributes\b/ },
+      { label: 'removed standardSchemaValidator API', regex: /\bstandardSchemaValidator\b/ },
+      { label: 'removed validateStandardSchema API', regex: /\bvalidateStandardSchema\b/ },
+      { label: 'wrong-case createSsrContext API', regex: /\bcreateSsrContext\b/ },
+      { label: 'removed hydrateState API', regex: /\bhydrateState\b/ },
+      { label: 'removed useAetherRouter API', regex: /\buseAetherRouter\b/ },
+      { label: 'removed AETHER_EVENTS API', regex: /\bAETHER_EVENTS\b/ },
+      { label: 'removed generateHydrationScript API', regex: /\bgenerateHydrationScript\b/ },
+      { label: 'removed createStaticCollector API', regex: /\bcreateStaticCollector\b/ },
+      { label: 'removed mountTestComponent API', regex: /\bmountTestComponent\b/ },
+      { label: 'removed createTestHarness API', regex: /\bcreateTestHarness\b/ },
+      { label: 'legacy AETH diagnostic code', regex: /\bAETH-(?:\d{3}|xxx|(?:SEC|REC|RTR|SSR)-\d+)\b/ },
+      { label: 'stale serializeState(key, data) call', regex: /\bserializeState\s*\(\s*['"][^'"]+['"]\s*,/ },
+      { label: 'stale createField(form, name) call', regex: /\bcreateField\s*(?:<[^>]+>)?\s*\(\s*form\b/ },
+      { label: 'stale tuple createStore destructuring', regex: /const\s*\[\s*state\s*,\s*setState\s*\]\s*=\s*createStore\b/ }
+    ];
+
+    const issues: string[] = [];
+    for (const file of activeFiles) {
+      const content = fs.readFileSync(file, 'utf8');
+      for (const { label, regex } of forbiddenPatterns) {
+        if (regex.test(content)) {
+          issues.push(`[${file}] contains ${label}`);
+        }
+      }
+    }
+
+    // Verify PUBLIC_API.md table entries & interface snippets match real package exports
+    const publicApi = fs.readFileSync('docs/PUBLIC_API.md', 'utf8');
+    if (publicApi.includes('ResourceReturn<T>')) {
+      issues.push('[docs/PUBLIC_API.md] documents stale interface name ResourceReturn<T> instead of Resource<T>');
+    }
+    if (!/interface Signal<T>[\s\S]*?set\([\s\S]*?update\(/.test(publicApi)) {
+      issues.push('[docs/PUBLIC_API.md] Signal<T> snippet must document real set() and update() methods');
+    }
+
+    const sectionRegex = /^##\s+\d+\.\s+`(@samrey\/[a-z0-9-]+)`([\s\S]*?)(?=^##\s+\d+\.|(?![\s\S]))/gm;
+    let secMatch: RegExpExecArray | null;
+    while ((secMatch = sectionRegex.exec(publicApi)) !== null) {
+      const pkgName = secMatch[1];
+      const pkgFolder = pkgName.replace('@samrey/', '');
+      const mod = await import(`../packages/${pkgFolder}/src/index.ts`);
+      const body = secMatch[2];
+      const rowRegex = /^\|\s*`([^`]+)`\s*\|/gm;
+      let rowMatch: RegExpExecArray | null;
+      while ((rowMatch = rowRegex.exec(body)) !== null) {
+        const cell = rowMatch[1];
+        const parts = cell.split('/').map(s => s.trim());
+        for (const part of parts) {
+          const symMatch = part.match(/^([A-Za-z_$][A-Za-z0-9_$]*)/);
+          if (!symMatch) continue;
+          const sym = symMatch[1];
+          if (!(sym in mod)) {
+            issues.push(`[docs/PUBLIC_API.md] symbol "${sym}" is not exported by ${pkgName}`);
+          }
+        }
+      }
+    }
+
+    // Verify packages/ssr/README.md ## API bullets all exist in @samrey/ssr
+    const ssrMod = await import('../packages/ssr/src/index.ts');
+    const ssrReadme = fs.readFileSync('packages/ssr/README.md', 'utf8');
+    const ssrApiSec = ssrReadme.match(/## API([\s\S]*?)## /)?.[1] || '';
+    for (const m of ssrApiSec.matchAll(/^- `([A-Za-z_$][A-Za-z0-9_$]*)\(/gm)) {
+      if (!(m[1] in ssrMod)) {
+        issues.push(`[packages/ssr/README.md] documented API "${m[1]}" is not exported by @samrey/ssr`);
+      }
+    }
+
+    // Verify serializeState*() output is not double-wrapped inside <script> tags
+    for (const ssrFile of ['src/data/assistantKnowledge.ts', 'src/data/recipeCatalog.ts']) {
+      const content = fs.readFileSync(ssrFile, 'utf8');
+      if (/<script[^>]*>\\?\$\{(?:stateJson|safeState)\}<\/script>/.test(content)) {
+        issues.push(`[${ssrFile}] double-wraps serializeState*() HTML output inside another <script> tag`);
+      }
+    }
+
+    assert.strictEqual(
+      issues.length,
+      0,
+      `Found ${issues.length} Item 10 documentation / knowledge sync issue(s):\n  - ${issues.join('\n  - ')}`
+    );
+  });
 });

@@ -129,11 +129,12 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
   }
 
   const normalized = rawArg.replace(/\\/g, '/');
-  const realRoot = getRealPath(cwd);
+  const resolvedRoot = path.resolve(cwd);
+  const realRoot = getRealPath(resolvedRoot);
   const candidate = normalized;
 
   if (!GLOB_META_RE.test(candidate)) {
-    resolveSafePath(realRoot, candidate);
+    resolveSafePath(resolvedRoot, candidate);
     return;
   }
 
@@ -141,7 +142,14 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
   const firstGlobIdx = candidate.search(GLOB_META_RE);
   const slashBeforeGlob = candidate.lastIndexOf('/', firstGlobIdx);
   const concretePrefix = slashBeforeGlob > 0 ? candidate.slice(0, slashBeforeGlob) : '/';
-  const safePrefix = resolveSafePath(realRoot, concretePrefix);
+  const globSuffix = slashBeforeGlob >= 0 ? candidate.slice(slashBeforeGlob + 1) : candidate;
+  if (globSuffix.split('/').some((seg) => seg === '..')) {
+    throw new Error(
+      `Security Exception: Glob test pattern "${rawArg}" contains ".." traversal after wildcard.`
+    );
+  }
+
+  const safePrefix = resolveSafePath(resolvedRoot, concretePrefix);
   const includeInternalDirs = normalized.includes('node_modules') || normalized.includes('.git');
 
   assertSubtreeContainsNoEscapingSymlinks(safePrefix, realRoot, includeInternalDirs);
@@ -156,7 +164,7 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
   }
 
   const globPattern = slashBeforeGlob >= 0
-    ? path.join(safePrefix, candidate.slice(slashBeforeGlob + 1))
+    ? path.join(safePrefix, globSuffix)
     : candidate;
   const matches = globSyncFn(globPattern, { cwd: realRoot });
   for (const match of matches) {
@@ -250,14 +258,23 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
   // Normalize slashes (handling Windows ..\ variants) and Unicode NFC
   const cleanRel = relativePath.replace(/\\/g, '/').normalize('NFC');
 
-  const resolvedTarget = path.isAbsolute(cleanRel)
-    ? path.resolve(cleanRel)
-    : path.resolve(realRoot, cleanRel);
-
-  // Initial lexical boundary check
-  const lexicalRel = path.relative(realRoot, resolvedTarget);
-  if (lexicalRel.startsWith('..') || path.isAbsolute(lexicalRel)) {
-    throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+  let lexicalRel: string;
+  if (path.isAbsolute(cleanRel)) {
+    const absTarget = path.resolve(cleanRel);
+    const relFromReal = path.relative(realRoot, absTarget);
+    const relFromResolved = path.relative(resolvedRoot, absTarget);
+    const inRealRoot = !relFromReal.startsWith('..') && !path.isAbsolute(relFromReal);
+    const inResolvedRoot = !relFromResolved.startsWith('..') && !path.isAbsolute(relFromResolved);
+    if (!inRealRoot && !inResolvedRoot) {
+      throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+    }
+    lexicalRel = inRealRoot ? relFromReal : relFromResolved;
+  } else {
+    const absTarget = path.resolve(realRoot, cleanRel);
+    lexicalRel = path.relative(realRoot, absTarget);
+    if (lexicalRel.startsWith('..') || path.isAbsolute(lexicalRel)) {
+      throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+    }
   }
 
   // Walk and lstat every existing path component from realRoot down to resolvedTarget.
@@ -456,9 +473,9 @@ export function safeWriteFile(
       throw new Error(`Security Exception: Refusing to overwrite existing file "${filePath}". Pass overwrite: true to allow.`);
     }
 
-    // 4. Open destination file with O_NOFOLLOW and re-verify parent/file identity while holding both fds
+    // 4. Open destination file with O_NOFOLLOW (never O_TRUNC before verifying fd identity) and re-verify while holding both fds
     const fileFlags = destStat
-      ? fs.constants.O_WRONLY | fs.constants.O_TRUNC | (fs.constants.O_NOFOLLOW || 0)
+      ? fs.constants.O_WRONLY | (fs.constants.O_NOFOLLOW || 0)
       : fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0);
 
     const fd = fs.openSync(safeTargetPath, fileFlags);
@@ -472,12 +489,17 @@ export function safeWriteFile(
         postParentLstat.dev !== parentFdStat.dev ||
         postParentLstat.ino !== parentFdStat.ino ||
         postFileLstat.isSymbolicLink() ||
+        !postFileStat.isFile() ||
         postFileStat.dev !== postFileLstat.dev ||
-        postFileStat.ino !== postFileLstat.ino
+        postFileStat.ino !== postFileLstat.ino ||
+        (destStat && (postFileStat.dev !== destStat.dev || postFileStat.ino !== destStat.ino))
       ) {
         throw new Error(`Security Exception: Detected concurrent path modification while opening "${filePath}".`);
       }
-      fs.writeFileSync(fd, content, 'utf8');
+      if (destStat) {
+        fs.ftruncateSync(fd, 0);
+      }
+      fs.writeSync(fd, content, 0, 'utf8');
       createdNewFile = false;
     } catch (err) {
       if (createdNewFile) {

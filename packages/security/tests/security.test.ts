@@ -558,4 +558,83 @@ describe('@samrey/security', () => {
       else delete (globalThis as any).window;
     }
   });
+
+  it('closes CSS arbitrary-function/EOF bypasses, textarea slash end-tags, and same-realm Trusted Types leakage', () => {
+    // 1. CSS arbitrary image/URI functions (cross-fade, -webkit-cross-fade, -moz-image-set, nested, var)
+    for (const cssPayload of [
+      'background: cross-fade("javascript:alert(1)", "https://ok.example/a.png", 50%)',
+      'background: -webkit-cross-fade("javascript:alert(1)", "https://ok.example/a.png", 50%)',
+      'background: -moz-image-set("jav\\61script:alert(1)" 1x)',
+      'background: cross-fade(url("javascript:alert(1)"), image-set("data:text/html,<script>alert(1)</script>" 1x), 50%)',
+      'background: filter(url("vbscript:msgbox(1)"))',
+      'background: url(//evil.com/leak.png)'
+    ]) {
+      const cleaned = sanitizeCssStyle(cssPayload);
+      assert.ok(!/javascript:|vbscript:|data:text\/html|\/\/evil\.com/i.test(cleaned), `Must neutralize CSS payload: ${cssPayload} -> ${cleaned}`);
+    }
+    const crossFadeMixed = sanitizeCssStyle('background: cross-fade("javascript:alert(1)", "https://ok.example/a.png", 50%)');
+    assert.ok(crossFadeMixed.includes('https://ok.example/a.png'));
+
+    // 2. Unclosed EOF quotes/parens in CSS functions must produce balanced quotes & single balanced paren
+    assert.equal(sanitizeCssStyle('background: url("https://ok.example/a.png'), 'background: url("https://ok.example/a.png")');
+    assert.equal(sanitizeCssStyle("background: url('https://ok.example/a.png"), "background: url('https://ok.example/a.png')");
+    const trailingSlashEof = sanitizeCssStyle('background: url("https://ok.example/a.png\\');
+    assert.equal((trailingSlashEof.match(/"/g) || []).length % 2, 0);
+    assert.ok(!trailingSlashEof.endsWith('\\"'));
+    const eofImgSet = sanitizeCssStyle('background: image-set("https://ok.example/a.png 1x)');
+    assert.ok(!eofImgSet.includes('))'), `Must not emit duplicate )) on EOF unclosed image-set: ${eofImgSet}`);
+    assert.equal((eofImgSet.match(/"/g) || []).length % 2, 0, `Quotes must stay balanced: ${eofImgSet}`);
+
+    // Benign metadata/content strings stay preserved
+    assert.ok(sanitizeCssStyle('src: url("https://ok.example/font.woff2") format("woff2")').includes('format("woff2")'));
+    assert.ok(sanitizeCssStyle('background: image-set("https://ok.example/a.webp" type("image/webp"))').includes('type("image/webp")'));
+
+    // 3. HTML textarea closing tag with slash separator
+    const slashTextarea = sanitizeTemplateHtml('<textarea>ok</textarea/title="><img src=x onerror=alert(1)>"><b>after</b>');
+    assert.equal(slashTextarea, '<textarea>ok</textarea><b>after</b>');
+
+    // 4. Same-realm Trusted Types allowedScriptOrigins must never leak to subsequent callers
+    const hadWindow = 'window' in globalThis;
+    const origWindow = (globalThis as any).window;
+    try {
+      resetTrustedPolicyForTest();
+      const createdNames = new Set<string>();
+      (globalThis as any).window = {
+        location: { origin: 'https://app.example' },
+        trustedTypes: {
+          createPolicy: (name: string, rules: any) => {
+            if (createdNames.has(name)) {
+              throw new TypeError(`Duplicate policy ${name}`);
+            }
+            createdNames.add(name);
+            return {
+              createHTML: (s: string) => ({ __html: rules.createHTML(s) }),
+              createScript: (s: string) => rules.createScript(s),
+              createScriptURL: (u: string) => ({ __url: rules.createScriptURL(u) })
+            };
+          }
+        }
+      };
+
+      const scopedHtml = getSamreyTrustedPolicy({ allowedScriptOrigins: ['https://cdn1.example'] }) as any;
+      assert.deepEqual(scopedHtml.createScriptURL('https://cdn1.example/a.js'), { __url: 'https://cdn1.example/a.js' });
+      assert.throws(() => scopedHtml.createScriptURL('https://cdn2.example/b.js'), /Security|blocked/i);
+
+      const defaultHtml = getSamreyTrustedPolicy() as any;
+      assert.throws(() => defaultHtml.createScriptURL('https://cdn1.example/x.js'), /Security|blocked/i);
+
+      const otherScoped = getSamreyTrustedPolicy({ allowedScriptOrigins: ['https://cdn2.example'] }) as any;
+      assert.deepEqual(otherScoped.createScriptURL('https://cdn2.example/b.js'), { __url: 'https://cdn2.example/b.js' });
+      assert.throws(() => otherScoped.createScriptURL('https://cdn1.example/a.js'), /Security|blocked/i);
+
+      const scopedTmpl = getSamreyTemplateTrustedPolicy({ allowedScriptOrigins: ['https://cdn1.example'] }) as any;
+      const defaultTmpl = getSamreyTemplateTrustedPolicy() as any;
+      assert.deepEqual(scopedTmpl.createScriptURL('https://cdn1.example/t.js'), { __url: 'https://cdn1.example/t.js' });
+      assert.throws(() => defaultTmpl.createScriptURL('https://cdn1.example/t.js'), /Security|blocked/i);
+    } finally {
+      resetTrustedPolicyForTest();
+      if (hadWindow) (globalThis as any).window = origWindow;
+      else delete (globalThis as any).window;
+    }
+  });
 });

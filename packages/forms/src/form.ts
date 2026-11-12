@@ -5,6 +5,7 @@
 
 import { signal, computed, ReadonlySignal } from '@samrey/reactivity';
 import { createField, FieldState } from './field.js';
+import { isRequiredValidator } from './required-marker.js';
 import { StandardSchemaV1, Validator } from './standard-schema.js';
 
 export type FormValidateFn<TValues extends Record<string, any>> = (
@@ -23,6 +24,7 @@ export interface FormConfig<TValues extends Record<string, any>> {
   initialValues: TValues;
   schema?: StandardSchemaV1<TValues>;
   validators?: { [K in keyof TValues]?: Validator<TValues[K]> | readonly Validator<TValues[K]>[] };
+  required?: { [K in keyof TValues]?: boolean };
   validate?: FormValidateFn<TValues>;
   onSubmit: (values: TValues) => Promise<void> | void;
 }
@@ -71,13 +73,16 @@ export function createForm<TValues extends Record<string, any>>(
   const isSubmittingSignal = signal<boolean>(false);
   const formErrorSignal = signal<string | null>(null);
   let submitInFlight = false;
+  let resetEpoch = 0;
   const fields = Object.create(null) as { [K in keyof TValues]: FieldState<TValues[K]> };
 
   for (const key of Object.keys(config.initialValues) as (keyof TValues)[]) {
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
     const val = config.initialValues[key];
-    const validator = composeValidators(config.validators?.[key]);
-    fields[key] = createField(String(key), val, validator);
+    const validatorSpec = config.validators?.[key];
+    const validator = composeValidators(validatorSpec);
+    const isReq = Boolean(config.required?.[key] ?? isRequiredValidator(validatorSpec));
+    fields[key] = createField(String(key), val, validator, { required: isReq });
   }
 
   const isValid = computed(() => {
@@ -86,6 +91,9 @@ export function createForm<TValues extends Record<string, any>>(
   });
 
   function reset(): void {
+    resetEpoch++;
+    submitInFlight = false;
+    isSubmittingSignal.value = false;
     formErrorSignal.value = null;
     for (const key of Object.keys(fields) as (keyof TValues)[]) {
       const field = fields[key];
@@ -109,23 +117,29 @@ export function createForm<TValues extends Record<string, any>>(
     submitInFlight = true;
     isSubmittingSignal.value = true;
     formErrorSignal.value = null;
+    const epoch = resetEpoch;
 
     try {
       let allValid = true;
 
       // 1. Mark fields as touched and run field-level validators
       for (const key of Object.keys(fields) as (keyof TValues)[]) {
+        if (epoch !== resetEpoch) return false;
         const f = fields[key];
         f.setTouched(true, false);
         f.setError(null);
         const res = f.validate();
         if (res instanceof Promise) {
           const ok = await res;
+          if (epoch !== resetEpoch) return false;
           if (!ok) allValid = false;
-        } else if (!res) {
-          allValid = false;
+        } else {
+          if (epoch !== resetEpoch) return false;
+          if (!res) allValid = false;
         }
       }
+
+      if (epoch !== resetEpoch) return false;
 
       // 2. Collect current form values
       const values = {} as TValues;
@@ -141,6 +155,7 @@ export function createForm<TValues extends Record<string, any>>(
             validateRes && typeof (validateRes as Promise<unknown>).then === 'function'
               ? await validateRes
               : validateRes;
+          if (epoch !== resetEpoch) return false;
           if (errorsObj && typeof errorsObj === 'object') {
             for (const errKey of Object.keys(errorsObj)) {
               if (errKey === '__proto__' || errKey === 'constructor' || errKey === 'prototype') continue;
@@ -156,10 +171,13 @@ export function createForm<TValues extends Record<string, any>>(
             }
           }
         } catch (err: any) {
+          if (epoch !== resetEpoch) return false;
           allValid = false;
           formErrorSignal.value = err?.message || 'Validation error';
         }
       }
+
+      if (epoch !== resetEpoch) return false;
 
       // 3. Execute Standard Schema (~v1) validation if provided
       let finalValues = values;
@@ -167,6 +185,7 @@ export function createForm<TValues extends Record<string, any>>(
         try {
           const schemaResult = config.schema['~standard'].validate(values);
           const result = schemaResult instanceof Promise ? await schemaResult : schemaResult;
+          if (epoch !== resetEpoch) return false;
 
           if (result.issues && result.issues.length > 0) {
             allValid = false;
@@ -192,10 +211,13 @@ export function createForm<TValues extends Record<string, any>>(
             finalValues = result.value as TValues;
           }
         } catch (err: any) {
+          if (epoch !== resetEpoch) return false;
           allValid = false;
           formErrorSignal.value = err?.message || 'Validation error';
         }
       }
+
+      if (epoch !== resetEpoch) return false;
 
       if (!allValid) {
         return false;
@@ -203,10 +225,12 @@ export function createForm<TValues extends Record<string, any>>(
 
       // 4. Run onSubmit
       await config.onSubmit(finalValues);
-      return true;
+      return epoch === resetEpoch;
     } finally {
-      submitInFlight = false;
-      isSubmittingSignal.value = false;
+      if (epoch === resetEpoch) {
+        submitInFlight = false;
+        isSubmittingSignal.value = false;
+      }
     }
   }
 

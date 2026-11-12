@@ -569,6 +569,53 @@ describe('Item 5: validateSamreyCode Hardening', () => {
         );
       }
     });
+
+    it('Item 9 regression: rejects value-form type imports in @samrey/ai and detects foreign hooks inside template ${...} interpolations', () => {
+      const { validateSamreyCode: validateWebCode } = webCodeValidator;
+
+      // 1. Value-form import of TypeScript type-only export must fail in BOTH validators
+      const missingTypeKw = `import { Signal, signal } from '@samrey/reactivity';`;
+      const aiTypeRes = validateSamreyCode(missingTypeKw);
+      const webTypeRes = validateWebCode(missingTypeKw);
+      assert.strictEqual(aiTypeRes.valid, false, '@samrey/ai validator must reject value-form import of type Signal');
+      assert.ok(
+        aiTypeRes.errors.some((e) => e.message.includes('Signal') && e.message.toLowerCase().includes('type')),
+        `Expected type-only error for Signal in @samrey/ai, got: ${JSON.stringify(aiTypeRes.errors)}`
+      );
+      assert.strictEqual(webTypeRes.isValid, false);
+      assert.ok(webTypeRes.errors.some((e) => e.includes('Signal')));
+
+      // 2. Template literal ${...} interpolation must NOT hide foreign APIs in web validator or @samrey/ai
+      const tmplInterp = `
+        import { signal } from '@samrey/reactivity';
+        export const s = \`count: \${useState(0)}\`;
+        export const nested = \`a \${\`b \${useEffect(() => {})}\`}\`;
+        export const ok = signal(1);
+      `;
+      const webTmplRes = validateWebCode(tmplInterp);
+      assert.ok(
+        webTmplRes.foreignApis.some((f) => f.name === 'useState'),
+        `Web validator must catch useState inside template \${...}, got: ${JSON.stringify(webTmplRes.foreignApis)}`
+      );
+      assert.ok(
+        webTmplRes.foreignApis.some((f) => f.name === 'useEffect'),
+        `Web validator must catch nested useEffect inside template \${...}, got: ${JSON.stringify(webTmplRes.foreignApis)}`
+      );
+
+      const aiTmplRes = validateSamreyCode(tmplInterp);
+      assert.strictEqual(aiTmplRes.valid, false);
+      assert.ok(aiTmplRes.errors.some((e) => e.message.includes('useState')));
+      assert.ok(aiTmplRes.errors.some((e) => e.message.includes('useEffect')));
+
+      // 3. Plain template literal prose without ${...} remains ignored
+      const plainTmpl = `
+        import { signal } from '@samrey/reactivity';
+        export const note = \`Do not use useState() or useEffect() here\`;
+        export const ok = signal(1);
+      `;
+      assert.strictEqual(validateWebCode(plainTmpl).foreignApis.length, 0);
+      assert.strictEqual(validateSamreyCode(plainTmpl).errors.length, 0);
+    });
   });
 });
 

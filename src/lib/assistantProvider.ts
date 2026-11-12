@@ -147,7 +147,7 @@ export class DeterministicKnowledgeProvider implements AssistantProvider {
     }
 
     // Check recipe catalog for recipe-level queries
-    const isErrorQuery = intent.type === 'ERROR_DIAGNOSTICS' || /aeth-?\d{3}/i.test(query);
+    const isErrorQuery = intent.type === 'ERROR_DIAGNOSTICS' || /(?:samrey|aeth)-?\d{3}/i.test(query);
     const kbAnswer = queryKnowledgeBase(query);
     const recipe = !isErrorQuery ? findRecipeForQuery(query) : null;
     let baseAnswer: AssistantAnswer;
@@ -208,7 +208,7 @@ export class SmartAssistantProvider implements AssistantProvider {
     }
 
     // Direct match fast-path optimization
-    // If the query is an exact error code (e.g. AETH-101) or exact API lookup with high confidence,
+    // If the query is an exact error code (e.g. SAMREY-101) or exact API lookup with high confidence,
     // we can return the grounded answer directly without unnecessary AI latency.
     if ((intent.type === 'ERROR_DIAGNOSTICS' || (intent.type === 'API_LOOKUP' && groundedContext.isExactMatchFound)) && intent.confidence >= 0.95) {
       const directAnswer = await this.knowledgeProvider.askQuestion(query);
@@ -289,14 +289,14 @@ function createUnknownDocAnswer(query: string, intent: UserIntent): AssistantAns
     query,
     category: 'general',
     title: 'No Matching Samrey Documentation Found',
-    shortAnswer: `No relevant Samrey Framework documentation was found for "${query}". Samrey Developer Assistant answers questions regarding official @samrey/* packages (reactivity, runtime, forms, router, HTTP, SSR, security, compiler, CLI, and AETH error codes).`,
+    shortAnswer: `No relevant Samrey Framework documentation was found for "${query}". Samrey Developer Assistant answers questions regarding official @samrey/* packages (reactivity, runtime, forms, router, HTTP, SSR, security, compiler, CLI, and SAMREY error codes).`,
     concept: 'The Samrey Developer Assistant is strictly grounded on the official Samrey Framework repository documentation and avoids hallucinating non-existent features or APIs.',
     recommendedApi: 'Explore official @samrey/* packages in the Documentation and Architecture tabs.',
-    whenToUse: 'Use the Samrey Developer Assistant to ask about signals, fine-grained DOM bindings, schema forms, route navigation, zero-eval security, SSR streaming, or AETH error codes.',
+    whenToUse: 'Use the Samrey Developer Assistant to ask about signals, fine-grained DOM bindings, schema forms, route navigation, zero-eval security, SSR streaming, or SAMREY error codes.',
     implementationSteps: [
       'Check the spelling of your search terms or API names.',
       'Search for a core Samrey subsystem: Reactivity (`signal`, `computed`), Runtime (`el`, `Show`, `For`), Forms (`createForm`), Router (`createRouter`), or HTTP (`createResource`).',
-      'If troubleshooting an error, provide the exact code (e.g. `AETH-101`, `AETH-301`).',
+      'If troubleshooting an error, provide the exact code (e.g. `SAMREY-101`, `SAMREY-301`).',
       'Select one of the popular question chips or browse the full specification documents.'
     ],
     tsCodeExample: `// Example: Creating reactive state in Samrey
