@@ -506,5 +506,27 @@ describe('@samrey/forms', () => {
     assert.equal(await overlap2, true);
     assert.equal(secondSubmitCount, 1);
     assert.equal(overlapForm.isSubmitting.value, false);
+
+    // 5. Synchronous validator throw must set field error cleanly instead of throwing uncaught; ARIA & onSubmit.reset()
+    const throwingField = createField('code', '', () => {
+      throw new Error('Sync validator boom');
+    });
+    assert.equal(throwingField.validate(), false);
+    assert.equal(throwingField.error.value, 'Sync validator boom');
+    assert.equal(throwingField.isValidating.value, false);
+    // Explicit validate()/setError() error must match identically between field.aria and getAccessibleFieldProps
+    assert.equal(throwingField.aria.value['aria-invalid'], true);
+    assert.equal(getAccessibleFieldProps(throwingField)['aria-invalid'], true);
+    throwingField.setError(null);
+    assert.equal(throwingField.aria.value['aria-invalid'], undefined);
+    assert.equal(getAccessibleFieldProps(throwingField)['aria-invalid'], undefined);
+
+    const selfResetForm = createForm({
+      initialValues: { msg: 'hello' },
+      onSubmit: () => {
+        selfResetForm.reset();
+      }
+    });
+    assert.equal(await selfResetForm.submit(), true, 'submit() completing onSubmit that calls reset() must still return true');
   });
 });

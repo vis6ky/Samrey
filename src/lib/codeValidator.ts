@@ -226,10 +226,71 @@ const FOREIGN_API_MAP: Array<{ regex: RegExp; name: string; framework: string; a
   { regex: /\$state|\$derived|\$effect/, name: 'Svelte 5 Runes', framework: 'Svelte', alternative: "signal(), computed(), effect() from '@samrey/reactivity'" }
 ];
 
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return', 'throw', 'case', 'default', 'typeof', 'void', 'delete',
+  'in', 'instanceof', 'of', 'await', 'yield', 'new', 'else', 'do'
+]);
+
+function scanRegexEnd(code: string, slashIndex: number): number {
+  let k = slashIndex + 1;
+  let inClass = false;
+  while (k < code.length) {
+    const c = code[k];
+    if (c === '\n' || c === '\r') return -1;
+    if (c === '\\') {
+      k += 2;
+      continue;
+    }
+    if (c === '[' && !inClass) {
+      inClass = true;
+      k++;
+      continue;
+    }
+    if (c === ']' && inClass) {
+      inClass = false;
+      k++;
+      continue;
+    }
+    if (c === '/' && !inClass) {
+      k++;
+      while (k < code.length && /[a-zA-Z]/.test(code[k])) {
+        k++;
+      }
+      return k;
+    }
+    k++;
+  }
+  return -1;
+}
+
+function canPrecedeRegex(prevNonWsChar: string, lastIdent: string): boolean {
+  if (!prevNonWsChar) return true;
+  if ('=([{:;?,!&|^~+-*/%<>\n\r'.includes(prevNonWsChar)) return true;
+  if (/[A-Za-z0-9_$]/.test(prevNonWsChar) && lastIdent) {
+    return REGEX_PRECEDING_KEYWORDS.has(lastIdent);
+  }
+  return false;
+}
+
 function stripCommentsAndStrings(code: string, keepStrings = false): string {
   let out = '';
   let i = 0;
   const templateBraceStack: number[] = [];
+  let prevNonWsChar = '';
+  let lastIdent = '';
+
+  const updatePrevFromNonWs = (ch: string) => {
+    if (/[A-Za-z0-9_$]/.test(ch)) {
+      if (/[A-Za-z0-9_$]/.test(prevNonWsChar)) {
+        lastIdent += ch;
+      } else {
+        lastIdent = ch;
+      }
+    } else {
+      lastIdent = '';
+    }
+    prevNonWsChar = ch;
+  };
 
   const consumeTemplateSegment = () => {
     while (i < code.length) {
@@ -243,11 +304,15 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         out += keepStrings ? '${' : '  ';
         i += 2;
         templateBraceStack.push(1);
+        prevNonWsChar = '{';
+        lastIdent = '';
         return;
       }
       if (cur === '`') {
         out += keepStrings ? '`' : ' ';
         i++;
+        prevNonWsChar = '`';
+        lastIdent = '';
         return;
       }
       out += keepStrings ? cur : (cur === '\n' ? '\n' : ' ');
@@ -280,6 +345,16 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
       }
       continue;
     }
+    if (ch === '/' && canPrecedeRegex(prevNonWsChar, lastIdent)) {
+      const regexEnd = scanRegexEnd(code, i);
+      if (regexEnd !== -1) {
+        out += keepStrings ? code.slice(i, regexEnd) : ' ';
+        i = regexEnd;
+        prevNonWsChar = '/';
+        lastIdent = '';
+        continue;
+      }
+    }
     if (ch === "'" || ch === '"') {
       const quote = ch;
       out += keepStrings ? ch : ' ';
@@ -299,6 +374,8 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         out += keepStrings ? cur : (cur === '\n' ? '\n' : ' ');
         i++;
       }
+      prevNonWsChar = quote;
+      lastIdent = '';
       continue;
     }
     if (ch === '`') {
@@ -310,6 +387,7 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
     if (templateBraceStack.length > 0 && ch === '{') {
       templateBraceStack[templateBraceStack.length - 1]++;
       out += ch;
+      updatePrevFromNonWs(ch);
       i++;
       continue;
     }
@@ -323,8 +401,14 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         continue;
       }
       out += ch;
+      updatePrevFromNonWs(ch);
       i++;
       continue;
+    }
+    if (!/\s/.test(ch)) {
+      updatePrevFromNonWs(ch);
+    } else if (ch === '\n' || ch === '\r') {
+      lastIdent = '';
     }
     out += ch;
     i++;
@@ -370,13 +454,27 @@ export function validateSamreyCode(
   const templateBraceStack: number[] = [];
   let inLineComment = false;
   let inBlockComment = false;
+  let structPrevChar = '';
+  let structLastIdent = '';
+
+  const trackStructChar = (c: string) => {
+    if (/[A-Za-z0-9_$]/.test(c)) {
+      structLastIdent = /[A-Za-z0-9_$]/.test(structPrevChar) ? structLastIdent + c : c;
+    } else {
+      structLastIdent = '';
+    }
+    structPrevChar = c;
+  };
 
   for (let i = 0; i < trimmed.length; i++) {
     const char = trimmed[i];
     const nextChar = trimmed[i + 1];
 
     if (inLineComment) {
-      if (char === '\n') inLineComment = false;
+      if (char === '\n') {
+        inLineComment = false;
+        structLastIdent = '';
+      }
       continue;
     }
     if (inBlockComment) {
@@ -388,12 +486,12 @@ export function validateSamreyCode(
     }
     if (inSingleQuote) {
       if (char === '\\') { i++; continue; }
-      if (char === "'") inSingleQuote = false;
+      if (char === "'") { inSingleQuote = false; structPrevChar = "'"; structLastIdent = ''; }
       continue;
     }
     if (inDoubleQuote) {
       if (char === '\\') { i++; continue; }
-      if (char === '"') inDoubleQuote = false;
+      if (char === '"') { inDoubleQuote = false; structPrevChar = '"'; structLastIdent = ''; }
       continue;
     }
     if (inBacktick) {
@@ -401,10 +499,12 @@ export function validateSamreyCode(
       if (char === '$' && nextChar === '{') {
         templateBraceStack.push(1);
         inBacktick = false;
+        structPrevChar = '{';
+        structLastIdent = '';
         i++;
         continue;
       }
-      if (char === '`') inBacktick = false;
+      if (char === '`') { inBacktick = false; structPrevChar = '`'; structLastIdent = ''; }
       continue;
     }
 
@@ -420,10 +520,27 @@ export function validateSamreyCode(
       continue;
     }
 
+    // Regex literal start
+    if (char === '/' && canPrecedeRegex(structPrevChar, structLastIdent)) {
+      const regexEnd = scanRegexEnd(trimmed, i);
+      if (regexEnd !== -1) {
+        i = regexEnd - 1;
+        structPrevChar = '/';
+        structLastIdent = '';
+        continue;
+      }
+    }
+
     // Quotes
     if (char === "'") { inSingleQuote = true; continue; }
     if (char === '"') { inDoubleQuote = true; continue; }
     if (char === '`') { inBacktick = true; continue; }
+
+    if (!/\s/.test(char)) {
+      trackStructChar(char);
+    } else if (char === '\n' || char === '\r') {
+      structLastIdent = '';
+    }
 
     if (templateBraceStack.length > 0 && char === '{') {
       templateBraceStack[templateBraceStack.length - 1]++;
@@ -483,6 +600,13 @@ export function validateSamreyCode(
       if (!validPkgExports) {
         errors.push(`Unknown Samrey package \`${pkg}\`. Valid packages: ${Object.keys(OFFICIAL_SAMREY_EXPORTS).join(', ')}`);
       } else {
+        const clauseWithoutType = rawClause.replace(/^type\s+/, '').trim();
+        if (!clauseWithoutType.startsWith('{') && !clauseWithoutType.startsWith('*')) {
+          const defMatch = clauseWithoutType.match(/^([A-Za-z_$][\w$]*)/);
+          if (defMatch) {
+            errors.push(`Default import \`${defMatch[1]}\` is not supported for \`${pkg}\` — use named imports instead.`);
+          }
+        }
         for (const rawItem of rawItems) {
           const isInlineType = /^\s*type\s+/.test(rawItem);
           const cleanName = rawItem.replace(/^\s*type\s+/, '').split(/\s+as\s+/)[0].trim();

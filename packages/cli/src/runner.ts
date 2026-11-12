@@ -67,6 +67,14 @@ function optionValueError(flagName: string): CommandResult {
   };
 }
 
+function parseStrictPort(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) return null;
+  return parsed;
+}
+
 function consumeOptionValue(
   args: string[],
   index: number,
@@ -168,11 +176,19 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         if (arg === '--port' || arg.startsWith('--port=')) {
           const res = consumeOptionValue(args, i, '--port');
           if ('error' in res) return res.error;
-          port = parseInt(res.value, 10);
+          const parsedPort = parseStrictPort(res.value);
+          if (parsedPort === null) {
+            return {
+              success: false,
+              message: `[Samrey Dev Error] Invalid port "${res.value}". Port must be an integer between 1 and 65535.`,
+              exitCode: 1
+            };
+          }
+          port = parsedPort;
           i = res.nextIndex;
         }
       }
-      return runDevCommand({ port, host, dryRun });
+      return runDevCommand({ cwd, port, host, dryRun });
     }
 
     case 'build': {
@@ -233,6 +249,13 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if (val === 'false') minify = false;
           else if (val === 'esbuild' || val === 'terser') minify = val;
           else if (val === 'true') minify = true;
+          else {
+            return {
+              success: false,
+              message: `[Samrey Build Error] Invalid --minify value "${val}". Expected true, false, esbuild, or terser.`,
+              exitCode: 1
+            };
+          }
         } else if (arg === '--sourcemap') {
           const next = args[i + 1];
           if (next === 'inline' || next === 'hidden') {
@@ -251,6 +274,13 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           if (val === 'inline' || val === 'hidden') sourcemap = val;
           else if (val === 'false') sourcemap = false;
           else if (val === 'true') sourcemap = true;
+          else {
+            return {
+              success: false,
+              message: `[Samrey Build Error] Invalid --sourcemap value "${val}". Expected true, false, inline, or hidden.`,
+              exitCode: 1
+            };
+          }
         }
       }
 
@@ -266,7 +296,15 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         if (arg === '--port' || arg.startsWith('--port=')) {
           const res = consumeOptionValue(args, i, '--port');
           if ('error' in res) return res.error;
-          port = parseInt(res.value, 10);
+          const parsedPort = parseStrictPort(res.value);
+          if (parsedPort === null) {
+            return {
+              success: false,
+              message: `[Samrey Preview Error] Invalid port "${res.value}". Port must be an integer between 1 and 65535.`,
+              exitCode: 1
+            };
+          }
+          port = parsedPort;
           i = res.nextIndex;
         } else if (arg === '--outDir' || arg.startsWith('--outDir=')) {
           const res = consumeOptionValue(args, i, '--outDir');
@@ -326,8 +364,23 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
     }
 
     case 'generate': {
-      const type = args[1] as GenerateArtifactType;
-      const name = args[2];
+      let targetDir: string | undefined;
+      const positionals: string[] = [];
+      for (let i = 1; i < args.length; i++) {
+        const arg = args[i]!;
+        if (arg === '--targetDir' || arg.startsWith('--targetDir=')) {
+          const res = consumeOptionValue(args, i, '--targetDir');
+          if ('error' in res) return res.error;
+          targetDir = path.resolve(cwd, res.value);
+          i = res.nextIndex;
+        } else if (arg.startsWith('-')) {
+          continue;
+        } else {
+          positionals.push(arg);
+        }
+      }
+      const type = positionals[0] as GenerateArtifactType;
+      const name = positionals[1];
       if (!type || !name) {
         return {
           success: false,
@@ -335,7 +388,7 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
           exitCode: 1
         };
       }
-      return runGenerateCommand({ type, name, dryRun });
+      return runGenerateCommand({ cwd, type, name, targetDir, dryRun });
     }
 
     case 'ai': {

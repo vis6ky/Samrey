@@ -772,38 +772,74 @@ function createSafeSandboxHttpClient(_baseUrl?: string, _options?: unknown) {
   });
 }
 
-function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, unknown> | null): void {
+function assertSafeSandboxElementArgs(tagName: unknown, attrs?: Record<string, unknown> | null): Record<string, unknown> | null | undefined {
   const lowerTag = String(tagName ?? '').trim().toLowerCase();
   if (!lowerTag || DANGEROUS_SANDBOX_TAGS.has(lowerTag)) {
     throw new TypeError(`[Sandbox Security] Creating <${lowerTag || 'unknown'}> elements inside the sandbox is prohibited.`);
   }
-  if (attrs && typeof attrs === 'object') {
-    for (const [k, v] of Object.entries(attrs)) {
-      const lk = k.toLowerCase();
-      if (RESTRICTED_SANDBOX_ATTRS.has(lk)) {
-        throw new TypeError(`[Sandbox Security] Restricted attribute "${k}" inside the sandbox is prohibited.`);
+  if (!attrs || typeof attrs !== 'object') return attrs;
+
+  const cleanAttrs: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    const lk = k.toLowerCase();
+    if (RESTRICTED_SANDBOX_ATTRS.has(lk)) {
+      throw new TypeError(`[Sandbox Security] Restricted attribute "${k}" inside the sandbox is prohibited.`);
+    }
+    if (lk.startsWith('on') && v !== undefined && v !== null && typeof v !== 'function') {
+      throw new TypeError(`[Sandbox Security] String inline event handler "${k}" is prohibited inside the sandbox.`);
+    }
+    if (typeof v === 'function' || v === undefined || v === null) {
+      cleanAttrs[k] = v;
+      continue;
+    }
+    const rawVal = String(v);
+    if (Security.SRCSET_ATTRIBUTES.has(lk) && rawVal.trim()) {
+      const safeSrcset = Security.sanitizeSrcset(rawVal);
+      if (!safeSrcset) {
+        throw new TypeError(`[Sandbox Security] Unsafe srcset in "${k}" attribute is prohibited inside the sandbox.`);
       }
-      if (lk.startsWith('on') && v !== undefined && v !== null && typeof v !== 'function') {
-        throw new TypeError(`[Sandbox Security] String inline event handler "${k}" is prohibited inside the sandbox.`);
-      }
-      const rawVal = v === undefined || v === null ? '' : String(v);
-      if (URI_SANDBOX_ATTRS.has(lk) && typeof v !== 'function' && rawVal.trim()) {
-        const safe = Security.sanitizeUri(rawVal, {
-          allowImageDataUri: lk === 'src' || lk === 'poster',
-          allowProtocolRelative: false
-        });
-        if (safe === 'about:blank' || safe === '') {
+      cleanAttrs[k] = safeSrcset;
+      continue;
+    }
+    if (lk === 'ping' && rawVal.trim()) {
+      const cleanedTokens: string[] = [];
+      for (const token of rawVal.trim().split(/\s+/)) {
+        const safeToken = Security.sanitizeUri(token, { allowImageDataUri: false, allowProtocolRelative: false });
+        if (safeToken === 'about:blank' || safeToken === '') {
           throw new TypeError(`[Sandbox Security] Unsafe URI in "${k}" attribute is prohibited inside the sandbox.`);
         }
+        cleanedTokens.push(safeToken);
       }
-      if (lk === 'style' && typeof v !== 'function' && rawVal.trim()) {
-        const sanitized = Security.sanitizeCssStyle(rawVal);
-        if (sanitized === '' && /(?:javascript|vbscript|expression|url\s*\()/i.test(rawVal)) {
-          throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited inside the sandbox.');
-        }
-      }
+      cleanAttrs[k] = cleanedTokens.join(' ');
+      continue;
     }
+    if ((URI_SANDBOX_ATTRS.has(lk) || Security.URL_ATTRIBUTES.has(lk)) && rawVal.trim()) {
+      const safe = Security.sanitizeUri(rawVal, {
+        allowImageDataUri: lk === 'src' || lk === 'poster',
+        allowProtocolRelative: false
+      });
+      if (safe === 'about:blank' || safe === '') {
+        throw new TypeError(`[Sandbox Security] Unsafe URI in "${k}" attribute is prohibited inside the sandbox.`);
+      }
+      cleanAttrs[k] = safe;
+      continue;
+    }
+    if (lk === 'style' && rawVal.trim()) {
+      const sanitized = Security.sanitizeCssStyle(rawVal);
+      if (
+        sanitized === '' ||
+        sanitized.includes('/*blocked*/') ||
+        (sanitized.includes('url("")') && !/url\(\s*(?:""|'')?\s*\)/i.test(rawVal)) ||
+        (sanitized.includes('image-set("")') && !/image-set\(\s*(?:""|'')?\s*\)/i.test(rawVal))
+      ) {
+        throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited inside the sandbox.');
+      }
+      cleanAttrs[k] = sanitized;
+      continue;
+    }
+    cleanAttrs[k] = rawVal;
   }
+  return cleanAttrs;
 }
 
 export function validateSandboxCodeSafety(source: string): string | null {
@@ -899,12 +935,12 @@ export function executeSamreyCode(
 
       // Runtime DOM & Control Flow
       el: (tagName: any, attrs?: any, ...children: any[]) => {
-        assertSafeSandboxElementArgs(tagName, attrs);
-        return Runtime.el(tagName, attrs, ...children);
+        const safeAttrs = assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.el(tagName, safeAttrs, ...children);
       },
       svgEl: (tagName: string, attrs?: any, ...children: any[]) => {
-        assertSafeSandboxElementArgs(tagName, attrs);
-        return Runtime.svgEl(tagName, attrs, ...children);
+        const safeAttrs = assertSafeSandboxElementArgs(tagName, attrs);
+        return Runtime.svgEl(tagName, safeAttrs, ...children);
       },
       text: Runtime.text,
       frag: Runtime.frag,

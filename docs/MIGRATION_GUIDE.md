@@ -17,8 +17,8 @@ This guide assists engineering teams migrating applications from React, SolidJS,
 | State | `useState(0)` | `signal(0)` |
 | Derived State | `useMemo(() => ...)` | `computed(() => ...)` |
 | Side Effects | `useEffect(() => ...)` | `effect(() => ...)` |
-| Conditional Render | `{isOpen ? <Modal /> : null}` | `<Show when={() => isOpen.value}><Modal /></Show>` |
-| List Rendering | `{items.map(item => <Item key={item.id} />)}` | `<For each={() => items.value} by={item => item.id}>{item => ...}</For>` |
+| Conditional Render | `{isOpen ? <Modal /> : null}` | `Show({ when: () => isOpen.value, children: () => Modal() })` |
+| List Rendering | `{items.map(item => <Item key={item.id} />)}` | `For({ each: () => items.value, key: item => item.id, children: item => ... })` |
 | Cleanup | Return callback in `useEffect` | `onCleanup(() => ...)` |
 | Rendering Engine | Virtual DOM reconciler | Native `cloneNode` + direct hole bindings |
 

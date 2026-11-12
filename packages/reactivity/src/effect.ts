@@ -94,6 +94,10 @@ export function effect(fn: () => void | (() => void)): () => void {
         }
       }
 
+      if (effectOwner.errorHandlers && effectOwner.errorHandlers.length > 0) {
+        effectOwner.errorHandlers.length = 0;
+      }
+
       // Reset dirty flag BEFORE executing fn so any signal write inside fn sets dirty and re-queues
       this.isDirty = false;
 
@@ -114,7 +118,8 @@ export function effect(fn: () => void | (() => void)): () => void {
         handleError(err, effectOwner);
       } finally {
         setActiveSubscriber(prevSub);
-        if (this.isDisposed) {
+        if (this.isDisposed || effectOwner.isDisposed) {
+          this.isDisposed = true;
           if (typeof userCleanup === 'function') {
             try {
               userCleanup();
@@ -137,6 +142,11 @@ export function effect(fn: () => void | (() => void)): () => void {
       }
     }
   };
+
+  if (effectOwner.isDisposed) {
+    node.isDisposed = true;
+    return () => {};
+  }
 
   // Initial execution
   node.update();

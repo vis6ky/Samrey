@@ -9,8 +9,8 @@ description: Fetch asynchronous data with createResource and manage HTTP request
 Guides asynchronous API data fetching, reactive loading/error states, and secure HTTP communication.
 
 ## Relevant APIs
-- `createResource<T>(fetcher: () => Promise<T>): [ResourceState<T>, ResourceActions<T>]`
-- `createHttpClient(options: HttpClientOptions): HttpClient`
+- `createResource<T>(fetcher: (info: { abortSignal: AbortSignal }) => Promise<T>, options?: ResourceOptions<T>): Resource<T>` (also iterable as `[resource, { refetch, mutate }]`)
+- `createHttpClient(options?: HttpClientOptions): HttpClient`
 
 ## Verified Code Example
 ```ts

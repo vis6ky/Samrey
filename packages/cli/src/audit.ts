@@ -159,15 +159,23 @@ function isRawHtmlFile(filename: string): boolean {
 
 function trySkipJsLineComment(source: string, pos: number, len: number): number {
   if (pos > 0 && source[pos - 1] === ':') return -1;
-  let j = pos - 1;
-  while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
-    j--;
+  const lineStart = Math.max(source.lastIndexOf('\n', pos - 1), source.lastIndexOf('\r', pos - 1)) + 1;
+  let inQuote: string | null = null;
+  for (let k = lineStart; k < pos; k++) {
+    const ch = source[k]!;
+    if (inQuote) {
+      if (ch === '\\') {
+        k++;
+      } else if (ch === inQuote) {
+        inQuote = null;
+      }
+    } else if (ch === '"' || ch === "'" || ch === '`') {
+      inQuote = ch;
+    }
   }
-  if (j < 0 || '\n\r;{}(),='.includes(source[j]!)) {
-    const nl = source.indexOf('\n', pos + 2);
-    return nl === -1 ? len : nl + 1;
-  }
-  return -1;
+  if (inQuote !== null) return -1;
+  const nl = source.indexOf('\n', pos + 2);
+  return nl === -1 ? len : nl + 1;
 }
 
 function trySkipJsRegexLiteral(source: string, pos: number, len: number): number {
@@ -327,13 +335,51 @@ function scanOpeningTags(source: string, scriptLike: boolean): ScannedOpeningTag
 
           const valCh = source[pos];
           if (valCh === '"' || valCh === "'") {
-            const closeQ = source.indexOf(valCh, pos + 1);
-            if (closeQ === -1) {
+            let qPos = pos + 1;
+            let closed = false;
+            while (qPos < len) {
+              const qc = source[qPos]!;
+              if (qc === '\\' && qPos + 1 < len) {
+                qPos += 2;
+                continue;
+              }
+              if (qc === valCh) {
+                value = source.slice(pos + 1, qPos);
+                pos = qPos + 1;
+                closed = true;
+                break;
+              }
+              qPos++;
+            }
+            if (!closed) {
               value = source.slice(pos + 1);
               pos = len;
-            } else {
-              value = source.slice(pos + 1, closeQ);
-              pos = closeQ + 1;
+            }
+          } else if (scriptLike && valCh === '\\' && (source[pos + 1] === '"' || source[pos + 1] === "'")) {
+            const targetQuote = source[pos + 1]!;
+            let qPos = pos + 2;
+            let closed = false;
+            while (qPos < len) {
+              if (source[qPos] === '\\') {
+                if (source[qPos + 1] === targetQuote) {
+                  value = source.slice(pos + 2, qPos);
+                  pos = qPos + 2;
+                  closed = true;
+                  break;
+                }
+                if (qPos + 1 < len) {
+                  qPos += 2;
+                  continue;
+                }
+              }
+              if (source[qPos] === targetQuote) {
+                break;
+              }
+              qPos++;
+            }
+            if (!closed) {
+              value = source.slice(pos + 2, qPos);
+              pos = qPos;
             }
           } else if (valCh === '{') {
             const closeBrace = skipBalancedBraces(source, pos, len);

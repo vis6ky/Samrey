@@ -616,6 +616,86 @@ describe('Item 5: validateSamreyCode Hardening', () => {
       assert.strictEqual(validateWebCode(plainTmpl).foreignApis.length, 0);
       assert.strictEqual(validateSamreyCode(plainTmpl).errors.length, 0);
     });
+
+    it('Batch 4 regression: handles regex literals, escaped trailing quotes, nested template args, indirect eval, bracket/compound innerHTML, default imports, and TS string-var URI non-false-positives', () => {
+      const { validateSamreyCode: validateWebCode } = webCodeValidator;
+
+      // 1. Regex literals with quotes/brackets/parens must not break structural check or mask trailing foreign hooks in web validator
+      const regexAndHook = `
+        import { signal } from '@samrey/reactivity';
+        const re = /['"\`([]/;
+        const after = useState(0);
+        export const ok = signal(re.source + after);
+      `;
+      const webRegexRes = validateWebCode(regexAndHook);
+      assert.ok(
+        !webRegexRes.errors.some((e) => e.includes('Unclosed') || e.includes('unclosed')),
+        `Regex literal must not trigger unclosed delimiter/string error: ${JSON.stringify(webRegexRes.errors)}`
+      );
+      assert.ok(
+        webRegexRes.foreignApis.some((f) => f.name === 'useState'),
+        `Regex literal must not swallow rest of file and hide useState(): ${JSON.stringify(webRegexRes.foreignApis)}`
+      );
+
+      // 2. Default imports from @samrey/* packages must be flagged in both validators
+      for (const badDefault of [
+        `import SamreyRuntime from '@samrey/runtime';`,
+        `import DefaultThing, { template } from '@samrey/runtime';`
+      ]) {
+        assert.strictEqual(validateSamreyCode(badDefault).valid, false, `@samrey/ai must reject default import: ${badDefault}`);
+        assert.strictEqual(validateWebCode(badDefault).isValid, false, `Web validator must reject default import: ${badDefault}`);
+      }
+
+      // 3. Escaped trailing backslash ("foo\\") and nested template (${`b)`}) in bind* helpers must still detect count.value
+      const escapedBind = `
+        import { signal } from '@samrey/reactivity';
+        import { bindAttr, bindText } from '@samrey/runtime';
+        const count = signal(0);
+        bindAttr(a, "data-x", "foo\\\\");
+        bindText(b, count.value);
+      `;
+      assert.ok(
+        validateSamreyCode(escapedBind).errors.some((e) => e.message.includes('bindText') && e.message.includes('count.value')),
+        'Escaped backslash in string literal must not desync quote tracking before bindText(b, count.value)'
+      );
+
+      const nestedTmplCall = `
+        import { signal } from '@samrey/reactivity';
+        import { bindAttr, bindText } from '@samrey/runtime';
+        const count = signal(0);
+        bindAttr(a, "data-t", \`a \${\`b)\`}\`);
+        bindText(b, count.value);
+      `;
+      assert.ok(
+        validateSamreyCode(nestedTmplCall).errors.some((e) => e.message.includes('bindText') && e.message.includes('count.value')),
+        'Nested template literal interpolation must not desync bind* call extraction'
+      );
+
+      // 4. Indirect / optional eval and bracket / compound innerHTML mutations must be caught
+      for (const dangerousSnippet of [
+        `eval?.("1+1");`,
+        `(0, eval)("1+1");`,
+        `window["eval"]("1+1");`,
+        `el["innerHTML"] = userHtml;`,
+        `el.innerHTML += userHtml;`
+      ]) {
+        const res = validateSamreyCode(dangerousSnippet);
+        assert.strictEqual(res.valid, false, `Expected dangerous pattern to be rejected: ${dangerousSnippet}`);
+      }
+
+      // 5. TypeScript variable initialized to 'javascript:...' string literal must not false-positive as an HTML attribute, while real HTML attributes remain flagged
+      const benignConstVar = `
+        import { sanitizeUri } from '@samrey/security';
+        const untrustedUri = 'javascript:stealTokens()';
+        export const clean = sanitizeUri(untrustedUri);
+      `;
+      const benignRes = validateSamreyCode(benignConstVar);
+      assert.strictEqual(benignRes.errors.length, 0, `Unexpected false positive on TS const var: ${JSON.stringify(benignRes.errors)}`);
+      assert.strictEqual(
+        validateSamreyCode(`import { template } from '@samrey/runtime'; template('<a href="javascript:alert(1)">x</a>');`).valid,
+        false
+      );
+    });
   });
 });
 

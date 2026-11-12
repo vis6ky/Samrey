@@ -69,7 +69,7 @@ export const RECIPES: Recipe[] = [
     problem: 'Component-to-component data communication',
     samreyConcept: 'Reactive state communication via passed signal Props and createContext / useContext',
     recommendedApi: '@samrey/reactivity -> signal() / Props & createContext',
-    implementation: `import { signal, ReadonlySignal, createContext, useContext } from '@samrey/reactivity';
+    implementation: `import { signal, type ReadonlySignal, createContext, useContext } from '@samrey/reactivity';
 import { el } from '@samrey/runtime';
 
 // 1. Passing Signal Props to Child Components
@@ -475,14 +475,14 @@ export function LoginForm() {
     category: 'http-api',
     categoryLabel: 'HTTP & API Calls',
     keywords: [
-      'call api', 'http fetch', 'createHttpClient', 'resource', 'fetch data', 'async resource',
+      'call api', 'http fetch', 'createHttpClient', 'createResource', 'fetch data', 'async resource',
       'api request', 'loading state'
     ],
     problem: 'Fetching asynchronous data from REST/GraphQL APIs with reactive loading, error, and refetch states',
     samreyConcept: 'Declarative async resource primitives with automated dependency tracking',
-    recommendedApi: '@samrey/http -> createHttpClient(), resource()',
+    recommendedApi: '@samrey/http -> createHttpClient(), createResource()',
     implementation: `import { signal } from '@samrey/reactivity';
-import { createHttpClient, resource } from '@samrey/http';
+import { createHttpClient, createResource } from '@samrey/http';
 import { el, Show } from '@samrey/runtime';
 
 interface User { id: string; name: string; email: string; }
@@ -493,9 +493,13 @@ export function UserProfile() {
   const userId = signal('101');
 
   // Resource automatically refetches whenever userId signal changes
-  const userResource = resource(async () => {
-    return api.get<User>(\`/users/\${userId.value}\`);
-  });
+  const userResource = createResource(
+    () => userId.value,
+    async (id) => {
+      const res = await api.get<User>(\`/users/\${id}\`);
+      return res.data;
+    }
+  );
 
   return el('div', { class: 'p-4' },
     Show({
@@ -516,14 +520,14 @@ export function UserProfile() {
     el('button', { onClick: () => userResource.refetch(), class: 'mt-2 px-3 py-1 bg-slate-200 rounded' }, 'Refresh')
   );
 }`,
-    howItWorks: 'resource() links an async fetcher to reactive state. It exposes data, loading, and error signals, and automatically handles request deduplication, cancellation, and refetching.',
+    howItWorks: 'createResource() links an async fetcher to reactive state. It exposes data, loading, and error signals, and automatically handles request deduplication, cancellation, and refetching.',
     whenToUse: 'For all asynchronous API fetching, remote queries, and data loading workflows.',
     alternative: 'Manual native fetch() in an effect() with explicit signal state management',
     commonMistakes: [
-      'Calling resource() inside click handlers instead of declaring it at component setup time.',
+      'Calling createResource() inside click handlers instead of declaring it at component setup time.',
       'Forgetting to display the error signal, causing unhandled promise rejections.'
     ],
-    relatedApis: ['createHttpClient', 'resource', 'createCache', 'fetchResource'],
+    relatedApis: ['createHttpClient', 'createResource', 'createHttpCache', 'RequestCache'],
     documentation: [
       { label: 'Router and HTTP Guide', url: '#docs', sourcePath: 'docs/ROUTER_AND_HTTP.md' }
     ]

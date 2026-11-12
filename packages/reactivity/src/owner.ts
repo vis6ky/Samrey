@@ -18,50 +18,58 @@ export function setOwner(owner: Owner | null): Owner | null {
 }
 
 export function createOwner(parent = currentOwner): Owner {
+  const parentDisposed = Boolean(parent && (parent.isDisposed || (parent as any).isDisposing));
   const owner: Owner = {
-    parent,
+    parent: parentDisposed ? null : parent,
     children: [],
     cleanups: [],
+    isDisposed: parentDisposed,
     context: parent?.context ? Object.create(parent.context) : Object.create(null),
     dispose() {
+      if (this.isDisposed) return;
       const isParentDisposing = (this.parent as any)?.isDisposing;
+      this.isDisposed = true;
       (this as any).isDisposing = true;
 
-      for (let i = 0; i < this.cleanups.length; i++) {
-        try {
-          this.cleanups[i]();
-        } catch (err) {
-          handleError(err, this);
-        }
-      }
-      this.cleanups.length = 0;
-
-      if (this.children.length > 0) {
-        const ch = this.children;
-        this.children = [];
-        for (let i = 0; i < ch.length; i++) {
-          ch[i].parent = null;
-          ch[i].dispose();
-        }
-      }
-
-      if (this.parent && !isParentDisposing) {
-        const ch = this.parent.children;
-        const len = ch.length;
-        const idx = len > 0 && ch[len - 1] === this ? len - 1 : ch.indexOf(this);
-        if (idx !== -1) {
-          if (idx === len - 1) {
-            ch.pop();
-          } else {
-            ch.splice(idx, 1);
+      try {
+        for (let i = 0; i < this.cleanups.length; i++) {
+          try {
+            this.cleanups[i]();
+          } catch (err) {
+            handleError(err, this);
           }
         }
-        this.parent = null;
+        this.cleanups.length = 0;
+
+        if (this.children.length > 0) {
+          const ch = this.children;
+          this.children = [];
+          for (let i = 0; i < ch.length; i++) {
+            ch[i].parent = null;
+            ch[i].dispose();
+          }
+        }
+
+        if (this.parent && !isParentDisposing) {
+          const ch = this.parent.children;
+          const len = ch.length;
+          const idx = len > 0 && ch[len - 1] === this ? len - 1 : ch.indexOf(this);
+          if (idx !== -1) {
+            if (idx === len - 1) {
+              ch.pop();
+            } else {
+              ch.splice(idx, 1);
+            }
+          }
+          this.parent = null;
+        }
+      } finally {
+        (this as any).isDisposing = false;
       }
     }
   };
 
-  if (parent) {
+  if (parent && !parentDisposed) {
     parent.children.push(owner);
   }
 
@@ -84,7 +92,7 @@ export function createRoot<T>(fn: (dispose: () => void) => T): T {
 }
 
 export function onCleanup(fn: () => void): void {
-  if (currentOwner) {
+  if (currentOwner && !currentOwner.isDisposed) {
     currentOwner.cleanups.push(fn);
   }
 }
@@ -130,7 +138,7 @@ export function getGlobalErrorHandler(): ((err: unknown) => void) | null {
 }
 
 export function onError(fn: (err: unknown) => void): void {
-  if (currentOwner) {
+  if (currentOwner && !currentOwner.isDisposed) {
     if (!currentOwner.errorHandlers) currentOwner.errorHandlers = [];
     currentOwner.errorHandlers.push(fn);
   }

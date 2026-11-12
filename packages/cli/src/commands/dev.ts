@@ -10,6 +10,7 @@ import { compileTemplate } from '@samrey/compiler';
 import { CommandResult } from './create.js';
 
 export interface DevCommandOptions {
+  cwd?: string;
   port?: number;
   host?: string | boolean;
   open?: boolean;
@@ -80,12 +81,25 @@ function hasForbiddenDotSegment(relPath: string): boolean {
 
 function normalizeHostHeader(hostHeader: string): string {
   const trimmed = hostHeader.trim().toLowerCase();
-  if (trimmed.startsWith('[')) {
-    const endBracket = trimmed.indexOf(']');
-    return endBracket === -1 ? trimmed : trimmed.slice(0, endBracket + 1);
+  if (!trimmed || /[\s@/\\?#]/.test(trimmed)) {
+    return '';
   }
-  const colonIdx = trimmed.indexOf(':');
-  return colonIdx === -1 ? trimmed : trimmed.slice(0, colonIdx);
+  if (trimmed.startsWith('[')) {
+    const match = /^(\[[0-9a-f:.]+\])(?::(\d{1,5}))?$/i.exec(trimmed);
+    if (!match) return '';
+    if (match[2]) {
+      const portNum = Number(match[2]);
+      if (portNum < 1 || portNum > 65535) return '';
+    }
+    return match[1]!;
+  }
+  const match = /^([a-z0-9.-]+)(?::(\d{1,5}))?$/i.exec(trimmed);
+  if (!match) return '';
+  if (match[2]) {
+    const portNum = Number(match[2]);
+    if (portNum < 1 || portNum > 65535) return '';
+  }
+  return match[1]!;
 }
 
 function sanitizeDevErrorMessage(msg: unknown, resolvedRoot: string, realRoot: string): string {
@@ -355,10 +369,10 @@ export function createNativeDevHandler(absoluteRoot: string, allowedHosts?: stri
 }
 
 export async function runDevCommand(options: DevCommandOptions = {}): Promise<CommandResult> {
-  const port = options.port || 3000;
+  const port = options.port !== undefined ? options.port : 3000;
   const host = options.host ? (typeof options.host === 'string' ? options.host : '0.0.0.0') : 'localhost';
 
-  if (port < 1 || port > 65535) {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
     return {
       success: false,
       message: `[Samrey Dev Error] Invalid port ${port}. Port must be between 1 and 65535.`,
@@ -409,7 +423,7 @@ export async function runDevCommand(options: DevCommandOptions = {}): Promise<Co
   }
 
   // Native lightweight dev server fallback
-  const rootDir = process.cwd();
+  const rootDir = options.cwd || process.cwd();
   const absoluteRoot = path.resolve(rootDir);
   const listenHost = options.host ? (typeof options.host === 'string' ? options.host : '0.0.0.0') : '127.0.0.1';
   const server = http.createServer(

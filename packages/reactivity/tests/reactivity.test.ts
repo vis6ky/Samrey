@@ -468,5 +468,49 @@ describe('@samrey/reactivity', () => {
     zSrc.value = 20;
     assert.equal(compEvals, 1, 'Disposed computed must not re-evaluate or resurrect on read/update');
     assert.equal(effectEvals, 2, 'Disposed effect must not re-subscribe or re-run');
+
+    // 4. Synchronously creating an effect AFTER dispose() inside createRoot must not leak a zombie effect
+    const postDisposeSig = signal(0);
+    let postDisposeRuns = 0;
+    createRoot((dispose) => {
+      dispose();
+      effect(() => {
+        postDisposeRuns++;
+        void postDisposeSig.value;
+      });
+    });
+    postDisposeSig.value = 1;
+    postDisposeSig.value = 2;
+    assert.equal(postDisposeRuns, 0, 'Effect created under an already-disposed owner must not run or remain subscribed');
+
+    // 5. Infinite effect loop (SAMREY-301) caught by onError handler must allow recovery signal/effect updates to flush
+    const loopSig = signal(0);
+    const recoverySig = signal('idle');
+    const seenRecovery: string[] = [];
+    let cycleCaughtMsg = '';
+    const disposeCycleRoot = createRoot((dispose) => {
+      onError((err: unknown) => {
+        cycleCaughtMsg = err instanceof Error ? err.message : String(err);
+        recoverySig.value = 'recovered';
+      });
+      effect(() => {
+        seenRecovery.push(recoverySig.value);
+      });
+      effect(() => {
+        if (loopSig.value > 0) {
+          loopSig.update((n) => n + 1);
+        }
+      });
+      return dispose;
+    });
+    assert.deepEqual(seenRecovery, ['idle']);
+    try {
+      loopSig.value = 1;
+    } catch {
+      // ignore if rethrown after handling or verify recovery already flushed
+    }
+    assert.ok(cycleCaughtMsg.includes('SAMREY-301'));
+    assert.deepEqual(seenRecovery, ['idle', 'recovered'], 'Recovery signal set inside SAMREY-301 onError must flush its subscriber');
+    disposeCycleRoot();
   });
 });

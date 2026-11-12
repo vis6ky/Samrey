@@ -76,7 +76,14 @@ export function createField<T>(
       isValidatingSignal.value = false;
       return true;
     }
-    const res = validator(valueSignal.value);
+    let res: string | null | undefined | Promise<string | null | undefined>;
+    try {
+      res = validator(valueSignal.value);
+    } catch (err: any) {
+      errorSignal.value = err?.message || 'Validation error';
+      isValidatingSignal.value = false;
+      return false;
+    }
     if (isPromise(res)) {
       isValidatingSignal.value = true;
       return res
@@ -140,7 +147,7 @@ export function createField<T>(
 
   const dirtySignal = computed(() => !areValuesEqual(valueSignal.value, initial));
   const ariaSignal = computed(() => {
-    return computeAriaAttributes(name, !!errorSignal.value && touchedSignal.value, required);
+    return computeAriaAttributes(name, !!errorSignal.value, required);
   });
 
   return {

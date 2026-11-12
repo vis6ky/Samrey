@@ -6,7 +6,7 @@
  */
 
 import { el, Show, For } from '@samrey/runtime';
-import { signal, computed, effect } from '@samrey/reactivity';
+import { signal, computed, effect, onCleanup, untrack } from '@samrey/reactivity';
 import { icon } from '../lib/icons.js';
 import { validateSamreyCode } from '../lib/codeValidator.js';
 import { executeSamreyCode, sanitizeSandboxErrorMessage, PLAYGROUND_PRESETS, PlaygroundPreset } from '../lib/runtimeSandbox.js';
@@ -39,8 +39,19 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
     ];
   };
 
+  let activeDispose: (() => void) | null = null;
+  const cleanupActiveSandbox = () => {
+    if (activeDispose) {
+      const fn = activeDispose;
+      activeDispose = null;
+      fn();
+    }
+  };
+  onCleanup(cleanupActiveSandbox);
+
   // Compile and run the code safely in sandbox
   const handleRun = () => {
+    cleanupActiveSandbox();
     isExecuting.value = true;
     runtimeError.value = null;
     executionKey.value = executionKey.value + 1;
@@ -58,19 +69,25 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
     addLog('[Runtime] Initializing fine-grained reactive tree and DOM listeners...', 'info');
 
     try {
-      const execResult = executeSamreyCode(props.code.value, (msg, type) => {
-        addLog(msg, type);
-      });
+      const execResult = untrack(() =>
+        executeSamreyCode(props.code.value, (msg, type) => {
+          addLog(msg, type);
+        })
+      );
+      cleanupActiveSandbox();
+      activeDispose = execResult.dispose ?? null;
 
       if (execResult.success && execResult.node) {
         renderedElement.value = execResult.node;
         runtimeError.value = null;
         addLog('[Runtime] Component mounted and reactive bindings activated.', 'success');
       } else {
+        cleanupActiveSandbox();
         runtimeError.value = sanitizeSandboxErrorMessage(execResult.error || 'Failed to evaluate component tree.');
         renderedElement.value = null;
       }
     } catch (err: any) {
+      cleanupActiveSandbox();
       const msg = sanitizeSandboxErrorMessage(err?.message || String(err));
       runtimeError.value = msg;
       renderedElement.value = null;
@@ -80,11 +97,19 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
     }
   };
 
-  // Auto-run when opened
+  // Auto-run when opened and dispose when closed
   effect(() => {
-    if (props.isOpen.value && props.code.value) {
-      executionLogs.value = [];
-      handleRun();
+    const open = props.isOpen.value;
+    const sourceCode = props.code.value;
+    if (open && sourceCode) {
+      untrack(() => {
+        executionLogs.value = [];
+        handleRun();
+      });
+    } else if (!open) {
+      untrack(() => {
+        cleanupActiveSandbox();
+      });
     }
   });
 
@@ -167,6 +192,7 @@ export function PlaygroundModal(props: PlaygroundModalProps): HTMLElement {
             type: 'button',
             class: 'p-2 rounded-xl bg-slate-800 hover:bg-rose-900/80 text-slate-300 hover:text-rose-200 transition cursor-pointer',
             onClick: () => {
+              cleanupActiveSandbox();
               if (props.onClose) props.onClose();
               else props.isOpen.value = false;
             }

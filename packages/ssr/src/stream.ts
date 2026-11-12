@@ -296,6 +296,7 @@ export function renderToStream(
         }
       };
 
+      try {
       // 1. Run the app's synchronous shell render first with an active Owner and SSR context
       let shellResult: any = undefined;
       let bodyContent = '';
@@ -382,13 +383,20 @@ export function renderToStream(
         nonce
       });
 
-      send(`\n  ${stateScript}`);
-      if (clientScriptTag) {
-        send(`\n  ${clientScriptTag}`);
-      }
-      send(`\n</body>\n</html>`);
+        send(`\n  ${stateScript}`);
+        if (clientScriptTag) {
+          send(`\n  ${clientScriptTag}`);
+        }
+        send(`\n</body>\n</html>`);
 
-      safeClose();
+        safeClose();
+      } catch (err) {
+        if (!isClosed) {
+          safeError(err);
+        } else {
+          disposeActiveOwner();
+        }
+      }
     },
     cancel() {
       isClosed = true;

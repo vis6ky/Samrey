@@ -989,6 +989,39 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
           syncBuiltinESMExports();
         }
         assert.equal(sawOTrunc, false, 'safeWriteFile must verify fd identity before ftruncateSync instead of passing O_TRUNC to openSync');
+
+        // 4. resolveSafePath & executeSafeCommand must reject symlink/.. before lexical resolution and reject glob brace traversal / node_modul* wildcard
+        const escLink = path.join(realProj, 'tests', 'escape');
+        fs.symlinkSync(outDir, escLink);
+        const deepLink = path.join(realProj, 'tests', 'deep');
+        fs.symlinkSync(path.join(realProj, 'tests', 'sub'), deepLink);
+        assert.throws(
+          () => resolveSafePath(realProj, `${realProj}/tests/escape/../evil.test.mjs`),
+          /Security Exception/i
+        );
+        assert.throws(
+          () => safeWriteFile('tests/escape/../evil.txt', 'pwned', realProj, true),
+          /Security Exception/i
+        );
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', `${realProj}/tests/escape/../evil.test.mjs`], realProj),
+          /Security Exception/i
+        );
+        assert.equal(
+          resolveSafePath(realProj, 'tests/deep/../ok.test.mjs'),
+          path.join(realProj, 'tests', 'ok.test.mjs')
+        );
+        fs.unlinkSync(escLink);
+        fs.mkdirSync(path.join(realProj, 'node_modules'), { recursive: true });
+        fs.symlinkSync(outDir, path.join(realProj, 'node_modules', 'escape-mod'));
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', `${realProj}/node_modul*/*/*.mjs`], realProj),
+          /Security Exception/i
+        );
+        await assert.rejects(
+          () => executeSafeCommand('node', ['--test', `${realProj}/tests/{..,tests}/*.test.mjs`], realProj),
+          /Security Exception/i
+        );
       } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
       }

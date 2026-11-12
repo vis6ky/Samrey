@@ -281,10 +281,14 @@ describe('@samrey/security', () => {
 
     // 4. SVG dangerous elements (<animate>, <set>, <foreignObject>, <discard>) and data:image/svg+xml
     const svgAttack = '<svg><animate onbegin="alert(1)" attributeName="href" to="javascript:alert(1)"></animate><foreignObject><script>alert(2)</script></foreignObject><path d="M0 0" /></svg>';
-    for (const clean of [sanitizeHtmlString(svgAttack), sanitizeTemplateHtml(svgAttack)]) {
+    const cleanHtmlSvg = sanitizeHtmlString(svgAttack);
+    assert.ok(!cleanHtmlSvg.includes('<foreignObject'), 'Untrusted HTML must strip <foreignObject>');
+    const cleanTmplSvg = sanitizeTemplateHtml(svgAttack);
+    assert.ok(cleanTmplSvg.includes('<foreignObject>'), 'Compiled templates allow <foreignObject> container');
+    for (const clean of [cleanHtmlSvg, cleanTmplSvg]) {
       assert.ok(!clean.includes('<animate'));
       assert.ok(!clean.includes('onbegin'));
-      assert.ok(!clean.includes('<foreignObject'));
+      assert.ok(!clean.includes('<script'));
       assert.ok(!clean.includes('alert(2)'));
       assert.ok(clean.includes('<path d="M0 0" />'));
     }

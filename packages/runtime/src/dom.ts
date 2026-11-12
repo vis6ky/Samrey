@@ -198,11 +198,11 @@ export function rawHtml(html: string | (() => string)): Node {
         const val = html() || '';
         if (val !== prev) {
           prev = val;
-          span.innerHTML = val;
+          span.innerHTML = String(sanitize(val) ?? '');
         }
       });
     } else {
-      span.innerHTML = html || '';
+      span.innerHTML = String(sanitize(html || '') ?? '');
     }
     return span as unknown as Node;
   }

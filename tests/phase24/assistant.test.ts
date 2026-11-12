@@ -526,5 +526,77 @@ export const count = signal(0);
     timerRes.dispose!();
     await new Promise((r) => setTimeout(r, 30));
     assert.equal(timerLogs.filter((l) => l.includes('-fired') || l.includes('-tick')).length, 0, `Disposed timers must not fire, got: ${JSON.stringify(timerLogs)}`);
+
+    // 6. Batch 3 red-team: sanitize & enforce style, srcset/imagesrcset/ping, style.cssText, Attr.value, and toString TOCTOU
+    for (const domAttack of [
+      'const d = el("div"); d.setAttribute("style", "color: red; background: url(javascript:alert(1))"); d',
+      'const d = el("img"); d.setAttribute("srcset", "javascript:alert(1) 1x"); d',
+      'const d = el("link"); d.setAttribute("imagesrcset", "javascript:alert(1) 1x"); d',
+      'const d = el("a"); d.setAttribute("ping", "javascript:alert(1)"); d',
+      'const d = el("div"); d.style.cssText = "background: url(javascript:alert(1))"; d',
+      'const d = el("a", { href: "https://samrey.dev" }); d.attributes[0].value = "javascript:alert(1)"; d',
+      'let n = 0; const d = el("a"); d.setAttribute("href", { toString() { return ++n === 1 ? "https://safe.example" : "javascript:alert(1)"; } }); d',
+      'const s = el("div", { style: "color: red; background: url(javascript:alert(1))" }); s',
+      'const s2 = el("img", { srcset: "javascript:alert(1) 1x" }); s2',
+      'const h = rawHtml("<img src=x onerror=alert(1)>"); h'
+    ]) {
+      if (domAttack.includes('rawHtml')) {
+        const res = executeSamreyCode(domAttack);
+        assert.equal(res.success, true, res.error);
+        const serialized = String((res.node as any)?.outerHTML || (res.node as any)?.innerHTML || '');
+        assert.ok(!serialized.includes('onerror'), `Headless rawHtml inside sandbox must sanitize unsafe markup, got: ${serialized}`);
+      } else {
+        const res = executeSamreyCode(domAttack);
+        if (res.success) {
+          const d = res.node as any;
+          const styleVal = String(d?.getAttribute?.('style') ?? d?.style?.cssText ?? '');
+          const hrefVal = String(d?.getAttribute?.('href') ?? d?.attributes?.[0]?.value ?? '');
+          const srcsetVal = String(d?.getAttribute?.('srcset') ?? d?.getAttribute?.('imagesrcset') ?? '');
+          const pingVal = String(d?.getAttribute?.('ping') ?? '');
+          assert.ok(!styleVal.includes('javascript:'), `Mixed unsafe CSS leaked: ${styleVal}`);
+          assert.ok(!hrefVal.includes('javascript:'), `Unsafe href/TOCTOU leaked: ${hrefVal}`);
+          assert.ok(!srcsetVal.includes('javascript:'), `Unsafe srcset leaked: ${srcsetVal}`);
+          assert.ok(!pingVal.includes('javascript:'), `Unsafe ping leaked: ${pingVal}`);
+        }
+      }
+    }
+
+    // 7. PlaygroundModal disposes active sandbox timers when owner disposes
+    const { createRoot } = await import('@samrey/reactivity');
+    const { PlaygroundModal } = await import('../../src/components/PlaygroundModal.js');
+    const origSetInterval = globalThis.setInterval;
+    const origClearInterval = globalThis.clearInterval;
+    const activeTimers = new Set<any>();
+    let firedAfterDispose = 0;
+    let isDisposed = false;
+    (globalThis as any).setInterval = (fn: (...a: any[]) => void, ms?: number, ...rest: any[]) => {
+      const id = origSetInterval(() => {
+        if (isDisposed) firedAfterDispose++;
+        fn();
+      }, ms, ...rest);
+      activeTimers.add(id);
+      return id;
+    };
+    (globalThis as any).clearInterval = (id: any) => {
+      activeTimers.delete(id);
+      return origClearInterval(id);
+    };
+    try {
+      await createRoot(async (dispose) => {
+        PlaygroundModal({
+          isOpen: { value: true },
+          code: { value: 'setInterval(() => {}, 5); el("div", null, "modal")' }
+        });
+        assert.ok(activeTimers.size > 0, 'PlaygroundModal sandbox must start an active interval');
+        isDisposed = true;
+        dispose();
+        assert.equal(activeTimers.size, 0, 'PlaygroundModal dispose must clear all sandbox intervals');
+        await new Promise((r) => setTimeout(r, 25));
+        assert.equal(firedAfterDispose, 0, 'Disposed PlaygroundModal interval must not fire');
+      });
+    } finally {
+      globalThis.setInterval = origSetInterval;
+      globalThis.clearInterval = origClearInterval;
+    }
   });
 });

@@ -24,7 +24,11 @@ function drainPendingEffects(): void {
         const firstSubOwner = Array.from(pendingEffects)[0]?.owner ?? null;
         pendingEffects.clear();
         const err = new Error('[SAMREY-301] Maximum reactive batch update cycles (1000) exceeded. Detected cyclic dependency or infinite effect loop.');
+        isFlushing = false;
         handleError(err, firstSubOwner, activeSubscriber?.owner ?? null);
+        if (pendingEffects.size > 0 && batchDepth === 0) {
+          drainPendingEffects();
+        }
         throw err;
       }
       const current = Array.from(pendingEffects);

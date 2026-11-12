@@ -194,6 +194,31 @@ describe('@samrey/ssr - Streaming HTML Renderer', () => {
       await abortStream.getReader().cancel('stop early');
       await new Promise((res) => setTimeout(res, 30));
       assert.equal(unhandled.length, 0, `Unexpected unhandledRejection(s): ${unhandled.length}`);
+
+      // Batch 3 red-team: post-shell error in serializeStateForHydration(strictSecrets) must clean up abortSignal listener, timer, and owner
+      const ac = new AbortController();
+      let addCount = 0;
+      let remCount = 0;
+      const origAdd = ac.signal.addEventListener.bind(ac.signal);
+      const origRem = ac.signal.removeEventListener.bind(ac.signal);
+      ac.signal.addEventListener = (...a: any[]) => { addCount++; return (origAdd as any)(...a); };
+      ac.signal.removeEventListener = (...a: any[]) => { remCount++; return (origRem as any)(...a); };
+
+      const secretStream = renderToStream(() => '<p>Shell</p>', {
+        strictSecrets: true,
+        state: { apiKey: 'secret-token' },
+        timeoutMs: 500,
+        abortSignal: ac.signal
+      });
+      await assert.rejects(async () => {
+        const reader = secretStream.getReader();
+        while (true) {
+          const { done } = await reader.read();
+          if (done) break;
+        }
+      }, /Security Violation|secret/i);
+      assert.equal(addCount, 1);
+      assert.equal(remCount, 1, 'renderToStream must remove abortSignal listener when post-shell serialization throws');
     } finally {
       process.off('unhandledRejection', onUnhandled);
     }

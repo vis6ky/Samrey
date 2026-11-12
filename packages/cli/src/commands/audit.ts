@@ -125,18 +125,30 @@ function findAuditFiles(dir: string, baseDir = dir, userIgnores: string[] = []):
   return results;
 }
 
+function formatAuditResult(
+  success: boolean,
+  textMessage: string,
+  payload: { filesScanned: number; violationsCount: number; messages: string[] },
+  json?: boolean
+): CommandResult {
+  return {
+    success,
+    message: json ? JSON.stringify({ success, ...payload }, null, 2) : textMessage,
+    exitCode: success ? 0 : 1,
+    data: payload
+  };
+}
+
 export async function runAuditCommand(options: AuditCommandOptions = {}): Promise<CommandResult> {
   if (options.fix) {
-    return {
-      success: false,
-      message: '[Samrey Audit Error] Automatic "--fix" is not supported because remediating inline scripts, URIs, and alt text safely requires semantic review.',
-      exitCode: 1,
-      data: {
-        filesScanned: 0,
-        violationsCount: 0,
-        messages: ['Automatic --fix is not supported.']
-      }
-    };
+    const errText =
+      '[Samrey Audit Error] Automatic "--fix" is not supported because remediating inline scripts, URIs, and alt text safely requires semantic review.';
+    return formatAuditResult(
+      false,
+      errText,
+      { filesScanned: 0, violationsCount: 0, messages: ['Automatic --fix is not supported.'] },
+      options.json
+    );
   }
 
   const projectRoot = options.cwd || process.cwd();
@@ -150,21 +162,21 @@ export async function runAuditCommand(options: AuditCommandOptions = {}): Promis
   if (discoveredFiles.length === 0) {
     const warningMsg = '  ⚠ Warning: 0 files scanned for audit.';
     const strictFail = Boolean(options.strict);
-    return {
-      success: !strictFail,
-      message: [
-        warningMsg,
-        strictFail
-          ? '  ✖ Audit failed: --strict requires at least one file to be scanned.'
-          : '  ✓ Audit completed with 0 files scanned.'
-      ].join('\n'),
-      exitCode: strictFail ? 1 : 0,
-      data: {
-        filesScanned: 0,
-        violationsCount: 0,
-        messages: [warningMsg]
-      }
-    };
+    const messages = strictFail
+      ? [warningMsg, 'Audit failed: --strict requires at least one file to be scanned.']
+      : [warningMsg];
+    const textMessage = [
+      warningMsg,
+      strictFail
+        ? '  ✖ Audit failed: --strict requires at least one file to be scanned.'
+        : '  ✓ Audit completed with 0 files scanned.'
+    ].join('\n');
+    return formatAuditResult(
+      !strictFail,
+      textMessage,
+      { filesScanned: 0, violationsCount: 0, messages },
+      options.json
+    );
   }
 
   let totalViolations = 0;
@@ -198,10 +210,5 @@ export async function runAuditCommand(options: AuditCommandOptions = {}): Promis
     messages: allMessages
   };
 
-  return {
-    success: passed,
-    message: options.json ? JSON.stringify({ success: passed, ...payload }, null, 2) : reportText,
-    exitCode: passed ? 0 : 1,
-    data: payload
-  };
+  return formatAuditResult(passed, reportText, payload, options.json);
 }

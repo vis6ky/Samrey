@@ -430,13 +430,19 @@ describe('AI Docs, Skills & Example Engine API Accuracy Audit', () => {
       }
     }
 
-    // Verify packages/ssr/README.md ## API bullets all exist in @samrey/ssr
-    const ssrMod = await import('../packages/ssr/src/index.ts');
-    const ssrReadme = fs.readFileSync('packages/ssr/README.md', 'utf8');
-    const ssrApiSec = ssrReadme.match(/## API([\s\S]*?)## /)?.[1] || '';
-    for (const m of ssrApiSec.matchAll(/^- `([A-Za-z_$][A-Za-z0-9_$]*)\(/gm)) {
-      if (!(m[1] in ssrMod)) {
-        issues.push(`[packages/ssr/README.md] documented API "${m[1]}" is not exported by @samrey/ssr`);
+    // Verify all packages/*/README.md ## API symbol bullets exist in the corresponding package exports
+    for (const pkgName of PACKAGES) {
+      const readmePath = path.join('packages', pkgName, 'README.md');
+      if (!fs.existsSync(readmePath)) continue;
+      const pkgMod = await import(`../packages/${pkgName}/src/index.ts`);
+      const readmeTxt = fs.readFileSync(readmePath, 'utf8');
+      const apiSection = readmeTxt.match(/^## API\r?\n([\s\S]*?)(?:\r?\n## |$)/m)?.[1] || '';
+      if (!apiSection) continue;
+      for (const m of apiSection.matchAll(/^- `([A-Za-z_$][A-Za-z0-9_$]*)/gm)) {
+        const sym = m[1];
+        if (!(sym in pkgMod)) {
+          issues.push(`[${readmePath}] documented API "${sym}" is not exported by @samrey/${pkgName}`);
+        }
       }
     }
 
@@ -452,6 +458,59 @@ describe('AI Docs, Skills & Example Engine API Accuracy Audit', () => {
       issues.length,
       0,
       `Found ${issues.length} Item 10 documentation / knowledge sync issue(s):\n  - ${issues.join('\n  - ')}`
+    );
+  });
+
+  it('Batch 4 regression: validates every KNOWLEDGE_BASE example, RECIPES implementation, and Markdown @samrey/* code block with zero errors', async () => {
+    const { KNOWLEDGE_BASE } = await import('../src/data/assistantKnowledge.js');
+    const { RECIPES } = await import('../src/data/recipeCatalog.js');
+    const issues: string[] = [];
+
+    for (const entry of KNOWLEDGE_BASE) {
+      const aiRes = validateAiCode(entry.tsCodeExample);
+      for (const e of aiRes.errors) issues.push(`[KNOWLEDGE_BASE:${entry.id} AI] ${e.message}`);
+      for (const w of aiRes.warnings) issues.push(`[KNOWLEDGE_BASE:${entry.id} AI WARN] ${w.message}`);
+      const webRes = validateWebCode(entry.tsCodeExample);
+      for (const e of webRes.errors) issues.push(`[KNOWLEDGE_BASE:${entry.id} WEB] ${e}`);
+      for (const f of webRes.foreignApis) issues.push(`[KNOWLEDGE_BASE:${entry.id} WEB FOREIGN] ${f.name}`);
+    }
+
+    for (const recipe of RECIPES) {
+      const aiRes = validateAiCode(recipe.implementation);
+      for (const e of aiRes.errors) issues.push(`[RECIPES:${recipe.id} AI] ${e.message}`);
+      for (const w of aiRes.warnings) issues.push(`[RECIPES:${recipe.id} AI WARN] ${w.message}`);
+      const webRes = validateWebCode(recipe.implementation);
+      for (const e of webRes.errors) issues.push(`[RECIPES:${recipe.id} WEB] ${e}`);
+      for (const f of webRes.foreignApis) issues.push(`[RECIPES:${recipe.id} WEB FOREIGN] ${f.name}`);
+    }
+
+    const mdFiles = [
+      ...PACKAGES.map((p) => path.join('packages', p, 'README.md')),
+      ...(fs.existsSync('docs')
+        ? fs.readdirSync('docs').filter((f) => f.endsWith('.md')).map((f) => path.join('docs', f))
+        : []),
+      ...(fs.existsSync('skills')
+        ? fs.readdirSync('skills').map((s) => path.join('skills', s, 'SKILL.md'))
+        : [])
+    ].filter((f) => fs.existsSync(f));
+
+    for (const mdFile of mdFiles) {
+      const raw = fs.readFileSync(mdFile, 'utf8');
+      const blocks = [...raw.matchAll(/```(?:ts|tsx|typescript)\r?\n([\s\S]*?)\r?\n```/g)];
+      blocks.forEach((m, idx) => {
+        const snippet = m[1];
+        if (!snippet.includes('@samrey/')) return;
+        const aiRes = validateAiCode(snippet);
+        for (const e of aiRes.errors) issues.push(`[${mdFile}#${idx} AI] ${e.message}`);
+        const webRes = validateWebCode(snippet);
+        for (const e of webRes.errors) issues.push(`[${mdFile}#${idx} WEB] ${e}`);
+      });
+    }
+
+    assert.strictEqual(
+      issues.length,
+      0,
+      `Found ${issues.length} Batch 4 code example validation issue(s):\n  - ${issues.join('\n  - ')}`
     );
   });
 });

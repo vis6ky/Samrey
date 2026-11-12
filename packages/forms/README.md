@@ -15,7 +15,7 @@ npm install @samrey/forms @samrey/reactivity @samrey/runtime
 ## Quick Example
 
 ```ts
-import { createForm, validators } from '@samrey/forms';
+import { createForm, bindField, validators } from '@samrey/forms';
 import { el } from '@samrey/runtime';
 
 const form = createForm({
@@ -23,7 +23,7 @@ const form = createForm({
     username: '',
     email: ''
   },
-  rules: {
+  validators: {
     username: [validators.required('Username is required'), validators.minLength(3, 'Minimum 3 characters')],
     email: [validators.required('Email is required'), validators.email('Invalid email address')]
   },
@@ -32,15 +32,16 @@ const form = createForm({
   }
 });
 
-const usernameField = form.register('username');
+const usernameInput = el('input', { type: 'text', ...bindField(form.fields.username) });
 ```
 
 ## API
 
-- `createForm(options: FormOptions<T>): Form<T>` — Creates a reactive form instance with validation and submission lifecycle.
-- `Form.register(fieldName: keyof T): FieldBindings` — Generates reactive two-way DOM attributes and accessibility props (`aria-invalid`, `aria-describedby`).
-- `Form.handleSubmit(fn?: SubmitHandler<T>): (e?: Event) => Promise<void>` — Submits the form after triggering full validation.
-- `Form.reset(): void` — Resets all fields back to initial values and clears dirty/touched flags.
+- `createForm(options: FormConfig<T>): FormInstance<T>` — Creates a reactive form instance with validation, `fields`, `submit`, `handleSubmit`, and `reset`.
+- `createField(options: FieldOptions<T>): FieldState<T>` — Creates a standalone reactive field with signal state and validation.
+- `bindField(field: FieldState<string>, options?): FieldBindings` — Generates reactive two-way DOM attributes and accessibility props (`aria-invalid`, `aria-describedby`).
+- `getAccessibleFieldProps(field: FieldState<any>, errorId?: string)` — Returns reactive ARIA props for accessible field rendering.
+- `validateSchema(schema, values)` — Executes a Standard Schema v1 validator against form values.
 - `validators.required(message?)` — Required value rule.
 - `validators.email(message?)` — Email format validator.
 - `validators.minLength(min, message?)` — Minimum length validator.

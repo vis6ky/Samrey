@@ -8,7 +8,13 @@
  * all host globals (`window`, `document`, `globalThis`, `process`, `Function`).
  */
 
-import { sanitizeUri, sanitizeCssStyle } from '@samrey/security';
+import {
+  sanitizeUri,
+  sanitizeCssStyle,
+  sanitizeSrcset,
+  URL_ATTRIBUTES,
+  SRCSET_ATTRIBUTES
+} from '@samrey/security';
 
 const BLOCKED_PROPERTY_KEYS = new Set([
   'constructor',
@@ -149,6 +155,19 @@ function isDomNode(val: unknown): val is Record<string, any> {
   return typeof (val as { nodeType?: unknown }).nodeType === 'number';
 }
 
+function isStyleDecl(val: unknown): val is Record<string, any> {
+  if (!val || typeof val !== 'object') return false;
+  if (SANDBOX_DOM_STYLE_OBJECTS.has(val)) return true;
+  if (typeof CSSStyleDeclaration !== 'undefined' && val instanceof CSSStyleDeclaration) return true;
+  return typeof (val as { cssText?: unknown }).cssText === 'string' && typeof (val as { setProperty?: unknown }).setProperty === 'function';
+}
+
+function isAttrNode(val: unknown): val is Record<string, any> & { nodeType: number; name?: string } {
+  if (!val || typeof val !== 'object') return false;
+  if (SANDBOX_DOM_ATTR_NODES.has(val)) return true;
+  return isDomNode(val) && (val as { nodeType: number }).nodeType === 2;
+}
+
 function assertMutableSandboxTarget(target: unknown, action: string): void {
   if (
     IMMUTABLE_HOST_OBJECTS.has(target) ||
@@ -162,7 +181,26 @@ function assertMutableSandboxTarget(target: unknown, action: string): void {
   }
 }
 
-function assertSafeDomAttrWrite(attrName: unknown, attrVal: unknown): void {
+function sanitizeSafeStyleValue(strVal: string, label: string): string {
+  const trimmed = strVal.trim();
+  if (!trimmed) return '';
+  const sanitized = sanitizeCssStyle(trimmed);
+  if (sanitized === '') {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS in "${label}" is prohibited.`);
+  }
+  if (sanitized.includes('/*blocked*/')) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS in "${label}" is prohibited.`);
+  }
+  if (sanitized.includes('url("")') && !/url\(\s*(?:""|'')?\s*\)/i.test(trimmed)) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS URL in "${label}" is prohibited.`);
+  }
+  if (sanitized.includes('image-set("")') && !/image-set\(\s*(?:""|'')?\s*\)/i.test(trimmed)) {
+    throw new TypeError(`[Sandbox Security] Unsafe CSS image-set in "${label}" is prohibited.`);
+  }
+  return sanitized;
+}
+
+function sanitizeSafeDomAttrWrite(attrName: unknown, attrVal: unknown): { key: string; value: string } {
   const key = String(attrName ?? '').trim();
   const lk = key.toLowerCase();
   if (!key || RESTRICTED_DOM_ATTRS.has(lk)) {
@@ -172,18 +210,35 @@ function assertSafeDomAttrWrite(attrName: unknown, attrVal: unknown): void {
     throw new TypeError(`[Sandbox Security] Inline DOM event attribute "${key}" is prohibited inside the sandbox.`);
   }
   const strVal = attrVal === undefined || attrVal === null ? '' : String(attrVal);
-  if (URI_DOM_ATTRS.has(lk) && strVal.trim()) {
+  if (SRCSET_ATTRIBUTES.has(lk) && strVal.trim()) {
+    const safeSrcset = sanitizeSrcset(strVal);
+    if (!safeSrcset) {
+      throw new TypeError(`[Sandbox Security] Unsafe srcset in "${key}" attribute is prohibited.`);
+    }
+    return { key, value: safeSrcset };
+  }
+  if (lk === 'ping' && strVal.trim()) {
+    const cleanedTokens: string[] = [];
+    for (const token of strVal.trim().split(/\s+/)) {
+      const safeToken = sanitizeUri(token, { allowImageDataUri: false, allowProtocolRelative: false });
+      if (safeToken === 'about:blank' || safeToken === '') {
+        throw new TypeError(`[Sandbox Security] Unsafe URI in "${key}" attribute is prohibited.`);
+      }
+      cleanedTokens.push(safeToken);
+    }
+    return { key, value: cleanedTokens.join(' ') };
+  }
+  if ((URI_DOM_ATTRS.has(lk) || URL_ATTRIBUTES.has(lk)) && strVal.trim()) {
     const safe = sanitizeUri(strVal, { allowImageDataUri: lk === 'src' || lk === 'poster', allowProtocolRelative: false });
     if (safe === 'about:blank' || safe === '') {
       throw new TypeError(`[Sandbox Security] Unsafe URI in "${key}" attribute is prohibited.`);
     }
+    return { key, value: safe };
   }
   if (lk === 'style' && strVal.trim()) {
-    const sanitized = sanitizeCssStyle(strVal);
-    if (sanitized === '' && /(?:javascript|vbscript|expression|url\s*\()/i.test(strVal)) {
-      throw new TypeError('[Sandbox Security] Unsafe CSS in "style" attribute is prohibited.');
-    }
+    return { key, value: sanitizeSafeStyleValue(strVal, 'style attribute') };
   }
+  return { key, value: strVal };
 }
 
 function createSafeObjectNamespace() {
@@ -1648,6 +1703,9 @@ function tickStep(budget: ExecBudget): void {
 }
 
 const SAFE_DOM_METHOD_CACHE = new WeakMap<object, Map<string, Function>>();
+const SANDBOX_DOM_STYLE_OBJECTS = new WeakSet<object>();
+const SANDBOX_DOM_ATTR_MAPS = new WeakSet<object>();
+const SANDBOX_DOM_ATTR_NODES = new WeakSet<object>();
 
 function readSafeProp(obj: unknown, keyRaw: unknown): unknown {
   if (obj === null || obj === undefined) {
@@ -1667,18 +1725,48 @@ function readSafeProp(obj: unknown, keyRaw: unknown): unknown {
       wrapped =
         key === 'setAttribute'
           ? function safeSetAttribute(attrName: unknown, attrVal: unknown) {
-              assertSafeDomAttrWrite(attrName, attrVal);
-              return (origFn as (...a: unknown[]) => unknown).call(obj, attrName, attrVal);
+              const clean = sanitizeSafeDomAttrWrite(attrName, attrVal);
+              return (origFn as (...a: unknown[]) => unknown).call(obj, clean.key, clean.value);
             }
           : function safeSetAttributeNS(ns: unknown, attrName: unknown, attrVal: unknown) {
-              assertSafeDomAttrWrite(attrName, attrVal);
-              return (origFn as (...a: unknown[]) => unknown).call(obj, ns, attrName, attrVal);
+              const clean = sanitizeSafeDomAttrWrite(attrName, attrVal);
+              return (origFn as (...a: unknown[]) => unknown).call(obj, ns, clean.key, clean.value);
             };
       cached.set(key, wrapped);
     }
     return wrapped;
   }
+  if (isStyleDecl(obj) && key === 'setProperty') {
+    const origFn = (obj as Record<string, unknown>)[key];
+    if (typeof origFn !== 'function') return origFn;
+    let cached = SAFE_DOM_METHOD_CACHE.get(obj);
+    if (!cached) {
+      cached = new Map();
+      SAFE_DOM_METHOD_CACHE.set(obj, cached);
+    }
+    let wrapped = cached.get(key);
+    if (!wrapped) {
+      wrapped = function safeSetProperty(propName: unknown, propVal: unknown, priority?: unknown) {
+        const cleanProp = String(propName ?? '').trim();
+        const rawVal = propVal === undefined || propVal === null ? '' : String(propVal);
+        if (cleanProp && rawVal.trim()) {
+          sanitizeSafeStyleValue(`${cleanProp}: ${rawVal}`, `style.${cleanProp}`);
+        }
+        return (origFn as (...a: unknown[]) => unknown).call(obj, cleanProp, rawVal, priority);
+      };
+      cached.set(key, wrapped);
+    }
+    return wrapped;
+  }
   const val = (obj as Record<string, unknown>)[key];
+  if (val && typeof val === 'object') {
+    if (isDomNode(obj)) {
+      if (key === 'style') SANDBOX_DOM_STYLE_OBJECTS.add(val);
+      else if (key === 'attributes') SANDBOX_DOM_ATTR_MAPS.add(val);
+    } else if (SANDBOX_DOM_ATTR_MAPS.has(obj)) {
+      SANDBOX_DOM_ATTR_NODES.add(val);
+    }
+  }
   assertSafeValue(val);
   return val;
 }
@@ -1697,18 +1785,38 @@ function writeSafeProp(obj: unknown, keyRaw: unknown, value: unknown): unknown {
   ) {
     throw new TypeError(`[Sandbox Security] Mutating host or intrinsic property "${key}" is prohibited.`);
   }
-  if (isDomNode(obj)) {
+  let writeVal = value;
+  if (isAttrNode(obj) && (key === 'value' || key === 'nodeValue' || key === 'textContent')) {
+    const attrName = String(obj.name ?? '').trim();
+    if (attrName) {
+      writeVal = sanitizeSafeDomAttrWrite(attrName, value).value;
+    }
+  } else if (isStyleDecl(obj)) {
+    const rawStr = value === undefined || value === null ? '' : String(value);
+    if (key === 'cssText') {
+      writeVal = rawStr.trim() ? sanitizeSafeStyleValue(rawStr, 'style.cssText') : '';
+    } else if (rawStr.trim()) {
+      sanitizeSafeStyleValue(`${key}: ${rawStr}`, `style.${key}`);
+      writeVal = rawStr;
+    }
+  } else if (isDomNode(obj)) {
     const lk = key.toLowerCase();
     if (lk.startsWith('on')) {
       throw new TypeError(`[Sandbox Security] Direct DOM event property "${key}" assignment is prohibited.`);
     }
-    if (URI_DOM_ATTRS.has(lk) || RESTRICTED_DOM_ATTRS.has(lk)) {
-      assertSafeDomAttrWrite(key, value);
+    if (
+      URI_DOM_ATTRS.has(lk) ||
+      URL_ATTRIBUTES.has(lk) ||
+      SRCSET_ATTRIBUTES.has(lk) ||
+      RESTRICTED_DOM_ATTRS.has(lk) ||
+      lk === 'style'
+    ) {
+      writeVal = sanitizeSafeDomAttrWrite(key, value).value;
     }
   }
-  assertSafeValue(value);
-  (obj as Record<string, unknown>)[key] = value;
-  return value;
+  assertSafeValue(writeVal);
+  (obj as Record<string, unknown>)[key] = writeVal;
+  return writeVal;
 }
 
 function deleteSafeProp(obj: unknown, keyRaw: unknown): boolean {
@@ -2393,7 +2501,7 @@ class SandboxEvaluator {
       case 'VarDecl': {
         for (const decl of stmt.decls) {
           const val = decl.init ? await this.evalExprAsync(decl.init, env) : undefined;
-          this.bindPattern(decl.pattern, stmt.declKind, val, env);
+          this.runAtDepth(env.frameDepth, () => this.bindPattern(decl.pattern, stmt.declKind, val, env));
         }
         return NORMAL_VOID;
       }
@@ -2443,7 +2551,7 @@ class SandboxEvaluator {
             tickStep(this.budget);
             const iterEnv = new Env(env);
             if (stmt.declKind) {
-              this.bindPattern(stmt.left, stmt.declKind, item, iterEnv);
+              this.runAtDepth(iterEnv.frameDepth, () => this.bindPattern(stmt.left, stmt.declKind!, item, iterEnv));
             } else if (stmt.left.kind === 'IdentPat') {
               env.set(stmt.left.name, item);
             }
@@ -2457,7 +2565,7 @@ class SandboxEvaluator {
             if (BLOCKED_PROPERTY_KEYS.has(key)) continue;
             const iterEnv = new Env(env);
             if (stmt.declKind) {
-              this.bindPattern(stmt.left, stmt.declKind, key, iterEnv);
+              this.runAtDepth(iterEnv.frameDepth, () => this.bindPattern(stmt.left, stmt.declKind!, key, iterEnv));
             } else if (stmt.left.kind === 'IdentPat') {
               env.set(stmt.left.name, key);
             }
@@ -2480,7 +2588,10 @@ class SandboxEvaluator {
           }
           if (stmt.handlerBlock) {
             const catchEnv = new Env(env);
-            if (stmt.handlerParam) this.bindPattern(stmt.handlerParam, 'let', err, catchEnv);
+            if (stmt.handlerParam) {
+              const handlerParam = stmt.handlerParam;
+              this.runAtDepth(catchEnv.frameDepth, () => this.bindPattern(handlerParam, 'let', err, catchEnv));
+            }
             this.hoistStatements(stmt.handlerBlock, catchEnv);
             sig = await this.execStmtListAsync(stmt.handlerBlock, catchEnv);
           } else {

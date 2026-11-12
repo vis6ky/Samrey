@@ -15,37 +15,43 @@ npm install @samrey/router @samrey/reactivity @samrey/runtime
 ## Quick Example
 
 ```ts
-import { createRouter, Link, RouterOutlet } from '@samrey/router';
+import { createRouter, Link, RouterOutlet, useParams } from '@samrey/router';
 import { el } from '@samrey/runtime';
 
 const routes = [
   { path: '/', component: () => el('h1', null, 'Home View') },
-  { path: '/users/:id', component: (params) => el('h2', null, `User ID: ${params.id}`) },
+  {
+    path: '/users/:id',
+    component: () => {
+      const params = useParams();
+      return el('h2', null, () => `User ID: ${params.value.id ?? ''}`);
+    }
+  },
   { path: '*', component: () => el('h1', null, '404 Not Found') }
 ];
 
-const router = createRouter({ routes });
+export const router = createRouter(routes);
 
 function App() {
   return el('div', null,
     el('nav', null,
-      Link({ to: '/', children: 'Home' }),
-      Link({ to: '/users/42', children: 'User Profile' })
+      Link({ href: '/', children: 'Home' }),
+      Link({ href: '/users/42', children: 'User Profile' })
     ),
-    RouterOutlet({ router })
+    RouterOutlet()
   );
 }
 ```
 
 ## API
 
-- `createRouter(options: RouterOptions): Router` — Creates a reactive router instance.
+- `createRouter(routes: RouteRecord[], initialPath?: string): RouterInstance` — Creates a reactive router instance.
 - `Link(props: LinkProps): HTMLElement` — Accessible navigation link component with active state handling.
-- `RouterOutlet(props: RouterOutletProps): HTMLElement` — Container rendering the component for the active matched route.
-- `useRouter(): Router` — Retrieves the active router instance from context.
-- `useParams(): Signal<Record<string, string>>` — Reactive signal containing matched URL route parameters.
-- `useLocation(): Signal<LocationState>` — Reactive signal containing path, search, and hash.
-- `useSearchParams(): [Signal<URLSearchParams>, (params: Record<string, string>) => void]` — Reactive query parameter hook.
+- `RouterOutlet(): HTMLElement` — Container rendering the component for the active matched route.
+- `useRouter(): RouterInstance` — Retrieves the active router instance from context.
+- `useParams(): ReadonlySignal<Record<string, string>>` — Reactive signal containing matched URL route parameters.
+- `useLocation(): ReadonlySignal<{ pathname: string; search: string; hash: string }>` — Reactive signal containing path, search, and hash.
+- `useSearchParams(): [ReadonlySignal<URLSearchParams>, (next: Record<string, string>) => void]` — Reactive query parameter helper.
 - `matchRoute(pattern: string, pathname: string): RouteMatch | null` — Utility matching URL path patterns.
 
 ## Environment

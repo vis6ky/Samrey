@@ -10,6 +10,7 @@ import { CommandResult } from './create.js';
 export type GenerateArtifactType = 'component' | 'route' | 'store' | 'resource';
 
 export interface GenerateCommandOptions {
+  cwd?: string;
   type: GenerateArtifactType;
   name: string;
   targetDir?: string;
@@ -233,9 +234,10 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
 
   const scaffold = scaffoldArtifact(options.type, cleanName);
 
+  const projectRoot = options.cwd || process.cwd();
   let targetDir = options.targetDir;
   if (!targetDir) {
-    const srcDir = path.join(process.cwd(), 'src');
+    const srcDir = path.join(projectRoot, 'src');
     if (fs.existsSync(srcDir)) {
       if (options.type === 'component') {
         targetDir = path.join(srcDir, 'components');
@@ -249,7 +251,7 @@ export async function runGenerateCommand(options: GenerateCommandOptions): Promi
         targetDir = srcDir;
       }
     } else {
-      targetDir = process.cwd();
+      targetDir = projectRoot;
     }
   }
 

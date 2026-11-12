@@ -21,26 +21,31 @@ import { signal } from '@samrey/reactivity';
 const userId = signal('1');
 
 // 1. Reactive Resource fetching
-const [user, { mutate, refetch }] = createResource(userId, async (id, { signal }) => {
-  const res = await fetch(`https://api.example.com/users/${id}`, { signal });
-  if (!res.ok) throw new Error('Failed to fetch user');
-  return res.json();
-});
+const [user, { mutate, refetch }] = createResource(
+  () => userId.value,
+  async (id, { abortSignal }) => {
+    const res = await fetch(`https://api.example.com/users/${id}`, { signal: abortSignal });
+    if (!res.ok) throw new Error('Failed to fetch user');
+    return res.json();
+  }
+);
 
 console.log(user.loading.value); // true
 console.log(user.data.value);    // undefined -> user object once resolved
 
 // 2. Typed HTTP Client
 const client = new HttpClient({ baseUrl: 'https://api.example.com' });
-const data = await client.get('/items');
+const response = await client.get('/items');
+console.log(response.data);
 ```
 
 ## API
 
-- `createResource<T, S>(source, fetcher, options)` — Creates a reactive resource bound to source signals. Returns `[ResourceSignal<T>, ResourceActions<T>]`.
-- `HttpClient` — Configurable HTTP client class with interceptors, timeouts, and JSON helpers.
-- `RequestCache` — Request cache and deduplication store.
-- `createHttpError(status, message, response)` — Structured HTTP error constructor with status codes.
+- `createResource<T, S>(source, fetcher, options)` — Creates a reactive resource bound to source accessors (iterable `[resource, { refetch, mutate }]`).
+- `createHttpClient(options?: HttpClientOptions): HttpClient` — Factory creating a configured `HttpClient` instance.
+- `HttpClient` — Configurable HTTP client class with interceptors, CSRF protection, same-origin enforcement, timeouts, and JSON helpers.
+- `RequestCache` / `createHttpCache` — Request cache and in-flight deduplication store.
+- `HttpError` — Structured HTTP error class with status code and parsed body.
 
 ## Environment
 

@@ -192,9 +192,12 @@ export class HttpClient {
     try {
       let res!: Response;
       for (let hop = 0; hop <= maxRedirects; hop++) {
+        const effectiveRedirect: RequestRedirect = !allowCrossOrigin
+          ? (options.redirect === 'error' ? 'error' : 'manual')
+          : (options.redirect ?? 'manual');
         res = await fetch(currentUrl, {
           ...options,
-          redirect: options.redirect ?? (!allowCrossOrigin ? 'manual' : 'follow'),
+          redirect: effectiveRedirect,
           method: currentMethod,
           headers,
           body: requestBody,
@@ -251,15 +254,29 @@ export class HttpClient {
         } else {
           const sentinelBase = 'https://__samrey_self__.invalid';
           const resolved = new URL(trimmedLoc, new URL(currentUrl || '/', sentinelBase));
-          if (!allowCrossOrigin && resolved.origin !== sentinelBase) {
-            throw new Error(`[Samrey HTTP] Blocked cross-origin redirect "${locationHeader}" (allowCrossOrigin is false)`);
+          if (resolved.origin !== sentinelBase) {
+            if (!allowCrossOrigin) {
+              throw new Error(`[Samrey HTTP] Blocked cross-origin redirect "${locationHeader}" (allowCrossOrigin is false)`);
+            }
+            const proto = (typeof window !== 'undefined' && /^https?:$/i.test(window.location?.protocol || ''))
+              ? window.location.protocol
+              : 'https:';
+            const externalUrl = trimmedLoc.startsWith('//')
+              ? `${proto}//${resolved.host}${resolved.pathname}${resolved.search}${resolved.hash}`
+              : resolved.href;
+            const safe = sanitizeUri(externalUrl);
+            if (safe === 'about:blank' || isProtocolRelativeUrl(safe)) {
+              throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${locationHeader}"`);
+            }
+            nextTarget = safe;
+          } else {
+            const relTarget = `${resolved.pathname}${resolved.search}${resolved.hash}`;
+            const safe = sanitizeUri(relTarget);
+            if (safe === 'about:blank' || (!allowCrossOrigin && isProtocolRelativeUrl(safe))) {
+              throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${locationHeader}"`);
+            }
+            nextTarget = safe;
           }
-          const relTarget = `${resolved.pathname}${resolved.search}${resolved.hash}`;
-          const safe = sanitizeUri(relTarget);
-          if (safe === 'about:blank' || (!allowCrossOrigin && isProtocolRelativeUrl(safe))) {
-            throw new Error(`[Samrey HTTP] Blocked insecure redirect URL: "${locationHeader}"`);
-          }
-          nextTarget = safe;
         }
 
         if (/^https?:\/\//i.test(nextTarget)) {

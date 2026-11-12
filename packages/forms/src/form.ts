@@ -225,7 +225,7 @@ export function createForm<TValues extends Record<string, any>>(
 
       // 4. Run onSubmit
       await config.onSubmit(finalValues);
-      return epoch === resetEpoch;
+      return true;
     } finally {
       if (epoch === resetEpoch) {
         submitInFlight = false;

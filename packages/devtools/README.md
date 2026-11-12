@@ -15,11 +15,11 @@ npm install -D @samrey/devtools @samrey/reactivity
 ## Quick Example
 
 ```ts
-import { initDevtools, getGraphSnapshot } from '@samrey/devtools';
+import { initDevTools, getGraphSnapshot, defaultGraphInspector } from '@samrey/devtools';
 import { signal, effect } from '@samrey/reactivity';
 
 // 1. Initialize devtools bridge
-const devtools = initDevtools({ enableLogging: true });
+const devtools = initDevTools({ isDev: true });
 
 const count = signal(0);
 const dispose = effect(() => {
@@ -28,16 +28,16 @@ const dispose = effect(() => {
 
 // 2. Capture reactive topology snapshot
 const snapshot = getGraphSnapshot();
-console.log(`Active signals: ${snapshot.nodes.length}`);
+console.log(`Active edges: ${snapshot.edges.length}`, defaultGraphInspector.getSnapshot());
 ```
 
 ## API
 
-- `initDevtools(options?: DevtoolsOptions): DevtoolsBridge` — Initializes the runtime inspection bridge.
-- `getGraphSnapshot(): DependencyGraphSnapshot` — Returns the current reactive topology node and edge map.
-- `trackSignal(signalInstance: Signal<unknown>, name?: string): void` — Explicitly labels a signal in the DevTools inspector.
-- `trackComponent(componentName: string, element: HTMLElement): void` — Labels a DOM subtree in the DevTools component tree.
-- `emitDevtoolsEvent(event: DevtoolsEvent): void` — Emits custom telemetry events over the DevTools channel.
+- `initDevTools(options?: { targetOrigin?: string; isDev?: boolean }): DevToolsBridge` — Initializes the runtime inspection bridge (alias: `initDevtools`).
+- `getGraphSnapshot()` — Captures the current reactive dependency graph snapshot via `GraphInspector`.
+- `isDevToolsActive(): boolean` / `computeIsDev(...)` — Reports active DevTools mode.
+- `GraphInspector` / `ComponentInspector` / `OwnerInspector` / `RouterInspector` / `NetworkInspector` / `FormInspector` / `PerformanceInspector` — Built-in telemetry inspector classes (with `default*` singletons).
+- `sanitizePayload(payload)` / `isSensitiveKey(key)` — Strips credential and secret fields from telemetry events.
 
 ## Environment
 

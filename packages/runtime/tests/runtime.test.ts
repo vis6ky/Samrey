@@ -16,7 +16,8 @@ import {
   onMount,
   bindStyle,
   rawHtml,
-  frag
+  frag,
+  mount
 } from '../src/index.js';
 import { signal, onCleanup, effect, createRoot, useContext, SuspenseTrackerContext } from '@samrey/reactivity';
 
@@ -863,6 +864,26 @@ describe('@samrey/runtime', () => {
       htmlSig.value = '<p>Updated <em>text</em></p>';
       assert.equal(node.querySelector('em')?.textContent, 'text');
       assert.equal(node.querySelector('b'), null);
+    });
+
+    it('Batch 2 red-team: mount() disposes active effects/cleanups if componentFn throws during mount', () => {
+      const s = signal(0);
+      let cleanedUp = false;
+      let postThrowRuns = 0;
+      const container = el('div') as any;
+
+      assert.throws(() => {
+        mount(() => {
+          onCleanup(() => { cleanedUp = true; });
+          effect(() => { postThrowRuns++; void s.value; });
+          throw new Error('mount failure');
+        }, container);
+      }, /mount failure/);
+
+      assert.equal(cleanedUp, true, 'mount() must run onCleanup handlers when componentFn throws');
+      const runsAtThrow = postThrowRuns;
+      s.value = 1;
+      assert.equal(postThrowRuns, runsAtThrow, 'mount() must dispose effects created before componentFn threw');
     });
   });
 });

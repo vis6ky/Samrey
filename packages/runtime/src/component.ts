@@ -58,11 +58,17 @@ export function mount(componentFn: () => Node | Node[], container: HTMLElement):
 
   createRoot((dispose) => {
     disposeRoot = dispose;
-    const node = componentFn();
-    if (Array.isArray(node)) {
-      container.replaceChildren(...node);
-    } else if (node) {
-      container.replaceChildren(node);
+    try {
+      const node = componentFn();
+      if (Array.isArray(node)) {
+        container.replaceChildren(...node);
+      } else if (node) {
+        container.replaceChildren(node);
+      }
+    } catch (err) {
+      disposeRoot = null;
+      dispose();
+      throw err;
     }
   });
 

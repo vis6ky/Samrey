@@ -602,6 +602,55 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       assert.equal(buildSsrBool.exitCode, 0);
       assert.equal(buildSsrBool.data?.outDir, 'custom-dist');
       assert.equal(buildSsrBool.data?.ssr, 'src/entry-server.ts');
+
+      // 5. Dev server must reject malformed Host headers with userinfo/trailing garbage like localhost:@evil.com
+      const { createNativeDevHandler } = await import('../src/commands/dev.js');
+      const handler = createNativeDevHandler(tmpRoot);
+      const runHostReq = (hostVal: string) =>
+        new Promise<{ status: number }>((resolve) => {
+          let status = 0;
+          const req = { method: 'GET', url: '/clean.ts', headers: { host: hostVal } } as any;
+          const res = {
+            writeHead(code: number) { status = code; },
+            end() { resolve({ status }); },
+            setHeader() {}
+          } as any;
+          handler(req, res);
+        });
+      assert.equal((await runHostReq('localhost:@evil.com')).status, 403);
+      assert.equal((await runHostReq('[::1]@evil.com')).status, 403);
+      assert.equal((await runHostReq('localhost:3000')).status, 200);
+
+      // 6. Batch 3 red-team: audit --json on 0 files/--fix, strict port/minify/sourcemap validation, cwd forwarding, and auditSource escapes/comments
+      const emptyAuditDir = path.join(tmpRoot, 'empty-dir');
+      fs.mkdirSync(emptyAuditDir);
+      const emptyJsonRes = await runCLI(['audit', emptyAuditDir, '--json']);
+      assert.equal(emptyJsonRes.exitCode, 0);
+      assert.equal(JSON.parse(emptyJsonRes.message).filesScanned, 0);
+
+      const fixJsonRes = await runCLI(['audit', emptyAuditDir, '--fix', '--json']);
+      assert.equal(fixJsonRes.exitCode, 1);
+      assert.equal(JSON.parse(fixJsonRes.message).success, false);
+
+      assert.equal((await runCLI(['dev', '--port', 'abc', '--dry-run'])).exitCode, 1);
+      assert.equal((await runCLI(['preview', '--port', '12px', '--dry-run'])).exitCode, 1);
+      assert.equal((await runCLI(['build', '--minify=bad', '--dry-run'])).exitCode, 1);
+      assert.equal((await runCLI(['build', '--sourcemap=bad', '--dry-run'])).exitCode, 1);
+
+      const genDir = path.join(tmpRoot, 'gen-cwd');
+      fs.mkdirSync(path.join(genDir, 'src', 'components'), { recursive: true });
+      const genFlagOrder = await runCLI(['generate', '--dry-run', 'component', 'Btn'], { cwd: genDir });
+      assert.equal(genFlagOrder.exitCode, 0, genFlagOrder.message);
+      const genWrite = await runCLI(['generate', 'component', 'MyCard'], { cwd: genDir });
+      assert.equal(genWrite.exitCode, 0, genWrite.message);
+      assert.ok(fs.existsSync(path.join(genDir, 'src', 'components', 'MyCard.ts')), 'generate must respect cliOptions.cwd');
+
+      const { auditSource } = await import('../src/audit.js');
+      const escReport = auditSource('const h = "<a href=\\"javascript:alert(1)\\">x</a><img alt=\\"a > b\\" onclick=\\"alert(1)\\">";', 'App.ts');
+      assert.ok(escReport.messages.some((m) => m.includes('javascript:')), 'Must detect escaped-quote javascript: URI inside JS string');
+      assert.ok(escReport.messages.some((m) => m.includes('onclick')), 'Must not terminate tag early on escaped > inside JS string attribute');
+      const trailCommentReport = auditSource('const x = 1 // <script>alert(1)</script>', 'App.ts');
+      assert.equal(trailCommentReport.messages.length, 0, 'Must skip trailing JS line comment after numeric/identifier expression');
     } finally {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

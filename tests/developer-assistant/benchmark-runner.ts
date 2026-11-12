@@ -159,24 +159,37 @@ export function auditCodeSymbols(
     hallucinatedApis.push('Forbidden @aether/* package namespace detected');
   }
 
-  // Extract all import statements
-  const importRegex = /import\s+(?:\{([^}]+)\}|([a-zA-Z0-9_$]+))\s+from\s+['"]([^'"]+)['"]/g;
+  // Extract all import statements (supporting `import type { ... }` and inline `type Symbol`)
+  const importRegex = /import\s+(type\s+)?(?:\{([^}]+)\}|([a-zA-Z0-9_$]+))\s+from\s+['"]([^'"]+)['"]/g;
   let match: RegExpExecArray | null;
 
   while ((match = importRegex.exec(code)) !== null) {
-    const namedImports = match[1] ? match[1].split(',').map(s => s.trim().split(/\s+as\s+/)[0].trim()) : [];
-    const defaultImport = match[2]?.trim();
-    const pkgName = match[3]?.trim();
+    const isStatementTypeOnly = Boolean(match[1]);
+    const rawItems = match[2] ? match[2].split(',').map(s => s.trim()).filter(Boolean) : [];
+    const defaultImport = match[3]?.trim();
+    const pkgName = match[4]?.trim();
 
     if (pkgName.startsWith('@samrey/')) {
       if (!VALID_SAMREY_PACKAGES.includes(pkgName)) {
         hallucinatedApis.push(`Nonexistent package: ${pkgName}`);
       } else {
         validSamreyImports.push(pkgName);
-        const allowedExports = OFFICIAL_SAMREY_EXPORTS[pkgName] || [];
+        const allowedRuntimeExports = OFFICIAL_PACKAGE_EXPORTS[pkgName] || new Set<string>();
+        const allowedAllExports = OFFICIAL_SAMREY_EXPORTS[pkgName] || [];
 
-        for (const named of namedImports) {
-          if (named && !allowedExports.includes(named)) {
+        if (defaultImport) {
+          hallucinatedApis.push(`Unsupported default import '${defaultImport}' from package '${pkgName}'`);
+        }
+
+        for (const item of rawItems) {
+          const isItemType = isStatementTypeOnly || /^type\s+/.test(item);
+          const named = item.replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim();
+          if (!named) continue;
+          if (isItemType) {
+            if (!allowedAllExports.includes(named)) {
+              hallucinatedApis.push(`Unknown type export '${named}' from package '${pkgName}'`);
+            }
+          } else if (!allowedRuntimeExports.has(named)) {
             hallucinatedApis.push(`Unknown export '${named}' from package '${pkgName}'`);
           }
         }

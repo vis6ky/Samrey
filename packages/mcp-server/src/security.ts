@@ -116,7 +116,18 @@ function assertSubtreeContainsNoEscapingSymlinks(
   }
 }
 
-function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: string): void {
+function globMightMatchInternalDir(normalizedPattern: string): boolean {
+  if (normalizedPattern.includes('node_modules') || normalizedPattern.includes('.git')) {
+    return true;
+  }
+  const segs = normalizedPattern.split('/').filter(Boolean);
+  return segs.some((seg) => {
+    if (!GLOB_META_RE.test(seg)) return false;
+    return /^(\*|n|node|\.|{\s*node|\{\s*\.|\?)/i.test(seg) || seg.includes('**');
+  });
+}
+
+function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: string): string {
   if (!rawArg || rawArg.includes('\0') || rawArg === '--' || rawArg.startsWith('-')) {
     throw new Error(
       `Security Exception: ${cmdLabel} test path argument cannot be empty or a flag, received "${rawArg}".`
@@ -134,8 +145,17 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
   const candidate = normalized;
 
   if (!GLOB_META_RE.test(candidate)) {
-    resolveSafePath(resolvedRoot, candidate);
-    return;
+    return resolveSafePath(resolvedRoot, candidate);
+  }
+
+  // Reject any literal ".." segment or brace/delimiter variant like "{..,tests}" anywhere in glob pattern
+  const hasTraversalToken = candidate.split('/').some((seg) =>
+    seg === '..' || /(?:^|[{,!\s])\.\.(?:$|[},\s])/.test(seg)
+  );
+  if (hasTraversalToken) {
+    throw new Error(
+      `Security Exception: Glob test pattern "${rawArg}" contains ".." traversal sequence.`
+    );
   }
 
   // Validate the longest concrete directory prefix before any glob metacharacter
@@ -143,14 +163,9 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
   const slashBeforeGlob = candidate.lastIndexOf('/', firstGlobIdx);
   const concretePrefix = slashBeforeGlob > 0 ? candidate.slice(0, slashBeforeGlob) : '/';
   const globSuffix = slashBeforeGlob >= 0 ? candidate.slice(slashBeforeGlob + 1) : candidate;
-  if (globSuffix.split('/').some((seg) => seg === '..')) {
-    throw new Error(
-      `Security Exception: Glob test pattern "${rawArg}" contains ".." traversal after wildcard.`
-    );
-  }
 
   const safePrefix = resolveSafePath(resolvedRoot, concretePrefix);
-  const includeInternalDirs = normalized.includes('node_modules') || normalized.includes('.git');
+  const includeInternalDirs = globMightMatchInternalDir(normalized);
 
   assertSubtreeContainsNoEscapingSymlinks(safePrefix, realRoot, includeInternalDirs);
 
@@ -171,6 +186,7 @@ function validateSafeCommandTestPath(rawArg: string, cwd: string, cmdLabel: stri
     const absMatch = path.isAbsolute(match) ? match : path.resolve(realRoot, match);
     resolveSafePath(realRoot, absMatch);
   }
+  return globPattern;
 }
 
 export function redactSecrets(text: string): string {
@@ -255,55 +271,80 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
   }
   const realRoot = fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
 
-  // Normalize slashes (handling Windows ..\ variants) and Unicode NFC
+  // Normalize slashes (handling Windows ..\ variants) and Unicode NFC WITHOUT collapsing ".." first
   const cleanRel = relativePath.replace(/\\/g, '/').normalize('NFC');
+  const realRootNorm = realRoot.replace(/\\/g, '/').replace(/\/+$/, '');
+  const resolvedRootNorm = resolvedRoot.replace(/\\/g, '/').replace(/\/+$/, '');
 
-  let lexicalRel: string;
+  let rawRelSegments: string[];
   if (path.isAbsolute(cleanRel)) {
-    const absTarget = path.resolve(cleanRel);
-    const relFromReal = path.relative(realRoot, absTarget);
-    const relFromResolved = path.relative(resolvedRoot, absTarget);
-    const inRealRoot = !relFromReal.startsWith('..') && !path.isAbsolute(relFromReal);
-    const inResolvedRoot = !relFromResolved.startsWith('..') && !path.isAbsolute(relFromResolved);
-    if (!inRealRoot && !inResolvedRoot) {
-      throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+    const cleanNoTrail = cleanRel.replace(/\/+$/, '');
+    if (cleanNoTrail === realRootNorm || cleanNoTrail === resolvedRootNorm) {
+      rawRelSegments = [];
+    } else if (cleanRel.startsWith(realRootNorm + '/')) {
+      rawRelSegments = cleanRel.slice(realRootNorm.length + 1).split('/').filter(Boolean);
+    } else if (cleanRel.startsWith(resolvedRootNorm + '/')) {
+      rawRelSegments = cleanRel.slice(resolvedRootNorm.length + 1).split('/').filter(Boolean);
+    } else {
+      // Handle macOS /var -> /private/var or symlinked intermediate ancestors only when no uncollapsed '..' traversal hides an escape
+      const hasRawDotDot = cleanRel.split('/').includes('..');
+      if (hasRawDotDot) {
+        throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+      }
+      const absTarget = path.resolve(cleanRel);
+      const relFromReal = path.relative(realRoot, absTarget);
+      const relFromResolved = path.relative(resolvedRoot, absTarget);
+      const inRealRoot = !relFromReal.startsWith('..') && !path.isAbsolute(relFromReal);
+      const inResolvedRoot = !relFromResolved.startsWith('..') && !path.isAbsolute(relFromResolved);
+      if (!inRealRoot && !inResolvedRoot) {
+        throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+      }
+      const picked = inRealRoot ? relFromReal : relFromResolved;
+      rawRelSegments = picked.split(path.sep).filter(Boolean);
     }
-    lexicalRel = inRealRoot ? relFromReal : relFromResolved;
   } else {
-    const absTarget = path.resolve(realRoot, cleanRel);
-    lexicalRel = path.relative(realRoot, absTarget);
-    if (lexicalRel.startsWith('..') || path.isAbsolute(lexicalRel)) {
-      throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
-    }
+    rawRelSegments = cleanRel.split('/').filter(Boolean);
   }
 
-  // Walk and lstat every existing path component from realRoot down to resolvedTarget.
-  // If any component is a symlink (dangling or not), resolve it with readlink and require
-  // the resolved target to be inside the real root; treat a dangling link whose target
-  // is outside as a violation.
-  const segments = lexicalRel.split(path.sep).filter(Boolean);
-  let current = realRoot;
+  // Walk segments sequentially from realRoot, resolving symlinks BEFORE applying ".."
+  let currentReal = realRoot;
+  const missingSegments: string[] = [];
 
-  for (let i = 0; i < segments.length; i++) {
-    const nextPath = path.join(current, segments[i]);
+  for (let i = 0; i < rawRelSegments.length; i++) {
+    const seg = rawRelSegments[i]!;
+    if (seg === '.') continue;
+    if (seg === '..') {
+      if (missingSegments.length > 0) {
+        missingSegments.pop();
+      } else {
+        if (currentReal === realRoot) {
+          throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+        }
+        currentReal = path.dirname(currentReal);
+        const relCheck = path.relative(realRoot, currentReal);
+        if (relCheck.startsWith('..') || path.isAbsolute(relCheck)) {
+          throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
+        }
+      }
+      continue;
+    }
 
+    if (missingSegments.length > 0) {
+      missingSegments.push(seg);
+      continue;
+    }
+
+    const nextPath = path.join(currentReal, seg);
     let stat: fs.Stats | null = null;
     try {
       stat = fs.lstatSync(nextPath);
     } catch (err: any) {
       if (err.code !== 'ENOENT') throw err;
-      // Component does not exist on disk.
-      // Verify remaining path doesn't escape root.
-      const remainingRel = path.relative(realRoot, path.join(current, ...segments.slice(i)));
-      if (remainingRel.startsWith('..') || path.isAbsolute(remainingRel)) {
-        throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
-      }
-      current = nextPath;
+      missingSegments.push(seg);
       continue;
     }
 
     if (stat.isSymbolicLink()) {
-      // Resolve the symlink target (handle chains up to limit)
       let linkTarget = nextPath;
       let depth = 0;
       while (depth < 40) {
@@ -312,7 +353,6 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
           linkStat = fs.lstatSync(linkTarget);
         } catch (err: any) {
           if (err.code !== 'ENOENT') throw err;
-          // Dangling link reached!
           break;
         }
         if (!linkStat || !linkStat.isSymbolicLink()) {
@@ -334,7 +374,6 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
         throw new Error(`Security Exception: Symlink loop detected.`);
       }
 
-      // Check final link target location
       const finalRel = path.relative(realRoot, linkTarget);
       if (finalRel.startsWith('..') || path.isAbsolute(finalRel)) {
         throw new Error(
@@ -342,7 +381,6 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
         );
       }
 
-      // If the link target exists, use realpath to be 100% sure
       if (fs.existsSync(linkTarget)) {
         const realLinkTarget = fs.realpathSync.native
           ? fs.realpathSync.native(linkTarget)
@@ -353,23 +391,27 @@ export function resolveSafePath(projectRoot: string, relativePath: string): stri
             `Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}" via symlink.`
           );
         }
-        current = realLinkTarget;
+        currentReal = realLinkTarget;
       } else {
-        // Dangling link whose target is inside root
-        current = linkTarget;
+        // Dangling link whose target is inside realRoot: treat unresolved suffix relative to realRoot
+        const danglingRel = path.relative(realRoot, linkTarget);
+        const danglingSegs = danglingRel.split(path.sep).filter(Boolean);
+        missingSegments.push(...danglingSegs);
       }
     } else {
-      // Regular file or directory
-      current = nextPath;
+      currentReal = nextPath;
     }
   }
 
-  const finalCheck = path.relative(realRoot, current);
+  const finalPath = missingSegments.length > 0
+    ? path.join(currentReal, ...missingSegments)
+    : currentReal;
+  const finalCheck = path.relative(realRoot, finalPath);
   if (finalCheck.startsWith('..') || path.isAbsolute(finalCheck)) {
     throw new Error(`Security Exception: Path "${relativePath}" escapes project root boundary "${realRoot}".`);
   }
 
-  return current;
+  return finalPath;
 }
 
 /**
@@ -393,10 +435,8 @@ export function safeWriteFile(
   }
   const realRoot = fs.realpathSync.native ? fs.realpathSync.native(resolvedRoot) : fs.realpathSync(resolvedRoot);
 
-  const normalizedInput = filePath.replace(/\\/g, '/').normalize('NFC');
-  const absTarget = path.isAbsolute(normalizedInput)
-    ? path.resolve(normalizedInput)
-    : path.resolve(resolvedRoot, normalizedInput);
+  const normalizedInput = resolveSafePath(resolvedRoot, filePath);
+  const absTarget = normalizedInput;
 
   const relFromResolved = path.relative(resolvedRoot, absTarget);
   const relFromReal = path.relative(realRoot, absTarget);
@@ -542,6 +582,7 @@ export function executeSafeCommand(
     }
 
     // 3. Exact subcommand validation per binary
+    let spawnArgs = [...args];
     if (cmd === 'npm') {
       if (args.length === 0) {
         return reject(new Error(`Security Exception: npm command requires a subcommand.`));
@@ -566,7 +607,7 @@ export function executeSafeCommand(
               new Error(`Security Exception: npm test extra argument must be an absolute path inside project root, received "${extra}".`)
             );
           }
-          validateSafeCommandTestPath(extra, cwd, 'npm test');
+          spawnArgs = ['test', validateSafeCommandTestPath(extra, cwd, 'npm test')];
         }
       } else if (sub === 'run') {
         const script = args[1];
@@ -617,7 +658,7 @@ export function executeSafeCommand(
         );
       }
       if (args.length === 2) {
-        validateSafeCommandTestPath(args[1], cwd, 'node --test');
+        spawnArgs = ['--test', validateSafeCommandTestPath(args[1], cwd, 'node --test')];
       }
     }
 
@@ -633,7 +674,7 @@ export function executeSafeCommand(
       }
     }
 
-    const child = spawn(cmd, args, {
+    const child = spawn(cmd, spawnArgs, {
       cwd,
       shell: false,
       stdio: ['ignore', 'pipe', 'pipe']

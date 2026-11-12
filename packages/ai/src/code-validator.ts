@@ -944,6 +944,17 @@ export function validateSamreyCode(
       continue;
     }
 
+    const clauseWithoutType = rawClause.replace(/^type\s+/, '').trim();
+    if (!clauseWithoutType.startsWith('{') && !clauseWithoutType.startsWith('*')) {
+      const defMatch = clauseWithoutType.match(/^([A-Za-z_$][\w$]*)/);
+      if (defMatch) {
+        errors.push({
+          message: `Default import "${defMatch[1]}" is not supported for "${pkg}". All @samrey/* packages use named exports.`,
+          suggestion: `Use named imports instead: import { ... } from '${pkg}';`
+        });
+      }
+    }
+
     const namedMatch = rawClause.match(/\{([\s\S]*?)\}/);
     if (namedMatch) {
       const items = namedMatch[1].split(',');
@@ -1152,14 +1163,40 @@ export function validateSamreyCode(
     }
   }
 
-  // 4d. Detect eval() (skipping obj.eval(...) member method calls unless preceded by window or globalThis)
+  // 4d. Detect eval() (direct, optional-chaining, indirect (0, eval), and window/globalThis eval)
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    if (t.value === 'eval' && t.type === 'identifier') {
+    const isEvalIdent = t.type === 'identifier' && t.value === 'eval';
+    const isBracketEval =
+      t.type === 'string' &&
+      t.value === 'eval' &&
+      idx >= 2 &&
+      tokens[idx - 1]?.value === '[' &&
+      (tokens[idx - 2]?.value === 'window' || tokens[idx - 2]?.value === 'globalThis') &&
+      tokens[idx + 1]?.value === ']';
+
+    if (isBracketEval && tokens[idx + 2]?.value === '(') {
+      errors.push({
+        message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
+        line: t.line,
+        suggestion: 'Use statically analyzed functions or compute values with "computed()" and pure signals from @samrey/reactivity.'
+      });
+      continue;
+    }
+
+    if (isEvalIdent) {
       const prev = idx > 0 ? tokens[idx - 1] : null;
       const next = idx + 1 < tokens.length ? tokens[idx + 1] : null;
+      const nextNext = idx + 2 < tokens.length ? tokens[idx + 2] : null;
 
-      if (next && next.value === '(') {
+      const isDirectCall = next?.value === '(' || (next?.value === '?.' && nextNext?.value === '(');
+      const isIndirectCall =
+        next?.value === ')' &&
+        nextNext?.value === '(' &&
+        prev &&
+        (prev.value === ',' || prev.value === '(');
+
+      if (isDirectCall || isIndirectCall) {
         if (prev && (prev.value === '.' || prev.value === '?.')) {
           const prevPrev = idx > 1 ? tokens[idx - 2] : null;
           if (prevPrev && (prevPrev.value === 'window' || prevPrev.value === 'globalThis')) {
@@ -1227,17 +1264,29 @@ export function validateSamreyCode(
     }
   }
 
-  // 4g. Detect Unsafe Dynamic / Non-Literal innerHTML and outerHTML Assignments
+  // 4g. Detect Unsafe Dynamic / Non-Literal innerHTML and outerHTML Assignments (dot & bracket, = & +=)
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    if (
+    const isDotHtmlSink =
       (t.value === 'outerHTML' || t.value === 'innerHTML') &&
       t.type === 'identifier' &&
       idx + 1 < tokens.length &&
-      tokens[idx + 1].value === '='
-    ) {
+      (tokens[idx + 1].value === '=' || tokens[idx + 1].value === '+=');
+    const isBracketHtmlSink =
+      (t.value === 'outerHTML' || t.value === 'innerHTML') &&
+      t.type === 'string' &&
+      idx > 0 &&
+      tokens[idx - 1].value === '[' &&
+      idx + 2 < tokens.length &&
+      tokens[idx + 1].value === ']' &&
+      (tokens[idx + 2].value === '=' || tokens[idx + 2].value === '+=');
+
+    if (isDotHtmlSink || isBracketHtmlSink) {
+      const propName = t.value;
+      const opIdx = isDotHtmlSink ? idx + 1 : idx + 2;
+      const isCompound = tokens[opIdx].value === '+=';
       let rhsTokens: CodeToken[] = [];
-      let j = idx + 2;
+      let j = opIdx + 1;
       let parenDepth = 0;
       let braceDepth = 0;
       let bracketDepth = 0;
@@ -1259,16 +1308,16 @@ export function validateSamreyCode(
         j++;
       }
 
-      const isSingleString = rhsTokens.length === 1 && rhsTokens[0].type === 'string';
-      const isStaticTemplate = rhsTokens.length === 1 && rhsTokens[0].type === 'template';
+      const isSingleString = !isCompound && rhsTokens.length === 1 && rhsTokens[0].type === 'string';
+      const isStaticTemplate = !isCompound && rhsTokens.length === 1 && rhsTokens[0].type === 'template';
       const isNullOrUndefined =
-        rhsTokens.length === 1 && (rhsTokens[0].value === 'null' || rhsTokens[0].value === 'undefined');
+        !isCompound && rhsTokens.length === 1 && (rhsTokens[0].value === 'null' || rhsTokens[0].value === 'undefined');
 
       if (!isSingleString && !isStaticTemplate && !isNullOrUndefined) {
         const rhsRaw = rhsTokens.length > 0
           ? code.slice(rhsTokens[0].start, rhsTokens[rhsTokens.length - 1].end).trim()
           : '';
-        if (t.value === 'outerHTML') {
+        if (propName === 'outerHTML') {
           errors.push({
             message: `Unsafe outerHTML assignment detected with non-literal expression "${rhsRaw}". This introduces Cross-Site Scripting (XSS) vulnerabilities.`,
             line: t.line,
@@ -1333,8 +1382,8 @@ export function validateSamreyCode(
     }
   }
 
-  // 4i. Detect javascript: URIs in HTML Attributes
-  const jsUriRegex = /\b([a-zA-Z0-9_:-]+)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
+  // 4i. Detect javascript: URIs in HTML/JSX URL attributes (avoiding TS variable assignments like `const uri = 'javascript:...'`)
+  const jsUriRegex = /\b(href|xlink:href|src|action|formaction|poster|data|codebase|background|cite|longdesc|ping|srcset|imagesrcset|style)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
   let jsUriMatch: RegExpExecArray | null;
   while ((jsUriMatch = jsUriRegex.exec(codeWithoutComments)) !== null) {
     const line = codeWithoutComments.slice(0, jsUriMatch.index).split('\n').length;
@@ -1648,6 +1697,7 @@ function extractCallArguments(
     let inSingleQuote = false;
     let inDoubleQuote = false;
     let inBacktick = false;
+    const templateBraceStack: number[] = [];
     let inLineComment = false;
     let inBlockComment = false;
     let currentArg = '';
@@ -1656,63 +1706,116 @@ function extractCallArguments(
     let i = openParenIndex + 1;
     for (; i < code.length; i++) {
       const char = code[i];
-      const prevChar = i > 0 ? code[i - 1] : '';
 
       if (inLineComment) {
         if (char === '\n') inLineComment = false;
         continue;
       }
       if (inBlockComment) {
-        if (char === '/' && prevChar === '*') inBlockComment = false;
+        if (char === '*' && code[i + 1] === '/') {
+          inBlockComment = false;
+          i++;
+        }
         continue;
       }
 
-      if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
-        if (char === '/' && code[i + 1] === '/') {
-          inLineComment = true;
+      if (inSingleQuote) {
+        if (char === '\\' && i + 1 < code.length) {
+          currentArg += char + code[i + 1];
           i++;
           continue;
         }
-        if (char === '/' && code[i + 1] === '*') {
-          inBlockComment = true;
+        if (char === "'") inSingleQuote = false;
+        currentArg += char;
+        continue;
+      }
+
+      if (inDoubleQuote) {
+        if (char === '\\' && i + 1 < code.length) {
+          currentArg += char + code[i + 1];
           i++;
           continue;
         }
-      }
-
-      if (char === "'" && !inDoubleQuote && !inBacktick && prevChar !== '\\') {
-        inSingleQuote = !inSingleQuote;
-        currentArg += char;
-        continue;
-      }
-      if (char === '"' && !inSingleQuote && !inBacktick && prevChar !== '\\') {
-        inDoubleQuote = !inDoubleQuote;
-        currentArg += char;
-        continue;
-      }
-      if (char === '`' && !inSingleQuote && !inDoubleQuote && prevChar !== '\\') {
-        inBacktick = !inBacktick;
+        if (char === '"') inDoubleQuote = false;
         currentArg += char;
         continue;
       }
 
-      if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
-        if (char === '(' || char === '{' || char === '[') {
+      if (inBacktick) {
+        if (char === '\\' && i + 1 < code.length) {
+          currentArg += char + code[i + 1];
+          i++;
+          continue;
+        }
+        if (char === '$' && code[i + 1] === '{') {
+          templateBraceStack.push(1);
           depth++;
-          currentArg += char;
-        } else if (char === ')' || char === '}' || char === ']') {
-          depth--;
-          if (depth === 0) {
-            args.push(currentArg.trim());
-            break;
-          }
-          currentArg += char;
-        } else if (char === ',' && depth === 1) {
-          args.push(currentArg.trim());
-          currentArg = '';
-        } else {
-          currentArg += char;
+          inBacktick = false;
+          currentArg += '${';
+          i++;
+          continue;
         }
+        if (char === '`') inBacktick = false;
+        currentArg += char;
+        continue;
+      }
+
+      if (char === '/' && code[i + 1] === '/') {
+        inLineComment = true;
+        i++;
+        continue;
+      }
+      if (char === '/' && code[i + 1] === '*') {
+        inBlockComment = true;
+        i++;
+        continue;
+      }
+      if (char === "'") {
+        inSingleQuote = true;
+        currentArg += char;
+        continue;
+      }
+      if (char === '"') {
+        inDoubleQuote = true;
+        currentArg += char;
+        continue;
+      }
+      if (char === '`') {
+        inBacktick = true;
+        currentArg += char;
+        continue;
+      }
+
+      if (templateBraceStack.length > 0 && char === '{') {
+        templateBraceStack[templateBraceStack.length - 1]++;
+        depth++;
+        currentArg += char;
+        continue;
+      }
+      if (templateBraceStack.length > 0 && char === '}') {
+        templateBraceStack[templateBraceStack.length - 1]--;
+        depth--;
+        if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+          templateBraceStack.pop();
+          inBacktick = true;
+        }
+        currentArg += char;
+        continue;
+      }
+
+      if (char === '(' || char === '{' || char === '[') {
+        depth++;
+        currentArg += char;
+      } else if (char === ')' || char === '}' || char === ']') {
+        depth--;
+        if (depth === 0) {
+          args.push(currentArg.trim());
+          break;
+        }
+        currentArg += char;
+      } else if (char === ',' && depth === 1) {
+        args.push(currentArg.trim());
+        currentArg = '';
       } else {
         currentArg += char;
       }

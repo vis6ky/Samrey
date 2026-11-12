@@ -43,6 +43,7 @@ export interface Owner {
   parent: Owner | null;
   children: Owner[];
   cleanups: (() => void)[];
+  isDisposed?: boolean;
   errorHandlers?: ((err: unknown) => void)[];
   context?: Record<string | symbol, unknown>;
   dispose(): void;

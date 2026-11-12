@@ -277,5 +277,14 @@ describe('@samrey/compiler', () => {
     assert.equal(isStaticSubtree(astRes.ast!.children[0]), false);
     assert.ok(astRes.generatedCode.includes('bindAttr(root, "data-v", () => (count()))'));
     assert.ok(astRes.generatedCode.includes('bindText(root.childNodes[0], () => (count()))'));
+
+    // 4. Compiled <svg><foreignObject> template MUST instantiate live DOM <foreignObject> children (not get stripped by TrustedTypesPolicy)
+    const foRoot = template(svgForeign.templates[0].staticHtml)() as any;
+    const foNode = foRoot.childNodes?.[0];
+    assert.ok(foNode, 'Compiled <svg><foreignObject> template must preserve <foreignObject> element at runtime');
+    assert.equal(String(foNode.tagName).toLowerCase(), 'foreignobject');
+    assert.equal(foNode.childNodes.length, 2, 'Compiled <foreignObject> children (<div>, <span>) must survive template() sanitization');
+    bindText(foNode.childNodes[1].childNodes[0], () => String(count()));
+    assert.equal(foNode.childNodes[1].textContent, '42');
   });
 });

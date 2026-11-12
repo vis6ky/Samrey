@@ -980,7 +980,6 @@ export const DANGEROUS_TEMPLATE_TAGS: ReadonlySet<string> = new Set([
   'frameset',
   'basefont',
   'bgsound',
-  'foreignobject',
   'animate',
   'animatemotion',
   'animatetransform',

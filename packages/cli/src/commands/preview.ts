@@ -18,10 +18,18 @@ export interface PreviewCommandOptions {
 
 export async function runPreviewCommand(options: PreviewCommandOptions = {}): Promise<CommandResult> {
   const projectRoot = options.cwd || process.cwd();
-  const port = options.port || 4173;
+  const port = options.port !== undefined ? options.port : 4173;
   const host = Boolean(options.host);
   const outDir = options.outDir || 'dist';
   const absoluteOutDir = path.resolve(projectRoot, outDir);
+
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    return {
+      success: false,
+      message: `[Samrey Preview Error] Invalid port ${port}. Port must be between 1 and 65535.`,
+      exitCode: 1
+    };
+  }
 
   if (options.dryRun) {
     return {

@@ -391,4 +391,69 @@ describe('@samrey/http', () => {
       else delete (globalThis as any).window;
     }
   });
+
+  it('Batch 1 red-team: enforces manual redirect control when allowCrossOrigin is true and preserves cross-origin //host redirects from empty baseUrl', async () => {
+    const origFetch = globalThis.fetch;
+    const wireRequests: Array<{ url: string; authorization: string | null; cookie: string | null }> = [];
+    const routes = new Map<string, { status: number; location?: string; body?: string }>();
+    for (let i = 0; i < 7; i++) {
+      routes.set(`https://a.example/loop?step=${i}`, { status: 302, location: `https://a.example/loop?step=${i + 1}` });
+    }
+    routes.set('https://a.example/loop?step=7', { status: 200, body: '{"ok":true}' });
+    routes.set('https://a.example/to-b', { status: 302, location: 'https://b.example/target' });
+    routes.set('https://b.example/target', { status: 200, body: '{"ok":true,"server":"b"}' });
+    routes.set('/start', { status: 302, location: '//cdn.example.com/data' });
+    routes.set('https://cdn.example.com/data', { status: 200, body: '{"ok":true,"cdn":true}' });
+
+    // Faithful fetch simulation: when init.redirect === 'follow', native fetch follows redirects internally
+    globalThis.fetch = (async (u: unknown, init?: RequestInit) => {
+      let current = String(u);
+      const headers = new Headers(init?.headers);
+      wireRequests.push({ url: current, authorization: headers.get('authorization'), cookie: headers.get('cookie') });
+      const route = routes.get(current);
+      if (init?.redirect === 'follow') {
+        let hops = 0;
+        let curRoute = route;
+        while (curRoute && curRoute.status >= 300 && curRoute.status < 400 && curRoute.location && hops < 20) {
+          hops++;
+          current = new URL(curRoute.location, current).href;
+          wireRequests.push({ url: current, authorization: headers.get('authorization'), cookie: headers.get('cookie') });
+          curRoute = routes.get(current);
+        }
+        return new Response(curRoute?.body ?? '{}', { status: curRoute?.status ?? 200 });
+      }
+      if (route && route.status >= 300 && route.status < 400) {
+        return { ok: false, status: route.status, statusText: 'Found', headers: new Headers({ location: route.location! }) } as any;
+      }
+      return new Response(route?.body ?? '{}', { status: route?.status ?? 200 });
+    }) as any;
+
+    try {
+      const api = createHttpClient('https://a.example');
+      await assert.rejects(
+        () => api.get('/loop?step=0', { allowCrossOrigin: true }),
+        /maximum redirect limit \(5\)/i
+      );
+
+      wireRequests.length = 0;
+      await api.get('/to-b', {
+        allowCrossOrigin: true,
+        headers: { Authorization: 'Bearer top-secret', Cookie: 'sid=xyz' }
+      });
+      const bHit = wireRequests.find((r) => r.url === 'https://b.example/target');
+      assert.ok(bHit, 'Expected redirect to b.example');
+      assert.equal(bHit!.authorization, null);
+      assert.equal(bHit!.cookie, null);
+
+      wireRequests.length = 0;
+      const emptyBaseClient = createHttpClient('');
+      await emptyBaseClient.get('/start', { allowCrossOrigin: true });
+      assert.ok(
+        wireRequests.some((r) => r.url === 'https://cdn.example.com/data'),
+        `Expected cross-origin //cdn.example.com/data redirect to keep external origin, got: ${wireRequests.map((r) => r.url).join(', ')}`
+      );
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
 });

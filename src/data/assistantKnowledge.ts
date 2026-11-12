@@ -156,7 +156,7 @@ export const KNOWLEDGE_BASE: KnowledgeItem[] = [
       'For direct parent-child communication, pass a `Signal<T>` or callback function via props.'
     ],
     tsCodeExample: `import { el } from '@samrey/runtime';
-import { signal, Signal, createContext, useContext } from '@samrey/reactivity';
+import { signal, type Signal, createContext, useContext } from '@samrey/reactivity';
 
 // 1. Define Context for deeply nested state
 interface UserSession {
@@ -400,12 +400,12 @@ export function TaskList(): HTMLElement {
     whenToUse: 'Use for all REST, GraphQL, or JSON API interactions, server requests, and asynchronous data dependencies in client-side or SSR applications.',
     implementationSteps: [
       'Create an HTTP client instance using `createHttpClient({ baseUrl, headers })`.',
-      'Define a reactive resource using `resource(() => http.get<T>(endpoint))`.',
-      'Bind `resource.loading`, `resource.error`, and `resource.data` to UI elements using `<Show>`.',
-      'Trigger manual revalidation by calling `resource.refetch()`.'
+      'Define a reactive resource using `createResource(() => http.get<T>(endpoint).then(r => r.data))`.',
+      'Bind `projectsResource.loading`, `projectsResource.error`, and `projectsResource.data` to UI elements using `Show({ when: ... })`.',
+      'Trigger manual revalidation by calling `projectsResource.refetch()`.'
     ],
     tsCodeExample: `import { el, Show, For } from '@samrey/runtime';
-import { createHttpClient, resource } from '@samrey/http';
+import { createHttpClient, createResource } from '@samrey/http';
 
 interface Project {
   id: string;
@@ -425,8 +425,9 @@ export const api = createHttpClient({
 // 2. Component fetching projects
 export function ProjectExplorer(): HTMLElement {
   // Reactive resource automatically executes on mount
-  const projectsResource = resource(async () => {
-    return api.get<Project[]>('/projects');
+  const projectsResource = createResource(async () => {
+    const res = await api.get<Project[]>('/projects');
+    return res.data;
   });
 
   return el('div', { class: 'p-6 max-w-2xl mx-auto space-y-4' },
@@ -468,14 +469,14 @@ export function ProjectExplorer(): HTMLElement {
     })
   );
 }`,
-    codeExplanation: '`createHttpClient` handles base URLs, authorization headers, timeout abort controllers, and JSON response parsing. `resource()` tracks the promise lifecycle, exposing reactive signals for `loading`, `error`, and `data`. When `projectsResource.refetch()` is called, loading transitions back to `true` and the UI seamlessly updates.',
+    codeExplanation: '`createHttpClient` handles base URLs, authorization headers, timeout abort controllers, and JSON response parsing. `createResource()` tracks the promise lifecycle, exposing reactive signals for `loading`, `error`, and `data`. When `projectsResource.refetch()` is called, loading transitions back to `true` and the UI seamlessly updates.',
     alternativeApproach: 'For simple single-fire calls in response to user actions (like form submissions), invoke `api.post(...)` or `api.put(...)` directly inside event handlers.',
     commonMistakes: [
       'Calling async `fetch` directly in component bodies without tracking reactive loading/error states.',
       'Forgetting to handle error cases, leading to unhandled promise rejections in UI flows.',
       'Hardcoding API secrets or authorization tokens into client-side bundles.'
     ],
-    relatedApis: ['createHttpClient', 'resource', 'createCache', 'fetchResource', 'Show', 'For'],
+    relatedApis: ['createHttpClient', 'createResource', 'createHttpCache', 'RequestCache', 'Show', 'For'],
     docLinks: [
       { label: 'Router & HTTP Guide', url: '#architecture' },
       { label: 'Public API Reference', url: '#docs' }
@@ -871,7 +872,7 @@ function FragileSubtreeComponent(): HTMLElement {
       'Return the root `HTMLElement`.'
     ],
     tsCodeExample: `import { el, onMount, onCleanup } from '@samrey/runtime';
-import { Signal, signal } from '@samrey/reactivity';
+import { type Signal, signal } from '@samrey/reactivity';
 
 export interface CardProps {
   title: string;
@@ -1793,7 +1794,7 @@ export async function generateStaticProductPages(): Promise<Record<string, strin
       'Observe O(1) execution time with zero list re-traversal.'
     ],
     tsCodeExample: `import { el, For } from '@samrey/runtime';
-import { signal, Signal } from '@samrey/reactivity';
+import { signal, type Signal } from '@samrey/reactivity';
 
 interface StockRow {
   id: string;
