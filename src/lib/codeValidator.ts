@@ -223,7 +223,7 @@ const FOREIGN_API_MAP: Array<{ regex: RegExp; name: string; framework: string; a
   { regex: /\bcreateSlice\b/, name: 'createSlice', framework: 'Redux Toolkit', alternative: "createStore() from '@samrey/reactivity'" },
   { regex: /\buseSelector\b/, name: 'useSelector', framework: 'Redux', alternative: "computed(() => store.key) from '@samrey/reactivity'" },
   { regex: /\bBehaviorSubject\b|\bObservable\b/, name: 'RxJS Observable', framework: 'RxJS', alternative: "signal() and effect() from '@samrey/reactivity'" },
-  { regex: /\$state|\$derived|\$effect/, name: 'Svelte 5 Runes', framework: 'Svelte', alternative: "signal(), computed(), effect() from '@samrey/reactivity'" }
+  { regex: /(?:^|[^a-zA-Z0-9_$])(?:\$state|\$derived|\$effect)\b/, name: 'Svelte 5 Runes', framework: 'Svelte', alternative: "signal(), computed(), effect() from '@samrey/reactivity'" }
 ];
 
 const REGEX_PRECEDING_KEYWORDS = new Set([
@@ -263,9 +263,20 @@ function scanRegexEnd(code: string, slashIndex: number): number {
   return -1;
 }
 
-function canPrecedeRegex(prevNonWsChar: string, lastIdent: string): boolean {
+function canPrecedeRegex(
+  prevNonWsChar: string,
+  lastIdent: string,
+  prevTwoNonWsChars = '',
+  charBeforeIncDec = ''
+): boolean {
   if (!prevNonWsChar) return true;
+  if (prevTwoNonWsChars === '++' || prevTwoNonWsChars === '--') {
+    if (/[A-Za-z0-9_$)\]]/.test(charBeforeIncDec)) {
+      return false; // postfix ++ / -- cannot precede regex
+    }
+  }
   if ('=([{:;?,!&|^~+-*/%<>\n\r'.includes(prevNonWsChar)) return true;
+  if (prevNonWsChar === '}') return true; // block close e.g. if (x) {} /regex/
   if (/[A-Za-z0-9_$]/.test(prevNonWsChar) && lastIdent) {
     return REGEX_PRECEDING_KEYWORDS.has(lastIdent);
   }
@@ -277,6 +288,8 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
   let i = 0;
   const templateBraceStack: number[] = [];
   let prevNonWsChar = '';
+  let prevTwoNonWsChars = '';
+  let charBeforeIncDec = '';
   let lastIdent = '';
 
   const updatePrevFromNonWs = (ch: string) => {
@@ -288,6 +301,17 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
       }
     } else {
       lastIdent = '';
+    }
+    if (ch === '+' || ch === '-') {
+      if (prevNonWsChar === ch) {
+        prevTwoNonWsChars = ch + ch;
+      } else {
+        charBeforeIncDec = prevNonWsChar;
+        prevTwoNonWsChars = ch;
+      }
+    } else {
+      prevTwoNonWsChars = ch;
+      charBeforeIncDec = '';
     }
     prevNonWsChar = ch;
   };
@@ -305,6 +329,8 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         i += 2;
         templateBraceStack.push(1);
         prevNonWsChar = '{';
+        prevTwoNonWsChars = '{';
+        charBeforeIncDec = '';
         lastIdent = '';
         return;
       }
@@ -312,6 +338,8 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
         out += keepStrings ? '`' : ' ';
         i++;
         prevNonWsChar = '`';
+        prevTwoNonWsChars = '`';
+        charBeforeIncDec = '';
         lastIdent = '';
         return;
       }
@@ -345,12 +373,14 @@ function stripCommentsAndStrings(code: string, keepStrings = false): string {
       }
       continue;
     }
-    if (ch === '/' && canPrecedeRegex(prevNonWsChar, lastIdent)) {
+    if (ch === '/' && canPrecedeRegex(prevNonWsChar, lastIdent, prevTwoNonWsChars, charBeforeIncDec)) {
       const regexEnd = scanRegexEnd(code, i);
       if (regexEnd !== -1) {
         out += keepStrings ? code.slice(i, regexEnd) : ' ';
         i = regexEnd;
         prevNonWsChar = '/';
+        prevTwoNonWsChars = '/';
+        charBeforeIncDec = '';
         lastIdent = '';
         continue;
       }
@@ -455,6 +485,8 @@ export function validateSamreyCode(
   let inLineComment = false;
   let inBlockComment = false;
   let structPrevChar = '';
+  let structPrevTwoNonWsChars = '';
+  let structCharBeforeIncDec = '';
   let structLastIdent = '';
 
   const trackStructChar = (c: string) => {
@@ -462,6 +494,17 @@ export function validateSamreyCode(
       structLastIdent = /[A-Za-z0-9_$]/.test(structPrevChar) ? structLastIdent + c : c;
     } else {
       structLastIdent = '';
+    }
+    if (c === '+' || c === '-') {
+      if (structPrevChar === c) {
+        structPrevTwoNonWsChars = c + c;
+      } else {
+        structCharBeforeIncDec = structPrevChar;
+        structPrevTwoNonWsChars = c;
+      }
+    } else {
+      structPrevTwoNonWsChars = c;
+      structCharBeforeIncDec = '';
     }
     structPrevChar = c;
   };
@@ -486,12 +529,12 @@ export function validateSamreyCode(
     }
     if (inSingleQuote) {
       if (char === '\\') { i++; continue; }
-      if (char === "'") { inSingleQuote = false; structPrevChar = "'"; structLastIdent = ''; }
+      if (char === "'") { inSingleQuote = false; structPrevChar = "'"; structPrevTwoNonWsChars = "'"; structCharBeforeIncDec = ''; structLastIdent = ''; }
       continue;
     }
     if (inDoubleQuote) {
       if (char === '\\') { i++; continue; }
-      if (char === '"') { inDoubleQuote = false; structPrevChar = '"'; structLastIdent = ''; }
+      if (char === '"') { inDoubleQuote = false; structPrevChar = '"'; structPrevTwoNonWsChars = '"'; structCharBeforeIncDec = ''; structLastIdent = ''; }
       continue;
     }
     if (inBacktick) {
@@ -500,11 +543,13 @@ export function validateSamreyCode(
         templateBraceStack.push(1);
         inBacktick = false;
         structPrevChar = '{';
+        structPrevTwoNonWsChars = '{';
+        structCharBeforeIncDec = '';
         structLastIdent = '';
         i++;
         continue;
       }
-      if (char === '`') { inBacktick = false; structPrevChar = '`'; structLastIdent = ''; }
+      if (char === '`') { inBacktick = false; structPrevChar = '`'; structPrevTwoNonWsChars = '`'; structCharBeforeIncDec = ''; structLastIdent = ''; }
       continue;
     }
 
@@ -521,11 +566,13 @@ export function validateSamreyCode(
     }
 
     // Regex literal start
-    if (char === '/' && canPrecedeRegex(structPrevChar, structLastIdent)) {
+    if (char === '/' && canPrecedeRegex(structPrevChar, structLastIdent, structPrevTwoNonWsChars, structCharBeforeIncDec)) {
       const regexEnd = scanRegexEnd(trimmed, i);
       if (regexEnd !== -1) {
         i = regexEnd - 1;
         structPrevChar = '/';
+        structPrevTwoNonWsChars = '/';
+        structCharBeforeIncDec = '';
         structLastIdent = '';
         continue;
       }
@@ -579,6 +626,10 @@ export function validateSamreyCode(
   const codeWithoutCommentsAndStrings = stripCommentsAndStrings(trimmed, false);
 
   // 2. Package & Import Audit
+  if (/\b(?:import\s+(?:[^;]*?from\s+)?|require\s*\(\s*)['"](?:react(?:-dom)?|vue|@angular\/|svelte|solid-js)['"]/.test(codeWithoutComments)) {
+    errors.push('Forbidden foreign framework import detected. Samrey is an independent framework with its own compile-time reactive runtime.');
+  }
+
   const importRegex = /\bimport\s+((?:type\s+)?(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}|[A-Za-z_$][\w$]*(?:\s*,\s*(?:\*\s+as\s+[A-Za-z_$][\w$]*|\{[^}]*\}))?))\s+from\s+['"]([^'"]+)['"]/g;
   let match: RegExpExecArray | null;
   let importsSamreyReactivity = false;
@@ -673,9 +724,109 @@ export function validateSamreyCode(
     warnings.push('Reactive binding note: Signal `.value` evaluated statically inside `el()`. Use accessor closure `() => signal.value` for live fine-grained DOM updates.');
   }
 
+  // Check for direct signal value read passed into bind* helpers
+  if (/\b(?:bindText|bindDynamicChild)\s*\([^,]+,\s*([a-zA-Z0-9_$]+)\.value\s*[,)]/.test(codeWithoutCommentsAndStrings)) {
+    errors.push('Direct signal value read passed to bindText(). Reactive bindings require an accessor function (e.g. () => count.value).');
+  }
+  if (/\b(?:bindAttr|bindAttribute|bindClass|bindProperty|bindStyle)\s*\([^,]+,\s*[^,]+,\s*([a-zA-Z0-9_$]+)\.value\s*[,)]/.test(codeWithoutCommentsAndStrings)) {
+    errors.push('Direct signal value read passed to bindAttr(). Reactive bindings require an accessor function (e.g. () => count.value).');
+  }
+
   // Check for in-place array mutation: todos.value.push(...)
-  if (/\b([a-zA-Z0-9_$]+)\.value\.(?:push|splice|pop|shift|unshift)\b/.test(codeWithoutCommentsAndStrings)) {
-    warnings.push('Reactive state note: In-place array mutation detected. Assign a new array reference `signal.value = [...signal.value, newItem]` to trigger reactive setters.');
+  const inPlaceRegex = /\b([a-zA-Z0-9_$]+)\.value\.(push|splice|pop|shift|unshift|sort|reverse)\s*\(/g;
+  let inPlaceMatch: RegExpExecArray | null;
+  while ((inPlaceMatch = inPlaceRegex.exec(codeWithoutCommentsAndStrings)) !== null) {
+    warnings.push(`Reactive state note: In-place array mutation ".value.${inPlaceMatch[2]}()" detected. Assign a new array reference \`signal.value = [...signal.value, newItem]\` to trigger reactive setters.`);
+  }
+
+  // 5. Security & Dangerous Sinks Audit
+  if (
+    /(?:\b(?:eval|window\.eval|globalThis\.eval)\s*(?:\?\.)?\s*\(|\(\s*(?:0\s*,\s*)?(?:window\.)?eval\s*\)\s*(?:\?\.)?\s*\(|(?:window|globalThis)\s*(?:\?\.)?\[\s*['"`]eval['"`]\s*\]\s*(?:\?\.)?\s*\()/.test(codeWithoutComments)
+  ) {
+    errors.push('Dangerous eval() execution detected. Arbitrary dynamic code evaluation violates security policies.');
+  }
+
+  if (
+    /(?:\bnew\s+Function\s*(?:\?\.)?\s*\(|(?:\b(?:window|globalThis)\s*(?:\.|\?\.)|\b(?:window|globalThis)\s*\[\s*['"`]Function['"`]\s*\]\s*)Function\s*(?:\?\.)?\s*\(|(?:window|globalThis)\s*\[\s*['"`]Function['"`]\s*\]\s*(?:\?\.)?\s*\(|(?:^|[^\w$.])Function\s*\([^)]*\)\s*(?:\?\.)?\s*\()/.test(codeWithoutComments)
+  ) {
+    errors.push('Dangerous Function() constructor detected. Dynamic code execution circumvents CSP.');
+  }
+
+  if (
+    /\bdocument\s*(?:\.|\?\.|\[\s*['"`](?:write|writeln)['"`]\s*\]\s*)\s*(?:write|writeln)?\s*(?:\?\.)?\s*\(/.test(codeWithoutComments)
+  ) {
+    errors.push('Dangerous document.write() call detected.');
+  }
+
+  if (/(?:inner|outer)HTML/i.test(codeWithoutComments)) {
+    const htmlAssignRegex = /(?:\b(?:innerHTML|outerHTML)\s*|\[\s*['"`](?:innerHTML|outerHTML)['"`]\s*\]\s*|\[\s*['"`](?:inner|outer)['"`]\s*\+\s*['"`]HTML['"`]\s*\]\s*)(?:\+=|=)\s*([^\n;},]+)/g;
+    let hm: RegExpExecArray | null;
+    while ((hm = htmlAssignRegex.exec(codeWithoutComments)) !== null) {
+      const rhs = hm[1].trim();
+      const isLiteralString = /^(['"`])[\s\S]*\1$/.test(rhs);
+      if (!isLiteralString && rhs !== 'null' && rhs !== 'undefined') {
+        errors.push('Unsafe innerHTML / outerHTML assignment with non-literal expression detected.');
+        break;
+      }
+    }
+
+    if (
+      /\b(?:insertAdjacentHTML\s*(?:\?\.)?\s*\(|\[\s*['"`]insertAdjacentHTML['"`]\s*\]\s*(?:\?\.)?\s*\()\s*[^,]+,\s*(?!['"`][^'"`]*['"`]\s*[,)])/.test(codeWithoutComments)
+    ) {
+      errors.push('Unsafe insertAdjacentHTML call with non-literal expression detected.');
+    }
+  }
+
+  const dangerousUriPattern = /(?:javascript|vbscript|data\s*:\s*text\/html)/i;
+  if (dangerousUriPattern.test(codeWithoutComments)) {
+    const attrWithUriRegex = /\b(href|xlink:href|src|action|formaction|poster|data|codebase|background|cite|longdesc|ping|srcset|imagesrcset|style)\s*=\s*(?:'([^']*)'|"([^"]*)"|`([^`]*)`)/gi;
+    let attrM: RegExpExecArray | null;
+    while ((attrM = attrWithUriRegex.exec(codeWithoutComments)) !== null) {
+      const before = codeWithoutComments.slice(0, attrM.index);
+      if (/\b(?:const|let|var)\s*$/.test(before)) {
+        continue;
+      }
+      const lastOpen = before.lastIndexOf('<');
+      const lastClose = before.lastIndexOf('>');
+      if (lastOpen === -1 || lastOpen < lastClose) {
+        continue;
+      }
+
+      const aName = attrM[1].toLowerCase();
+      const aVal = attrM[2] ?? attrM[3] ?? attrM[4] ?? '';
+      if (
+        (aName === 'style' && /url\s*\(\s*['"]?\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(aVal)) ||
+        (aName !== 'style' && dangerousUriPattern.test(aVal))
+      ) {
+        errors.push(`Dangerous script URI scheme detected in attribute "${aName}".`);
+      }
+    }
+
+    const setAttrMatch = /\bsetAttribute\s*\(\s*['"`](href|src|action|formaction|poster|data|background|cite|srcset|style)['"`]\s*,\s*(['"`])([\s\S]*?)\2\s*\)/gi;
+    let sam: RegExpExecArray | null;
+    while ((sam = setAttrMatch.exec(codeWithoutComments)) !== null) {
+      const attrName = sam[1].toLowerCase();
+      const val = sam[3];
+      if (
+        (attrName === 'style' && /url\s*\(\s*['"]?\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(val)) ||
+        (attrName !== 'style' && dangerousUriPattern.test(val))
+      ) {
+        errors.push('Dangerous script URI scheme passed to setAttribute().');
+      }
+    }
+
+    const objAttrMatch = /(?:\{|,)\s*['"]?(href|src|action|formaction|poster|data|background|cite|srcset|style)['"]?\s*:\s*(['"`])([\s\S]*?)\2/gi;
+    let oam: RegExpExecArray | null;
+    while ((oam = objAttrMatch.exec(codeWithoutComments)) !== null) {
+      const attrName = oam[1].toLowerCase();
+      const val = oam[3];
+      if (
+        (attrName === 'style' && /url\s*\(\s*['"]?\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(val)) ||
+        (attrName !== 'style' && dangerousUriPattern.test(val))
+      ) {
+        errors.push('Dangerous script URI scheme detected in el() attributes object.');
+      }
+    }
   }
 
   if (warnings.length === 0 && errors.length === 0) {

@@ -46,6 +46,176 @@ export function getDelegatedEventScript(events = ['click', 'input', 'submit', 'k
   return `<script${nonceAttr}>!function(){Array.isArray(window.__SAMREY_EVENTS__)||(window.__SAMREY_EVENTS__=[]);var a=window.__SAMREY_ACTIVE_EVENTS__=window.__SAMREY_ACTIVE_EVENTS__&&typeof window.__SAMREY_ACTIVE_EVENTS__==="object"?window.__SAMREY_ACTIVE_EVENTS__:{},r=window.__SAMREY_EVENT_REGS__=Array.isArray(window.__SAMREY_EVENT_REGS__)?window.__SAMREY_EVENT_REGS__:[],e=${eventsList},h=function(t){Array.isArray(window.__SAMREY_EVENTS__)&&window.__SAMREY_EVENTS__.push(t)};e.forEach(function(t){if(!Object.prototype.hasOwnProperty.call(a,t)){a[t]=1;document.addEventListener(t,h,{capture:!0});r.push([t,h])}});var c=function(){r.forEach(function(x){document.removeEventListener(x[0],x[1],{capture:!0});delete a[x[0]]});r.length=0;if(window.__SAMREY_EVENTS_CLEANUP__===c)delete window.__SAMREY_EVENTS_CLEANUP__;delete window.__SAMREY_ACTIVE_EVENTS__;delete window.__SAMREY_EVENT_REGS__};window.__SAMREY_EVENTS_CLEANUP__=c}();</script>`;
 }
 
+function getSafeProtoValue(node: unknown, prop: string, ctors: Array<unknown>): { found: boolean; value: unknown } {
+  if (!node || typeof node !== 'object') return { found: false, value: undefined };
+  for (const ctor of ctors) {
+    if (typeof ctor === 'function' && node instanceof (ctor as any)) {
+      const desc = Object.getOwnPropertyDescriptor((ctor as any).prototype, prop);
+      if (desc && typeof desc.get === 'function') {
+        try {
+          return { found: true, value: desc.get.call(node) };
+        } catch {
+          // continue to fallback
+        }
+      }
+    }
+  }
+  return { found: false, value: undefined };
+}
+
+function getSafeNodeType(node: unknown): number | null {
+  if (!node || typeof node !== 'object') return null;
+  const protoRes = getSafeProtoValue(node, 'nodeType', [
+    typeof Node !== 'undefined' ? Node : undefined
+  ]);
+  if (protoRes.found) {
+    return typeof protoRes.value === 'number' ? protoRes.value : null;
+  }
+  const raw = (node as { nodeType?: unknown }).nodeType;
+  return typeof raw === 'number' ? raw : null;
+}
+
+function getSafeChildNodes(node: unknown): any[] {
+  if (!node || typeof node !== 'object') return [];
+  const protoRes = getSafeProtoValue(node, 'childNodes', [
+    typeof Node !== 'undefined' ? Node : undefined
+  ]);
+  const rawList = protoRes.found ? protoRes.value : (node as { childNodes?: unknown }).childNodes;
+  if (!rawList || typeof rawList !== 'object') return [];
+  if (Array.isArray(rawList)) return rawList.slice();
+  // Reject clobbered DOM elements (e.g. <select name="childNodes"> is iterable over <option>s!)
+  if (getSafeNodeType(rawList) !== null) return [];
+  if (typeof (rawList as { length?: unknown }).length === 'number' || Symbol.iterator in rawList) {
+    try {
+      return Array.from(rawList as ArrayLike<any>);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function getSafeTextContent(node: unknown): string {
+  if (!node || typeof node !== 'object') return '';
+  const protoRes = getSafeProtoValue(node, 'textContent', [
+    typeof Node !== 'undefined' ? Node : undefined
+  ]);
+  const raw = protoRes.found ? protoRes.value : (node as { textContent?: unknown }).textContent;
+  return typeof raw === 'string' ? raw : raw == null ? '' : String(raw);
+}
+
+function setSafeTextContent(node: unknown, value: string): void {
+  if (!node || typeof node !== 'object') return;
+  if (typeof Node !== 'undefined' && node instanceof Node) {
+    const desc = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+    if (desc && typeof desc.set === 'function') {
+      try {
+        desc.set.call(node, value);
+        return;
+      } catch {
+        // fallback below
+      }
+    }
+  }
+  (node as { textContent: string }).textContent = value;
+}
+
+function getSafeParentNode(node: unknown): any {
+  if (!node || typeof node !== 'object') return null;
+  const protoRes = getSafeProtoValue(node, 'parentNode', [
+    typeof Node !== 'undefined' ? Node : undefined
+  ]);
+  return protoRes.found ? protoRes.value : ((node as { parentNode?: unknown }).parentNode ?? null);
+}
+
+function getSafeNextSibling(node: unknown): any {
+  if (!node || typeof node !== 'object') return null;
+  const protoRes = getSafeProtoValue(node, 'nextSibling', [
+    typeof Node !== 'undefined' ? Node : undefined
+  ]);
+  return protoRes.found ? protoRes.value : ((node as { nextSibling?: unknown }).nextSibling ?? null);
+}
+
+function safeQuerySelector(container: unknown, selector: string): Element | null {
+  if (!container || typeof container !== 'object') return null;
+  if (
+    typeof Element !== 'undefined' &&
+    container instanceof Element &&
+    typeof Element.prototype.querySelector === 'function'
+  ) {
+    return Element.prototype.querySelector.call(container, selector);
+  }
+  const fn = (container as { querySelector?: unknown }).querySelector;
+  return typeof fn === 'function' ? fn.call(container, selector) : null;
+}
+
+function safeInsertBefore(parent: unknown, newNode: unknown, refNode: unknown): void {
+  if (!parent || typeof parent !== 'object') return;
+  if (
+    typeof Node !== 'undefined' &&
+    parent instanceof Node &&
+    typeof Node.prototype.insertBefore === 'function'
+  ) {
+    Node.prototype.insertBefore.call(parent, newNode as Node, (refNode as Node | null) ?? null);
+    return;
+  }
+  const fn = (parent as { insertBefore?: unknown }).insertBefore;
+  if (typeof fn === 'function') {
+    fn.call(parent, newNode, refNode ?? null);
+  }
+}
+
+function safeReplaceChildren(container: unknown, ...nodes: unknown[]): void {
+  if (!container || typeof container !== 'object') return;
+  if (
+    typeof Element !== 'undefined' &&
+    container instanceof Element &&
+    typeof Element.prototype.replaceChildren === 'function'
+  ) {
+    Element.prototype.replaceChildren.call(container, ...(nodes as Array<Node | string>));
+    return;
+  }
+  if (
+    typeof DocumentFragment !== 'undefined' &&
+    container instanceof DocumentFragment &&
+    typeof DocumentFragment.prototype.replaceChildren === 'function'
+  ) {
+    DocumentFragment.prototype.replaceChildren.call(container, ...(nodes as Array<Node | string>));
+    return;
+  }
+  const fn = (container as { replaceChildren?: unknown }).replaceChildren;
+  if (typeof fn === 'function') {
+    fn.call(container, ...nodes);
+    return;
+  }
+  // Fallback if replaceChildren was shadowed without native prototype method
+  const removeChildFn =
+    typeof Node !== 'undefined' && container instanceof Node && typeof Node.prototype.removeChild === 'function'
+      ? Node.prototype.removeChild
+      : (container as { removeChild?: unknown }).removeChild;
+  if (typeof removeChildFn === 'function') {
+    for (const child of getSafeChildNodes(container)) {
+      removeChildFn.call(container, child);
+    }
+  }
+  for (const node of nodes) {
+    safeInsertBefore(container, node, null);
+  }
+}
+
+function safeSplitText(node: unknown, offset: number): any {
+  if (!node || typeof node !== 'object') return null;
+  if (
+    typeof Text !== 'undefined' &&
+    node instanceof Text &&
+    typeof Text.prototype.splitText === 'function'
+  ) {
+    return Text.prototype.splitText.call(node, offset);
+  }
+  const fn = (node as { splitText?: unknown }).splitText;
+  return typeof fn === 'function' ? fn.call(node, offset) : null;
+}
+
 function getSafeElementAttribute(el: unknown, attrName: string): string | null {
   if (!el || typeof el !== 'object') return null;
   try {
@@ -68,8 +238,8 @@ function getSafeElementAttribute(el: unknown, attrName: string): string | null {
 
 function getSafeElementTagName(el: unknown): string | null {
   if (!el || typeof el !== 'object') return null;
-  const nt = (el as { nodeType?: unknown }).nodeType;
-  if (nt !== undefined && nt !== 1) return null;
+  const nt = getSafeNodeType(el);
+  if (nt !== null && nt !== 1) return null;
   try {
     if (typeof Element !== 'undefined' && el instanceof Element) {
       const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'tagName');
@@ -103,7 +273,10 @@ function getSafeElementClassName(el: unknown): string | null {
   if (!el || typeof el !== 'object') return null;
   const attrClass = getSafeElementAttribute(el, 'class');
   if (typeof attrClass === 'string') return attrClass;
-  const cls = (el as { className?: unknown }).className;
+  const protoCls = getSafeProtoValue(el, 'className', [
+    typeof Element !== 'undefined' ? Element : undefined
+  ]);
+  const cls = protoCls.found ? protoCls.value : (el as { className?: unknown }).className;
   if (typeof cls === 'string') return cls;
   if (cls && typeof cls === 'object' && typeof (cls as { baseVal?: unknown }).baseVal === 'string') {
     return (cls as { baseVal: string }).baseVal;
@@ -146,8 +319,7 @@ export function replayCapturedEvents(container?: HTMLElement): number {
       typeof document !== 'undefined' &&
       typeof document.contains === 'function' &&
       !document.contains(target) &&
-      container &&
-      typeof container.querySelector === 'function'
+      container
     ) {
       try {
         const safeId =
@@ -156,15 +328,15 @@ export function replayCapturedEvents(container?: HTMLElement): number {
         const safeClass = getSafeElementClassName(target);
         const safeTag = getSafeElementTagName(target);
         if (safeId) {
-          target = container.querySelector(`#${escapeCssIdentifier(safeId)}`) || target;
+          target = safeQuerySelector(container, `#${escapeCssIdentifier(safeId)}`) || target;
         } else if (safeClass && safeClass.trim()) {
           const classes = safeClass.trim().split(/\s+/).filter(Boolean);
           if (classes.length > 0) {
             const selector = classes.map((c) => `.${escapeCssIdentifier(c)}`).join('');
-            target = container.querySelector(selector) || target;
+            target = safeQuerySelector(container, selector) || target;
           }
         } else if (safeTag) {
-          target = container.querySelector(escapeCssIdentifier(safeTag.toLowerCase())) || target;
+          target = safeQuerySelector(container, escapeCssIdentifier(safeTag.toLowerCase())) || target;
         }
       } catch {
         // Preserve original target if fallback selector cannot be queried
@@ -207,8 +379,9 @@ function flattenClientNodes(input: unknown, expandHeadlessMarkers = true): any[]
       if (seen.has(n)) return;
       seen.add(n);
     }
-    if (n.nodeType === 11 && n.childNodes) {
-      for (const child of Array.from(n.childNodes)) {
+    const nt = getSafeNodeType(n);
+    if (nt === 11) {
+      for (const child of getSafeChildNodes(n)) {
         visit(child);
       }
       return;
@@ -216,8 +389,8 @@ function flattenClientNodes(input: unknown, expandHeadlessMarkers = true): any[]
     out.push(n);
     if (
       expandHeadlessMarkers &&
-      n.nodeType === 8 &&
-      !n.parentNode &&
+      nt === 8 &&
+      !getSafeParentNode(n) &&
       Array.isArray(n[HEADLESS_CHILDREN_SYMBOL])
     ) {
       for (const hChild of n[HEADLESS_CHILDREN_SYMBOL]) {
@@ -242,45 +415,48 @@ function matchNodeTrees(
 
   while (cIdx < clientList.length) {
     const cNode = clientList[cIdx];
-    if (!cNode || cNode.nodeType === 8) {
+    const cType = getSafeNodeType(cNode);
+    if (!cNode || cType === 8) {
       cIdx++;
       continue;
     }
 
-    while (sIdx < serverList.length && serverList[sIdx]?.nodeType === 8) {
+    while (sIdx < serverList.length && getSafeNodeType(serverList[sIdx]) === 8) {
       sIdx++;
     }
 
     const sNode = serverList[sIdx];
+    const sType = getSafeNodeType(sNode);
     if (
-      cNode.nodeType === 3 &&
-      (!cNode.textContent || cNode.textContent === '') &&
+      cType === 3 &&
+      getSafeTextContent(cNode) === '' &&
       capture.retargeters.has(cNode) &&
-      (!sNode || sNode.nodeType !== 3)
+      (!sNode || sType !== 3)
     ) {
       cIdx++;
       continue;
     }
 
     if (!sNode) {
-      onMismatch?.(getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cNode.nodeType}`, 'missing', parentForError);
+      onMismatch?.(getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cType}`, 'missing', parentForError);
       return false;
     }
 
-    if (cNode.nodeType !== sNode.nodeType) {
+    if (cType !== sType) {
       onMismatch?.(
-        getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cNode.nodeType}`,
-        getSafeElementTagName(sNode)?.toUpperCase() || `NodeType: ${sNode.nodeType}`,
+        getSafeElementTagName(cNode)?.toUpperCase() || `NodeType: ${cType}`,
+        getSafeElementTagName(sNode)?.toUpperCase() || `NodeType: ${sType}`,
         sNode
       );
       return false;
     }
 
-    if (cNode.nodeType === 3) {
+    if (cType === 3) {
       cIdx++;
       while (cIdx < clientList.length) {
         const nextC = clientList[cIdx];
-        if (!nextC || nextC.nodeType === 8 || nextC.nodeType === 3) {
+        const nextCType = getSafeNodeType(nextC);
+        if (!nextC || nextCType === 8 || nextCType === 3) {
           cIdx++;
         } else {
           break;
@@ -289,7 +465,8 @@ function matchNodeTrees(
       sIdx++;
       while (sIdx < serverList.length) {
         const nextS = serverList[sIdx];
-        if (!nextS || nextS.nodeType === 8 || nextS.nodeType === 3) {
+        const nextSType = getSafeNodeType(nextS);
+        if (!nextS || nextSType === 8 || nextSType === 3) {
           sIdx++;
         } else {
           break;
@@ -298,16 +475,16 @@ function matchNodeTrees(
       continue;
     }
 
-    if (cNode.nodeType === 1) {
+    if (cType === 1) {
       const cTag = getSafeElementTagName(cNode)?.toUpperCase();
       const sTag = getSafeElementTagName(sNode)?.toUpperCase();
       if (!cTag || !sTag || cTag !== sTag) {
-        onMismatch?.(cTag || `NodeType: ${cNode.nodeType}`, sTag || `NodeType: ${sNode.nodeType}`, sNode);
+        onMismatch?.(cTag || `NodeType: ${cType}`, sTag || `NodeType: ${sType}`, sNode);
         return false;
       }
 
-      const sChildren = sNode.childNodes ? Array.from(sNode.childNodes) : [];
-      const cChildren = cNode.childNodes ? Array.from(cNode.childNodes) : [];
+      const sChildren = getSafeChildNodes(sNode);
+      const cChildren = getSafeChildNodes(cNode);
       if (sChildren.length > 0 || cChildren.length > 0) {
         if (!matchNodeTrees(sChildren, cChildren, sNode, capture, onMismatch)) {
           return false;
@@ -321,8 +498,9 @@ function matchNodeTrees(
 
   while (sIdx < serverList.length) {
     const sRem = serverList[sIdx];
-    if (sRem && sRem.nodeType !== 8) {
-      onMismatch?.('missing', getSafeElementTagName(sRem)?.toUpperCase() || `NodeType: ${sRem.nodeType}`, sRem);
+    const sRemType = getSafeNodeType(sRem);
+    if (sRem && sRemType !== 8) {
+      onMismatch?.('missing', getSafeElementTagName(sRem)?.toUpperCase() || `NodeType: ${sRemType}`, sRem);
       return false;
     }
     sIdx++;
@@ -346,9 +524,9 @@ function createHydrationTextNode(content: string, templateNode?: any): any {
   if (templateNode?.ownerDocument && typeof templateNode.ownerDocument.createTextNode === 'function') {
     return templateNode.ownerDocument.createTextNode(content);
   }
-  if (templateNode && templateNode.nodeType === 3 && typeof templateNode.cloneNode === 'function') {
+  if (templateNode && getSafeNodeType(templateNode) === 3 && typeof templateNode.cloneNode === 'function') {
     const cloned = templateNode.cloneNode(false);
-    cloned.textContent = content;
+    setSafeTextContent(cloned, content);
     cloned.parentNode = null;
     return cloned;
   }
@@ -368,8 +546,9 @@ function createHydrationTextNode(content: string, templateNode?: any): any {
 function hasMoreClientTextInRun(clientList: any[], fromIdx: number): boolean {
   for (let k = fromIdx; k < clientList.length; k++) {
     const n = clientList[k];
-    if (!n || n.nodeType === 8) continue;
-    return n.nodeType === 3;
+    const nt = getSafeNodeType(n);
+    if (!n || nt === 8) continue;
+    return nt === 3;
   }
   return false;
 }
@@ -391,16 +570,18 @@ function adoptNodeTrees(
       continue;
     }
 
-    while (sIdx < serverList.length && serverList[sIdx]?.nodeType === 8) {
+    while (sIdx < serverList.length && getSafeNodeType(serverList[sIdx]) === 8) {
       sIdx++;
     }
     const sNode = serverList[sIdx];
+    const cType = getSafeNodeType(cNode);
+    const sType = getSafeNodeType(sNode);
 
-    if (cNode.nodeType === 8) {
-      if (serverParent && typeof serverParent.insertBefore === 'function') {
+    if (cType === 8) {
+      if (serverParent) {
         (cNode as any)[HYDRATING_MARKER_SYMBOL] = true;
         try {
-          serverParent.insertBefore(cNode, sNode ?? null);
+          safeInsertBefore(serverParent, cNode, sNode ?? null);
         } finally {
           delete (cNode as any)[HYDRATING_MARKER_SYMBOL];
         }
@@ -410,14 +591,14 @@ function adoptNodeTrees(
     }
 
     if (
-      cNode.nodeType === 3 &&
-      (!cNode.textContent || cNode.textContent === '') &&
+      cType === 3 &&
+      getSafeTextContent(cNode) === '' &&
       capture.retargeters.has(cNode) &&
-      (!sNode || sNode.nodeType !== 3)
+      (!sNode || sType !== 3)
     ) {
       const boundTextNode = createHydrationTextNode('', sNode);
-      if (serverParent && typeof serverParent.insertBefore === 'function') {
-        serverParent.insertBefore(boundTextNode, sNode ?? null);
+      if (serverParent) {
+        safeInsertBefore(serverParent, boundTextNode, sNode ?? null);
       }
       retargetNode(cNode, boundTextNode, capture);
       cIdx++;
@@ -426,31 +607,30 @@ function adoptNodeTrees(
 
     const matchedServerNode = sNode;
     if (!matchedServerNode) break;
+    const matchedServerType = getSafeNodeType(matchedServerNode);
 
     if (
-      cNode.nodeType === 3 &&
-      matchedServerNode.nodeType === 3 &&
+      cType === 3 &&
+      matchedServerType === 3 &&
       hasMoreClientTextInRun(clientList, cIdx + 1)
     ) {
       let nextNonCommentServer: any = null;
       for (let k = sIdx + 1; k < serverList.length; k++) {
-        if (serverList[k]?.nodeType !== 8) {
+        if (getSafeNodeType(serverList[k]) !== 8) {
           nextNonCommentServer = serverList[k];
           break;
         }
       }
-      const fullText = String(matchedServerNode.textContent ?? '');
-      const splitOffset = Math.min(String(cNode.textContent ?? '').length, fullText.length);
-      if (splitOffset < fullText.length || !nextNonCommentServer || nextNonCommentServer.nodeType !== 3) {
-        let remainderNode: any;
-        if (typeof matchedServerNode.splitText === 'function') {
-          remainderNode = matchedServerNode.splitText(splitOffset);
-        } else {
-          matchedServerNode.textContent = fullText.slice(0, splitOffset);
+      const fullText = getSafeTextContent(matchedServerNode);
+      const splitOffset = Math.min(getSafeTextContent(cNode).length, fullText.length);
+      if (splitOffset < fullText.length || !nextNonCommentServer || getSafeNodeType(nextNonCommentServer) !== 3) {
+        let remainderNode = safeSplitText(matchedServerNode, splitOffset);
+        if (!remainderNode) {
+          setSafeTextContent(matchedServerNode, fullText.slice(0, splitOffset));
           remainderNode = createHydrationTextNode(fullText.slice(splitOffset), matchedServerNode);
-          if (serverParent && typeof serverParent.insertBefore === 'function') {
-            const nextRef = (sIdx + 1 < serverList.length ? serverList[sIdx + 1] : null) ?? matchedServerNode.nextSibling ?? null;
-            serverParent.insertBefore(remainderNode, nextRef);
+          if (serverParent) {
+            const nextRef = (sIdx + 1 < serverList.length ? serverList[sIdx + 1] : null) ?? getSafeNextSibling(matchedServerNode) ?? null;
+            safeInsertBefore(serverParent, remainderNode, nextRef);
           }
         }
         serverList.splice(sIdx + 1, 0, remainderNode);
@@ -459,9 +639,9 @@ function adoptNodeTrees(
 
     retargetNode(cNode, matchedServerNode, capture);
 
-    if (cNode.nodeType === 1) {
-      const sChildren = matchedServerNode.childNodes ? Array.from(matchedServerNode.childNodes) : [];
-      const cChildren = cNode.childNodes ? Array.from(cNode.childNodes) : [];
+    if (cType === 1) {
+      const sChildren = getSafeChildNodes(matchedServerNode);
+      const cChildren = getSafeChildNodes(cNode);
       if (cChildren.length > 0) {
         adoptNodeTrees(matchedServerNode, sChildren, cChildren, capture);
       }
@@ -495,7 +675,7 @@ export function hydrate(
     const owner = createOwner();
 
     runWithOwner(owner, () => {
-      const existingChildren = Array.from(container.childNodes);
+      const existingChildren = getSafeChildNodes(container);
       const isSsrPresent = existingChildren.length > 0;
 
       // Instantiate component tree while recording retargetable runtime bindings & events
@@ -509,7 +689,7 @@ export function hydrate(
         if (!matches) {
           if (repairMismatch) {
             console.warn('[Samrey Hydration Mismatch] Server HTML does not match client tree. Gracefully repairing DOM in-place.');
-            container.replaceChildren(...mountNodes);
+            safeReplaceChildren(container, ...mountNodes);
           }
         } else {
           // Non-destructive in-place hydration: keep SSR DOM nodes alive and migrate reactivity & events onto them
@@ -517,7 +697,7 @@ export function hydrate(
         }
       } else {
         // Direct mount if server HTML was empty
-        container.replaceChildren(...mountNodes);
+        safeReplaceChildren(container, ...mountNodes);
       }
 
       // Replay all events captured before hydration finished, targeting container elements
@@ -528,7 +708,7 @@ export function hydrate(
   return {
     dispose: () => {
       if (disposeRoot) disposeRoot();
-      container.replaceChildren();
+      safeReplaceChildren(container);
     },
     replayedEventsCount: replayedCount
   };

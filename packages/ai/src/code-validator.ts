@@ -31,11 +31,11 @@ export interface CodeValidationResult {
 }
 
 const FORBIDDEN_IMPORTS = [
-  { match: /['"]react['"]|['"]react-dom['"]/, name: 'React' },
-  { match: /['"]vue['"]/, name: 'Vue' },
-  { match: /['"]@angular\//, name: 'Angular' },
-  { match: /['"]svelte['"]/, name: 'Svelte' },
-  { match: /['"]solid-js['"]/, name: 'Solid' }
+  { match: /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]react(?:-dom)?['"]/, name: 'React' },
+  { match: /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]vue['"]/, name: 'Vue' },
+  { match: /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]@angular\//, name: 'Angular' },
+  { match: /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]svelte['"]/, name: 'Svelte' },
+  { match: /(?:\bfrom\s*|\bimport\s*|\brequire\s*\(\s*)['"]solid-js['"]/, name: 'Solid' }
 ];
 
 const FORBIDDEN_HOOKS = [
@@ -560,7 +560,7 @@ export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
 };
 
 export interface CodeToken {
-  type: 'identifier' | 'keyword' | 'string' | 'template' | 'number' | 'punct';
+  type: 'identifier' | 'keyword' | 'string' | 'template' | 'number' | 'punct' | 'regex';
   value: string;
   raw: string;
   line: number;
@@ -578,10 +578,260 @@ const JS_KEYWORDS = new Set([
   'from', 'of', 'null', 'undefined', 'true', 'false'
 ]);
 
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return', 'throw', 'case', 'default', 'typeof', 'void', 'delete',
+  'in', 'instanceof', 'of', 'await', 'yield', 'new', 'else', 'do'
+]);
+
+function scanRegexEnd(code: string, slashIndex: number): number {
+  let k = slashIndex + 1;
+  let inClass = false;
+  while (k < code.length) {
+    const c = code[k];
+    if (c === '\n' || c === '\r') return -1;
+    if (c === '\\') {
+      k += 2;
+      continue;
+    }
+    if (c === '[' && !inClass) {
+      inClass = true;
+      k++;
+      continue;
+    }
+    if (c === ']' && inClass) {
+      inClass = false;
+      k++;
+      continue;
+    }
+    if (c === '/' && !inClass) {
+      k++;
+      while (k < code.length && /[a-zA-Z]/.test(code[k])) {
+        k++;
+      }
+      return k;
+    }
+    k++;
+  }
+  return -1;
+}
+
+function canPrecedeRegex(
+  prevNonWsChar: string,
+  lastIdent: string,
+  prevTwoNonWsChars = '',
+  charBeforeIncDec = ''
+): boolean {
+  if (!prevNonWsChar) return true;
+  if (prevTwoNonWsChars === '++' || prevTwoNonWsChars === '--') {
+    if (/[A-Za-z0-9_$)\]]/.test(charBeforeIncDec)) {
+      return false; // postfix ++ / -- cannot precede regex
+    }
+  }
+  if ('=([{:;?,!&|^~+-*/%<>\n\r'.includes(prevNonWsChar)) return true;
+  if (prevNonWsChar === '}') return true; // block close e.g. if (x) {} /regex/
+  if (/[A-Za-z0-9_$]/.test(prevNonWsChar) && lastIdent) {
+    return REGEX_PRECEDING_KEYWORDS.has(lastIdent);
+  }
+  return false;
+}
+
+function stripCommentsAndStrings(code: string, keepTemplateExpressions = false): string {
+  let out = '';
+  let i = 0;
+  const templateBraceStack: number[] = [];
+  let prevNonWsChar = '';
+  let prevTwoNonWsChars = '';
+  let charBeforeIncDec = '';
+  let lastIdent = '';
+
+  const updatePrev = (ch: string) => {
+    if (/[A-Za-z0-9_$]/.test(ch)) {
+      lastIdent = /[A-Za-z0-9_$]/.test(prevNonWsChar) ? lastIdent + ch : ch;
+    } else {
+      lastIdent = '';
+    }
+    if (ch === '+' || ch === '-') {
+      if (prevNonWsChar === ch) {
+        prevTwoNonWsChars = ch + ch;
+      } else {
+        charBeforeIncDec = prevNonWsChar;
+        prevTwoNonWsChars = ch;
+      }
+    } else {
+      prevTwoNonWsChars = ch;
+      charBeforeIncDec = '';
+    }
+    prevNonWsChar = ch;
+  };
+
+  const consumeTemplateSegment = () => {
+    while (i < code.length) {
+      const cur = code[i];
+      if (cur === '\\' && i + 1 < code.length) {
+        out += code[i + 1] === '\n' ? ' \n' : '  ';
+        i += 2;
+        continue;
+      }
+      if (cur === '$' && code[i + 1] === '{') {
+        out += keepTemplateExpressions ? '${' : '  ';
+        i += 2;
+        templateBraceStack.push(1);
+        prevNonWsChar = '{';
+        prevTwoNonWsChars = '{';
+        charBeforeIncDec = '';
+        lastIdent = '';
+        return;
+      }
+      if (cur === '`') {
+        out += ' ';
+        i++;
+        prevNonWsChar = '`';
+        prevTwoNonWsChars = '`';
+        charBeforeIncDec = '';
+        lastIdent = '';
+        return;
+      }
+      out += cur === '\n' ? '\n' : ' ';
+      i++;
+    }
+  };
+
+  while (i < code.length) {
+    const ch = code[i];
+    const next = code[i + 1];
+
+    if (ch === '/' && next === '/') {
+      out += '  ';
+      i += 2;
+      while (i < code.length && code[i] !== '\n') {
+        out += ' ';
+        i++;
+      }
+      if (i < code.length && code[i] === '\n') {
+        out += '\n';
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      out += '  ';
+      i += 2;
+      while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) {
+        out += code[i] === '\n' ? '\n' : ' ';
+        i++;
+      }
+      if (i < code.length) {
+        out += '  ';
+        i += 2;
+      }
+      continue;
+    }
+
+    if (ch === '/' && next !== '/' && next !== '*' && canPrecedeRegex(prevNonWsChar, lastIdent, prevTwoNonWsChars, charBeforeIncDec)) {
+      const regEnd = scanRegexEnd(code, i);
+      if (regEnd !== -1) {
+        while (i < regEnd) {
+          out += code[i] === '\n' ? '\n' : ' ';
+          i++;
+        }
+        updatePrev('/');
+        continue;
+      }
+    }
+
+    if (ch === "'" || ch === '"') {
+      const quote = ch;
+      out += ' ';
+      i++;
+      while (i < code.length) {
+        const cur = code[i];
+        if (cur === '\\' && i + 1 < code.length) {
+          out += code[i + 1] === '\n' ? ' \n' : '  ';
+          i += 2;
+          continue;
+        }
+        if (cur === quote) {
+          out += ' ';
+          i++;
+          break;
+        }
+        out += cur === '\n' ? '\n' : ' ';
+        i++;
+      }
+      updatePrev(quote);
+      continue;
+    }
+
+    if (ch === '`') {
+      out += ' ';
+      i++;
+      consumeTemplateSegment();
+      continue;
+    }
+
+    if (templateBraceStack.length > 0 && ch === '{') {
+      templateBraceStack[templateBraceStack.length - 1]++;
+      out += ch;
+      updatePrev(ch);
+      i++;
+      continue;
+    }
+
+    if (templateBraceStack.length > 0 && ch === '}') {
+      templateBraceStack[templateBraceStack.length - 1]--;
+      if (templateBraceStack[templateBraceStack.length - 1] === 0) {
+        templateBraceStack.pop();
+        out += ' ';
+        i++;
+        consumeTemplateSegment();
+        continue;
+      }
+      out += ch;
+      updatePrev(ch);
+      i++;
+      continue;
+    }
+
+    if (!/\s/.test(ch)) {
+      updatePrev(ch);
+    } else if (ch === '\n' || ch === '\r') {
+      lastIdent = '';
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
+
 export function stripComments(code: string): string {
   let result = '';
   let i = 0;
   const templateBraceStack: number[] = [];
+  let prevNonWsChar = '';
+  let prevTwoNonWsChars = '';
+  let charBeforeIncDec = '';
+  let lastIdent = '';
+
+  const updatePrev = (ch: string) => {
+    if (/[A-Za-z0-9_$]/.test(ch)) {
+      lastIdent = /[A-Za-z0-9_$]/.test(prevNonWsChar) ? lastIdent + ch : ch;
+    } else {
+      lastIdent = '';
+    }
+    if (ch === '+' || ch === '-') {
+      if (prevNonWsChar === ch) {
+        prevTwoNonWsChars = ch + ch;
+      } else {
+        charBeforeIncDec = prevNonWsChar;
+        prevTwoNonWsChars = ch;
+      }
+    } else {
+      prevTwoNonWsChars = ch;
+      charBeforeIncDec = '';
+    }
+    prevNonWsChar = ch;
+  };
 
   const consumeTemplateSegment = () => {
     while (i < code.length) {
@@ -592,13 +842,16 @@ export function stripComments(code: string): string {
         result += '${';
         i += 2;
         templateBraceStack.push(1);
+        updatePrev('{');
         return;
       } else if (code[i] === '`') {
         result += '`';
         i++;
+        updatePrev('`');
         return;
       } else {
         result += code[i];
+        if (!/\s/.test(code[i])) updatePrev(code[i]);
         i++;
       }
     }
@@ -616,6 +869,7 @@ export function stripComments(code: string): string {
         result += '\n';
         i++;
       }
+      continue;
     } else if (code[i] === '/' && code[i + 1] === '*') {
       result += '  ';
       i += 2;
@@ -626,6 +880,20 @@ export function stripComments(code: string): string {
       if (i < code.length) {
         result += '  ';
         i += 2;
+      }
+      continue;
+    } else if (
+      code[i] === '/' &&
+      code[i + 1] !== '/' &&
+      code[i + 1] !== '*' &&
+      canPrecedeRegex(prevNonWsChar, lastIdent, prevTwoNonWsChars, charBeforeIncDec)
+    ) {
+      const regEnd = scanRegexEnd(code, i);
+      if (regEnd !== -1) {
+        result += code.slice(i, regEnd);
+        i = regEnd;
+        updatePrev('/');
+        continue;
       }
     } else if (code[i] === "'" || code[i] === '"') {
       const quote = code[i];
@@ -644,25 +912,38 @@ export function stripComments(code: string): string {
         result += code[i];
         i++;
       }
+      updatePrev(quote);
+      continue;
     } else if (code[i] === '`') {
       result += '`';
       i++;
       consumeTemplateSegment();
+      continue;
     } else if (templateBraceStack.length > 0 && code[i] === '{') {
       templateBraceStack[templateBraceStack.length - 1]++;
       result += '{';
+      updatePrev('{');
       i++;
+      continue;
     } else if (templateBraceStack.length > 0 && code[i] === '}') {
       templateBraceStack[templateBraceStack.length - 1]--;
       result += '}';
+      updatePrev('}');
       i++;
       if (templateBraceStack[templateBraceStack.length - 1] === 0) {
         templateBraceStack.pop();
         consumeTemplateSegment();
       }
+      continue;
     } else {
+      if (!/\s/.test(code[i])) {
+        updatePrev(code[i]);
+      } else if (code[i] === '\n' || code[i] === '\r') {
+        lastIdent = '';
+      }
       result += code[i];
       i++;
+      continue;
     }
   }
   return result;
@@ -712,6 +993,52 @@ export function tokenizeCode(code: string): CodeToken[] {
         advance(); advance();
       }
       continue;
+    }
+
+    if (char === '/' && code[i + 1] !== '/' && code[i + 1] !== '*') {
+      const prevTok = tokens.length > 0 ? tokens[tokens.length - 1] : undefined;
+      const prevPrevTok = tokens.length > 1 ? tokens[tokens.length - 2] : undefined;
+      let canRegex = false;
+      if (!prevTok) {
+        canRegex = true;
+      } else if (prevTok.type === 'punct') {
+        if (prevTok.value === ')' || prevTok.value === ']') {
+          canRegex = false;
+        } else if (prevTok.value === '++' || prevTok.value === '--') {
+          if (prevPrevTok && (prevPrevTok.type === 'identifier' || prevPrevTok.value === ')' || prevPrevTok.value === ']')) {
+            canRegex = false;
+          } else {
+            canRegex = true;
+          }
+        } else {
+          canRegex = true;
+        }
+      } else if (prevTok.type === 'keyword') {
+        canRegex = REGEX_PRECEDING_KEYWORDS.has(prevTok.value);
+      }
+
+      if (canRegex) {
+        const regexEnd = scanRegexEnd(code, i);
+        if (regexEnd !== -1) {
+          const start = i;
+          const startLine = line;
+          const startCol = col;
+          let raw = '';
+          while (i < regexEnd) {
+            raw += advance();
+          }
+          tokens.push({
+            type: 'regex',
+            value: raw,
+            raw,
+            line: startLine,
+            col: startCol,
+            start,
+            end: regexEnd
+          });
+          continue;
+        }
+      }
     }
 
     if (char === "'" || char === '"') {
@@ -910,6 +1237,8 @@ export function validateSamreyCode(
   const detectedApis: string[] = [];
 
   const codeWithoutComments = stripComments(code);
+  const codeWithoutStrings = stripCommentsAndStrings(code, false);
+  const codeWithTemplateExpressionsOnly = stripCommentsAndStrings(code, true);
   const tokens = tokenizeCode(code);
 
   // 1. Detect Foreign Framework Imports
@@ -1060,6 +1389,31 @@ export function validateSamreyCode(
     }
   }
 
+  // 2c. Detect Solid foreign APIs
+  const solidApis = ['createSignal', 'createEffect'];
+  for (const api of solidApis) {
+    if (new RegExp(`\\b${api}\\b`).test(codeWithoutStrings)) {
+      foreignFrameworkDetected = 'Solid';
+      errors.push({
+        message: `Foreign Solid API "${api}()" detected. Samrey is an independent framework with its own compile-time reactive runtime.`,
+        suggestion: api === 'createSignal' ? 'Use "signal(initialValue)" from @samrey/reactivity.' : 'Use "effect(() => ...)" from @samrey/reactivity.'
+      });
+    }
+  }
+
+  // 2d. Detect Svelte 5 Runes ($state, $derived, $effect)
+  const svelteRunes = ['$state', '$derived', '$effect'];
+  for (const rune of svelteRunes) {
+    const escaped = rune.replace('$', '\\$');
+    if (new RegExp(`(?:^|[^a-zA-Z0-9_$])${escaped}\\b`).test(codeWithoutStrings)) {
+      foreignFrameworkDetected = 'Svelte';
+      errors.push({
+        message: `Foreign Svelte rune "${rune}" detected. Samrey does not use Svelte runes.`,
+        suggestion: rune === '$state' ? 'Use "signal(initialValue)" from @samrey/reactivity.' : rune === '$derived' ? 'Use "computed(() => ...)" from @samrey/reactivity.' : 'Use "effect(() => ...)" from @samrey/reactivity.'
+      });
+    }
+  }
+
   // 3. Detect Samrey Official APIs
   const apiCandidates = [
     'signal',
@@ -1114,8 +1468,8 @@ export function validateSamreyCode(
   // 4. In-place array mutation on signals
   const inPlaceRegex = /\.value\.(push|splice|pop|shift|unshift|sort|reverse)\s*\(/g;
   let inPlaceMatch: RegExpExecArray | null;
-  while ((inPlaceMatch = inPlaceRegex.exec(codeWithoutComments)) !== null) {
-    const line = codeWithoutComments.slice(0, inPlaceMatch.index).split('\n').length;
+  while ((inPlaceMatch = inPlaceRegex.exec(codeWithoutStrings)) !== null) {
+    const line = code.slice(0, inPlaceMatch.index).split('\n').length;
     warnings.push({
       message: `In-place array mutation ".value.${inPlaceMatch[1]}()" detected. Signal subscribers will NOT be notified of array interior changes.`,
       line,
@@ -1126,7 +1480,7 @@ export function validateSamreyCode(
   // 4b. Detect Direct Signal Value Reads or Static Literals in bind* Helpers
   const twoArgBindHelpers = ['bindText', 'bindDynamicChild'];
   for (const helper of twoArgBindHelpers) {
-    const calls = extractCallArguments(codeWithoutComments, helper);
+    const calls = extractCallArguments(code, helper, codeWithoutStrings);
     for (const call of calls) {
       if (call.args.length >= 2) {
         checkBindAccessor(helper, call.args[1], call.line, errors);
@@ -1136,7 +1490,7 @@ export function validateSamreyCode(
 
   const threeArgBindHelpers = ['bindAttr', 'bindAttribute', 'bindClass', 'bindProperty', 'bindStyle'];
   for (const helper of threeArgBindHelpers) {
-    const calls = extractCallArguments(codeWithoutComments, helper);
+    const calls = extractCallArguments(code, helper, codeWithoutStrings);
     for (const call of calls) {
       if (call.args.length >= 3) {
         checkBindAccessor(helper, call.args[2], call.line, errors);
@@ -1147,14 +1501,26 @@ export function validateSamreyCode(
   // 4c. Detect document.write() / document.writeln() via AST tokens
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    if (
-      (t.value === 'write' || t.value === 'writeln') &&
+    const isWriteName = t.value === 'write' || t.value === 'writeln';
+    if (!isWriteName) continue;
+
+    const isDotDocWrite =
+      t.type === 'identifier' &&
       idx >= 2 &&
-      tokens[idx - 1].value === '.' &&
+      (tokens[idx - 1].value === '.' || tokens[idx - 1].value === '?.') &&
       tokens[idx - 2].value === 'document' &&
       idx + 1 < tokens.length &&
-      tokens[idx + 1].value === '('
-    ) {
+      (tokens[idx + 1].value === '(' || (tokens[idx + 1].value === '?.' && tokens[idx + 2]?.value === '('));
+
+    const isBracketDocWrite =
+      (t.type === 'string' || t.type === 'template') &&
+      idx >= 2 &&
+      tokens[idx - 1].value === '[' &&
+      (tokens[idx - 2].value === 'document' || (tokens[idx - 2].value === '?.' && tokens[idx - 3]?.value === 'document')) &&
+      tokens[idx + 1]?.value === ']' &&
+      (tokens[idx + 2]?.value === '(' || (tokens[idx + 2]?.value === '?.' && tokens[idx + 3]?.value === '('));
+
+    if (isDotDocWrite || isBracketDocWrite) {
       errors.push({
         message: 'Dangerous "document.write()" call detected. Direct document writing blocks page parsing, destroys DOM state, and introduces severe XSS risks.',
         line: t.line,
@@ -1166,16 +1532,16 @@ export function validateSamreyCode(
   // 4d. Detect eval() (direct, optional-chaining, indirect (0, eval), and window/globalThis eval)
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    const isEvalIdent = t.type === 'identifier' && t.value === 'eval';
+    if (t.value !== 'eval') continue;
+
     const isBracketEval =
-      t.type === 'string' &&
-      t.value === 'eval' &&
+      (t.type === 'string' || t.type === 'template') &&
       idx >= 2 &&
       tokens[idx - 1]?.value === '[' &&
-      (tokens[idx - 2]?.value === 'window' || tokens[idx - 2]?.value === 'globalThis') &&
-      tokens[idx + 1]?.value === ']';
+      tokens[idx + 1]?.value === ']' &&
+      (tokens[idx + 2]?.value === '(' || (tokens[idx + 2]?.value === '?.' && tokens[idx + 3]?.value === '('));
 
-    if (isBracketEval && tokens[idx + 2]?.value === '(') {
+    if (isBracketEval) {
       errors.push({
         message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
         line: t.line,
@@ -1184,21 +1550,19 @@ export function validateSamreyCode(
       continue;
     }
 
-    if (isEvalIdent) {
+    if (t.type === 'identifier') {
       const prev = idx > 0 ? tokens[idx - 1] : null;
+      const prevPrev = idx > 1 ? tokens[idx - 2] : null;
       const next = idx + 1 < tokens.length ? tokens[idx + 1] : null;
       const nextNext = idx + 2 < tokens.length ? tokens[idx + 2] : null;
 
       const isDirectCall = next?.value === '(' || (next?.value === '?.' && nextNext?.value === '(');
-      const isIndirectCall =
+      const isParenEval =
         next?.value === ')' &&
-        nextNext?.value === '(' &&
-        prev &&
-        (prev.value === ',' || prev.value === '(');
+        (nextNext?.value === '(' || (nextNext?.value === '?.' && tokens[idx + 3]?.value === '('));
 
-      if (isDirectCall || isIndirectCall) {
+      if (isDirectCall || isParenEval) {
         if (prev && (prev.value === '.' || prev.value === '?.')) {
-          const prevPrev = idx > 1 ? tokens[idx - 2] : null;
           if (prevPrev && (prevPrev.value === 'window' || prevPrev.value === 'globalThis')) {
             errors.push({
               message: 'Dangerous "eval()" execution detected. Arbitrary dynamic code evaluation violates framework security sandboxing and enables code injection vulnerabilities.',
@@ -1217,22 +1581,45 @@ export function validateSamreyCode(
     }
   }
 
-  // 4e. Detect new Function()
+  // 4e. Detect Function constructor
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    if (
-      t.value === 'Function' &&
-      t.type === 'identifier' &&
-      idx > 0 &&
-      tokens[idx - 1].value === 'new' &&
-      idx + 1 < tokens.length &&
-      tokens[idx + 1].value === '('
-    ) {
+    if (t.value !== 'Function') continue;
+
+    const isBracketFunction =
+      (t.type === 'string' || t.type === 'template') &&
+      idx >= 2 &&
+      tokens[idx - 1]?.value === '[' &&
+      (tokens[idx - 2]?.value === 'window' || tokens[idx - 2]?.value === 'globalThis') &&
+      tokens[idx + 1]?.value === ']' &&
+      (tokens[idx + 2]?.value === '(' || (tokens[idx + 2]?.value === '?.' && tokens[idx + 3]?.value === '('));
+
+    if (isBracketFunction) {
       errors.push({
-        message: 'Dangerous "new Function()" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
+        message: 'Dangerous "Function" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
         line: t.line,
         suggestion: 'Define standard closures or use explicit compiled handlers instead of generating code strings dynamically.'
       });
+      continue;
+    }
+
+    if (t.type === 'identifier') {
+      const prev = idx > 0 ? tokens[idx - 1] : null;
+      const prevPrev = idx > 1 ? tokens[idx - 2] : null;
+      const next = idx + 1 < tokens.length ? tokens[idx + 1] : null;
+
+      const isCall = next?.value === '(' || (next?.value === '?.' && tokens[idx + 2]?.value === '(');
+      const isNew = prev?.value === 'new';
+      const isWindowOrGlobal = prev && (prev.value === '.' || prev.value === '?.') && prevPrev && (prevPrev.value === 'window' || prevPrev.value === 'globalThis');
+      const isTypeAnnotation = prev && (prev.value === ':' || prev.value === 'type' || prev.value === 'interface' || prev.value === 'extends' || prev.value === 'implements');
+
+      if ((isNew && isCall) || (isWindowOrGlobal && isCall) || (isCall && !isTypeAnnotation && (!prev || prev.value === '(' || prev.value === '=' || prev.value === 'return' || prev.value === ',' || prev.value === ';' || prev.value === '{'))) {
+        errors.push({
+          message: 'Dangerous "new Function()" constructor detected. Dynamic Function constructor evaluation circumvents strict CSP and enables arbitrary code execution.',
+          line: t.line,
+          suggestion: 'Define standard closures or use explicit compiled handlers instead of generating code strings dynamically.'
+        });
+      }
     }
   }
 
@@ -1272,18 +1659,45 @@ export function validateSamreyCode(
       t.type === 'identifier' &&
       idx + 1 < tokens.length &&
       (tokens[idx + 1].value === '=' || tokens[idx + 1].value === '+=');
-    const isBracketHtmlSink =
-      (t.value === 'outerHTML' || t.value === 'innerHTML') &&
-      t.type === 'string' &&
-      idx > 0 &&
-      tokens[idx - 1].value === '[' &&
-      idx + 2 < tokens.length &&
-      tokens[idx + 1].value === ']' &&
-      (tokens[idx + 2].value === '=' || tokens[idx + 2].value === '+=');
+
+    let isBracketHtmlSink = false;
+    let bracketPropName = '';
+    let bracketCloseIdx = -1;
+
+    if (t.value === '[' && idx > 0) {
+      let b = idx + 1;
+      let bracketTokens: CodeToken[] = [];
+      let bDepth = 1;
+      while (b < tokens.length) {
+        if (tokens[b].value === '[') bDepth++;
+        else if (tokens[b].value === ']') {
+          bDepth--;
+          if (bDepth === 0) {
+            bracketCloseIdx = b;
+            break;
+          }
+        }
+        bracketTokens.push(tokens[b]);
+        b++;
+      }
+
+      if (bracketCloseIdx !== -1 && bracketCloseIdx + 1 < tokens.length && (tokens[bracketCloseIdx + 1].value === '=' || tokens[bracketCloseIdx + 1].value === '+=')) {
+        if (bracketTokens.length === 1 && (bracketTokens[0].value === 'innerHTML' || bracketTokens[0].value === 'outerHTML')) {
+          isBracketHtmlSink = true;
+          bracketPropName = bracketTokens[0].value;
+        } else {
+          const concatenated = bracketTokens.filter(tok => tok.type === 'string' || tok.type === 'template').map(tok => tok.value).join('');
+          if (concatenated === 'innerHTML' || concatenated === 'outerHTML') {
+            isBracketHtmlSink = true;
+            bracketPropName = concatenated;
+          }
+        }
+      }
+    }
 
     if (isDotHtmlSink || isBracketHtmlSink) {
-      const propName = t.value;
-      const opIdx = isDotHtmlSink ? idx + 1 : idx + 2;
+      const propName = isDotHtmlSink ? t.value : bracketPropName;
+      const opIdx = isDotHtmlSink ? idx + 1 : bracketCloseIdx + 1;
       const isCompound = tokens[opIdx].value === '+=';
       let rhsTokens: CodeToken[] = [];
       let j = opIdx + 1;
@@ -1293,11 +1707,20 @@ export function validateSamreyCode(
 
       while (j < tokens.length) {
         const tok = tokens[j];
+        const prevJTok = tokens[j - 1];
+
         if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0) {
           if (tok.value === ';' || tok.value === '}' || tok.value === ',') {
             break;
           }
+          if (tok.line > prevJTok.line) {
+            const statementStarters = new Set(['const', 'let', 'var', 'function', 'class', 'return', 'if', 'for', 'while', 'export', 'import', 'switch', 'try', 'throw']);
+            if (statementStarters.has(tok.value) || (tok.type === 'identifier' && !'+\\-*/%?:=<>!&|^'.includes(tok.value))) {
+              break;
+            }
+          }
         }
+
         if (tok.value === '(') parenDepth++;
         else if (tok.value === ')') parenDepth--;
         else if (tok.value === '{') braceDepth++;
@@ -1337,13 +1760,25 @@ export function validateSamreyCode(
   // 4h. Detect insertAdjacentHTML with non-literal dynamic expressions
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
-    if (
+    const isDotAdjacent =
       t.value === 'insertAdjacentHTML' &&
       t.type === 'identifier' &&
-      idx + 1 < tokens.length &&
-      tokens[idx + 1].value === '('
-    ) {
-      let j = idx + 2;
+      (tokens[idx + 1]?.value === '(' || (tokens[idx + 1]?.value === '?.' && tokens[idx + 2]?.value === '('));
+
+    const isBracketAdjacent =
+      t.value === 'insertAdjacentHTML' &&
+      (t.type === 'string' || t.type === 'template') &&
+      idx > 0 &&
+      tokens[idx - 1].value === '[' &&
+      tokens[idx + 1]?.value === ']' &&
+      (tokens[idx + 2]?.value === '(' || (tokens[idx + 2]?.value === '?.' && tokens[idx + 3]?.value === '('));
+
+    if (isDotAdjacent || isBracketAdjacent) {
+      const openParenIdx = isDotAdjacent
+        ? (tokens[idx + 1].value === '(' ? idx + 1 : idx + 2)
+        : (tokens[idx + 2].value === '(' ? idx + 2 : idx + 3);
+
+      let j = openParenIdx + 1;
       let parenDepth = 1;
       let argTokens: CodeToken[][] = [[]];
 
@@ -1382,30 +1817,99 @@ export function validateSamreyCode(
     }
   }
 
-  // 4i. Detect javascript: URIs in HTML/JSX URL attributes (avoiding TS variable assignments like `const uri = 'javascript:...'`)
-  const jsUriRegex = /\b(href|xlink:href|src|action|formaction|poster|data|codebase|background|cite|longdesc|ping|srcset|imagesrcset|style)\s*=\s*(?:'\s*javascript:[^']*'|"\s*javascript:[^"]*"|`\s*javascript:[^`]*`)/gi;
-  let jsUriMatch: RegExpExecArray | null;
-  while ((jsUriMatch = jsUriRegex.exec(codeWithoutComments)) !== null) {
-    const line = codeWithoutComments.slice(0, jsUriMatch.index).split('\n').length;
-    errors.push({
-      message: `Dangerous "javascript:" URI scheme detected in attribute (${jsUriMatch[0]}). Executing script via URI schemes enables XSS attacks.`,
-      line,
-      suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
-    });
+  // 4i. Detect dangerous URI schemes (javascript:, vbscript:, data:text/html) in HTML/JSX attributes, setAttribute, and style/srcset
+  const dangerousUriPattern = /(?:javascript|vbscript|data\s*:\s*text\/html)/i;
+
+  const attrWithUriRegex = /\b(href|xlink:href|src|action|formaction|poster|data|codebase|background|cite|longdesc|ping|srcset|imagesrcset|style)\s*=\s*(?:'([^']*)'|"([^"]*)"|`([^`]*)`)/gi;
+  let attrMatch: RegExpExecArray | null;
+  while ((attrMatch = attrWithUriRegex.exec(codeWithoutComments)) !== null) {
+    const before = codeWithoutComments.slice(0, attrMatch.index);
+    if (/\b(?:const|let|var)\s*$/.test(before)) {
+      continue;
+    }
+    const lastOpen = before.lastIndexOf('<');
+    const lastClose = before.lastIndexOf('>');
+    if (lastOpen === -1 || lastOpen < lastClose) {
+      continue;
+    }
+
+    const attrName = attrMatch[1].toLowerCase();
+    const val = attrMatch[2] ?? attrMatch[3] ?? attrMatch[4] ?? '';
+    let isDangerous = false;
+    if (attrName === 'style') {
+      if (/url\s*\(\s*['"]?\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(val)) {
+        isDangerous = true;
+      }
+    } else if (attrName === 'srcset' || attrName === 'imagesrcset') {
+      if (dangerousUriPattern.test(val)) {
+        isDangerous = true;
+      }
+    } else {
+      if (/^\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(val)) {
+        isDangerous = true;
+      }
+    }
+
+    if (isDangerous) {
+      const line = codeWithoutComments.slice(0, attrMatch.index).split('\n').length;
+      const scheme = /vbscript:/i.test(val) ? 'vbscript:' : /data\s*:\s*text\/html/i.test(val) ? 'data:text/html' : 'javascript:';
+      errors.push({
+        message: `Dangerous "${scheme}" URI scheme detected in attribute "${attrName}". Executing script via URI schemes enables XSS attacks.`,
+        line,
+        suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
+      });
+    }
   }
 
-  // 4j. Detect javascript: URIs in el() / Attribute Objects
+  // Check setAttribute('href', 'javascript:...') calls
+  for (let idx = 0; idx < tokens.length; idx++) {
+    const t = tokens[idx];
+    if (
+      t.value === 'setAttribute' &&
+      tokens[idx + 1]?.value === '(' &&
+      tokens[idx + 2]?.type === 'string' &&
+      tokens[idx + 3]?.value === ',' &&
+      (tokens[idx + 4]?.type === 'string' || tokens[idx + 4]?.type === 'template')
+    ) {
+      const attrName = tokens[idx + 2].value.toLowerCase();
+      const val = tokens[idx + 4].value;
+      if (
+        (attrName === 'style' && /url\s*\(\s*['"]?\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(val)) ||
+        (attrName !== 'style' && dangerousUriPattern.test(val))
+      ) {
+        const scheme = /vbscript:/i.test(val) ? 'vbscript:' : /data\s*:\s*text\/html/i.test(val) ? 'data:text/html' : 'javascript:';
+        errors.push({
+          message: `Dangerous "${scheme}" URI scheme passed to setAttribute("${attrName}"). Executing script via URI schemes enables XSS attacks.`,
+          line: t.line,
+          suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
+        });
+      }
+    }
+  }
+
+  // 4j. Detect dangerous URI schemes in el() / Attribute Objects
+  const DANGEROUS_URI_ATTRS = new Set([
+    'href', 'src', 'action', 'formaction', 'poster', 'data', 'codebase',
+    'background', 'cite', 'longdesc', 'ping', 'srcset', 'imagesrcset', 'style'
+  ]);
+
   for (let idx = 0; idx < tokens.length; idx++) {
     const t = tokens[idx];
     if (
       (t.type === 'string' || t.type === 'template') &&
-      /^\s*javascript:/i.test(t.value)
+      dangerousUriPattern.test(t.value)
     ) {
-      if (idx >= 2 && tokens[idx - 1].value === ':') {
+      if (idx >= 3 && tokens[idx - 1].value === ':') {
         const keyToken = tokens[idx - 2];
-        if (keyToken.type === 'identifier' || keyToken.type === 'string') {
+        const delimToken = tokens[idx - 3];
+        if (
+          (delimToken.value === '{' || delimToken.value === ',') &&
+          (keyToken.type === 'identifier' || keyToken.type === 'string') &&
+          DANGEROUS_URI_ATTRS.has(keyToken.value.toLowerCase())
+        ) {
+          const scheme = /vbscript:/i.test(t.value) ? 'vbscript:' : /data\s*:\s*text\/html/i.test(t.value) ? 'data:text/html' : 'javascript:';
           errors.push({
-            message: `Dangerous "javascript:" URI scheme detected in attribute/property "${keyToken.value}". Executing script via URI schemes enables XSS attacks.`,
+            message: `Dangerous "${scheme}" URI scheme detected in attribute/property "${keyToken.value}". Executing script via URI schemes enables XSS attacks.`,
             line: t.line,
             suggestion: 'Use native event listeners with "on(element, \'click\', handler)" or standard valid URLs.'
           });
@@ -1684,13 +2188,17 @@ function checkBindAccessor(
 
 function extractCallArguments(
   code: string,
-  functionName: string
+  functionName: string,
+  codeWithoutStrings?: string
 ): Array<{ rawCall: string; args: string[]; line: number }> {
   const results: Array<{ rawCall: string; args: string[]; line: number }> = [];
   const regex = new RegExp(`\\b${functionName}\\s*\\(`, 'g');
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(code)) !== null) {
+    if (codeWithoutStrings && codeWithoutStrings.slice(match.index, match.index + functionName.length) !== functionName) {
+      continue;
+    }
     const startIndex = match.index;
     const openParenIndex = match.index + match[0].length - 1;
     let depth = 1;

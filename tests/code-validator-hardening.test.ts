@@ -696,6 +696,159 @@ describe('Item 5: validateSamreyCode Hardening', () => {
         false
       );
     });
+
+    it('Batch 4 validator hardening: regex/string lexical boundaries, eval/Function/XSS sinks, URI context disambiguation, and web parity', () => {
+      const { validateSamreyCode: validateWebCode } = webCodeValidator;
+
+      // 1. Regex literals in @samrey/ai must not desync quotes, comments, or bind* call extraction
+      const aiRegexCode = `
+        import { signal } from '@samrey/reactivity';
+        import { template, bindText } from '@samrey/runtime';
+        const re = /['"\`)\\/*]/;
+        const count = signal(0);
+        const root = template('<span ref="s"></span>').clone();
+        bindText(root.refs.s, () => re.source + count.value);
+      `;
+      const aiRegexValid = validateSamreyCode(aiRegexCode);
+      assert.strictEqual(aiRegexValid.valid, true, `Regex literal broke valid Samrey code: ${JSON.stringify(aiRegexValid.errors)}`);
+
+      const aiRegexWithHook = `
+        import { signal } from '@samrey/reactivity';
+        const re = /['"\`([]/;
+        const [x] = useState(0);
+        export const s = signal(re.source + x);
+      `;
+      const aiRegexHookRes = validateSamreyCode(aiRegexWithHook);
+      assert.strictEqual(aiRegexHookRes.valid, false);
+      assert.ok(aiRegexHookRes.errors.some((e) => e.message.includes('useState')));
+
+      // 2. String and plain template literals must NOT false-positive as in-place mutation or bind* violations
+      const stringsOnly = `
+        import { signal } from '@samrey/reactivity';
+        const docs = "Never do items.value.push(x) or bindText(el, count.value) in Samrey";
+        const note = \`Example anti-pattern: todos.value.splice(0, 1) and bindAttr(el, 'id', c.value)\`;
+        export const s = signal(docs + note);
+      `;
+      const stringsOnlyRes = validateSamreyCode(stringsOnly);
+      assert.strictEqual(stringsOnlyRes.valid, true, `String prose caused errors: ${JSON.stringify(stringsOnlyRes.errors)}`);
+      assert.strictEqual(stringsOnlyRes.warnings.length, 0, `String prose caused warnings: ${JSON.stringify(stringsOnlyRes.warnings)}`);
+
+      // 3. Expanded eval / Function / document.write / bracket+template+concat HTML sinks & ASI newline handling
+      const dangerousSinks = [
+        `(window.eval)("1+1");`,
+        `(0, window.eval)("1+1");`,
+        `window["eval"]?.("1+1");`,
+        `window?.["eval"]("1+1");`,
+        `window[\`eval\`]("1+1");`,
+        `globalThis[\`eval\`]("1+1");`,
+        `Function("return 1")();`,
+        `window.Function("return 1")();`,
+        `globalThis.Function("return 1")();`,
+        `window["Function"]("return 1")();`,
+        `document?.write("<p>x</p>");`,
+        `document["writeln"]("<p>x</p>");`,
+        `el[\`innerHTML\`] = userHtml;`,
+        `el["outer" + "HTML"] = userHtml;`,
+        `el?.insertAdjacentHTML("beforeend", userHtml);`,
+        `el["insertAdjacentHTML"]("beforeend", userHtml);`
+      ];
+      for (const snippet of dangerousSinks) {
+        const aiRes = validateSamreyCode(snippet);
+        assert.strictEqual(aiRes.valid, false, `@samrey/ai must reject dangerous sink: ${snippet}`);
+        const webRes = validateWebCode(snippet);
+        assert.strictEqual(webRes.isValid, false, `Web validator must reject dangerous sink: ${snippet}`);
+      }
+
+      // ASI newline termination on static innerHTML must NOT false-positive
+      const asiStaticHtml = `
+        import { template } from '@samrey/runtime';
+        const root = template('<div ref="box"></div>').clone();
+        root.refs.box.innerHTML = '<p>Safe static content</p>'
+        const count = 42;
+      `;
+      const asiRes = validateSamreyCode(asiStaticHtml);
+      assert.strictEqual(asiRes.valid, true, `ASI newline caused false positive: ${JSON.stringify(asiRes.errors)}`);
+
+      // 4. Dangerous URI schemes in HTML attributes (style url(), srcset, vbscript:, data:text/html), attr objects, and setAttribute
+      const badUriSnippets = [
+        `import { template } from '@samrey/runtime'; template('<a href="vbscript:msgbox(1)">x</a>');`,
+        `import { template } from '@samrey/runtime'; template('<iframe src="data:text/html,<script>alert(1)</script>"></iframe>');`,
+        `import { template } from '@samrey/runtime'; template('<div style="background: url(javascript:alert(1))"></div>');`,
+        `import { template } from '@samrey/runtime'; template('<img srcset="ok.png 1x, javascript:alert(1) 2x" />');`,
+        `import { el } from '@samrey/runtime'; el('a', { href: 'vbscript:msgbox(1)' }, 'bad');`,
+        `import { el } from '@samrey/runtime'; el('iframe', { src: 'data:text/html,<svg>' }, '');`,
+        `const link = document.createElement('a'); link.setAttribute('href', 'javascript:alert(1)');`,
+        `const frame = document.createElement('iframe'); frame.setAttribute('src', 'data:text/html,<p>x</p>');`
+      ];
+      for (const snippet of badUriSnippets) {
+        assert.strictEqual(validateSamreyCode(snippet).valid, false, `@samrey/ai must reject dangerous URI: ${snippet}`);
+        assert.strictEqual(validateWebCode(snippet).isValid, false, `Web validator must reject dangerous URI: ${snippet}`);
+      }
+
+      // Non-false-positives: TS variables named data/src and ternary ': javascript:...' expressions
+      const safeUriCode = `
+        import { sanitizeUri } from '@samrey/security';
+        const data = 'javascript:alert(1)';
+        const src = 'vbscript:msgbox(1)';
+        const fallback = true ? 'https://example.com' : 'javascript:alert(1)';
+        export const cleaned = [sanitizeUri(data), sanitizeUri(src), sanitizeUri(fallback)];
+      `;
+      const safeAi = validateSamreyCode(safeUriCode);
+      assert.strictEqual(safeAi.valid, true, `Safe TS URI code caused errors in @samrey/ai: ${JSON.stringify(safeAi.errors)}`);
+      const safeWeb = validateWebCode(safeUriCode);
+      assert.strictEqual(safeWeb.isValid, true, `Safe TS URI code caused errors in web validator: ${JSON.stringify(safeWeb.errors)}`);
+
+      // 5. Postfix ++/-- before division & block `}` before regex in web validator + Svelte `$state` word-boundary
+      const postfixDiv = `
+        import { signal } from '@samrey/reactivity';
+        let i = 4, j = 6;
+        const avg = i++ / 2 + j++ / 2;
+        const bad = useState(avg);
+        export const s = signal(bad);
+      `;
+      const webPostfix = validateWebCode(postfixDiv);
+      assert.ok(webPostfix.foreignApis.some((f) => f.name === 'useState'), `Postfix ++/-- confused regex scanner: ${JSON.stringify(webPostfix)}`);
+
+      const blockThenRegex = `
+        import { signal } from '@samrey/reactivity';
+        function check(a: boolean, s: string) {
+          if (a) {}
+          /['"\`]/.test(s);
+          return useState(0);
+        }
+        export const s = signal(check(true, 'a'));
+      `;
+      const webBlockRegex = validateWebCode(blockThenRegex);
+      assert.ok(!webBlockRegex.errors.some((e) => e.includes('Unclosed')), `Block } before regex caused unclosed error: ${JSON.stringify(webBlockRegex.errors)}`);
+      assert.ok(webBlockRegex.foreignApis.some((f) => f.name === 'useState'), `Block } before regex hid useState: ${JSON.stringify(webBlockRegex)}`);
+
+      const identWithDollar = `
+        import { signal } from '@samrey/reactivity';
+        const my$state = signal(1);
+        export const out = my$state.value;
+      `;
+      assert.strictEqual(validateWebCode(identWithDollar).foreignApis.length, 0, 'my$state must not trigger Svelte $state rune check');
+
+      // 6. Foreign imports parity & bare side-effect import 'react'
+      assert.strictEqual(validateSamreyCode(`import 'react';`).valid, false);
+      assert.strictEqual(validateWebCode(`import 'react';`).isValid, false);
+      assert.strictEqual(validateSamreyCode(`const [n, setN] = createSignal(0);`).valid, false);
+      assert.strictEqual(validateSamreyCode(`let count = $state(0);`).valid, false);
+
+      // 7. Web validator parity for .value.sort()/reverse() and bindText(el, count.value)
+      const webBindAndSort = `
+        import { signal } from '@samrey/reactivity';
+        import { bindText, template } from '@samrey/runtime';
+        const count = signal(0);
+        const list = signal([3, 1, 2]);
+        list.value.sort();
+        const root = template('<span ref="s"></span>').clone();
+        bindText(root.refs.s, count.value);
+      `;
+      const webBindRes = validateWebCode(webBindAndSort);
+      assert.strictEqual(webBindRes.isValid, false, 'Web validator should reject static count.value in bindText');
+      assert.ok(webBindRes.warnings.some((w) => w.includes('sort')), `Web validator should warn on .value.sort(): ${JSON.stringify(webBindRes.warnings)}`);
+    });
   });
 });
 

@@ -723,6 +723,53 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       assert.equal(auditSource('<img src={x + /{/} alt="ok" onerror="alert(1)" />', 'App.tsx').violationsCount, 1);
       assert.equal(auditSource('const id = <T extends object>(x: T) => x;\n// <script>alert(1)</script>', 'App.tsx').violationsCount, 0);
       assert.equal(auditSource('<UI.Box>"Welcome</UI.Box>\n// <script>alert(1)</script>', 'App.tsx').violationsCount, 0);
+
+      // Additional Batch 3 red-team bypasses for auditSource: postfix ++/--, default/yield strings, unspaced comparisons
+      assert.equal(
+        auditSource('const x = a++ / 2; const bad = "<script>alert(1)</script>"; const y = 1 / 2;', 'App.ts').violationsCount,
+        1,
+        'Postfix ++ before division must not be parsed as regex literal hiding <script>'
+      );
+      assert.equal(
+        auditSource('<div data-x={a++ / 2} onclick="alert(1)"></div> // comment', 'App.tsx').violationsCount,
+        1,
+        'Postfix ++ / 2 inside JSX expression must not swallow closing brace or onclick'
+      );
+      assert.equal(
+        auditSource('export default"/*"; const x = "<script>alert(1)</script>"; /* */', 'App.ts').violationsCount,
+        1,
+        'String immediately after export default must not treat /* inside string as comment'
+      );
+      assert.equal(
+        auditSource('const ok = a<b\nconst s = "<script>alert(1)</script>"\nconst g = 1 > 0', 'App.tsx').violationsCount,
+        1,
+        'Unspaced comparison a<b must not consume subsequent <script> up to >'
+      );
+      assert.equal(
+        auditSource('const ok = a < b\nconst s = "<script>alert(1)</script>"\nconst g = 1 > 0', 'App.tsx').violationsCount,
+        1,
+        'Spaced comparison a < b must not consume subsequent <script> up to >'
+      );
+      assert.equal(
+        auditSource('<div>Hello <a href="javascript:alert(1)">click</a></div>', 'App.tsx').violationsCount,
+        1,
+        'Inline JSX child tag after prose text must still be audited'
+      );
+      assert.equal(
+        auditSource('function App() { return<a href="javascript:alert(1)">x</a>; }', 'App.tsx').violationsCount,
+        1,
+        'JSX tag immediately following return without whitespace must be audited'
+      );
+      assert.equal(
+        auditSource('const x = { a: 1 } / 2; const s = "<script>alert(1)</script>"; const y = 1 / 2;', 'App.ts').violationsCount,
+        1,
+        'Division after object closing brace must not be treated as regex literal hiding <script>'
+      );
+      const commentInJsxAttrReport = auditSource('<div /* <script> */ onclick="alert(1)"></div>', 'App.tsx');
+      assert.ok(
+        commentInJsxAttrReport.messages.some((m) => m.includes('onclick')),
+        `JS block comment inside JSX opening tag must not abort scanning following onclick, got: ${JSON.stringify(commentInJsxAttrReport.messages)}`
+      );
     } finally {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

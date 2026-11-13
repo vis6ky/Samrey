@@ -153,7 +153,12 @@ const KNOWN_DOM_EVENT_ATTRIBUTES = new Set<string>([
 ]);
 
 const REGEX_PRECEDING_KEYWORDS = new Set<string>([
-  'return', 'case', 'throw', 'typeof', 'void', 'delete', 'await', 'else', 'do', 'in', 'of'
+  'return', 'case', 'throw', 'typeof', 'void', 'delete', 'await', 'yield', 'else', 'do', 'in', 'of'
+]);
+
+const STRING_PRECEDING_KEYWORDS = new Set<string>([
+  ...REGEX_PRECEDING_KEYWORDS,
+  'default', 'from', 'import', 'extends', 'as', 'implements', 'satisfies'
 ]);
 
 function isScriptLikeFile(filename: string): boolean {
@@ -190,7 +195,11 @@ function trySkipJsRegexLiteral(source: string, pos: number, len: number): number
   while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
     j--;
   }
-  let canStartRegex = j < 0 || '=([,:?!&|^~;{}\n\r+-*%<>'.includes(source[j]!);
+  const prevOp = j >= 0 ? source[j]! : '';
+  const isPostfixIncDec =
+    (prevOp === '+' && j > 0 && source[j - 1] === '+') ||
+    (prevOp === '-' && j > 0 && source[j - 1] === '-');
+  let canStartRegex = !isPostfixIncDec && (j < 0 || '=([,:?!&|^~;{\n\r+-*%<>'.includes(prevOp));
   if (!canStartRegex && /[a-zA-Z]/.test(source[j]!)) {
     let wordStart = j;
     while (wordStart > 0 && /[a-zA-Z0-9_$]/.test(source[wordStart - 1]!)) {
@@ -245,7 +254,27 @@ function isJsStringOpener(source: string, pos: number): boolean {
     start--;
   }
   const word = source.slice(start, pos);
-  return REGEX_PRECEDING_KEYWORDS.has(word);
+  return STRING_PRECEDING_KEYWORDS.has(word);
+}
+
+function isJsComparisonBeforeLt(source: string, ltPos: number): boolean {
+  if (ltPos === 0) return false;
+  let j = ltPos - 1;
+  while (j >= 0 && (source[j] === ' ' || source[j] === '\t')) {
+    j--;
+  }
+  if (j < 0) return false;
+  const ch = source[j]!;
+  if (ch === ')' || ch === ']') return true;
+  if (/[a-zA-Z0-9_$]/.test(ch)) {
+    let start = j;
+    while (start > 0 && /[a-zA-Z0-9_$]/.test(source[start - 1]!)) {
+      start--;
+    }
+    const word = source.slice(start, j + 1);
+    return !STRING_PRECEDING_KEYWORDS.has(word);
+  }
+  return false;
 }
 
 const VOID_HTML_TAGS = new Set([
@@ -389,6 +418,10 @@ function scanOpeningTags(source: string, scriptLike: boolean, isJsxMarkup: boole
     }
 
     const lt = i;
+    if (scriptLike && !inJsLiteralText && !inJsxChildren && isJsComparisonBeforeLt(source, lt)) {
+      i = lt + 1;
+      continue;
+    }
     const firstChar = source[lt + 1];
     if (!firstChar || !/[a-zA-Z]/.test(firstChar)) {
       i = lt + 1;
@@ -430,6 +463,16 @@ function scanOpeningTags(source: string, scriptLike: boolean, isJsxMarkup: boole
       if (ch === '<') {
         abortedAt = pos;
         break;
+      }
+      if (scriptLike && !inJsLiteralText && ch === '/' && source[pos + 1] === '*') {
+        const closeBlock = source.indexOf('*/', pos + 2);
+        pos = closeBlock === -1 ? len : closeBlock + 2;
+        continue;
+      }
+      if (scriptLike && !inJsLiteralText && ch === '/' && source[pos + 1] === '/') {
+        const nl = source.indexOf('\n', pos + 2);
+        pos = nl === -1 ? len : nl + 1;
+        continue;
       }
       if (ch === '{') {
         pos = skipBalancedBraces(source, pos, len);

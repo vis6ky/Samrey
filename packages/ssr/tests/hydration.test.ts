@@ -741,4 +741,123 @@ describe('@samrey/ssr - Client Hydration & Event Replay', () => {
       (globalThis as any).Element = prevElement;
     }
   });
+
+  it('Batch 3 red-team: safely handles DOM-clobbered nodeType, childNodes (input & iterable select), and replaceChildren on <form>', () => {
+    const prevDocument = (globalThis as any).document;
+    const prevElement = (globalThis as any).Element;
+    const prevNode = (globalThis as any).Node;
+    const prevEventTarget = (globalThis as any).EventTarget;
+
+    const nodeTypeMap = new WeakMap<object, number>();
+    const nodeNameMap = new WeakMap<object, string>();
+    const childListMap = new WeakMap<object, any[]>();
+    const tagMap = new WeakMap<object, string>();
+
+    class MockEventTarget {
+      addEventListener() {}
+      removeEventListener() {}
+      dispatchEvent() { return true; }
+    }
+    class MockNode extends MockEventTarget {
+      get nodeType() { return nodeTypeMap.get(this) ?? 1; }
+      get nodeName() { return nodeNameMap.get(this) ?? 'DIV'; }
+      get childNodes() { return childListMap.get(this) ?? []; }
+      get firstChild() { return (childListMap.get(this) ?? [])[0] ?? null; }
+      get parentNode() { return null; }
+      get nextSibling() { return null; }
+      insertBefore(newNode: any, refNode: any) {
+        const list = childListMap.get(this) ?? [];
+        const idx = refNode ? list.indexOf(refNode) : -1;
+        if (idx === -1) list.push(newNode);
+        else list.splice(idx, 0, newNode);
+        childListMap.set(this, list);
+        return newNode;
+      }
+    }
+    class MockElement extends MockNode {
+      attributes: Record<string, string> = {};
+      get tagName() { return tagMap.get(this) ?? 'DIV'; }
+      setAttribute(k: string, v: string) { this.attributes[k] = v; }
+      getAttribute(k: string) { return this.attributes[k] ?? null; }
+      replaceChildren(...nodes: any[]) { childListMap.set(this, [...nodes]); }
+      querySelector() { return null; }
+    }
+
+    (globalThis as any).EventTarget = MockEventTarget;
+    (globalThis as any).Node = MockNode;
+    (globalThis as any).Element = MockElement;
+
+    const makeEl = (tag: string) => {
+      const n = new MockElement();
+      const upper = tag.toUpperCase();
+      nodeTypeMap.set(n, 1);
+      nodeNameMap.set(n, upper);
+      tagMap.set(n, upper);
+      childListMap.set(n, []);
+      return n as any;
+    };
+
+    (globalThis as any).document = {
+      createElement: (tag: string) => makeEl(tag),
+      createTextNode: (t: string) => ({ nodeType: 3, nodeName: '#text', textContent: t }),
+      createComment: (t: string) => ({ nodeType: 8, nodeName: '#comment', textContent: t }),
+      createDocumentFragment: () => ({ nodeType: 11, nodeName: '#document-fragment', childNodes: [] as any[] })
+    };
+
+    try {
+      // 1. Clobbered <form> with inputs named tagName, nodeType, and an iterable <select name="childNodes"><option/></select>
+      const clobberedForm = makeEl('FORM');
+      const inpTag = makeEl('INPUT');
+      const inpNt = makeEl('INPUT');
+      const selChildren = makeEl('SELECT');
+      const opt = makeEl('OPTION');
+      childListMap.get(selChildren)!.push(opt);
+      // Make selChildren iterable just like HTMLSelectElement over <option>
+      selChildren[Symbol.iterator] = function* () { yield opt; };
+      childListMap.get(clobberedForm)!.push(inpTag, inpNt, selChildren);
+
+      Object.defineProperty(clobberedForm, 'tagName', { value: inpTag, configurable: true });
+      Object.defineProperty(clobberedForm, 'nodeType', { value: inpNt, configurable: true });
+      Object.defineProperty(clobberedForm, 'childNodes', { value: selChildren, configurable: true });
+      Object.defineProperty(clobberedForm, 'replaceChildren', { value: inpTag, configurable: true });
+
+      const container = makeEl('DIV');
+      childListMap.get(container)!.push(clobberedForm);
+
+      let mismatches = 0;
+      const res1 = hydrate(() => {
+        const f = makeEl('FORM');
+        const c1 = makeEl('INPUT');
+        const c2 = makeEl('INPUT');
+        const sel = makeEl('SELECT');
+        childListMap.get(sel)!.push(makeEl('OPTION'));
+        childListMap.get(f)!.push(c1, c2, sel);
+        return f as unknown as Node;
+      }, container, { onMismatch: () => { mismatches++; }, repairMismatch: false });
+      assert.equal(mismatches, 0, 'Clobbered nodeType/childNodes/tagName on <form> must still hydrate cleanly');
+      res1.dispose();
+
+      // 2. Clobbered <form> acting directly as hydration container with clobbered replaceChildren & childNodes
+      const formContainer = makeEl('FORM');
+      const replInput = makeEl('INPUT');
+      childListMap.get(formContainer)!.push(replInput);
+      Object.defineProperty(formContainer, 'replaceChildren', { value: replInput, configurable: true });
+      Object.defineProperty(formContainer, 'childNodes', { value: replInput, configurable: true });
+      Object.defineProperty(formContainer, 'nodeType', { value: replInput, configurable: true });
+
+      let formMismatches = 0;
+      const res2 = hydrate(() => makeEl('SPAN') as unknown as Node, formContainer, {
+        onMismatch: () => { formMismatches++; },
+        repairMismatch: true
+      });
+      assert.equal(formMismatches, 1, 'Mismatch repair on form container with clobbered replaceChildren must not throw');
+      assert.equal(childListMap.get(formContainer)!.length, 1);
+      res2.dispose();
+    } finally {
+      (globalThis as any).document = prevDocument;
+      (globalThis as any).Element = prevElement;
+      (globalThis as any).Node = prevNode;
+      (globalThis as any).EventTarget = prevEventTarget;
+    }
+  });
 });
