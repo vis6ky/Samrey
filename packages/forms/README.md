@@ -32,7 +32,8 @@ const form = createForm({
   }
 });
 
-const usernameInput = el('input', { type: 'text', ...bindField(form.fields.username) });
+const usernameInput = el('input', { type: 'text' });
+bindField(form.fields.username, usernameInput);
 ```
 
 ## API

@@ -50,7 +50,7 @@ function App() {
 - `RouterOutlet(): HTMLElement` — Container rendering the component for the active matched route.
 - `useRouter(): RouterInstance` — Retrieves the active router instance from context.
 - `useParams(): ReadonlySignal<Record<string, string>>` — Reactive signal containing matched URL route parameters.
-- `useLocation(): ReadonlySignal<{ pathname: string; search: string; hash: string }>` — Reactive signal containing path, search, and hash.
+- `useLocation(): ReadonlySignal<string>` — Reactive signal containing path, search, and hash.
 - `useSearchParams(): [ReadonlySignal<URLSearchParams>, (next: Record<string, string>) => void]` — Reactive query parameter helper.
 - `matchRoute(pattern: string, pathname: string): RouteMatch | null` — Utility matching URL path patterns.
 

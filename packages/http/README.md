@@ -15,7 +15,7 @@ npm install @samrey/http @samrey/reactivity
 ## Quick Example
 
 ```ts
-import { createResource, HttpClient } from '@samrey/http';
+import { createResource, createHttpClient } from '@samrey/http';
 import { signal } from '@samrey/reactivity';
 
 const userId = signal('1');
@@ -34,9 +34,9 @@ console.log(user.loading.value); // true
 console.log(user.data.value);    // undefined -> user object once resolved
 
 // 2. Typed HTTP Client
-const client = new HttpClient({ baseUrl: 'https://api.example.com' });
+const client = createHttpClient({ baseUrl: 'https://api.example.com' });
 const response = await client.get('/items');
-console.log(response.data);
+console.log(response); // response data directly
 ```
 
 ## API
