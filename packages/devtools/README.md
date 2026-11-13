@@ -28,13 +28,13 @@ const dispose = effect(() => {
 
 // 2. Capture reactive topology snapshot
 const snapshot = getGraphSnapshot();
-console.log(`Active edges: ${snapshot.edges.length}`, defaultGraphInspector.getSnapshot());
+console.log(`Active nodes: ${snapshot.length}`, defaultGraphInspector.getSnapshot());
 ```
 
 ## API
 
 - `initDevTools(options?: { targetOrigin?: string; isDev?: boolean }): DevToolsBridge` — Initializes the runtime inspection bridge (alias: `initDevtools`).
-- `getGraphSnapshot()` — Captures the current reactive dependency graph snapshot via `GraphInspector`.
+- `getGraphSnapshot(): InspectedSignalNode[]` — Captures the current reactive dependency graph snapshot via `GraphInspector`.
 - `isDevToolsActive(): boolean` / `computeIsDev(...)` — Reports active DevTools mode.
 - `GraphInspector` / `ComponentInspector` / `OwnerInspector` / `RouterInspector` / `NetworkInspector` / `FormInspector` / `PerformanceInspector` — Built-in telemetry inspector classes (with `default*` singletons).
 - `sanitizePayload(payload)` / `isSensitiveKey(key)` — Strips credential and secret fields from telemetry events.

@@ -4,6 +4,7 @@
  */
 
 import { lintA11y } from '@samrey/compiler';
+import { validateSamreyCode } from '@samrey/ai';
 import {
   URL_ATTRIBUTES,
   SRCSET_ATTRIBUTES,
@@ -539,6 +540,27 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
       } else if (body.trim().length > 0) {
         messages.push(`${filename}:${tagLine}: <script> tag with src attribute must not contain inline code. Violates CSP.`);
       }
+    }
+  }
+
+  if (scriptLike || filename.toLowerCase().endsWith('.samrey')) {
+    const validation = validateSamreyCode(source, {
+      filename,
+      isTemplateOnly: filename.toLowerCase().endsWith('.samrey')
+    });
+
+    for (const err of validation.errors) {
+      const errLine = err.line ?? 1;
+      const isJsUriAttrErr = err.message.startsWith('Dangerous "javascript:" URI scheme detected in attribute (');
+      if (isJsUriAttrErr) {
+        const alreadyReportedOnLine = messages.some(
+          (m) => m.startsWith(`${filename}:${errLine}:`) && m.toLowerCase().includes('javascript:')
+        );
+        if (alreadyReportedOnLine) {
+          continue;
+        }
+      }
+      messages.push(`${filename}:${errLine}: ${err.message}`);
     }
   }
 

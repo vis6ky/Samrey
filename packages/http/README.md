@@ -34,15 +34,15 @@ console.log(user.loading.value); // true
 console.log(user.data.value);    // undefined -> user object once resolved
 
 // 2. Typed HTTP Client
-const client = new HttpClient({ baseUrl: 'https://api.example.com' });
-const response = await client.get('/items');
-console.log(response.data);
+const client = new HttpClient('https://api.example.com');
+const items = await client.get('/items');
+console.log(items);
 ```
 
 ## API
 
 - `createResource<T, S>(source, fetcher, options)` — Creates a reactive resource bound to source accessors (iterable `[resource, { refetch, mutate }]`).
-- `createHttpClient(options?: HttpClientOptions): HttpClient` — Factory creating a configured `HttpClient` instance.
+- `createHttpClient(baseUrl?: string): HttpClient` — Factory creating a configured `HttpClient` instance.
 - `HttpClient` — Configurable HTTP client class with interceptors, CSRF protection, same-origin enforcement, timeouts, and JSON helpers.
 - `RequestCache` / `createHttpCache` — Request cache and in-flight deduplication store.
 - `HttpError` — Structured HTTP error class with status code and parsed body.

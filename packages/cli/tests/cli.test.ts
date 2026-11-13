@@ -655,4 +655,42 @@ describe('@samrey/cli - Comprehensive Developer Experience & Tooling Suite', () 
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   });
+
+  it('Batch 4 #46: integrates validateSamreyCode into auditSource to detect unsafe JS sinks, foreign APIs, and bad reactive bindings', async () => {
+    const { auditSource } = await import('../src/audit.js');
+
+    const unsafeJs = [
+      "import { useState } from 'react';",
+      "import { signal } from '@samrey/reactivity';",
+      "import { bindText, el } from '@samrey/runtime';",
+      'const count = signal(0);',
+      'const [state] = useState(0);',
+      'const node = el("a", { href: "javascript:alert(1)" }, "link");',
+      'bindText(node, count.value);',
+      'eval("1 + 1");',
+      'node.innerHTML = userInput;'
+    ].join('\n');
+
+    const report = auditSource(unsafeJs, 'BadWidget.ts');
+    assert.ok(report.violationsCount >= 6, `Expected >= 6 violations, got ${report.violationsCount}: ${report.messages.join('\n')}`);
+    assert.ok(report.messages.some((m) => m.includes('React')));
+    assert.ok(report.messages.some((m) => m.includes('javascript:')));
+    assert.ok(report.messages.some((m) => m.includes('bindText')));
+    assert.ok(report.messages.some((m) => m.includes('eval()')));
+    assert.ok(report.messages.some((m) => m.includes('innerHTML')));
+
+    const validSamreyTs = [
+      "import { signal } from '@samrey/reactivity';",
+      "import { bindText, el } from '@samrey/runtime';",
+      'export function GoodWidget() {',
+      '  const count = signal(0);',
+      '  const span = el("span", null);',
+      '  bindText(span, () => String(count.value));',
+      '  return span;',
+      '}'
+    ].join('\n');
+
+    const cleanReport = auditSource(validSamreyTs, 'GoodWidget.ts');
+    assert.equal(cleanReport.violationsCount, 0, `Expected 0 violations, got:\n${cleanReport.messages.join('\n')}`);
+  });
 });

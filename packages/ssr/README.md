@@ -56,8 +56,8 @@ In development (`NODE_ENV !== 'production'`), passing unconverted `Map` or `Set`
 
 ## API
 
-- `renderToString(component: () => HTMLElement | Promise<HTMLElement>, options?: SsrOptions): Promise<string>` — Renders an Samrey component tree into an HTML string.
-- `renderToStream(component: () => HTMLElement, options?: StreamOptions): ReadableStream` — Streams HTML chunks with suspense boundary support.
+- `renderToString(app: (() => unknown) | string, options?: RenderToStringOptions): Promise<string>` — Renders a Samrey component tree or HTML string into an HTML document string.
+- `renderToStream(app: (() => unknown) | string, options?: RenderToStreamOptions): ReadableStream<Uint8Array>` — Streams HTML chunks with async data loader and suspense support.
 - `serializeStateForHydration(state: unknown, options?: SerializeOptions): string` — Serializes JavaScript state into a safe `<script>` tag preventing XSS breakout (aliased as `serializeState`).
 - `deserializeHydrationState(options?: DeserializeOptions): T | null` — Safely parses and optionally schema-validates serialized client hydration state.
 - `getDelegatedEventScript(events?: string[], nonce?: string): string` — Generates pre-hydration delegated event capture script.

@@ -833,7 +833,7 @@ export const COMPATIBILITY_TASKS: CompatibilityTask[] = [
       const form = createForm({
         initialValues: { email: '', name: '' },
         validators: {
-          email: (val) => (!val.includes('@') ? 'Invalid email' : null)
+          email: (val: string) => (!val.includes('@') ? 'Invalid email' : null)
         },
         onSubmit: () => {}
       });

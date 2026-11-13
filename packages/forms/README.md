@@ -4,7 +4,7 @@ Type-safe reactive form container, Standard Schema validation, fine-grained fiel
 
 ## Purpose
 
-`@samrey/forms` manages complex form state and validation without triggering component re-renders. Every form field is backed by fine-grained signals (`value`, `errors`, `touched`, `dirty`, `validating`) and auto-generates accessible ARIA attributes.
+`@samrey/forms` manages complex form state and validation without triggering component re-renders. Every form field is backed by fine-grained signals (`value`, `error`, `touched`, `dirty`, `isValidating`, `aria`) and auto-generates accessible ARIA attributes.
 
 ## Installation
 
@@ -32,15 +32,16 @@ const form = createForm({
   }
 });
 
-const usernameInput = el('input', { type: 'text', ...bindField(form.fields.username) });
+const usernameInput = el('input', { type: 'text' });
+bindField(usernameInput, form.fields.username);
 ```
 
 ## API
 
-- `createForm(options: FormConfig<T>): FormInstance<T>` — Creates a reactive form instance with validation, `fields`, `submit`, `handleSubmit`, and `reset`.
-- `createField(options: FieldOptions<T>): FieldState<T>` — Creates a standalone reactive field with signal state and validation.
-- `bindField(field: FieldState<string>, options?): FieldBindings` — Generates reactive two-way DOM attributes and accessibility props (`aria-invalid`, `aria-describedby`).
-- `getAccessibleFieldProps(field: FieldState<any>, errorId?: string)` — Returns reactive ARIA props for accessible field rendering.
+- `createForm<TValues extends Record<string, any>>(config: FormConfig<TValues>): FormInstance<TValues>` — Creates a reactive form instance with validation, `fields`, `submit`, `handleSubmit`, and `reset`.
+- `createField<T>(name: string, initialValue: T, validatorOrConfig?: Validator<T> | { validator?: Validator<T>; required?: boolean }, options?: { required?: boolean }): FieldState<T>` — Creates a standalone reactive field with signal state and validation.
+- `bindField<T>(element: any, field: FieldState<T>, options?: BindFieldOptions): void` — Binds reactive two-way DOM value/checked state, accessibility attributes (`aria-invalid`, `aria-errormessage`, `aria-describedby`, `aria-required`), and input/change/blur listeners directly to an element.
+- `getAccessibleFieldProps(field: FieldState<any>): AriaBindingAttributes` — Returns ARIA props for accessible field rendering.
 - `validateSchema(schema, values)` — Executes a Standard Schema v1 validator against form values.
 - `validators.required(message?)` — Required value rule.
 - `validators.email(message?)` — Email format validator.

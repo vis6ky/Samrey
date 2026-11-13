@@ -50,8 +50,8 @@ dispose();
 - `batch<T>(fn: () => T): T` — Groups multiple signal mutations into a single topological notification cycle.
 - `untrack<T>(fn: () => T): T` — Reads signal values without creating a reactive dependency.
 - `createStore<T extends object>(initial: T): T` — Creates a deep reactive proxy store with fine-grained path tracking.
-- `produce<T>(draft: T, fn: (draft: T) => void): void` — Performs immutable-style mutable draft updates on store state.
-- `reconcile<T>(target: T, source: T): void` — Structural state reconciliation algorithm preserving unchanged node references.
+- `produce<T extends object>(target: T, fn: (draft: T) => void): T` — Performs mutable draft updates inside a mutator callback and returns the target store.
+- `reconcile<T extends object>(target: T, source: Partial<T>): T` — Structural state reconciliation algorithm applying partial source updates while scrubbing prototype-pollution keys and returning `target`.
 - `createRoot<T>(fn: (dispose: () => void) => T): T` — Creates an isolated reactive ownership scope with manual teardown.
 - `onCleanup(fn: () => void): void` — Registers a disposal callback for the active reactive owner.
 - `createContext<T>(defaultValue?: T): Context<T>` — Creates a dependency injection context identifier.
