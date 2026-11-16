@@ -12,6 +12,9 @@ import { runTestCommand } from './commands/test.js';
 import { runAuditCommand } from './commands/audit.js';
 import { runAnalyzeCommand } from './commands/analyze.js';
 import { runGenerateCommand, GenerateArtifactType } from './commands/generate.js';
+import { runCheckCommand } from './commands/check.js';
+import { runDoctorCommand } from './commands/doctor.js';
+import { runExplainCommand } from './commands/explain.js';
 import { CommandResult } from './commands/create.js';
 
 export const CLI_VERSION = '2.1.0';
@@ -29,6 +32,9 @@ COMMANDS:
   build                Compile and bundle Samrey application using project Vite
   preview              Serve production bundle locally using project Vite preview
   test                 Execute application test suites using project test runner
+  check                Fast non-destructive syntax, type, and framework idiom validation
+  doctor               Diagnose environment, Node version, dependencies, and configuration
+  explain <error>      Explain compiler diagnostic codes (e.g. SAMREY-108) and solutions
   audit                Run small static checks (img alt, javascript: URIs, inline handlers, <script>)
   analyze              Inspect real build artifact file sizes (raw and gzip)
   generate <type> <n>  Scaffold components, routes, stores, or async resources
@@ -449,6 +455,29 @@ export async function runCLI(args: string[], cliOptions: { cwd?: string } = {}):
         };
       }
       return runGenerateCommand({ cwd, type, name, targetDir, dryRun });
+    }
+
+    case 'check': {
+      const json = args.includes('--json');
+      return runCheckCommand({ cwd, json });
+    }
+
+    case 'doctor': {
+      const json = args.includes('--json');
+      return runDoctorCommand({ cwd, json });
+    }
+
+    case 'explain': {
+      const json = args.includes('--json');
+      const query = args.slice(1).filter(a => !a.startsWith('-')).join(' ');
+      if (!query) {
+        return {
+          success: false,
+          message: '[Samrey Explain Error] Query or error code required.\nUsage: samrey explain SAMREY-108',
+          exitCode: 1
+        };
+      }
+      return runExplainCommand({ query, json });
     }
 
     case 'ai': {

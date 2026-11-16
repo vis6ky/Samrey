@@ -1,4 +1,33 @@
-# Samrey Framework — Universal AI Development Instructions
+# Samrey Framework — Universal AI Development Instructions (AGENTS.md)
+
+> **Authority**: This document and the `ai/` specification directory constitute the **Single Source of Truth** for all autonomous coding agents, LLMs, and AI tools developing in Samrey.
+
+---
+
+## 0. Canonical Specification Hierarchy (`ai/` Single Source of Truth)
+
+All agents must adhere to the detailed rules defined in the `ai/` specification suite:
+- [ai/SPEC.md](ai/SPEC.md): Core framework specification & design invariants
+- [ai/ARCHITECTURE.md](ai/ARCHITECTURE.md): Zero-VDOM execution lifecycle & system architecture
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Authoritative public API contracts across all 13 `@samrey/*` packages
+- [ai/REACTIVITY_RULES.md](ai/REACTIVITY_RULES.md): Signals, computed, effects, stores, and owner hierarchy rules
+- [ai/COMPONENT_RULES.md](ai/COMPONENT_RULES.md): Static template cloning (`template()`), `.refs`, surgical bindings, and control flow functions
+- [ai/COMPILER_RULES.md](ai/COMPILER_RULES.md): AIR intermediate representation, static hoisting, and diagnostic codes
+- [ai/ROUTING_RULES.md](ai/ROUTING_RULES.md): Client-side routing, outlets, links, and navigation guards
+- [ai/SSR_RULES.md](ai/SSR_RULES.md): Streaming SSR, hydration, event delegation, and serialization
+- [ai/SECURITY_RULES.md](ai/SECURITY_RULES.md): Contextual sanitizers, Trusted Types, anti-CSRF, and secrets redaction
+- [ai/TESTING_RULES.md](ai/TESTING_RULES.md): Headless DOM test harness, event simulation, and reactivity flushing
+- [ai/ERROR_REFERENCE.md](ai/ERROR_REFERENCE.md): Searchable catalog of error codes `SAMREY-101` through `SAMREY-501`
+- [ai/EXAMPLES_INDEX.md](ai/EXAMPLES_INDEX.md): Verified production code examples catalog
+- [ai/VERSION_COMPATIBILITY.md](ai/VERSION_COMPATIBILITY.md): SemVer and runtime compatibility matrix
+
+For vendor-specific instructions:
+- Anthropic Claude / Claude Code: See [CLAUDE.md](CLAUDE.md)
+- Google Gemini / Gemini CLI: See [GEMINI.md](GEMINI.md)
+- GitHub Copilot: See [.github/copilot-instructions.md](.github/copilot-instructions.md)
+- Cursor: See [.cursor/rules/samrey.mdc](.cursor/rules/samrey.mdc)
+
+---
 
 ## 1. What is Samrey?
 Samrey is an independent, compile-time reactive frontend framework engineered for high performance.

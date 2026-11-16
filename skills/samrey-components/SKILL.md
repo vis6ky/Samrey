@@ -1,57 +1,86 @@
 ---
 name: samrey-components
-description: Create idiomatic Samrey components using static template cloning, surgical bindings, and props.
+description: Authoring UI components, static template hoisting, template references, surgical bindings, and control flow in @samrey/runtime.
 ---
 
-# Samrey Components & DOM Bindings
+# Samrey Components & Surgical DOM Bindings (`samrey-components`)
 
-## Purpose
-Instructs how to author native Samrey component functions that return DOM nodes with surgical reactive bindings.
+## 1. Skill Description & Activation Criteria
+- **Purpose**: Teaches how to build native Samrey components returning real DOM nodes with fine-grained surgical bindings.
+- **Activation Criteria**: Trigger when building UI elements, pages, layout widgets, control flow branches (`Show`, `For`), or binding DOM properties.
 
-## When to Use
-- Writing UI elements, buttons, cards, modals, or layout wrappers.
-- Attaching dynamic text or attribute bindings.
-- Registering event listeners on real DOM nodes.
+## 2. Framework Concepts
+- **Static Template Hoisting**: `template('...')` is declared once at module scope.
+- **Template References**: Elements flagged with `ref="id"` are looked up in $O(1)$ from `root.refs.id`.
+- **Micro-Bindings**: `bindText`, `bindAttr`, `bindClass`, `bindStyle`, `on`.
+- **Function-Based Control Flow**: `Show`, `Switch`, `Match`, and `For` are component functions, never HTML tags.
 
-## Relevant APIs
-- `template(html: string): () => Node` from `@samrey/runtime`
-- `bindText(node: Text, getter: () => string): void` from `@samrey/runtime`
-- `bindAttr(el: Element, name: string, getter: () => any): void` from `@samrey/runtime`
-- `on(el: Element, event: string, handler: Function): void` from `@samrey/runtime`
-- `createComponent(fn: Function, props: object): Node` from `@samrey/runtime`
-
-## Verified Code Example
+## 3. Correct API Usage
 ```ts
+import { template, bindText, bindClass, on, Show, For } from '@samrey/runtime';
 import { signal } from '@samrey/reactivity';
-import { template, on, bindText, bindAttr } from '@samrey/runtime';
 
-const _tmpl = template(`
-<div class="user-card p-4 border rounded">
-  <h3 class="name font-bold"></h3>
-  <span class="badge text-xs px-2 py-1">Active</span>
-  <button class="toggle-btn mt-2 px-3 py-1 bg-blue-500 text-white rounded">Toggle Status</button>
-</div>`);
+const _tmpl = template('<div ref="box" class="card"><span ref="txt"></span></div>');
 
-export function UserCard(props: { username: string }) {
-  const isActive = signal(true);
-  const root = _tmpl() as HTMLElement;
+export function Card() {
+  const active = signal(false);
+  const root = _tmpl.clone();
+  const { box, txt } = root.refs;
 
-  bindText(root.querySelector('.name')!, () => props.username);
-  bindAttr(root.querySelector('.badge')!, 'class', () =>
-    isActive.value ? 'badge bg-green-100 text-green-800' : 'badge bg-gray-100 text-gray-800'
-  );
-
-  on(root.querySelector('.toggle-btn')!, 'click', () => {
-    isActive.update(v => !v);
-  });
+  bindClass(box, 'active', () => active.value);
+  bindText(txt, () => active.value ? 'Active' : 'Inactive');
+  on(box, 'click', () => active.update(v => !v));
 
   return root;
 }
 ```
 
-## Common Mistakes
-- **Mistake**: Returning a JSX string instead of DOM elements.
-- **Mistake**: Writing `onClick={...}` inside `template('<button onClick="...">')`. Handlers must be attached via `on(el, 'click', handler)`.
+## 4. Verified Code Example
+```ts
+import { signal } from '@samrey/reactivity';
+import { template, bindText, on, For } from '@samrey/runtime';
 
-## Validation Instructions
-Validate component code using `npx @samrey/cli ai validate <file.ts>`.
+interface Todo { id: number; text: string; done: boolean; }
+
+const _todoTmpl = template('<li class="todo"><span ref="title"></span><button ref="delBtn">✕</button></li>');
+
+export function TodoList() {
+  const todos = signal<Todo[]>([
+    { id: 1, text: 'Master Samrey', done: true }
+  ]);
+
+  return For({
+    each: () => todos.value,
+    key: (item) => item.id,
+    children: (item) => {
+      const row = _todoTmpl.clone();
+      const { title, delBtn } = row.refs;
+
+      bindText(title, () => item.text);
+      on(delBtn, 'click', () => {
+        todos.update(list => list.filter(t => t.id !== item.id));
+      });
+
+      return row;
+    }
+  });
+}
+```
+
+## 5. Common Mistakes
+- **Mistake**: Writing `<Show>` as raw HTML template text.
+  - *Correction*: Invoke `Show({ when: () => cond.value, children: () => View() })` in TypeScript.
+- **Mistake**: Passing static string rather than a getter to `bindText`.
+  - *Correction*: Always pass a reactive getter callback: `bindText(el, () => signal.value)`.
+
+## 6. Forbidden Patterns
+- ❌ Do NOT emit `<Show>` or `<For>` inside `template('...')`.
+- ❌ Do NOT use `innerHTML` directly with user input.
+
+## 7. Validation Procedures
+1. Run `npx @samrey/cli test` to verify component rendering and assertions.
+2. Check for `SAMREY-108` violations with `npx @samrey/cli check`.
+
+## 8. Authoritative Documentation
+- [ai/COMPONENT_RULES.md](../../COMPONENT_RULES.md)
+- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#2-samreyruntime)

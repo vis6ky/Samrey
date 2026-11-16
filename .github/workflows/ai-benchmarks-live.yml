@@ -1,0 +1,44 @@
+name: Live Multi-Model AI Agent Benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Comma-separated models to evaluate (e.g. gpt-4o, claude-3-5-sonnet, gemini-1-5-pro, grok-beta)'
+        required: false
+        default: 'gpt-4o,claude-3-5-sonnet,gemini-1-5-pro,grok-beta'
+
+jobs:
+  run-live-benchmark:
+    name: Execute Real Model Benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Packages
+        run: npm run build:packages
+
+      - name: Run Multi-Model Benchmark
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: npx tsx benchmarks/run-benchmark.ts
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: samrey-ai-benchmark-results
+          path: benchmarks/reports/

@@ -1,0 +1,90 @@
+name: AI-Agent Readiness & Benchmark CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  ai-verification:
+    name: AI Specifications, Skills, MCP & Benchmark Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build All Packages
+        run: npm run build:packages
+
+      - name: Verify AI Spec & Documentation Accuracy
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const pkgs = ['reactivity', 'runtime', 'compiler', 'router', 'forms', 'http', 'ssr', 'testing', 'devtools', 'security', 'cli', 'ai', 'mcp-server'];
+          const reg = new Map();
+          for (const p of pkgs) {
+            reg.set('@samrey/' + p, new Set(Object.keys(require('./packages/' + p + '/dist/index.js'))));
+          }
+          let errs = 0;
+          function check(f) {
+            const c = fs.readFileSync(f, 'utf8');
+            const rx = /import\\s+(?:type\\s+)?\\{([^}]+)\\}\\s+from\\s+['\"](@samrey\\/[a-z-]+)['\"]/g;
+            let m;
+            while ((m = rx.exec(c)) !== null) {
+              const syms = m[1].split(',').map(s => s.trim().replace(/^type\\s+/, '').split(/\\s+as\\s+/)[0].trim()).filter(Boolean);
+              const valid = reg.get(m[2]);
+              for (const s of syms) {
+                if (!valid || !valid.has(s)) {
+                  console.error('Invalid export ' + s + ' from ' + m[2] + ' in ' + f);
+                  errs++;
+                }
+              }
+            }
+          }
+          ['ai', 'skills'].forEach(d => {
+            fs.readdirSync(d, { recursive: true }).forEach(p => {
+              const full = path.join(d, p);
+              if (fs.statSync(full).isFile() && (full.endsWith('.md') || full.endsWith('.ts'))) check(full);
+            });
+          });
+          check('AGENTS.md');
+          check('CLAUDE.md');
+          check('GEMINI.md');
+          if (errs > 0) process.exit(1);
+          console.log('✅ AI specifications and skills verified!');
+          "
+
+      - name: Verify MCP Server Tools (27 Registered Tools)
+        run: |
+          node -e "
+          const { MCP_TOOLS, handleToolCall } = require('./packages/mcp-server/dist/index.js');
+          if (MCP_TOOLS.length < 25) throw new Error('Expected at least 25 registered MCP tools, got ' + MCP_TOOLS.length);
+          console.log('✅ Registered MCP tools verified:', MCP_TOOLS.length);
+          "
+
+      - name: Run 20 Benchmark Challenges Baseline Self-Test
+        run: npx tsx benchmarks/run-benchmark.ts --self-test
+
+      - name: Verify Benchmark Application 1 (SaaS Dashboard)
+        run: npx tsx benchmarks/fixtures/saas-dashboard/tests/dashboard.test.ts
+
+      - name: Verify Benchmark Application 2 (E-Commerce Storefront)
+        run: npx tsx benchmarks/fixtures/ecommerce-store/tests/ecommerce.test.ts
+
+      - name: Verify Benchmark Application 3 (Enterprise CRM)
+        run: npx tsx benchmarks/fixtures/crm-app/tests/crm.test.ts
+
+      - name: Run Framework CLI Doctor
+        run: node packages/cli/dist/bin.js doctor --json

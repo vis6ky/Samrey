@@ -1,0 +1,3061 @@
+{
+  "timestamp": "2026-11-16T09:40:52.228Z",
+  "version": "2.1.0",
+  "summaries": [
+    {
+      "modelId": "golden-reference-baseline",
+      "status": "COMPLETED",
+      "totalChallenges": 20,
+      "passedChallenges": 20,
+      "averageScore": 98.5,
+      "totalExecutionTimeMs": 50,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "App.ts": "import { template } from '@samrey/runtime';\nconst _tmpl = template('<div class=\"app-shell\"><header><h1>Samrey App</h1></header><main><p>Welcome to Samrey</p></main><footer><p>© 2026</p></footer></div>');\nexport function App() { return _tmpl(); }"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 1,
+            "challengeName": "App Bootstrap & Layout",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "UserCard.ts": "import { template, bindText, bindAttr } from '@samrey/runtime';\nexport interface UserCardProps { name: string; role: string; avatarUrl: string; }\nconst _tmpl = template('<div class=\"user-card\"><img ref=\"img\" alt=\"avatar\" /><h3 ref=\"title\"></h3><p ref=\"role\"></p></div>');\nexport function UserCard(props: UserCardProps) {\n  const root = _tmpl.clone();\n  const { img, title, role } = root.refs;\n  bindAttr(img, 'src', () => props.avatarUrl);\n  bindText(title, () => props.name);\n  bindText(role, () => props.role);\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 2,
+            "challengeName": "User Card Component with Refs",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "Counter.ts": "import { signal } from '@samrey/reactivity';\nimport { template, bindText, on } from '@samrey/runtime';\nconst _tmpl = template('<div class=\"counter\"><button ref=\"dec\">-</button><span ref=\"count\"></span><button ref=\"inc\">+</button></div>');\nexport function Counter(props: { initial?: number } = {}) {\n  const count = signal(props.initial ?? 0);\n  const root = _tmpl.clone();\n  const { dec, count: countEl, inc } = root.refs;\n  bindText(countEl, () => count.value.toString());\n  on(inc, 'click', () => count.update(n => n + 1));\n  on(dec, 'click', () => count.update(n => n - 1));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 3,
+            "challengeName": "Interactive Counter with Signals",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ShoppingSummary.ts": "import { signal, computed } from '@samrey/reactivity';\nimport { template, bindText } from '@samrey/runtime';\nconst _tmpl = template('<div class=\"summary\">Subtotal: <span ref=\"sub\"></span>, Tax: <span ref=\"tax\"></span>, Total: <span ref=\"tot\"></span></div>');\nexport function ShoppingSummary(props: { prices?: number[] } = {}) {\n  const prices = signal(props.prices ?? [20, 30, 50]);\n  const subtotal = computed(() => prices.value.reduce((a, b) => a + b, 0));\n  const tax = computed(() => subtotal.value * 0.10);\n  const total = computed(() => subtotal.value + tax.value);\n  const root = _tmpl.clone();\n  const { sub, tax: taxEl, tot } = root.refs;\n  bindText(sub, () => subtotal.value.toFixed(2));\n  bindText(taxEl, () => tax.value.toFixed(2));\n  bindText(tot, () => total.value.toFixed(2));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 4,
+            "challengeName": "Cart Total Calculator with Computed",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ContactList.ts": "import { signal } from '@samrey/reactivity';\nimport { template, bindText, on, For, Show } from '@samrey/runtime';\nexport interface Contact { id: number; name: string; email: string; }\nconst _layoutTmpl = template('<div class=\"contacts-layout\"><ul ref=\"list\" class=\"list\"></ul><div ref=\"detail\" class=\"detail\"></div></div>');\nconst _rowTmpl = template('<li class=\"contact-row\"><button ref=\"btn\"></button></li>');\nconst _cardTmpl = template('<div class=\"card\"><h4 ref=\"name\"></h4><p ref=\"email\"></p></div>');\nexport function ContactList(props: { contacts: Contact[] }) {\n  const selected = signal<Contact | null>(null);\n  const root = _layoutTmpl.clone();\n  const { list, detail } = root.refs;\n  list.appendChild(For({\n    each: () => props.contacts,\n    key: (c) => c.id,\n    children: (c) => {\n      const row = _rowTmpl.clone();\n      bindText(row.refs.btn, () => c.name);\n      on(row.refs.btn, 'click', () => { selected.value = c; });\n      return row;\n    }\n  }));\n  detail.appendChild(Show({\n    when: () => selected.value,\n    children: () => {\n      const card = _cardTmpl.clone();\n      bindText(card.refs.name, () => selected.value?.name ?? '');\n      bindText(card.refs.email, () => selected.value?.email ?? '');\n      return card;\n    },\n    fallback: () => template('<p>Select a contact</p>')()\n  }));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 5,
+            "challengeName": "Master-Detail View with Show and For",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "RegistrationForm.ts": "import { createForm, bindField } from '@samrey/forms';\nimport { template, bindText, on } from '@samrey/runtime';\nconst _tmpl = template('<form novalidate><input id=\"uname\" ref=\"u\" /><span ref=\"uErr\"></span><input id=\"email\" ref=\"e\" /><span ref=\"eErr\"></span><button ref=\"sub\" type=\"submit\">Submit</button></form>');\nexport function RegistrationForm(props: { onSubmit: (data: any) => Promise<void> }) {\n  const form = createForm({\n    initialValues: { username: '', email: '' },\n    validate: (v) => {\n      const errs: Record<string, string> = {};\n      if (!v.username.trim()) errs.username = 'Username required';\n      if (!v.email.includes('@')) errs.email = 'Valid email required';\n      return errs;\n    },\n    onSubmit: props.onSubmit\n  });\n  const root = _tmpl.clone();\n  const { u, uErr, e, eErr } = root.refs;\n  bindField(u as HTMLInputElement, form, 'username');\n  bindField(e as HTMLInputElement, form, 'email');\n  bindText(uErr, () => form.errors.value.username ?? '');\n  bindText(eErr, () => form.errors.value.email ?? '');\n  on(root, 'submit', (ev) => { ev.preventDefault(); form.handleSubmit(); });\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 6,
+            "challengeName": "Accessible Registration Form",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "AppRouter.ts": "import { createRouter, RouterOutlet, Link } from '@samrey/router';\nimport { template } from '@samrey/runtime';\nexport const HomeView = () => template('<div>Home</div>')();\nexport const DashboardView = () => template('<div>Dashboard</div>')();\nexport const router = createRouter([\n  { path: '/', component: HomeView },\n  { path: '/dashboard', component: DashboardView }\n]);\nconst _layout = template('<div class=\"nav-layout\"><nav ref=\"nav\"></nav><main ref=\"main\"></main></div>');\nexport function Layout() {\n  const root = _layout.clone();\n  root.refs.nav.appendChild(Link({ href: '/', children: 'Home' }));\n  root.refs.nav.appendChild(Link({ href: '/dashboard', children: 'Dashboard' }));\n  root.refs.main.appendChild(RouterOutlet());\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 7,
+            "challengeName": "Client Navigation with RouterOutlet and Links",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "UserProfileLoader.ts": "import { createResource } from '@samrey/http';\nimport { template, Show, bindText } from '@samrey/runtime';\nexport function UserProfileLoader(props: { fetchUser: () => Promise<{ name: string }> }) {\n  const [data] = createResource(props.fetchUser);\n  const _card = template('<div class=\"profile-card\"><h2 ref=\"name\"></h2></div>');\n  return Show({\n    when: () => data.loading.value,\n    children: () => template('<div class=\"loading\">Loading...</div>')(),\n    fallback: () => {\n      const root = _card.clone();\n      bindText(root.refs.name, () => data.value?.name ?? '');\n      return root;\n    }\n  });\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 8,
+            "challengeName": "Async Resource Loader with createResource",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "AuthManager.ts": "import { signal } from '@samrey/reactivity';\nimport { template, bindText, on, Show } from '@samrey/runtime';\nexport function createAuthManager() {\n  const user = signal<string | null>(null);\n  return {\n    user,\n    login: (name: string) => { user.value = name; },\n    logout: () => { user.value = null; }\n  };\n}\nconst _tmpl = template('<div class=\"auth-bar\"><div ref=\"pane\"></div></div>');\nexport function AuthStatusWidget(props: { auth: ReturnType<typeof createAuthManager> }) {\n  const root = _tmpl.clone();\n  root.refs.pane.appendChild(Show({\n    when: () => props.auth.user.value,\n    children: () => {\n      const loggedIn = template('<div><span>User: </span><span ref=\"u\"></span><button ref=\"btn\">Logout</button></div>').clone();\n      bindText(loggedIn.refs.u, () => props.auth.user.value ?? '');\n      on(loggedIn.refs.btn, 'click', () => props.auth.logout());\n      return loggedIn;\n    },\n    fallback: () => {\n      const guest = template('<div><button ref=\"btn\">Login</button></div>').clone();\n      on(guest.refs.btn, 'click', () => props.auth.login('User1'));\n      return guest;\n    }\n  }));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 9,
+            "challengeName": "Auth Session Guard & State",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "Authorize.ts": "import { Show, template } from '@samrey/runtime';\nexport function Authorize(props: { role: string; userRoles: string[]; children: () => any; fallback?: () => any }) {\n  const hasRole = () => props.userRoles.includes(props.role);\n  return Show({\n    when: hasRole,\n    children: props.children,\n    fallback: props.fallback ?? (() => template('<div class=\"denied\">Access Denied</div>')())\n  });\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 10,
+            "challengeName": "Role-Based Access Control Directive",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ServerRenderer.ts": "import { renderToString } from '@samrey/ssr';\nexport async function handleSsrRequest(componentFactory: () => any, title = 'Samrey SSR'): Promise<string> {\n  const bodyHtml = await renderToString(componentFactory);\n  return `<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><title>${title}</title></head><body><div id=\"app\">${bodyHtml}</div></body></html>`;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 11,
+            "challengeName": "Streaming Server-Side Renderer",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ClientHydration.ts": "import { hydrate } from '@samrey/ssr';\nexport function bootstrapClient(appFactory: () => any, container: HTMLElement): void {\n  hydrate(appFactory, container);\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 12,
+            "challengeName": "Client Hydration Bootstrapper",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "SafeView.ts": "import { ErrorBoundary, template, on } from '@samrey/runtime';\nexport function SafeView(props: { riskyComponent: () => any }) {\n  const _fallbackTmpl = template('<div class=\"error-pane\"><h3>An error occurred</h3><button ref=\"btn\">Try Again</button></div>');\n  return ErrorBoundary({\n    fallback: (_err, reset) => {\n      const root = _fallbackTmpl.clone();\n      on(root.refs.btn, 'click', reset);\n      return root;\n    },\n    children: props.riskyComponent\n  });\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 13,
+            "challengeName": "ErrorBoundary Safe Fallback",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "CodeDiagnostics.ts": "export function diagnoseCodeIssue(errorMessage: string): { code: string; suggestion: string } {\n  if (errorMessage.includes('SAMREY-108') || errorMessage.includes('<Show') || errorMessage.includes('<For')) {\n    return { code: 'SAMREY-108', suggestion: 'Invoke Show/For as TypeScript component functions: Show({ when, children })' };\n  }\n  if (errorMessage.includes('useState') || errorMessage.includes('useEffect')) {\n    return { code: 'FOREIGN-HOOK', suggestion: 'Replace foreign React hooks with signal() and effect() from @samrey/reactivity' };\n  }\n  return { code: 'UNKNOWN', suggestion: 'Inspect Samrey documentation' };\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 14,
+            "challengeName": "Diagnostic Parser & Repair",
+            "passed": true,
+            "totalScore": 85,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 0,
+                "maxScore": 15,
+                "details": [
+                  "FAILED: Foreign React hooks detected."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [
+              "Foreign React hooks detected in code."
+            ],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "HighFrequencyUpdater.ts": "import { signal, batch, effect } from '@samrey/reactivity';\nexport function createHighFrequencyUpdater() {\n  const x = signal(0);\n  const y = signal(0);\n  const z = signal(0);\n  let effectFiredCount = 0;\n  effect(() => {\n    // Read all three\n    x.value; y.value; z.value;\n    effectFiredCount++;\n  });\n  return {\n    x, y, z,\n    getEffectFiredCount: () => effectFiredCount,\n    updateAll: (newX: number, newY: number, newZ: number) => {\n      batch(() => {\n        x.value = newX;\n        y.value = newY;\n        z.value = newZ;\n      });\n    }\n  };\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 15,
+            "challengeName": "Batched High-Frequency State Mutations",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ModalDialog.ts": "import { template, bindText, on, Show } from '@samrey/runtime';\nexport function ModalDialog(props: { isOpen: () => boolean; title: string; onClose: () => void }) {\n  const _modalTmpl = template('<div role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\" class=\"modal-backdrop\"><div class=\"modal-box\"><h2 id=\"modal-title\" ref=\"t\"></h2><button ref=\"closeBtn\" aria-label=\"Close modal\">✕</button></div></div>');\n  return Show({\n    when: props.isOpen,\n    children: () => {\n      const root = _modalTmpl.clone();\n      bindText(root.refs.t, () => props.title);\n      on(root.refs.closeBtn, 'click', props.onClose);\n      return root;\n    }\n  });\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 16,
+            "challengeName": "Aria-Compliant Modal Dialog",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "UserCommentView.ts": "import { sanitizeHtml, sanitizeUrl } from '@samrey/security';\nimport { template, bindAttr } from '@samrey/runtime';\nconst _tmpl = template('<div class=\"comment\"><a ref=\"authorLink\" target=\"_blank\">Author</a><div ref=\"body\" class=\"body\"></div></div>');\nexport function UserCommentView(props: { authorUrl: string; htmlContent: string }) {\n  const root = _tmpl.clone();\n  const { authorLink, body } = root.refs;\n  const safeUrl = sanitizeUrl(props.authorUrl);\n  bindAttr(authorLink, 'href', () => safeUrl);\n  body.innerHTML = sanitizeHtml(props.htmlContent);\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 17,
+            "challengeName": "Sanitized User Comment Renderer",
+            "passed": true,
+            "totalScore": 85,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 0,
+                "maxScore": 15,
+                "details": [
+                  "Encountered syntax or type errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [
+              "[UserCommentView.ts] Syntax / AST error: [object Object]"
+            ],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ModernProfile.ts": "import { template, bindText } from '@samrey/runtime';\nconst _tmpl = template('<div class=\"profile\"><span ref=\"name\"></span><span ref=\"badge\"></span></div>');\nexport function ModernProfile(props: { name: string; badge: string }) {\n  const root = _tmpl.clone();\n  bindText(root.refs.name, () => props.name);\n  bindText(root.refs.badge, () => props.badge);\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 18,
+            "challengeName": "Refactor QuerySelector to Template References",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "ToggleSwitch.ts": "import { signal } from '@samrey/reactivity';\nimport { template, bindText, bindClass, on } from '@samrey/runtime';\nconst _tmpl = template('<button ref=\"btn\" class=\"toggle\"><span ref=\"lbl\"></span></button>');\nexport function ToggleSwitch(props: { initial?: boolean } = {}) {\n  const onState = signal(props.initial ?? false);\n  const root = _tmpl.clone();\n  const { btn, lbl } = root.refs;\n  bindClass(btn, 'is-active', () => onState.value);\n  bindText(lbl, () => onState.value ? 'ON' : 'OFF');\n  on(btn, 'click', () => onState.update(v => !v));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 19,
+            "challengeName": "React to Samrey Component Migration",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "SUCCESS",
+            "modelId": "golden-reference",
+            "generatedFiles": {
+              "TodoApplication.ts": "import { signal, computed } from '@samrey/reactivity';\nimport { template, bindText, on, For } from '@samrey/runtime';\nexport interface TodoItem { id: number; text: string; done: boolean; }\nconst _appTmpl = template('<div class=\"todo-app\"><header><h2>Todos</h2><input ref=\"input\" /><button ref=\"addBtn\">Add</button></header><div class=\"filters\"><button ref=\"allBtn\">All</button><button ref=\"actBtn\">Active</button></div><ul ref=\"list\"></ul><footer>Items: <span ref=\"count\"></span></footer></div>');\nconst _rowTmpl = template('<li><span ref=\"txt\"></span><button ref=\"toggleBtn\">Toggle</button></li>');\nexport function TodoApplication() {\n  const todos = signal<TodoItem[]>([{ id: 1, text: 'First task', done: false }]);\n  const filter = signal<'all' | 'active'>('all');\n  const filtered = computed(() => {\n    if (filter.value === 'active') return todos.value.filter(t => !t.done);\n    return todos.value;\n  });\n  const count = computed(() => todos.value.filter(t => !t.done).length);\n  const root = _appTmpl.clone();\n  const { input, addBtn, allBtn, actBtn, list, count: countEl } = root.refs;\n  bindText(countEl, () => count.value.toString());\n  on(allBtn, 'click', () => { filter.value = 'all'; });\n  on(actBtn, 'click', () => { filter.value = 'active'; });\n  on(addBtn, 'click', () => {\n    const inp = input as HTMLInputElement;\n    if (inp.value.trim()) {\n      todos.value = [...todos.value, { id: Date.now(), text: inp.value.trim(), done: false }];\n      inp.value = '';\n    }\n  });\n  list.appendChild(For({\n    each: () => filtered.value,\n    key: (t) => t.id,\n    children: (t) => {\n      const row = _rowTmpl.clone();\n      bindText(row.refs.txt, () => t.text);\n      on(row.refs.toggleBtn, 'click', () => {\n        todos.update(items => items.map(i => i.id === t.id ? { ...i, done: !i.done } : i));\n      });\n      return row;\n    }\n  }));\n  return root;\n}"
+            },
+            "executionTimeMs": 1
+          },
+          "evaluation": {
+            "challengeId": 20,
+            "challengeName": "Mini Todo Application with Filter",
+            "passed": true,
+            "totalScore": 100,
+            "dimensions": {
+              "functionalCorrectness": {
+                "name": "Functional Correctness",
+                "weight": 30,
+                "score": 30,
+                "maxScore": 30,
+                "details": [
+                  "All unit test assertions passed."
+                ]
+              },
+              "buildAndTypeCheck": {
+                "name": "Build & Type-Check",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Code parsed cleanly into valid AST without compilation errors."
+                ]
+              },
+              "apiUsage": {
+                "name": "Samrey API Usage",
+                "weight": 15,
+                "score": 15,
+                "maxScore": 15,
+                "details": [
+                  "Pure Samrey native APIs utilized."
+                ]
+              },
+              "testSuccess": {
+                "name": "Test Success",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Test execution succeeded."
+                ]
+              },
+              "security": {
+                "name": "Security Verification",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Zero security violations detected."
+                ]
+              },
+              "accessibility": {
+                "name": "Accessibility Verification",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "WCAG accessibility guidelines respected."
+                ]
+              },
+              "maintainability": {
+                "name": "Maintainability & Structure",
+                "weight": 10,
+                "score": 10,
+                "maxScore": 10,
+                "details": [
+                  "Clean component modularity and exports."
+                ]
+              },
+              "performance": {
+                "name": "Performance Optimization",
+                "weight": 5,
+                "score": 5,
+                "maxScore": 5,
+                "details": [
+                  "Zero-VDOM static template hoisting and immutable reactivity verified."
+                ]
+              }
+            },
+            "diagnostics": [],
+            "executionLog": "Self-test reference run"
+          }
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-4o",
+      "status": "NOT_RUN",
+      "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+      "totalChallenges": 20,
+      "passedChallenges": 0,
+      "averageScore": 0,
+      "totalExecutionTimeMs": 0,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gpt-4o",
+            "notRunReason": "OPENAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "modelId": "claude-3-5-sonnet",
+      "status": "NOT_RUN",
+      "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+      "totalChallenges": 20,
+      "passedChallenges": 0,
+      "averageScore": 0,
+      "totalExecutionTimeMs": 0,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "claude-3-5-sonnet",
+            "notRunReason": "ANTHROPIC_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "modelId": "gemini-1-5-pro",
+      "status": "NOT_RUN",
+      "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+      "totalChallenges": 20,
+      "passedChallenges": 0,
+      "averageScore": 0,
+      "totalExecutionTimeMs": 0,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "gemini-1-5-pro",
+            "notRunReason": "GEMINI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "modelId": "grok-beta",
+      "status": "NOT_RUN",
+      "notRunReason": "XAI_API_KEY environment variable is not configured.",
+      "totalChallenges": 20,
+      "passedChallenges": 0,
+      "averageScore": 0,
+      "totalExecutionTimeMs": 0,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "grok-beta",
+            "notRunReason": "XAI_API_KEY environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "modelId": "generic-cli",
+      "status": "NOT_RUN",
+      "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+      "totalChallenges": 20,
+      "passedChallenges": 0,
+      "averageScore": 0,
+      "totalExecutionTimeMs": 0,
+      "totalEstimatedCostUsd": 0,
+      "challengeReports": [
+        {
+          "challengeId": 1,
+          "challengeName": "App Bootstrap & Layout",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 2,
+          "challengeName": "User Card Component with Refs",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 3,
+          "challengeName": "Interactive Counter with Signals",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 4,
+          "challengeName": "Cart Total Calculator with Computed",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 5,
+          "challengeName": "Master-Detail View with Show and For",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 6,
+          "challengeName": "Accessible Registration Form",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 7,
+          "challengeName": "Client Navigation with RouterOutlet and Links",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 8,
+          "challengeName": "Async Resource Loader with createResource",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 9,
+          "challengeName": "Auth Session Guard & State",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 10,
+          "challengeName": "Role-Based Access Control Directive",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 11,
+          "challengeName": "Streaming Server-Side Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 12,
+          "challengeName": "Client Hydration Bootstrapper",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 13,
+          "challengeName": "ErrorBoundary Safe Fallback",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 14,
+          "challengeName": "Diagnostic Parser & Repair",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 15,
+          "challengeName": "Batched High-Frequency State Mutations",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 16,
+          "challengeName": "Aria-Compliant Modal Dialog",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 17,
+          "challengeName": "Sanitized User Comment Renderer",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 18,
+          "challengeName": "Refactor QuerySelector to Template References",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 19,
+          "challengeName": "React to Samrey Component Migration",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        },
+        {
+          "challengeId": 20,
+          "challengeName": "Mini Todo Application with Filter",
+          "generation": {
+            "status": "NOT_RUN",
+            "modelId": "generic-cli",
+            "notRunReason": "SAMREY_AGENT_CMD environment variable is not configured.",
+            "generatedFiles": {},
+            "executionTimeMs": 0
+          }
+        }
+      ]
+    }
+  ]
+}

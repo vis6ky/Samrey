@@ -14,556 +14,77 @@ export interface AgentSkillDefinition {
 }
 
 export const SAMREY_SKILLS: AgentSkillDefinition[] = [
-  // 1. samrey-overview
   {
-    id: 'samrey-overview',
-    name: 'samrey-overview',
-    description: 'Understand the core architecture, zero-VDOM compile-time model, and execution invariants of the Samrey framework.',
-    content: `---
-name: samrey-overview
-description: Understand the core architecture, zero-VDOM compile-time model, and execution invariants of the Samrey framework.
----
-
-# Samrey Framework Architecture & Overview
-
-## Purpose
-Use this skill when understanding the conceptual foundation of Samrey, answering architectural questions, or designing high-performance web applications without a Virtual DOM.
-
-## When to Use
-- When onboarding an AI agent to the Samrey codebase.
-- When planning application architecture and module boundaries.
-- When explaining why React or Vue idioms cannot be directly used in Samrey.
-
-## Core Architectural Invariants
-1. **Zero Virtual DOM**: Component functions execute **EXACTLY ONCE** on mount. They do NOT re-run on signal updates.
-2. **Compile-Time Static Hoisting**: The compiler extracts HTML skeletons into hoisted browser \`<template>\` elements (\`_tmpl$1 = template("...")\`).
-3. **Fine-Grained Surgical DOM Updates**: Signals trigger micro-updates targeting specific text nodes or attributes via \`bindText\` and \`bindAttr\`.
-4. **Pure Signals**: Reactive state is driven by \`signal()\`, \`computed()\`, \`effect()\`, and \`createStore()\` from \`@samrey/reactivity\`.
-
-## Common Mistakes
-- **Mistake**: Expecting the component function to re-execute like a React function component when state changes.
-  - **Correction**: Place reactive signal reads inside callbacks passed to \`bindText(() => count.value)\` or \`Show({ when: () => condition.value })\`.
-- **Mistake**: Using React hooks (\`useState\`, \`useEffect\`).
-  - **Correction**: Use \`signal()\` and \`effect()\` from \`@samrey/reactivity\`.
-
-## Validation Instructions
-Verify that components execute only once and all reactive updates are localized to dynamic DOM bindings.
-`
+    "id": "samrey-core",
+    "name": "samrey-core",
+    "description": "Core architecture, execution lifecycle, project scaffolding, and zero-VDOM invariants of Samrey.",
+    "content": "---\nname: samrey-core\ndescription: Core architecture, execution lifecycle, project scaffolding, and zero-VDOM invariants of Samrey.\n---\n\n# Samrey Core Architecture & Framework Invariants (`samrey-core`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Guides an AI agent through understanding the conceptual foundation, execution model, and bootstrapping of a Samrey application.\n- **Activation Criteria**: Trigger when onboarding to Samrey, initializing a new project, structuring application modules, or reasoning about why React/Vue idioms do not apply.\n\n## 2. Framework Concepts\n1. **Zero Virtual DOM**: Component functions execute **EXACTLY ONCE** upon instantiation. There is no reconciliation, tree diffing, or repeated component function evaluation.\n2. **Compile-Time Static Hoisting**: Invariant HTML markup is lifted outside components into immutable `<template>` elements.\n3. **Surgical Fine-Grained Bindings**: Signal updates trigger microscopic updates (`bindText`, `bindAttr`, `on`) targeted directly at individual DOM nodes in $O(1)$ time.\n4. **Push-Pull Topologically Sorted Reactivity**: Glitch-free reactive state graph driven by a versioned transaction clock.\n\n## 3. Correct API Usage\n```bash\n# Scaffolding\nnpx @samrey/cli create my-app --template ssr\ncd my-app\nnpm install\nnpm run dev\n\n# Testing & Building\nnpm test\nnpm run build\n```\n\n## 4. Verified Code Example\n```ts\nimport { signal } from '@samrey/reactivity';\nimport { template, bindText, on } from '@samrey/runtime';\n\n// Hoisted static template\nconst _tmpl = template('<button ref=\"btn\" class=\"counter-btn\">Count: <span ref=\"count\"></span></button>');\n\nexport function Counter(props: { initial?: number }) {\n  const count = signal(props.initial ?? 0);\n  const root = _tmpl.clone();\n  const { btn, count: countEl } = root.refs;\n\n  bindText(countEl, () => count.value.toString());\n  on(btn, 'click', () => count.update(n => n + 1));\n\n  return root;\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Placing initialization code expecting it to re-run on state change.\n  - *Correction*: Code inside the component body runs once. Place dynamic operations inside `effect(() => ...)` or dynamic binding getters `() => expr`.\n- **Mistake**: Using `document.querySelector` inside components instead of `.refs`.\n  - *Correction*: Use template references `const { name, btn } = root.refs;` for $O(1)$ property access.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT import React hooks (`useState`, `useEffect`).\n- ❌ Do NOT write `<Show>` or `<For>` as template HTML markup tags.\n- ❌ Do NOT call signals as functions (`count()`).\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli check` to verify framework idiom adherence.\n2. Run `npm test` to verify zero test failures.\n\n## 8. Authoritative Documentation\n- [ai/SPEC.md](../../SPEC.md)\n- [ai/ARCHITECTURE.md](../../ARCHITECTURE.md)\n"
   },
-
-  // 2. samrey-project-creation
   {
-    id: 'samrey-project-creation',
-    name: 'samrey-project-creation',
-    description: 'Scaffold, configure, and initialize production Samrey applications using the CLI and starter templates.',
-    content: `---
-name: samrey-project-creation
-description: Scaffold, configure, and initialize production Samrey applications using the CLI and starter templates.
----
-
-# Samrey Project Creation & Scaffolding
-
-## Purpose
-Guides the creation of new Samrey web projects with correct dependency graphs, Vite plugins, and production starter templates.
-
-## When to Use
-- Initializing a new greenfield Samrey project.
-- Setting up build tools (Vite, TypeScript, Tailwind CSS).
-- Choosing the right starter template (\`ssr\`, \`spa\`, \`minimal\`, \`ssg\`).
-
-## Relevant CLI Commands
-\`\`\`bash
-# Create an SSR application (recommended for full-stack apps)
-npx @samrey/cli create my-app --template ssr
-
-# Create a Single-Page Application (SPA)
-npx @samrey/cli create my-spa --template spa
-
-# Initialize AI developer instructions and MCP configs
-cd my-app
-npx @samrey/cli ai init
-\`\`\`
-
-## Project File Layout
-\`\`\`
-my-app/
-├── src/
-│   ├── components/      # Reusable UI components
-│   ├── routes/          # Application views & router config
-│   ├── stores/          # Reactive domain stores
-│   ├── App.ts           # Root application shell
-│   └── main.ts          # Client entrypoint
-├── server.ts            # Node.js SSR server (for ssr template)
-├── vite.config.ts       # Vite build config with Samrey compiler plugin
-├── package.json
-└── tsconfig.json
-\`\`\`
-
-## Validation Instructions
-Run \`npm run build\` and \`npm test\` inside the project directory to confirm zero build errors.
-`
+    "id": "samrey-reactivity",
+    "name": "samrey-reactivity",
+    "description": "Reactive state management, signals, computeds, effects, stores, batching, and lifecycle management in @samrey/reactivity.",
+    "content": "---\nname: samrey-reactivity\ndescription: Reactive state management, signals, computeds, effects, stores, batching, and lifecycle management in @samrey/reactivity.\n---\n\n# Samrey Reactivity Engine (`samrey-reactivity`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to manage fine-grained state with signals, computed values, side effects, proxies, stores, and memory cleanup.\n- **Activation Criteria**: Trigger when managing state, creating reactive stores, deriving calculations, handling side-effects, or debugging reactivity cycles.\n\n## 2. Framework Concepts\n- **`signal(value)`**: Primitive reactive container holding a value. Notifies subscribers on reference changes (`Object.is`).\n- **`computed(() => fn)`**: Derived lazy, memoized reactive value.\n- **`effect(() => fn)`**: Eager side effect that re-runs when its read signal dependencies change.\n- **`batch(() => fn)`**: Groups multiple signal mutations so downstream effects only fire once.\n- **`createStore(initial)`**: Deep reactive proxy for complex objects and arrays.\n- **`createRoot` / `onCleanup`**: Memory management and disposal scopes.\n\n## 3. Correct API Usage\n```ts\nimport { signal, computed, effect, batch, createStore, produce } from '@samrey/reactivity';\n\n// Primitive Signal\nconst count = signal(0);\ncount.value++;            // Write\ncount.update(n => n + 1); // Functional update\n\n// Derived\nconst isEven = computed(() => count.value % 2 === 0);\n\n// Deep Store\nconst [state, setState] = createStore({ user: { name: 'Alex' } });\nproduce(state, draft => {\n  draft.user.name = 'Bob';\n});\n```\n\n## 4. Verified Code Example\n```ts\nimport { signal, computed, effect, onCleanup } from '@samrey/reactivity';\n\nexport function createStopwatch() {\n  const elapsed = signal(0);\n  const isRunning = signal(false);\n  const formatted = computed(() => `${(elapsed.value / 1000).toFixed(1)}s`);\n\n  effect(() => {\n    if (!isRunning.value) return;\n    const interval = setInterval(() => {\n      elapsed.update(ms => ms + 100);\n    }, 100);\n\n    onCleanup(() => clearInterval(interval));\n  });\n\n  return {\n    elapsed,\n    isRunning,\n    formatted,\n    start: () => isRunning.set(true),\n    pause: () => isRunning.set(false),\n    reset: () => { isRunning.set(false); elapsed.set(0); }\n  };\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: In-place array mutation (e.g. `items.value.push(x)`).\n  - *Correction*: Always reassign a new reference: `items.value = [...items.value, x]`.\n- **Mistake**: Forgetting `.value` accessor when reading a signal.\n  - *Correction*: Use `signal.value` to subscribe or read.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT call a signal as a function: `count()`.\n- ❌ Do NOT create circular dependencies in effects without `untrack()`.\n- ❌ Do NOT use React hooks (`useState`, `useReducer`).\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli test` to execute reactivity tests.\n2. Verify with `serious-bugs-verification.test.ts`.\n\n## 8. Authoritative Documentation\n- [ai/REACTIVITY_RULES.md](../../REACTIVITY_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#1-samreyreactivity)\n"
   },
-
-  // 3. samrey-components
   {
-    id: 'samrey-components',
-    name: 'samrey-components',
-    description: 'Create idiomatic Samrey components using static template cloning, surgical bindings, and props.',
-    content: `---
-name: samrey-components
-description: Create idiomatic Samrey components using static template cloning, surgical bindings, and props.
----
-
-# Samrey Components & DOM Bindings
-
-## Purpose
-Instructs how to author native Samrey component functions that return DOM nodes with surgical reactive bindings.
-
-## When to Use
-- Writing UI elements, buttons, cards, modals, or layout wrappers.
-- Attaching dynamic text or attribute bindings.
-- Registering event listeners on real DOM nodes.
-
-## Relevant APIs
-- \`template(html: string): () => Node\` from \`@samrey/runtime\`
-- \`bindText(node: Text, getter: () => string): void\` from \`@samrey/runtime\`
-- \`bindAttr(el: Element, name: string, getter: () => any): void\` from \`@samrey/runtime\`
-- \`on(el: Element, event: string, handler: Function): void\` from \`@samrey/runtime\`
-- \`createComponent(fn: Function, props: object): Node\` from \`@samrey/runtime\`
-
-## Verified Code Example
-\`\`\`ts
-import { signal } from '@samrey/reactivity';
-import { template, on, bindText, bindAttr } from '@samrey/runtime';
-
-const _tmpl = template(\`
-<div class="user-card p-4 border rounded">
-  <h3 class="name font-bold"></h3>
-  <span class="badge text-xs px-2 py-1">Active</span>
-  <button class="toggle-btn mt-2 px-3 py-1 bg-blue-500 text-white rounded">Toggle Status</button>
-</div>\`);
-
-export function UserCard(props: { username: string }) {
-  const isActive = signal(true);
-  const root = _tmpl() as HTMLElement;
-
-  bindText(root.querySelector('.name')!, () => props.username);
-  bindAttr(root.querySelector('.badge')!, 'class', () =>
-    isActive.value ? 'badge bg-green-100 text-green-800' : 'badge bg-gray-100 text-gray-800'
-  );
-
-  on(root.querySelector('.toggle-btn')!, 'click', () => {
-    isActive.update(v => !v);
-  });
-
-  return root;
-}
-\`\`\`
-
-## Common Mistakes
-- **Mistake**: Returning a JSX string instead of DOM elements.
-- **Mistake**: Writing \`onClick={...}\` inside \`template('<button onClick="...">')\`. Handlers must be attached via \`on(el, 'click', handler)\`.
-
-## Validation Instructions
-Validate component code using \`npx @samrey/cli ai validate <file.ts>\`.
-`
+    "id": "samrey-components",
+    "name": "samrey-components",
+    "description": "Authoring UI components, static template hoisting, template references, surgical bindings, and control flow in @samrey/runtime.",
+    "content": "---\nname: samrey-components\ndescription: Authoring UI components, static template hoisting, template references, surgical bindings, and control flow in @samrey/runtime.\n---\n\n# Samrey Components & Surgical DOM Bindings (`samrey-components`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to build native Samrey components returning real DOM nodes with fine-grained surgical bindings.\n- **Activation Criteria**: Trigger when building UI elements, pages, layout widgets, control flow branches (`Show`, `For`), or binding DOM properties.\n\n## 2. Framework Concepts\n- **Static Template Hoisting**: `template('...')` is declared once at module scope.\n- **Template References**: Elements flagged with `ref=\"id\"` are looked up in $O(1)$ from `root.refs.id`.\n- **Micro-Bindings**: `bindText`, `bindAttr`, `bindClass`, `bindStyle`, `on`.\n- **Function-Based Control Flow**: `Show`, `Switch`, `Match`, and `For` are component functions, never HTML tags.\n\n## 3. Correct API Usage\n```ts\nimport { template, bindText, bindClass, on, Show, For } from '@samrey/runtime';\nimport { signal } from '@samrey/reactivity';\n\nconst _tmpl = template('<div ref=\"box\" class=\"card\"><span ref=\"txt\"></span></div>');\n\nexport function Card() {\n  const active = signal(false);\n  const root = _tmpl.clone();\n  const { box, txt } = root.refs;\n\n  bindClass(box, 'active', () => active.value);\n  bindText(txt, () => active.value ? 'Active' : 'Inactive');\n  on(box, 'click', () => active.update(v => !v));\n\n  return root;\n}\n```\n\n## 4. Verified Code Example\n```ts\nimport { signal } from '@samrey/reactivity';\nimport { template, bindText, on, For } from '@samrey/runtime';\n\ninterface Todo { id: number; text: string; done: boolean; }\n\nconst _todoTmpl = template('<li class=\"todo\"><span ref=\"title\"></span><button ref=\"delBtn\">✕</button></li>');\n\nexport function TodoList() {\n  const todos = signal<Todo[]>([\n    { id: 1, text: 'Master Samrey', done: true }\n  ]);\n\n  return For({\n    each: () => todos.value,\n    key: (item) => item.id,\n    children: (item) => {\n      const row = _todoTmpl.clone();\n      const { title, delBtn } = row.refs;\n\n      bindText(title, () => item.text);\n      on(delBtn, 'click', () => {\n        todos.update(list => list.filter(t => t.id !== item.id));\n      });\n\n      return row;\n    }\n  });\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Writing `<Show>` as raw HTML template text.\n  - *Correction*: Invoke `Show({ when: () => cond.value, children: () => View() })` in TypeScript.\n- **Mistake**: Passing static string rather than a getter to `bindText`.\n  - *Correction*: Always pass a reactive getter callback: `bindText(el, () => signal.value)`.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT emit `<Show>` or `<For>` inside `template('...')`.\n- ❌ Do NOT use `innerHTML` directly with user input.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli test` to verify component rendering and assertions.\n2. Check for `SAMREY-108` violations with `npx @samrey/cli check`.\n\n## 8. Authoritative Documentation\n- [ai/COMPONENT_RULES.md](../../COMPONENT_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#2-samreyruntime)\n"
   },
-
-  // 4. samrey-reactivity
   {
-    id: 'samrey-reactivity',
-    name: 'samrey-reactivity',
-    description: 'Master fine-grained reactive state, computed values, side effects, batching, and stores in Samrey.',
-    content: `---
-name: samrey-reactivity
-description: Master fine-grained reactive state, computed values, side effects, batching, and stores in Samrey.
----
-
-# Samrey Reactivity System (@samrey/reactivity)
-
-## Purpose
-Teaches how to model reactive data flow using signals, derivations, effects, and deep proxies.
-
-## Core Rules
-1. **Read with \`.value\`**: To subscribe to a signal in an effect or computation, read \`mySignal.value\`.
-2. **Write with \`.value =\` or \`.set()\`**: Trigger subscriber notifications by assigning a new value.
-3. **Use \`.update(fn)\` for state transitions**: \`count.update(n => n + 1)\`.
-4. **Immutable Collections**: Always assign a new array or object reference when updating signal state: \`items.value = [...items.value, newItem]\`.
-5. **Batch Related Writes**: Wrap multiple signal mutations in \`batch(() => { ... })\`.
-
-## Verified Code Example
-\`\`\`ts
-import { signal, computed, effect, batch, createStore } from '@samrey/reactivity';
-
-// 1. Primitive Signal
-const count = signal(0);
-
-// 2. Computed Derivation (memoized)
-const isEven = computed(() => count.value % 2 === 0);
-
-// 3. Side Effect
-const dispose = effect(() => {
-  console.log(\`Count: \${count.value}, isEven: \${isEven.value}\`);
-});
-
-// 4. Batching
-batch(() => {
-  count.value = 2;
-  count.value = 4;
-}); // logs once with count: 4
-
-// 5. Deep Proxy Store
-const appState = createStore({
-  user: { name: 'Alice', preferences: { darkTheme: true } }
-});
-appState.user.preferences.darkTheme = false; // deeply reactive!
-\`\`\`
-
-## Common Mistakes
-- **Mistake**: In-place mutation (\`myArray.value.push(x)\`). This mutates the interior array without changing the signal reference and will NOT trigger reactivity.
-- **Mistake**: Calling \`count()\` instead of \`count.value\`.
-
-## Validation Instructions
-Run unit tests checking signal subscriber notifications and value correctness.
-`
+    "id": "samrey-compiler",
+    "name": "samrey-compiler",
+    "description": "Ahead-of-Time parsing, AIR intermediate representation, static template hoisting, and diagnostic code resolution in @samrey/compiler.",
+    "content": "---\nname: samrey-compiler\ndescription: Ahead-of-Time parsing, AIR intermediate representation, static template hoisting, and diagnostic code resolution in @samrey/compiler.\n---\n\n# Samrey Compiler & AIR Toolchain (`samrey-compiler`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Explains the Ahead-of-Time compilation pipeline, AIR optimization, security/accessibility linting, and diagnostic error resolution.\n- **Activation Criteria**: Trigger when configuring Vite build plugins, inspecting compiler output, investigating `SAMREY-101` to `SAMREY-202` errors, or writing custom template transforms.\n\n## 2. Framework Concepts\n- **Template Parser (`parseTemplate`)**: Converts template syntax into a structured AST with precise source coordinates.\n- **AIR Builder (`buildAIR`)**: Categorizes static HTML, dynamic text nodes, event bindings, and directives into an Intermediate Representation.\n- **Security Classifier (`classifySecurityNode`)**: Flags dangerous schemes (`javascript:`) and sinks.\n- **A11y Linter (`lintAccessibility`)**: Enforces required ARIA labels and alt attributes.\n- **Code Generator (`generateCode`)**: Generates optimized JavaScript that directly invokes `@samrey/runtime`.\n\n## 3. Correct API Usage\n```ts\nimport { parseTemplate, buildAIR, generateCode, lintAccessibility } from '@samrey/compiler';\n\nconst source = '<div class=\"banner\"><h1>Hello</h1></div>';\nconst ast = parseTemplate(source);\nconst air = buildAIR(ast);\nconst a11yErrors = lintAccessibility(air);\nconst jsCode = generateCode(air);\n```\n\n## 4. Verified Code Example\n```ts\nimport { compileTemplate, SamreyCompilerError } from '@samrey/compiler';\n\ntry {\n  const result = compileTemplate('<button ref=\"btn\">Click me</button>');\n  console.log('Compiled code:', result.code);\n} catch (err) {\n  if (err instanceof SamreyCompilerError) {\n    console.error(`Compiler error [${err.code}] at line ${err.line}:${err.column}`);\n    console.error(`Explanation: ${err.explanation}`);\n    console.error(`Suggested fix: ${err.suggestion}`);\n  }\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Forgetting closing tags in multi-line template strings.\n  - *Correction*: Inspect the line and column reported in `SAMREY-101` error frame.\n- **Mistake**: Using duplicate `ref=\"...\"` within the same template string.\n  - *Correction*: Ensure each `ref` name is distinct per template (`SAMREY-109`).\n\n## 6. Forbidden Patterns\n- ❌ Do NOT emit inline script execution attributes (e.g. `onclick=\"doSomething()\"`).\n- ❌ Do NOT use dangerous URI schemes like `href=\"javascript:...\"` (`SAMREY-201`).\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli audit` to verify template security and accessibility.\n2. Run `npx @samrey/cli build` to test Vite compiler integration.\n\n## 8. Authoritative Documentation\n- [ai/COMPILER_RULES.md](../../COMPILER_RULES.md)\n- [ai/ERROR_REFERENCE.md](../../ERROR_REFERENCE.md)\n"
   },
-
-  // 5. samrey-routing
   {
-    id: 'samrey-routing',
-    name: 'samrey-routing',
-    description: 'Implement client-side SPA routing with createRouter, RouterOutlet, Link, and route parameters.',
-    content: `---
-name: samrey-routing
-description: Implement client-side SPA routing with createRouter, RouterOutlet, Link, and route parameters.
----
-
-# Samrey Client-Side Routing (@samrey/router)
-
-## Purpose
-Explains how to define routes, mount the RouterOutlet outlet, create navigation links, and access dynamic route parameters.
-
-## Relevant APIs
-- \`createRouter(routes: RouteRecord[], initialPath?: string): RouterInstance\`
-- \`RouterOutlet(): Node\`
-- \`Link({ href, children, class, activeClass }): HTMLAnchorElement\`
-- \`useParams(): ReadonlySignal<Record<string, string>>\`
-- \`useLocation(): ReadonlySignal<string>\`
-- \`useNavigate(): (to: string) => void\`
-
-## Verified Code Example
-\`\`\`ts
-import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
-import { template, bindText } from '@samrey/runtime';
-
-function HomePage() {
-  return template('<div><h2>Welcome Home</h2></div>')();
-}
-
-function ProductPage() {
-  const params = useParams();
-  const root = template('<div><h2>Product Details</h2><p class="id"></p></div>')() as HTMLElement;
-  bindText(root.querySelector('.id')!, () => \`Product ID: \${params.value.id || ''}\`);
-  return root;
-}
-
-export const router = createRouter([
-  { path: '/', component: HomePage },
-  { path: '/products/:id', component: ProductPage }
-]);
-
-export function NavigationBar() {
-  const nav = template('<header><nav class="nav"></nav><main></main></header>')() as HTMLElement;
-  const navEl = nav.querySelector('.nav')!;
-  
-  navEl.appendChild(Link({ href: '/', children: 'Home' }));
-  navEl.appendChild(Link({ href: '/products/101', children: 'Product #101' }));
-  
-  nav.querySelector('main')!.appendChild(RouterOutlet());
-  return nav;
-}
-\`\`\`
-`
+    "id": "samrey-routing",
+    "name": "samrey-routing",
+    "description": "Client-side routing, navigation outlets, route parameters, links, and navigation guards with @samrey/router.",
+    "content": "---\nname: samrey-routing\ndescription: Client-side routing, navigation outlets, route parameters, links, and navigation guards with @samrey/router.\n---\n\n# Samrey Client-Side Routing (`samrey-routing`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Instructs how to build multi-page Single-Page Applications (SPAs) with `@samrey/router`.\n- **Activation Criteria**: Trigger when configuring routes, rendering views via `RouterOutlet`, parsing URL path parameters, generating navigational links, or adding auth guards.\n\n## 2. Framework Concepts\n- **`createRouter(routes)`**: Declares the route tree and returns a singleton router instance.\n- **`RouterOutlet()`**: Mounting node that dynamically renders the active route component.\n- **`Link({ href, children })`**: Renders an accessible anchor tag with client-side history navigation.\n- **`useParams()`**: Signal-based accessor for active route parameters (`:id`).\n- **`useNavigate()`**: Imperative navigation helper.\n- **`beforeEnter(to, from)`**: Guard callback to protect restricted routes.\n\n## 3. Correct API Usage\n```ts\nimport { createRouter, RouterOutlet, Link, useParams, useNavigate } from '@samrey/router';\nimport { template } from '@samrey/runtime';\n\nexport const router = createRouter([\n  { path: '/', component: () => template('<div>Home</div>')() },\n  { path: '/profile/:id', component: ProfileView },\n  { path: '*', component: () => template('<div>404</div>')() }\n]);\n```\n\n## 4. Verified Code Example\n```ts\nimport { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';\nimport { template, bindText } from '@samrey/runtime';\n\nfunction UserDetail() {\n  const params = useParams();\n  const root = template('<div class=\"user-page\">User ID: <span ref=\"id\"></span></div>').clone();\n  bindText(root.refs.id, () => params().id ?? 'None');\n  return root;\n}\n\nexport function Shell() {\n  const root = template('<nav ref=\"menu\"></nav><main ref=\"view\"></main>').clone();\n  const { menu, view } = root.refs;\n\n  menu.appendChild(Link({ href: '/', children: 'Home' }));\n  menu.appendChild(Link({ href: '/users/101', children: 'User 101' }));\n\n  view.appendChild(RouterOutlet());\n  return root;\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Using standard `<a href=\"...\">` without `Link()`, causing full browser page reloads.\n  - *Correction*: Always use `Link({ href, children })` for client-side SPA routing.\n- **Mistake**: Forgetting a wildcard fallback route `{ path: '*', component: NotFound }`.\n  - *Correction*: Add a wildcard route to prevent unhandled 404 navigation errors.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT manipulate `window.location` directly for internal SPA links.\n- ❌ Do NOT import React Router.\n\n## 7. Validation Procedures\n1. Test routes using `renderTest(() => Shell())` from `@samrey/testing`.\n2. Assert navigation changes with `flushReactivity()`.\n\n## 8. Authoritative Documentation\n- [ai/ROUTING_RULES.md](../../ROUTING_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#4-samreyrouter)\n"
   },
-
-  // 6. samrey-http
   {
-    id: 'samrey-http',
-    name: 'samrey-http',
-    description: 'Fetch asynchronous data with createResource and manage HTTP requests with CSRF protection.',
-    content: `---
-name: samrey-http
-description: Fetch asynchronous data with createResource and manage HTTP requests with CSRF protection.
----
-
-# HTTP Client & Async Resources (@samrey/http)
-
-## Purpose
-Guides asynchronous API data fetching, reactive loading/error states, and secure HTTP communication.
-
-## Relevant APIs
-- \`createResource<T>(fetcher: () => Promise<T>): [ResourceState<T>, ResourceActions<T>]\`
-- \`createHttpClient(options: HttpClientOptions): HttpClient\`
-
-## Verified Code Example
-\`\`\`ts
-import { createResource } from '@samrey/http';
-import { Show, template, bindText, on } from '@samrey/runtime';
-
-interface Post { id: number; title: string; }
-
-export function PostFeed() {
-  const [posts, { refetch }] = createResource<Post[]>(async () => {
-    const res = await fetch('/api/posts');
-    if (!res.ok) throw new Error('Failed to load posts');
-    return res.json();
-  });
-
-  const root = template(\`
-<div class="posts-feed">
-  <button id="refetch-btn">Reload</button>
-  <div id="content"></div>
-</div>\`)() as HTMLElement;
-
-  on(root.querySelector('#refetch-btn')!, 'click', () => refetch());
-
-  root.querySelector('#content')!.appendChild(
-    Show({
-      when: () => posts.loading.value,
-      children: () => template('<p>Loading feed...</p>')(),
-      fallback: () =>
-        Show({
-          when: () => posts.error.value !== null,
-          children: () => template('<p class="err">Error loading posts.</p>')(),
-          fallback: () => {
-            const list = template('<ul class="list"></ul>')() as HTMLElement;
-            for (const p of posts.data.value || []) {
-              const li = document.createElement('li');
-              li.textContent = p.title;
-              list.appendChild(li);
-            }
-            return list;
-          }
-        })
-    })
-  );
-
-  return root;
-}
-\`\`\`
-`
+    "id": "samrey-forms",
+    "name": "samrey-forms",
+    "description": "Form management, schema validation, ARIA accessibility, input binding, and submission deduplication in @samrey/forms.",
+    "content": "---\nname: samrey-forms\ndescription: Form management, schema validation, ARIA accessibility, input binding, and submission deduplication in @samrey/forms.\n---\n\n# Samrey Forms & Validation (`samrey-forms`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to build accessible, schema-validated forms with reactive error states and deduplicated submissions.\n- **Activation Criteria**: Trigger when building login forms, registration forms, settings panels, data mutation dialogs, or handling input validation.\n\n## 2. Framework Concepts\n- **`createForm(config)`**: Generates reactive signals for `values`, `errors`, `touched`, `isSubmitting`, and `isValid`.\n- **`bindField(input, form, fieldName)`**: Automatically synchronizes an input element with the reactive form instance and manages blur/change events.\n- **`computeAriaAttributes(error, touched)`**: Generates accessible `aria-invalid` and `aria-describedby` attributes.\n- **Submission Deduplication**: Protects against double-submits while `isSubmitting.value` is true.\n\n## 3. Correct API Usage\n```ts\nimport { createForm, bindField } from '@samrey/forms';\n\nconst form = createForm({\n  initialValues: { email: '', password: '' },\n  validate: (values) => {\n    const errs: Record<string, string> = {};\n    if (!values.email.includes('@')) errs.email = 'Valid email is required.';\n    if (values.password.length < 8) errs.password = 'Password must be at least 8 chars.';\n    return errs;\n  },\n  onSubmit: async (values) => {\n    await api.login(values);\n  }\n});\n```\n\n## 4. Verified Code Example\n```ts\nimport { createForm, bindField } from '@samrey/forms';\nimport { template, bindText, on } from '@samrey/runtime';\n\nconst _tmpl = template(`\n  <form class=\"user-form\">\n    <label for=\"username\">Username</label>\n    <input id=\"username\" ref=\"input\" type=\"text\" />\n    <span ref=\"err\" class=\"error\"></span>\n    <button ref=\"btn\" type=\"submit\">Save</button>\n  </form>\n`);\n\nexport function UserForm(props: { onSave: (name: string) => Promise<void> }) {\n  const form = createForm({\n    initialValues: { username: '' },\n    validate: (v) => {\n      const errs: Record<string, string> = {};\n      if (!v.username.trim()) errs.username = 'Username cannot be blank.';\n      return errs;\n    },\n    onSubmit: async (v) => {\n      await props.onSave(v.username);\n    }\n  });\n\n  const root = _tmpl.clone();\n  const { input, err, btn } = root.refs;\n\n  bindField(input as HTMLInputElement, form, 'username');\n  bindText(err, () => form.errors.value.username ?? '');\n\n  on(root, 'submit', (e) => {\n    e.preventDefault();\n    form.handleSubmit();\n  });\n\n  return root;\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Forgetting `e.preventDefault()` on form submit.\n  - *Correction*: Prevent native page reload and delegate to `form.handleSubmit()`.\n- **Mistake**: Manually tracking touched states instead of using `bindField()`.\n  - *Correction*: `bindField` manages blur events and touched states automatically.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT use Formik, React Hook Form, or foreign form libraries.\n- ❌ Do NOT store raw unvalidated user input directly into critical application state.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli test` to verify validation logic.\n2. Verify accessibility with `npx @samrey/cli audit --a11y`.\n\n## 8. Authoritative Documentation\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#5-samreyforms)\n- [ai/EXAMPLES_INDEX.md](../../EXAMPLES_INDEX.md#4-example-3-accessible-form-validation)\n"
   },
-
-  // 7. samrey-forms
   {
-    id: 'samrey-forms',
-    name: 'samrey-forms',
-    description: 'Build robust reactive forms with validation schemas (Zod/Valibot) and accessible ARIA attributes.',
-    content: `---
-name: samrey-forms
-description: Build robust reactive forms with validation schemas (Zod/Valibot) and accessible ARIA attributes.
----
-
-# Forms & Validation (@samrey/forms)
-
-## Purpose
-Instructs how to manage form input state, dirty/touched flags, field validation, and accessible error association.
-
-## Relevant APIs
-- \`createForm<T>(config: FormConfig<T>): FormInstance<T>\`
-- \`Field(props: FieldProps): Node\`
-- \`useField(form: FormInstance, name: string): FieldState\`
-
-## Verified Code Example
-\`\`\`ts
-import { createForm } from '@samrey/forms';
-import { template, on, bindText } from '@samrey/runtime';
-
-export function RegistrationForm() {
-  const form = createForm({
-    initialValues: { email: '', password: '' },
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-      if (!values.email.includes('@')) errors.email = 'Valid email is required.';
-      if (values.password.length < 8) errors.password = 'Password must be at least 8 characters.';
-      return errors;
-    },
-    onSubmit: async (values) => {
-      await registerAccount(values);
-    }
-  });
-
-  const root = template(\`
-<form class="reg-form">
-  <div class="field">
-    <label for="email">Email</label>
-    <input id="email" type="email" />
-    <span class="err-email text-red-600 text-sm"></span>
-  </div>
-  <button type="submit">Register</button>
-</form>\`)() as HTMLFormElement;
-
-  const emailInput = root.querySelector('#email') as HTMLInputElement;
-  const emailErr = root.querySelector('.err-email')!;
-
-  on(emailInput, 'input', () => {
-    form.setFieldValue('email', emailInput.value);
-  });
-
-  bindText(emailErr, () => form.errors.value.email || '');
-
-  on(root, 'submit', (e) => {
-    e.preventDefault();
-    form.handleSubmit();
-  });
-
-  return root;
-}
-\`\`\`
-`
+    "id": "samrey-ssr",
+    "name": "samrey-ssr",
+    "description": "Server-side rendering, streaming HTML, pre-hydration script, state serialization, and client hydration in @samrey/ssr.",
+    "content": "---\nname: samrey-ssr\ndescription: Server-side rendering, streaming HTML, pre-hydration script, state serialization, and client hydration in @samrey/ssr.\n---\n\n# Samrey Server-Side Rendering & Hydration (`samrey-ssr`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to build full-stack SSR applications, stream HTML from Node.js, serialize state safely, and hydrate on the client.\n- **Activation Criteria**: Trigger when configuring Node.js server scripts, implementing `renderToString` or `renderToStream`, setting up hydration, or resolving hydration mismatches.\n\n## 2. Framework Concepts\n- **`renderToString(rootFn)`**: Executes components asynchronously on the server to produce complete static HTML.\n- **`renderToStream(rootFn)`**: Streams HTML progressively using Web Streams.\n- **`generatePreHydrationScript()`**: Injects an inline snippet that buffers user interactions before client bundles load.\n- **`serializeStateForHydration(state)`**: Securely serializes state, escaping `</script>` tags and prototype pollution keys.\n- **`hydrate(rootFn, container)`**: Attaches event listeners and signals to server-rendered DOM nodes without rebuilding.\n\n## 3. Correct API Usage\n```ts\n// Server\nimport { renderToString, generatePreHydrationScript, serializeStateForHydration } from '@samrey/ssr';\nconst html = await renderToString(() => App());\nconst preHydrate = generatePreHydrationScript();\nconst stateScript = serializeStateForHydration({ initial: 42 });\n\n// Client\nimport { hydrate } from '@samrey/ssr';\nhydrate(() => App(), document.getElementById('app')!);\n```\n\n## 4. Verified Code Example\n```ts\n// server.ts\nimport http from 'node:http';\nimport { renderToString, generatePreHydrationScript } from '@samrey/ssr';\nimport { App } from './src/App.js';\n\nconst server = http.createServer(async (req, res) => {\n  const body = await renderToString(() => App());\n  const preScript = generatePreHydrationScript();\n\n  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });\n  res.end(`<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\" />\n    <title>Samrey App</title>\n    ${preScript}\n  </head>\n  <body>\n    <div id=\"app\">${body}</div>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>`);\n});\n\nserver.listen(3000);\n```\n\n## 5. Common Mistakes\n- **Mistake**: Using browser globals (`window`, `localStorage`) during server execution.\n  - *Correction*: Defer browser-only logic to `onMount(() => ...)`, which only runs in the client.\n- **Mistake**: Using `mount()` on the client instead of `hydrate()`, wiping out server HTML.\n  - *Correction*: Call `hydrate(() => App(), container)`.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT serialize secrets or auth tokens into SSR hydration state payloads.\n- ❌ Do NOT use client-specific timers in the server component execution pass.\n\n## 7. Validation Procedures\n1. Run `npm run build` and `node server.js` to verify server render output.\n2. Verify hydration matches without console warnings.\n\n## 8. Authoritative Documentation\n- [ai/SSR_RULES.md](../../SSR_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#7-samreyssr)\n"
   },
-
-  // 8. samrey-ssr
   {
-    id: 'samrey-ssr',
-    name: 'samrey-ssr',
-    description: 'Implement Server-Side Rendering (SSR), streaming responses, hydration, and static site generation (SSG).',
-    content: `---
-name: samrey-ssr
-description: Implement Server-Side Rendering (SSR), streaming responses, hydration, and static site generation (SSG).
----
-
-# Server-Side Rendering & Hydration (@samrey/ssr)
-
-## Purpose
-Explains how to render Samrey components on Node.js HTTP servers and hydrate them in the browser without hydration mismatches.
-
-## Relevant APIs
-- \`renderToString(rootFn: () => Node | Promise<Node>): Promise<string>\`
-- \`renderToStream(rootFn: () => Node): ReadableStream\`
-- \`hydrate(rootFn: () => Node, container: Element): void\`
-
-## Server Implementation Example
-\`\`\`ts
-import http from 'node:http';
-import { renderToString } from '@samrey/ssr';
-import { App } from './src/App.js';
-
-const server = http.createServer(async (req, res) => {
-  if (req.url === '/') {
-    const htmlBody = await renderToString(() => App());
-    
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(\`
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Samrey App</title>
-  </head>
-  <body>
-    <div id="app">\${htmlBody}</div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
-</html>\`);
-  }
-});
-
-server.listen(3000);
-\`\`\`
-
-## Client Hydration Example
-\`\`\`ts
-// src/main.ts
-import { hydrate } from '@samrey/ssr';
-import { App } from './App.js';
-
-const container = document.getElementById('app')!;
-hydrate(() => App(), container);
-\`\`\`
-`
+    "id": "samrey-security",
+    "name": "samrey-security",
+    "description": "Contextual sanitization (HTML, URL, CSS), Trusted Types, anti-CSRF token protection, and secret scrubbing in @samrey/security.",
+    "content": "---\nname: samrey-security\ndescription: Contextual sanitization (HTML, URL, CSS), Trusted Types, anti-CSRF token protection, and secret scrubbing in @samrey/security.\n---\n\n# Samrey Security Primitives (`samrey-security`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to secure Samrey applications against Cross-Site Scripting (XSS), CSRF, prototype pollution, and credential leaks.\n- **Activation Criteria**: Trigger when sanitizing user input, working with rich text HTML, generating or validating CSRF tokens, or handling authentication state.\n\n## 2. Framework Concepts\n- **`sanitizeHtml(untrusted)`**: Contextual HTML sanitizer that strips script tags, iframes, and dangerous attributes.\n- **`sanitizeUrl(untrusted)`**: Validates URL protocols, preventing `javascript:` and unsafe data schemes.\n- **`sanitizeCssStyle(untrusted)`**: Neutralizes CSS injection and style-based data exfiltration.\n- **Anti-CSRF Tokens (`generateCsrfToken`, `verifyCsrfToken`)**: Timing-safe cryptographic tokens.\n- **`stripSecrets(obj)`**: Redacts passwords, tokens, API keys, and authorization headers from serialized state.\n\n## 3. Correct API Usage\n```ts\nimport { sanitizeHtml, sanitizeUrl, generateCsrfToken, verifyCsrfToken, stripSecrets } from '@samrey/security';\n\n// Sanitization\nconst safeHtml = sanitizeHtml(userMarkup);\nconst safeUrl = sanitizeUrl(userLink);\n\n// CSRF\nconst token = generateCsrfToken();\nconst valid = verifyCsrfToken(submittedToken, token);\n\n// State scrubbing\nconst publicState = stripSecrets(serverSessionData);\n```\n\n## 4. Verified Code Example\n```ts\nimport { sanitizeHtml, sanitizeUrl } from '@samrey/security';\nimport { template, bindAttr } from '@samrey/runtime';\n\nconst _profileTmpl = template(`\n  <div class=\"user-profile\">\n    <a ref=\"websiteLink\" target=\"_blank\" rel=\"noopener\">Website</a>\n    <div ref=\"bioBox\" class=\"bio\"></div>\n  </div>\n`);\n\nexport function UserProfile(props: { website: string; bio: string }) {\n  const root = _profileTmpl.clone();\n  const { websiteLink, bioBox } = root.refs;\n\n  // Sanitize external link\n  const safeHref = sanitizeUrl(props.website);\n  bindAttr(websiteLink, 'href', () => safeHref);\n\n  // Sanitize and set formatted bio\n  bioBox.innerHTML = sanitizeHtml(props.bio);\n\n  return root;\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Setting `element.innerHTML` directly with unsanitized user content.\n  - *Correction*: Always wrap untrusted HTML in `sanitizeHtml(content)`.\n- **Mistake**: Using non-timing-safe equality (`===`) to verify CSRF tokens.\n  - *Correction*: Always use `verifyCsrfToken()` which uses `crypto.timingSafeEqual`.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT disable Trusted Types policies in production environments.\n- ❌ Do NOT store plaintext credentials in client localStorage or sessionStorage.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli audit --security` to scan for security vulnerabilities.\n2. Run `tests/phase2-sanitizers-secrets.test.ts`.\n\n## 8. Authoritative Documentation\n- [ai/SECURITY_RULES.md](../../SECURITY_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#8-samreysecurity)\n"
   },
-
-  // 9. samrey-testing
   {
-    id: 'samrey-testing',
-    name: 'samrey-testing',
-    description: 'Unit and integration test Samrey components and reactive state with @samrey/testing.',
-    content: `---
-name: samrey-testing
-description: Unit and integration test Samrey components and reactive state with @samrey/testing.
----
-
-# Testing Samrey Applications (@samrey/testing)
-
-## Purpose
-Teaches how to mount components into headless DOM test environments, simulate user events, and assert reactive DOM updates.
-
-## Relevant APIs
-- \`renderTest(componentFactory: () => unknown): TestRenderResult\`
-- \`fireEvent(element: Element, eventName: string, eventInit?: object): boolean\`
-- \`flushReactivity(): Promise<void>\`
-
-## Verified Code Example
-\`\`\`ts
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
-import { Counter } from './Counter.js';
-
-describe('Counter Component', () => {
-  it('renders initial state and increments reactively', async () => {
-    const { container } = renderTest(() => Counter({ initial: 5 }));
-    const button = container.querySelector('button')!;
-
-    assert.ok(button.textContent?.includes('5'), 'Initial count must be 5');
-
-    fireEvent(button, 'click');
-    await flushReactivity();
-
-    assert.ok(button.textContent?.includes('6'), 'Count must increment to 6');
-  });
-});
-\`\`\`
-
-## Validation Instructions
-Run project test suites using \`npx @samrey/cli test\` or \`npm test\`.
-`
+    "id": "samrey-testing",
+    "name": "samrey-testing",
+    "description": "Headless DOM component unit testing, event simulation, reactivity flushing, and async assertions in @samrey/testing.",
+    "content": "---\nname: samrey-testing\ndescription: Headless DOM component unit testing, event simulation, reactivity flushing, and async assertions in @samrey/testing.\n---\n\n# Testing Samrey Applications (`samrey-testing`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Teaches how to write robust unit, integration, and component tests using the headless DOM test harness in `@samrey/testing`.\n- **Activation Criteria**: Trigger when authoring test files, asserting reactive updates, simulating user clicks/inputs, testing form submissions, or verifying async data resources.\n\n## 2. Framework Concepts\n- **`renderTest(componentFactory)`**: Mounts a component in a headless DOM wrapper and returns `{ container, unmount }`.\n- **`fireEvent(element, eventType, options)`**: Dispatches synthetic DOM events.\n- **`flushReactivity()`**: Flushes microtasks and pending effects synchronously to ensure assertions run after reactive state propagates.\n- **`waitFor(assertionFn, options)`**: Polls an assertion until it passes or times out.\n- **`createMockResource(data)`**: Creates mock `@samrey/http` resources for testing.\n\n## 3. Correct API Usage\n```ts\nimport { describe, it } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { renderTest, fireEvent, flushReactivity } from '@samrey/testing';\n\ndescribe('Widget', () => {\n  it('updates state', async () => {\n    const { container } = renderTest(() => MyWidget());\n    fireEvent(container.querySelector('button')!, 'click');\n    await flushReactivity();\n    assert.equal(container.querySelector('.val')?.textContent, 'Updated');\n  });\n});\n```\n\n## 4. Verified Code Example\n```ts\nimport { describe, it, afterEach } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { renderTest, fireEvent, flushReactivity, cleanupAllTestContainers } from '@samrey/testing';\nimport { Counter } from './Counter.js';\n\ndescribe('Counter Unit Tests', () => {\n  afterEach(() => {\n    cleanupAllTestContainers();\n  });\n\n  it('increments count on click', async () => {\n    const { container } = renderTest(() => Counter({ initial: 5 }));\n    const button = container.querySelector('button')!;\n\n    assert.ok(button.textContent?.includes('5'), 'Expected initial count of 5');\n\n    fireEvent(button, 'click');\n    await flushReactivity();\n\n    assert.ok(button.textContent?.includes('6'), 'Expected count to increment to 6');\n  });\n});\n```\n\n## 5. Common Mistakes\n- **Mistake**: Asserting DOM changes immediately after `fireEvent` without awaiting `flushReactivity()`.\n  - *Correction*: Always `await flushReactivity()` before asserting DOM node values.\n- **Mistake**: Forgetting `cleanupAllTestContainers()` in `afterEach()`.\n  - *Correction*: Clean up test containers to prevent memory growth across large test suites.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT import Jest, Mocha, or testing-library/react.\n- ❌ Do NOT mock signals with non-reactive objects.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli test` to execute all project tests.\n2. Ensure exit code is 0.\n\n## 8. Authoritative Documentation\n- [ai/TESTING_RULES.md](../../TESTING_RULES.md)\n- [ai/API_CONTRACTS.md](../../API_CONTRACTS.md#9-samreytesting)\n"
   },
-
-  // 10. samrey-debugging
   {
-    id: 'samrey-debugging',
-    name: 'samrey-debugging',
-    description: 'Diagnose compiler errors (SAMREY-101 to SAMREY-108), reactivity pitfalls, and runtime exceptions.',
-    content: `---
-name: samrey-debugging
-description: Diagnose compiler errors (SAMREY-101 to SAMREY-108), reactivity pitfalls, and runtime exceptions.
----
-
-# Debugging Samrey Applications & Compiler Errors
-
-## Purpose
-Guides resolving compiler diagnostics, runtime issues, and anti-pattern warnings.
-
-## Compiler Error Codes
-- **SAMREY-101**: Unclosed HTML/JSX tag.
-  - *Fix*: Check line & column reported in the error frame and add matching closing tag.
-- **SAMREY-102**: Unterminated interpolation expression \`{...\`.
-  - *Fix*: Ensure matching closing brace \`}\`.
-- **SAMREY-104**: Mismatched or unexpected closing tag.
-  - *Fix*: Match opening tag or remove extraneous closing tag.
-- **SAMREY-108**: Template-level \`<Show>\` or \`<For>\` tag used in HTML template.
-  - *Fix*: Call them as component functions in TypeScript: \`Show({ when, children })\` or \`For({ each, key, children })\`.
-
-## Reactivity Debugging
-- **Issue**: "Signal was updated but DOM did not change."
-  - *Cause*: State was mutated in-place (e.g. \`arr.value.push(x)\`), or signal was read outside a reactive binding.
-  - *Fix*: Assign new reference \`arr.value = [...arr.value, x]\` and verify binding is wrapped in a getter function \`() => signal.value\`.
-- **Issue**: Infinite effect loop.
-  - *Cause*: Writing to a signal inside an effect that also reads the same signal.
-  - *Fix*: Wrap the read in \`untrack(() => signal.value)\`.
-`
+    "id": "samrey-debugging",
+    "name": "samrey-debugging",
+    "description": "Diagnosing compiler errors (SAMREY-101 to SAMREY-501), infinite effect loops, stale closures, and hydration mismatches.",
+    "content": "---\nname: samrey-debugging\ndescription: Diagnosing compiler errors (SAMREY-101 to SAMREY-501), infinite effect loops, stale closures, and hydration mismatches.\n---\n\n# Debugging Samrey Applications (`samrey-debugging`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Diagnostic guide for troubleshooting compilation errors, runtime warnings, infinite reactivity cycles, and hydration issues.\n- **Activation Criteria**: Trigger when resolving build errors, troubleshooting unresponsive signal bindings, diagnosing infinite loop warnings, or handling test failures.\n\n## 2. Framework Concepts\n- **Compiler Diagnostic System**: Structured error format emitting `[SAMREY-XXX]`, file location, source frame, explanation, and recommendation.\n- **Infinite Loop Detection**: Runtimes and effects have transaction cycle limits to prevent browser freezing.\n- **Hydration Divergence Detection**: SSR mismatches are flagged in dev mode.\n\n## 3. Correct API Usage\n```bash\n# Explain a diagnostic code\nnpx @samrey/cli explain SAMREY-108\n\n# Run automated diagnostic fixer\nnpx @samrey/cli explain --fix src/MyComponent.ts\n```\n\n## 4. Key Error Diagnoses & Quick-Fixes\n\n### SAMREY-108: Control Flow Used as Template Tag\n- **Cause**: `<Show>` or `<For>` written inside HTML template markup.\n- **Fix**: Replace HTML tag with TypeScript function call:\n  ```ts\n  Show({\n    when: () => isVisible.value,\n    children: () => ActiveView(),\n    fallback: () => InactiveView()\n  });\n  ```\n\n### SAMREY-301: Infinite Effect Loop / Cyclic Dependency\n- **Cause**: Effect writes to a signal that it also synchronously reads.\n- **Fix**: Wrap un-subscribed reads in `untrack(() => signal.value)`.\n\n### Stale Signal Closure / Unresponsive DOM\n- **Cause**: Passed static value instead of getter function to dynamic binding:\n  ```ts\n  // Broken:\n  bindText(el, count.value.toString());\n  // Fixed:\n  bindText(el, () => count.value.toString());\n  ```\n\n## 5. Common Mistakes\n- **Mistake**: Calling signal as a function: `const val = mySignal()`.\n  - *Correction*: Signals in Samrey are objects with a `.value` property. Read `mySignal.value`.\n- **Mistake**: In-place array mutation (`arr.value.push(x)`).\n  - *Correction*: Reassign reference: `arr.value = [...arr.value, x]`.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT suppress compiler errors with `@ts-ignore` without understanding the root cause.\n- ❌ Do NOT wrap component bodies in loops.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli check --json` to diagnose all project files.\n2. Run `npm test` to verify fixes.\n\n## 8. Authoritative Documentation\n- [ai/ERROR_REFERENCE.md](../../ERROR_REFERENCE.md)\n- [ai/REACTIVITY_RULES.md](../../REACTIVITY_RULES.md)\n"
+  },
+  {
+    "id": "samrey-performance",
+    "name": "samrey-performance",
+    "description": "High-throughput performance optimization, static hoisting, memory leak prevention, and zero-VDOM fine-grained updates in Samrey.",
+    "content": "---\nname: samrey-performance\ndescription: High-throughput performance optimization, static hoisting, memory leak prevention, and zero-VDOM fine-grained updates in Samrey.\n---\n\n# Samrey Performance Optimization (`samrey-performance`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Instructs how to architect ultra-high-throughput, low-memory Samrey applications and avoid performance regressions.\n- **Activation Criteria**: Trigger when building high-frequency data streams (e.g. trading dashboards, real-time charts), virtualized lists, large data tables, or diagnosing memory leaks.\n\n## 2. Framework Concepts\n- **Zero VDOM Advantage**: Because components run once, runtime cost is localized entirely to the modified signal subscribers ($O(1)$ operations).\n- **Template Cloning Throughput**: Cloning `<template>` nodes via native `cloneNode(true)` is $3\\times$ to $5\\times$ faster than iterative `createElement()` calls.\n- **Topological Transaction Clock**: Ensures intermediate computed values in complex graph networks are never computed more than once per batch.\n- **Disposal Trees**: Subscriptions are tied to owners (`createOwner`, `runWithOwner`). When an owner is disposed, all descendant listeners detach cleanly.\n\n## 3. Correct API Usage\n```ts\nimport { batch } from '@samrey/reactivity';\n\n// Batch multiple high-frequency updates into a single browser frame\nbatch(() => {\n  stockPrice.value = 142.50;\n  volume.value = 120500;\n  bidAskSpread.value = 0.05;\n});\n```\n\n## 4. Verified Code Example: Keyed List Optimization\n```ts\nimport { signal } from '@samrey/reactivity';\nimport { template, bindText, For } from '@samrey/runtime';\n\ninterface MetricRow { id: string; name: string; value: number; }\n\nconst _rowTmpl = template('<tr class=\"metric-row\"><td ref=\"name\"></td><td ref=\"val\"></td></tr>');\n\nexport function MetricTable(props: { metrics: Signal<MetricRow[]> }) {\n  return For({\n    each: () => props.metrics.value,\n    // Stable key prevents unnecessary DOM node recreation\n    key: (item) => item.id,\n    children: (item) => {\n      const row = _rowTmpl.clone();\n      const { name, val } = row.refs;\n      bindText(name, () => item.name);\n      bindText(val, () => item.value.toFixed(2));\n      return row;\n    }\n  });\n}\n```\n\n## 5. Common Mistakes\n- **Mistake**: Re-creating the `template(\"...\")` inside the component function body.\n  - *Correction*: Always hoist `template()` at module level so the browser parses HTML once.\n- **Mistake**: Creating orphaned long-running effects outside an Owner or component lifecycle.\n  - *Correction*: Wrap standalone effects in `createRoot(dispose => ...)` and call `dispose()` when unmounting.\n\n## 6. Forbidden Patterns\n- ❌ Do NOT trigger synchronous signal writes inside render loops.\n- ❌ Do NOT use unstable keys (such as `Math.random()`) in `For()`.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli analyze` to inspect production bundle sizes.\n2. Run benchmark regression tests via `npm run benchmark`.\n\n## 8. Authoritative Documentation\n- [ai/ARCHITECTURE.md](../../ARCHITECTURE.md)\n- [ai/REACTIVITY_RULES.md](../../REACTIVITY_RULES.md)\n"
+  },
+  {
+    "id": "samrey-migration",
+    "name": "samrey-migration",
+    "description": "Migrating code from React, Vue, Solid, and Svelte to native Samrey idioms without foreign framework dependencies.",
+    "content": "---\nname: samrey-migration\ndescription: Migrating code from React, Vue, Solid, and Svelte to native Samrey idioms without foreign framework dependencies.\n---\n\n# Migrating to Samrey Framework (`samrey-migration`)\n\n## 1. Skill Description & Activation Criteria\n- **Purpose**: Provides automated and manual translation rules for converting components and state management from React, Vue, Solid, and Svelte into native Samrey.\n- **Activation Criteria**: Trigger when refactoring existing projects into Samrey, converting React JSX components, translating hooks, or porting third-party UI patterns.\n\n## 2. Framework Comparison & Translation Map\n\n| Foreign Pattern | Framework | Samrey Native Equivalent |\n| :--- | :--- | :--- |\n| `const [x, setX] = useState(0)` | React | `const x = signal(0);` (read: `x.value`, write: `x.value = v`) |\n| `useEffect(() => { ... }, [dep])` | React | `effect(() => { ... });` (auto-subscribes to read signals) |\n| `useMemo(() => fn, [dep])` | React | `const derived = computed(() => fn);` |\n| `useRef(null)` | React | Template references: `template('<div ref=\"myRef\"></div>').clone().refs.myRef` |\n| `<Show when={c}>` (JSX tag) | Solid | `Show({ when: () => c.value, children: () => View() })` (TS function) |\n| `<For each={items}>` (JSX tag) | Solid | `For({ each: () => items.value, key: i => i.id, children: (item) => Row(item) })` |\n| `ref(0)` / `reactive({})` | Vue | `signal(0)` / `createStore({})` |\n| `v-if=\"condition\"` | Vue | `Show({ when: () => condition.value, children: () => View() })` |\n| `v-for=\"item in items\"` | Vue | `For({ each: () => items.value, key: i => i.id, children: ... })` |\n\n## 3. Correct API Usage & Migration Walkthrough\n\n### React Component Migration\n**React Source (Before):**\n```tsx\nimport React, { useState } from 'react';\n\nexport function Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <button onClick={() => setCount(count + 1)}>\n      Count: {count}\n    </button>\n  );\n}\n```\n\n**Samrey Native (After):**\n```ts\nimport { signal } from '@samrey/reactivity';\nimport { template, bindText, on } from '@samrey/runtime';\n\nconst _tmpl = template('<button ref=\"btn\">Count: <span ref=\"num\"></span></button>');\n\nexport function Counter() {\n  const count = signal(0);\n  const root = _tmpl.clone();\n  const { btn, num } = root.refs;\n\n  bindText(num, () => count.value.toString());\n  on(btn, 'click', () => count.update(n => n + 1));\n\n  return root;\n}\n```\n\n## 4. Key Architectural Shifts\n1. **One-Time Execution**: Understand that the function body does NOT re-run. State variables and helper objects are allocated only once.\n2. **Getter Wrapping**: Dynamic values passed to `bindText`, `bindAttr`, `Show.when`, etc., must be functions (`() => expr`) so the reactive runtime can subscribe to signal reads.\n\n## 5. Common Migration Pitfalls\n- **Pitfall**: Leaving React imports (`import React from 'react'`).\n  - *Correction*: Delete all foreign imports; Samrey is completely self-contained.\n- **Pitfall**: Invoking signals as functions (`count()` like Solid).\n  - *Correction*: Access the `.value` property (`count.value`).\n\n## 6. Forbidden Patterns\n- ❌ Do NOT try to simulate React hooks with custom hook closures.\n- ❌ Do NOT use virtual DOM render props.\n\n## 7. Validation Procedures\n1. Run `npx @samrey/cli check --json` to detect unconverted React hooks or syntax errors.\n2. Run `npm test` to verify behavior.\n\n## 8. Authoritative Documentation\n- [ai/SPEC.md](../../SPEC.md)\n- [ai/REACTIVITY_RULES.md](../../REACTIVITY_RULES.md)\n- [ai/COMPONENT_RULES.md](../../COMPONENT_RULES.md)\n"
   }
 ];
 
@@ -589,4 +110,3 @@ export function installSkills(targetDir: string, force = false): string[] {
 
   return installedFiles;
 }
-

@@ -7,7 +7,36 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 export function getAuthoritativeInstructionContent(): string {
-  return `# Samrey Framework — Universal AI Development Instructions
+  return `# Samrey Framework — Universal AI Development Instructions (AGENTS.md)
+
+> **Authority**: This document and the \`ai/\` specification directory constitute the **Single Source of Truth** for all autonomous coding agents, LLMs, and AI tools developing in Samrey.
+
+---
+
+## 0. Canonical Specification Hierarchy (\`ai/\` Single Source of Truth)
+
+All agents must adhere to the detailed rules defined in the \`ai/\` specification suite:
+- [ai/SPEC.md](ai/SPEC.md): Core framework specification & design invariants
+- [ai/ARCHITECTURE.md](ai/ARCHITECTURE.md): Zero-VDOM execution lifecycle & system architecture
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Authoritative public API contracts across all 13 \`@samrey/*\` packages
+- [ai/REACTIVITY_RULES.md](ai/REACTIVITY_RULES.md): Signals, computed, effects, stores, and owner hierarchy rules
+- [ai/COMPONENT_RULES.md](ai/COMPONENT_RULES.md): Static template cloning (\`template()\`), \`.refs\`, surgical bindings, and control flow functions
+- [ai/COMPILER_RULES.md](ai/COMPILER_RULES.md): AIR intermediate representation, static hoisting, and diagnostic codes
+- [ai/ROUTING_RULES.md](ai/ROUTING_RULES.md): Client-side routing, outlets, links, and navigation guards
+- [ai/SSR_RULES.md](ai/SSR_RULES.md): Streaming SSR, hydration, event delegation, and serialization
+- [ai/SECURITY_RULES.md](ai/SECURITY_RULES.md): Contextual sanitizers, Trusted Types, anti-CSRF, and secrets redaction
+- [ai/TESTING_RULES.md](ai/TESTING_RULES.md): Headless DOM test harness, event simulation, and reactivity flushing
+- [ai/ERROR_REFERENCE.md](ai/ERROR_REFERENCE.md): Searchable catalog of error codes \`SAMREY-101\` through \`SAMREY-501\`
+- [ai/EXAMPLES_INDEX.md](ai/EXAMPLES_INDEX.md): Verified production code examples catalog
+- [ai/VERSION_COMPATIBILITY.md](ai/VERSION_COMPATIBILITY.md): SemVer and runtime compatibility matrix
+
+For vendor-specific instructions:
+- Anthropic Claude / Claude Code: See [CLAUDE.md](CLAUDE.md)
+- Google Gemini / Gemini CLI: See [GEMINI.md](GEMINI.md)
+- GitHub Copilot: See [.github/copilot-instructions.md](.github/copilot-instructions.md)
+- Cursor: See [.cursor/rules/samrey.mdc](.cursor/rules/samrey.mdc)
+
+---
 
 ## 1. What is Samrey?
 Samrey is an independent, compile-time reactive frontend framework engineered for high performance.
@@ -68,18 +97,19 @@ batch(() => {
 import { signal } from '@samrey/reactivity';
 import { template, on, bindText } from '@samrey/runtime';
 
-// Hoisted static template
-const _tmpl = template('<button class="btn">Count: <span class="num"></span></button>');
+// Hoisted static template with Template References (Samrey 2.1.0)
+const _tmpl = template('<button ref="btn" class="btn">Count: <span ref="num" class="num"></span></button>');
 
 export function Counter(props: { initial?: number }) {
   const count = signal(props.initial ?? 0);
-  const root = _tmpl() as HTMLButtonElement;
+  const root = _tmpl.clone();
+  const { btn, num } = root.refs;
 
   // Surgical text node update — only this span updates when count changes
-  bindText(root.querySelector('.num')!, () => count.value.toString());
+  bindText(num, () => count.value.toString());
 
   // Event handler
-  on(root, 'click', () => count.update(n => n + 1));
+  on(btn, 'click', () => count.update(n => n + 1));
 
   return root;
 }
@@ -229,33 +259,127 @@ export function generateAgentsMd(): string {
 }
 
 export function generateGeminiMd(): string {
-  return `# GEMINI INSTRUCTIONS — SAMREY FRAMEWORK
+  return `# Google Gemini & Gemini CLI Instructions — Samrey Framework (GEMINI.md)
 
-You are developing applications using **Samrey**, an independent high-performance reactive web framework.
-Follow these mandatory guidelines when analyzing, generating, or debugging Samrey code.
+> **Role**: Guidance tailored for Google Gemini models (Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini CLI, Google AI Studio, and Antigravity) developing applications in Samrey.
 
-${getAuthoritativeInstructionContent()}
+---
+
+## 1. Single Source of Truth
+Gemini must treat [AGENTS.md](AGENTS.md) and the [ai/](ai/) canonical specification directory as the authoritative reference:
+- [ai/SPEC.md](ai/SPEC.md): Core framework contracts & zero-VDOM invariants
+- [ai/ARCHITECTURE.md](ai/ARCHITECTURE.md): System architecture & execution lifecycle
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Verified public APIs across all 13 \`@samrey/*\` packages
+- [ai/COMPONENT_RULES.md](ai/COMPONENT_RULES.md): Component construction, template hoisting, and surgical bindings
+- [ai/ERROR_REFERENCE.md](ai/ERROR_REFERENCE.md): Diagnostic codes \`SAMREY-101\` to \`SAMREY-501\`
+
+---
+
+## 2. Gemini-Specific Execution & Prompt Optimizations
+
+### Context Caching & Rule Precedence
+- When working in large multi-turn sessions, rely on the cached rules in \`ai/*.md\`.
+- Never invent speculative APIs or assume React conventions. Samrey components execute **EXACTLY ONCE** on instantiation.
+
+### Tool Use & CLI Execution
+When executing shell operations via Antigravity or Gemini CLI:
+- Run non-destructive verification: \`npx @samrey/cli check --json\`
+- Inspect errors: \`npx @samrey/cli explain <error-code> --json\`
+- Run test suites: \`npx @samrey/cli test\`
+- Build for production: \`npx @samrey/cli build\`
+
+### Structured Generation Format
+When generating components for the user, emit:
+1. Static hoisted template (\`template('<... ref="id" ...>')\`).
+2. Component factory function accepting typed \`props\`.
+3. Surgical bindings (\`bindText\`, \`bindAttr\`, \`on\`).
+4. Companion test file using \`@samrey/testing\` (\`renderTest\`, \`fireEvent\`, \`flushReactivity\`).
+
+---
+
+## 3. Strict Prohibitions
+- ❌ **NEVER import React, Vue, or Angular libraries**.
+- ❌ **NEVER use React hooks** (\`useState\`, \`useEffect\`, etc.).
+- ❌ **NEVER mutate signal arrays or objects in-place** (\`todos.value.push(x)\`).
+- ❌ **NEVER write \`<Show>\` or \`<For>\` as template HTML tags**.
+- ❌ **NEVER call signals as functions** (\`count()\`).
 `;
 }
 
 export function generateClaudeMd(): string {
-  return `# CLAUDE PROJECT INSTRUCTIONS — SAMREY FRAMEWORK
+  return `# Claude & Claude Code Instructions — Samrey Framework (CLAUDE.md)
 
-When working in this repository, you are writing native code for **Samrey** (not React, Vue, or Angular).
+> **Role**: Guidance tailored for Anthropic Claude (Claude 3.5 Sonnet, Claude 3 Opus) and the Claude Code CLI working within the Samrey framework repository.
 
-${getAuthoritativeInstructionContent()}
+---
 
-## MCP Server Integration
-To inspect documentation or execute real Samrey validation tools, use the Samrey MCP server:
-- Command: \`npx @samrey/mcp-server\`
-- Available tools: \`samrey_search_docs\`, \`samrey_validate_code\`, \`samrey_analyze_project\`, \`samrey_get_examples\`, \`samrey_diagnose_errors\`.
+## 1. Authoritative Specification
+Always refer to the single source of truth in [AGENTS.md](AGENTS.md) and the comprehensive [ai/](ai/) specification directory:
+- [ai/SPEC.md](ai/SPEC.md): Core framework contracts & zero-VDOM invariants
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Verified public APIs across all 13 \`@samrey/*\` packages
+- [ai/ERROR_REFERENCE.md](ai/ERROR_REFERENCE.md): Diagnostic codes \`SAMREY-101\` to \`SAMREY-501\`
+- [ai/EXAMPLES_INDEX.md](ai/EXAMPLES_INDEX.md): Production code examples
+
+---
+
+## 2. Claude-Specific Workflow Optimizations
+
+### Model Context Protocol (MCP) Integration
+When running in Claude Code or Claude Desktop with MCP enabled, invoke \`@samrey/mcp-server\` tools to inspect code and validate architecture:
+\`\`\`json
+{
+  "mcpServers": {
+    "samrey": {
+      "command": "npx",
+      "args": ["@samrey/mcp-server"]
+    }
+  }
+}
+\`\`\`
+Key MCP Tools:
+- \`samrey_get_project_context\`: Discover active routes, packages, and workspace layout in a single round-trip.
+- \`samrey_get_api_contracts\`: Inspect accurate TypeScript signatures before generating code.
+- \`samrey_validate_code\`: Verify syntax and catch foreign framework idioms (React hooks, \`<Show>\` HTML tags) prior to writing files.
+- \`samrey_diagnose_errors\`: Diagnose and retrieve quick-fixes for compiler errors.
+
+### Subagent & Task Delegation
+When coordinating multi-step architectural migrations or complex feature development:
+1. Use subagents or targeted tool calls for targeted file reads (\`ai/API_CONTRACTS.md\`, \`ai/COMPONENT_RULES.md\`).
+2. Always write tests alongside components using \`@samrey/testing\`.
+3. Verify changes with \`npx @samrey/cli test\` and \`npx @samrey/cli check\`.
+
+---
+
+## 3. Strict Rules & Anti-Patterns
+- ❌ **NEVER use React hooks** (\`useState\`, \`useEffect\`, \`useMemo\`, \`useCallback\`, \`useRef\`, \`useContext\`).
+- ❌ **NEVER write \`<Show>\` or \`<For>\` as HTML tags**. They are TypeScript functions: \`Show({ when, children })\`, \`For({ each, key, children })\`.
+- ❌ **NEVER mutate signals in-place** (\`arr.value.push(x)\`). Always reassign \`arr.value = [...arr.value, x]\`.
+- ❌ **NEVER call signals as functions** (\`count()\`). Access via \`.value\` property.
 `;
 }
 
 export function generateCopilotInstructions(): string {
   return `# GitHub Copilot Repository Instructions for Samrey
 
-${getAuthoritativeInstructionContent()}
+You are assisting developers writing code for **Samrey**, an independent high-performance reactive web framework.
+Always consult the canonical specification in [AGENTS.md](../AGENTS.md) and [ai/SPEC.md](../ai/SPEC.md).
+
+## Critical Autocomplete & Generation Rules
+
+1. **Zero Virtual DOM**: Component functions execute **EXACTLY ONCE**. Never suggest React-style hooks (\`useState\`, \`useEffect\`, \`useCallback\`, \`useRef\`).
+2. **Reactivity**:
+   - Primitive state: \`signal(initialValue)\` from \`@samrey/reactivity\`. Read with \`.value\`, write with \`.value = next\` or \`.update(fn)\`.
+   - Derived state: \`computed(() => expr)\`.
+   - Side effects: \`effect(() => { ... })\`.
+   - Stores: \`createStore(initialObject)\`. Mutate with \`produce(state, draft => { ... })\`.
+3. **Templates & DOM**:
+   - Always hoist invariant HTML templates at module scope using \`template('...')\` from \`@samrey/runtime\`.
+   - Use \`ref="name"\` for element targets: \`const root = _tmpl.clone(); const { name } = root.refs;\`.
+   - Bind dynamically with \`bindText\`, \`bindAttr\`, \`bindClass\`, \`bindStyle\`, \`on\`.
+4. **Control Flow**:
+   - Conditional: \`Show({ when: () => cond.value, children: () => View(), fallback: () => Fallback() })\`.
+   - Keyed list: \`For({ each: () => items.value, key: i => i.id, children: (item) => Row(item) })\`.
+   - Do NOT emit \`<Show>\` or \`<For>\` as HTML tags.
 `;
 }
 
@@ -265,7 +389,17 @@ description: Comprehensive rules for Samrey framework development, reactivity, a
 globs: **/*.{ts,tsx,js,jsx}
 ---
 
-${getAuthoritativeInstructionContent()}
+# Samrey Framework — Cursor AI Rules
+
+Always consult the canonical specification in \`AGENTS.md\` and \`ai/SPEC.md\`.
+
+## Key Invariants
+- **Zero VDOM**: Components execute once during creation.
+- **Signals**: Use \`signal()\`, \`computed()\`, \`effect()\` from \`@samrey/reactivity\`. Read with \`.value\`.
+- **Hoisting**: Invariant markup is hoisted into \`template('<... ref="id" ...>')\` at module scope.
+- **Surgical Updates**: Use \`bindText\`, \`bindAttr\`, \`bindClass\`, \`bindStyle\`, \`on\` from \`@samrey/runtime\`.
+- **Control Flow**: \`Show\` and \`For\` are functions, never HTML tags.
+- **Prohibited**: Never use React hooks (\`useState\`, \`useEffect\`), never mutate signals in-place (\`arr.value.push(x)\`), never call signals as functions (\`count()\`).
 `;
 }
 
@@ -295,4 +429,3 @@ export function writeAllInstructions(projectRoot = process.cwd(), force = false)
 
   return writtenFiles;
 }
-

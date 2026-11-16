@@ -1,224 +1,48 @@
-# CLAUDE PROJECT INSTRUCTIONS — SAMREY FRAMEWORK
+# Claude & Claude Code Instructions — Samrey Framework (CLAUDE.md)
 
-When working in this repository, you are writing native code for **Samrey** (not React, Vue, or Angular).
-
-# Samrey Framework — Universal AI Development Instructions
-
-## 1. What is Samrey?
-Samrey is an independent, compile-time reactive frontend framework engineered for high performance.
-- **Zero Virtual DOM**: Components run **EXACTLY ONCE** during creation. There is no VDOM diffing or reconciliation pass.
-- **Compile-Time Static Hoisting**: Invariant HTML markup is hoisted into `template("...")` cloning operations (`_tmpl$1 = template("<div>...</div>")`).
-- **Surgical Fine-Grained Bindings**: State changes trigger microscopic surgical DOM updates (`bindText`, `bindAttr`, `on`) without re-running component functions.
-- **Pure Signals**: Reactive state is managed via `signal()`, `computed()`, `effect()`, and `createStore()` from `@samrey/reactivity`.
+> **Role**: Guidance tailored for Anthropic Claude (Claude 3.5 Sonnet, Claude 3 Opus) and the Claude Code CLI working within the Samrey framework repository.
 
 ---
 
-## 2. Prohibited Foreign Framework Idioms (STRICT)
-- ❌ **NEVER use React hooks** (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useContext`). Samrey is NOT React.
-- ❌ **NEVER mutate signal arrays or objects in-place** (e.g. `todos.value.push(x)` will NOT trigger reactivity). Always reassign a new reference: `todos.value = [...todos.value, x]` or use `todos.update(arr => [...arr, x])`.
-- ❌ **NEVER write `<Show>` or `<For>` as template HTML tags** in string templates or raw HTML (this triggers compiler error `SAMREY-108`).
-- ❌ **NEVER import React or Vue libraries**.
+## 1. Authoritative Specification
+Always refer to the single source of truth in [AGENTS.md](AGENTS.md) and the comprehensive [ai/](ai/) specification directory:
+- [ai/SPEC.md](ai/SPEC.md): Core framework contracts & zero-VDOM invariants
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Verified public APIs across all 13 `@samrey/*` packages
+- [ai/ERROR_REFERENCE.md](ai/ERROR_REFERENCE.md): Diagnostic codes `SAMREY-101` to `SAMREY-501`
+- [ai/EXAMPLES_INDEX.md](ai/EXAMPLES_INDEX.md): Production code examples
 
 ---
 
-## 3. Core Development Workflows & Real APIs
+## 2. Claude-Specific Workflow Optimizations
 
-### A. Creating an Application
-```bash
-# Create a new production Samrey app
-npx @samrey/cli create my-app --template ssr
-cd my-app
-npm install
-npm run dev
-```
-
-### B. Reactive State & Computations
-```ts
-import { signal, computed, effect, batch } from '@samrey/reactivity';
-
-// 1. Primitive Signal
-const count = signal(0);
-console.log(count.value); // Read with .value
-count.value++;            // Write with .value =
-count.set(10);           // Or .set()
-count.update(n => n + 1); // Or .update()
-
-// 2. Derived Computed Value
-const double = computed(() => count.value * 2);
-
-// 3. Side Effects
-effect(() => {
-  console.log(`Current count is ${count.value}, double is ${double.value}`);
-});
-
-// 4. Batching Multiple Mutations
-batch(() => {
-  count.value = 100;
-  // effects run once after batch completes
-});
-```
-
-### C. Creating Components & Surgical DOM Bindings
-```ts
-import { signal } from '@samrey/reactivity';
-import { template, on, bindText } from '@samrey/runtime';
-
-// Hoisted static template
-const _tmpl = template('<button class="btn">Count: <span class="num"></span></button>');
-
-export function Counter(props: { initial?: number }) {
-  const count = signal(props.initial ?? 0);
-  const root = _tmpl() as HTMLButtonElement;
-
-  // Surgical text node update — only this span updates when count changes
-  bindText(root.querySelector('.num')!, () => count.value.toString());
-
-  // Event handler
-  on(root, 'click', () => count.update(n => n + 1));
-
-  return root;
-}
-```
-
-### D. Conditional Rendering (`Show`)
-```ts
-import { signal } from '@samrey/reactivity';
-import { Show, template } from '@samrey/runtime';
-
-const _userTmpl = template('<div class="profile">Welcome, User!</div>');
-const _guestTmpl = template('<div class="guest">Please sign in.</div>');
-
-export function AuthSection() {
-  const isAuth = signal(false);
-
-  return Show({
-    when: () => isAuth.value,
-    children: () => _userTmpl(),
-    fallback: () => _guestTmpl()
-  });
-}
-```
-
-### E. List Rendering (`For`)
-```ts
-import { signal } from '@samrey/reactivity';
-import { For, template, bindText } from '@samrey/runtime';
-
-interface Item { id: number; name: string; }
-
-const _itemTmpl = template('<li class="item-row"><span class="txt"></span></li>');
-
-export function ItemList() {
-  const items = signal<Item[]>([
-    { id: 1, name: 'Item Alpha' },
-    { id: 2, name: 'Item Beta' }
-  ]);
-
-  return For({
-    each: () => items.value,
-    key: (item) => item.id,
-    children: (item) => {
-      const row = _itemTmpl() as HTMLElement;
-      bindText(row.querySelector('.txt')!, () => item.name);
-      return row;
+### Model Context Protocol (MCP) Integration
+When running in Claude Code or Claude Desktop with MCP enabled, invoke `@samrey/mcp-server` tools to inspect code and validate architecture:
+```json
+{
+  "mcpServers": {
+    "samrey": {
+      "command": "npx",
+      "args": ["@samrey/mcp-server"]
     }
-  });
-}
-```
-
-### F. Client-Side Routing
-```ts
-import { createRouter, RouterOutlet, Link, useParams } from '@samrey/router';
-import { template } from '@samrey/runtime';
-
-function Home() { return template('<div>Home Page</div>')(); }
-function Dashboard() { return template('<div>Dashboard Page</div>')(); }
-
-export const router = createRouter([
-  { path: '/', component: Home },
-  { path: '/dashboard', component: Dashboard }
-]);
-
-export function Navigation() {
-  const nav = template('<nav><div class="nav-links"></div><main></main></nav>')() as HTMLElement;
-  nav.querySelector('.nav-links')!.appendChild(Link({ href: '/', children: 'Home' }));
-  nav.querySelector('.nav-links')!.appendChild(Link({ href: '/dashboard', children: 'Dashboard' }));
-  nav.querySelector('main')!.appendChild(RouterOutlet());
-  return nav;
-}
-```
-
-### G. Async Data Fetching (`createResource`)
-```ts
-import { createResource } from '@samrey/http';
-import { Show, template, bindText } from '@samrey/runtime';
-
-export function UserList() {
-  const [users] = createResource(async () => {
-    const res = await fetch('/api/users');
-    return res.json();
-  });
-
-  return Show({
-    when: () => users.loading.value,
-    children: () => template('<div>Loading users...</div>')(),
-    fallback: () => template('<div>Data loaded!</div>')()
-  });
-}
-```
-
-### H. Forms & Validation
-```ts
-import { createForm } from '@samrey/forms';
-
-const form = createForm({
-  initialValues: { email: '', password: '' },
-  validate: (values) => {
-    const errors: Record<string, string> = {};
-    if (!values.email.includes('@')) errors.email = 'Valid email is required';
-    return errors;
-  },
-  onSubmit: async (values) => {
-    await login(values);
   }
-});
+}
 ```
+Key MCP Tools:
+- `samrey_get_project_context`: Discover active routes, packages, and workspace layout in a single round-trip.
+- `samrey_get_api_contracts`: Inspect accurate TypeScript signatures before generating code.
+- `samrey_validate_code`: Verify syntax and catch foreign framework idioms (React hooks, `<Show>` HTML tags) prior to writing files.
+- `samrey_diagnose_errors`: Diagnose and retrieve quick-fixes for compiler errors.
 
-### I. Component Unit Testing
-```ts
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { renderTest, fireEvent, flushReactivity } from '@samrey/testing';
-import { Counter } from './Counter.js';
+### Subagent & Task Delegation
+When coordinating multi-step architectural migrations or complex feature development:
+1. Use subagents or targeted tool calls for targeted file reads (`ai/API_CONTRACTS.md`, `ai/COMPONENT_RULES.md`).
+2. Always write tests alongside components using `@samrey/testing`.
+3. Verify changes with `npx @samrey/cli test` and `npx @samrey/cli check`.
 
-describe('Counter', () => {
-  it('increments count on click', async () => {
-    const { container } = renderTest(() => Counter({ initial: 0 }));
-    const btn = container.querySelector('button')!;
-    fireEvent(btn, 'click');
-    await flushReactivity();
-    assert.ok(btn.textContent?.includes('1'));
-  });
-});
-```
+---
 
-### J. Production Build & Quality Auditing
-```bash
-# Run security & a11y audit
-npx @samrey/cli audit
-
-# Run test suite
-npx @samrey/cli test
-
-# Build production bundle
-npx @samrey/cli build
-
-# Inspect bundle file sizes
-npx @samrey/cli analyze
-```
-
-
-## MCP Server Integration
-To inspect documentation or execute real Samrey validation tools, use the Samrey MCP server:
-- Command: `npx @samrey/mcp-server`
-- Available tools: `samrey_search_docs`, `samrey_validate_code`, `samrey_analyze_project`, `samrey_get_examples`, `samrey_diagnose_errors`.
+## 3. Strict Rules & Anti-Patterns
+- ❌ **NEVER use React hooks** (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useContext`).
+- ❌ **NEVER write `<Show>` or `<For>` as HTML tags**. They are TypeScript functions: `Show({ when, children })`, `For({ each, key, children })`.
+- ❌ **NEVER mutate signals in-place** (`arr.value.push(x)`). Always reassign `arr.value = [...arr.value, x]`.
+- ❌ **NEVER call signals as functions** (`count()`). Access via `.value` property.

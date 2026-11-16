@@ -1,0 +1,15 @@
+{
+  "name": "ecommerce-store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@samrey/reactivity": "^2.1.0",
+    "@samrey/runtime": "^2.1.0",
+    "@samrey/forms": "^2.1.0",
+    "@samrey/security": "^2.1.0"
+  },
+  "devDependencies": {
+    "@samrey/testing": "^2.1.0"
+  }
+}
