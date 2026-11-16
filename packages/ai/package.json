@@ -50,9 +50,13 @@
   },
   "dependencies": {
     "@samrey/compiler": "^2.1.0",
+    "@samrey/forms": "^2.1.0",
+    "@samrey/http": "^2.1.0",
     "@samrey/reactivity": "^2.1.0",
+    "@samrey/router": "^2.1.0",
     "@samrey/runtime": "^2.1.0",
-    "@samrey/security": "^2.1.0"
+    "@samrey/security": "^2.1.0",
+    "@samrey/ssr": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

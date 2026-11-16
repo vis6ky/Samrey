@@ -24,20 +24,20 @@ const source = `<div class="user-card">
 
 // 1. One-step compilation
 const result = compileTemplate(source);
-console.log(result.code);
+console.log(result.generatedCode);
 
 // 2. Multi-stage pipeline
-const ast = parseTemplate(source);
-const air = buildAIR(ast);
-const output = generateCode(air);
+const parsed = parseTemplate(source);
+const air = buildAIR(parsed.ast);
+const output = generateCode(air.templates, air.bindingsCode.join('\n  '), air.usedHelpers);
 ```
 
 ## API
 
-- `compileTemplate(source: string, options?: CompileOptions)` — Compiles template syntax into optimized JavaScript code.
-- `parseTemplate(source: string, options?: ParseOptions)` — Parses template syntax into an Samrey AST.
-- `buildAIR(ast: SamreyAST, options?: AIROptions)` — Transforms AST into Samrey Intermediate Representation (AIR).
-- `generateCode(air: AIRTree, options?: CodegenOptions)` — Emits production JavaScript code with cloneNode calls and targeted signal bindings.
+- `compileTemplate(source: string, options?: ParseOptions): AIRCompilationResult` — Compiles template syntax into optimized JavaScript code (`generatedCode`), template units (`templates`), and `diagnostics`.
+- `parseTemplate(source: string, options?: ParseOptions): ParseResult` — Parses template syntax into a Samrey AST (`ast`), `diagnostics`, and `errors`.
+- `buildAIR(ast: ASTRootNode)` — Transforms AST into Samrey Intermediate Representation (AIR) templates, bindings, diagnostics, and used helpers.
+- `generateCode(templates: AIRTemplateUnit[], componentBody: string, explicitImports?: Iterable<string>): string` — Emits production JavaScript code with cloneNode calls and targeted signal bindings.
 - `classifySecurityNode(node: ASTNode)` — Classifies AST nodes for dynamic security risks.
 - `lintAccessibility(ast: SamreyAST)` — Audits AST nodes against WCAG AA accessibility standards.
 - `SamreyCompilerError` — Structured compiler error class with source frames.
