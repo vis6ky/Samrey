@@ -1,0 +1,64 @@
+{
+  "taskId": "TASK-05-DEBUG",
+  "taskTitle": "Debug an Intentionally Broken Application",
+  "agent": {
+    "agentName": "Golden Reference",
+    "modelIdentifier": "gemini-in-antigravity",
+    "category": "authenticated-ide-agent",
+    "humanInterventions": 0,
+    "correctionCycles": 0
+  },
+  "timestamp": "2026-11-16T10:52:39.143Z",
+  "passed": false,
+  "score": 65,
+  "dimensions": {
+    "compilation": {
+      "score": 20,
+      "max": 20,
+      "passed": true,
+      "message": "TypeScript / Module clean load"
+    },
+    "astAntiPatterns": {
+      "score": 20,
+      "max": 20,
+      "passed": true,
+      "violations": []
+    },
+    "functionalTests": {
+      "score": 10,
+      "max": 40,
+      "passed": false,
+      "subtests": [
+        {
+          "name": "Anti-Pattern Static Elimination",
+          "passed": true
+        },
+        {
+          "name": "Initial Render & Count Badge",
+          "passed": false,
+          "error": "document is not defined"
+        },
+        {
+          "name": "Add Todo & Reactive Update",
+          "passed": false,
+          "error": "document is not defined"
+        },
+        {
+          "name": "Delete Todo & Empty State Handling",
+          "passed": false,
+          "error": "document is not defined"
+        }
+      ]
+    },
+    "qualityA11y": {
+      "score": 15,
+      "max": 20,
+      "passed": true,
+      "notes": [
+        "Missing explicit accessibility attributes (aria-*, role, label).",
+        "Hoisted static markup using template(...) cloning."
+      ]
+    }
+  },
+  "errors": []
+}

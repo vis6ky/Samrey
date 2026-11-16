@@ -1,0 +1,12 @@
+{
+  "name": "samrey-fixture-04-forms",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@samrey/core": "^2.1.0",
+    "@samrey/reactivity": "^2.1.0",
+    "@samrey/runtime": "^2.1.0",
+    "@samrey/forms": "^2.1.0"
+  }
+}
