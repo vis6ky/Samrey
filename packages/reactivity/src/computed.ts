@@ -12,7 +12,10 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   let isInitialized = false;
   let hasError = false;
   let lastError: unknown;
-  const trackedVersions: number[] = [];
+  // BUG-13 FIX: Track dependency versions via Map<Dependency, number> rather than
+  // positional array index. Set iteration order can change in conditional branches,
+  // causing positional index comparison to produce false cache hits or miss updates.
+  const trackedVersions = new Map<Dependency, number>();
 
   const owner = getOwner();
 
@@ -23,7 +26,7 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     }
     node.sources.clear();
     node.subscribers.clear();
-    trackedVersions.length = 0;
+    trackedVersions.clear();
   };
 
   const isDead = () => {
@@ -62,7 +65,20 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
   function evaluate(): T {
     if (isDead()) {
-      return cachedValue;
+      // BUG-04 FIX: If the computed was never evaluated before its owner was
+      // disposed, cachedValue is uninitialized (undefined cast to T at the TS
+      // type level). Returning it silently would propagate undefined into typed
+      // downstream reads and cause hard-to-diagnose runtime errors.
+      // If a prior error was recorded, re-throw it; if we were initialized,
+      // return the last good cache; otherwise throw to make the problem visible.
+      if (hasError) throw lastError;
+      if (isInitialized) return cachedValue;
+      throw new Error(
+        '[Samrey Reactivity] computed() was accessed after its reactive owner ' +
+        'was disposed before the computed had been evaluated for the first time. ' +
+        'Ensure computed() calls are made inside an active owner scope (e.g. inside ' +
+        'createRoot(), effect(), or a component function).'
+      );
     }
 
     if (!node.isDirty) {
@@ -71,23 +87,23 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     }
 
     if (isInitialized || hasError) {
-      let i = 0;
-      let anyChanged = node.sources.size === 0;
-      for (const source of node.sources) {
-        const maybeSub = source as unknown as Partial<Subscriber>;
-        if (typeof maybeSub.update === 'function' && maybeSub.isDirty) {
-          try {
-            maybeSub.update();
-          } catch {
+      let anyChanged = node.sources.size === 0 || trackedVersions.size !== node.sources.size;
+      if (!anyChanged) {
+        for (const source of node.sources) {
+          const maybeSub = source as unknown as Partial<Subscriber>;
+          if (typeof maybeSub.update === 'function' && maybeSub.isDirty) {
+            try {
+              maybeSub.update();
+            } catch {
+              anyChanged = true;
+              break;
+            }
+          }
+          if (source.version !== trackedVersions.get(source)) {
             anyChanged = true;
             break;
           }
         }
-        if (source.version !== trackedVersions[i]) {
-          anyChanged = true;
-          break;
-        }
-        i++;
       }
       if (!anyChanged) {
         node.isDirty = false;
@@ -105,11 +121,10 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     const prevSub = setActiveSubscriber(node);
     try {
       const nextVal = fn();
-      let i = 0;
+      trackedVersions.clear();
       for (const source of node.sources) {
-        trackedVersions[i++] = source.version;
+        trackedVersions.set(source, source.version);
       }
-      trackedVersions.length = i;
 
       if (!isInitialized || hasError || !Object.is(cachedValue, nextVal)) {
         node.version = incrementClock();
@@ -120,11 +135,10 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
       lastError = undefined;
       node.isDirty = false;
     } catch (err) {
-      let i = 0;
+      trackedVersions.clear();
       for (const source of node.sources) {
-        trackedVersions[i++] = source.version;
+        trackedVersions.set(source, source.version);
       }
-      trackedVersions.length = i;
       hasError = true;
       lastError = err;
       node.version = incrementClock();

@@ -274,8 +274,16 @@ export function Show<T>(props: ShowProps<T>): Node {
   }
 
   effect(() => {
-    const whenProp = props.when;
-    const condition = typeof whenProp === 'function' ? (whenProp as () => unknown)() : (whenProp && typeof whenProp === 'object' && 'value' in whenProp) ? (whenProp as { value: unknown }).value : whenProp;
+    // BUG-12 FIX: Read the `when` prop reference outside reactive tracking so that
+    // if `props` is a reactive store or proxy, we do not over-subscribe to unrelated
+    // store mutations. The condition function or signal accessor itself is then evaluated
+    // reactively.
+    const whenProp = untrack(() => props.when);
+    const condition = typeof whenProp === 'function'
+      ? (whenProp as () => unknown)()
+      : (whenProp && typeof whenProp === 'object' && 'value' in whenProp)
+        ? (whenProp as { value: unknown }).value
+        : whenProp;
     const isTruthy = Boolean(condition);
 
     if (prevTruthy !== null) {
@@ -423,6 +431,9 @@ interface KeyedEntry<T> {
  * <For> Reactive Keyed List Reconciliation Primitive
  *
  * Reconciles keyed lists with LIS-optimized DOM node reuse, index & item signal updates, and owner disposals.
+ * Each item is rendered within an isolated reactive owner. To mount side-effect or modal DOM nodes
+ * outside the item row container, use the `<Portal>` component or register an `onCleanup()` hook
+ * so external DOM nodes are properly removed when their corresponding item is pruned from the list (BUG-15).
  */
 export function For<T, K = unknown>(props: ForProps<T, K>): Node {
   const outerOwner = getOwner();
@@ -878,7 +889,7 @@ export function Switch(props: SwitchProps): Node {
     let matchedVal: unknown = undefined;
 
     for (const match of matchCases) {
-      const whenProp = match.when;
+      const whenProp = untrack(() => match.when);
       const val = typeof whenProp === 'function'
         ? (whenProp as () => unknown)()
         : (whenProp && typeof whenProp === 'object' && 'value' in whenProp)

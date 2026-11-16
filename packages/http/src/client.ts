@@ -100,6 +100,13 @@ export class HttpClient {
 
   private resolveUrl(path: string, allowCrossOrigin = false): string {
     const trimmedPath = path.trim();
+
+    // BUG-10 FIX: Block dangerous/disallowed URI schemes (data:, blob:, javascript:, vbscript:)
+    // before URL normalization to prevent SSRF and request smuggling.
+    if (/^(?:data|blob|javascript|vbscript):/i.test(trimmedPath)) {
+      throw new Error(`[Samrey HTTP] Blocked disallowed URI scheme in request URL: "${path}"`);
+    }
+
     if (/^[a-z][a-z0-9+.-]*:(?!\/\/)/i.test(trimmedPath) && /^https?:/i.test(trimmedPath)) {
       throw new Error(`[Samrey HTTP] Blocked malformed HTTP URL: "${path}"`);
     }
@@ -344,4 +351,9 @@ export function createHttpClient(baseUrl?: string): HttpClient {
   return new HttpClient(baseUrl);
 }
 
-export const httpClient = new HttpClient();
+/**
+ * Default shared HttpClient instance. Frozen to prevent state mutation across SSR requests (BUG-11 FIX).
+ * In SSR multi-tenant applications, use `createHttpClient()` to create isolated
+ * client instances per request context if custom base URLs or options are needed.
+ */
+export const httpClient = Object.freeze(new HttpClient());

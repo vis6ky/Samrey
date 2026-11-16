@@ -174,9 +174,11 @@ export interface BindFieldOptions {
 export function bindField<T>(element: any, field: FieldState<T>, options?: BindFieldOptions): void {
   if (!element) return;
   const isCheckbox = element.type === 'checkbox';
+  let lastDispatchedVal: unknown = Symbol();
 
   effect(() => {
     const val = field.value.value;
+    lastDispatchedVal = val;
     if (isCheckbox) {
       element.checked = Boolean(val);
     } else {
@@ -216,14 +218,16 @@ export function bindField<T>(element: any, field: FieldState<T>, options?: BindF
     });
   }
 
-  const onInput = (e: any) => {
-    const val = isCheckbox ? e.target.checked : e.target.value;
+  // BUG-06 FIX: Deduplicate input & change events to avoid double setValue calls
+  // and double validation triggers per keystroke on text inputs.
+  const handleUpdate = (e: any) => {
+    const val = isCheckbox ? e.target?.checked : e.target?.value;
+    if (Object.is(val, lastDispatchedVal)) return;
+    lastDispatchedVal = val;
     field.setValue(val as any);
   };
-  const onChange = (e: any) => {
-    const val = isCheckbox ? e.target.checked : e.target.value;
-    field.setValue(val as any);
-  };
+  const onInput = handleUpdate;
+  const onChange = handleUpdate;
   const onBlur = () => {
     field.setTouched(true);
   };
@@ -244,8 +248,10 @@ export function bindField<T>(element: any, field: FieldState<T>, options?: BindF
 }
 
 export const validators = {
+  // BUG-09 FIX: Allow `false` as a valid value (in addition to `0`) so boolean
+  // fields and checkboxes are not erroneously marked invalid when false.
   required: (msg = 'Field is required') => {
-    const fn = (val: unknown) => (!val && val !== 0 ? msg : null);
+    const fn = (val: unknown) => (!val && val !== 0 && val !== false ? msg : null);
     (fn as unknown as Record<symbol, unknown>)[REQUIRED_VALIDATOR_MARKER] = true;
     return fn;
   },

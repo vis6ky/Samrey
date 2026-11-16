@@ -3,7 +3,7 @@
  * @samrey/runtime - Fine-Grained Reactive DOM Slot Binders
  */
 
-import { effect, isHydrationCapturing, recordHydrationRetarget } from '@samrey/reactivity';
+import { effect, onCleanup, isHydrationCapturing, recordHydrationRetarget } from '@samrey/reactivity';
 import { URL_ATTRIBUTES, SRCSET_ATTRIBUTES, sanitizeUri, sanitizeSrcset, sanitizeCssStyle } from '@samrey/security';
 import { createHeadlessTextNode, createHeadlessCommentNode } from './headless-dom.js';
 
@@ -127,6 +127,23 @@ export function bindDynamicChild(parent: Node, getter: () => unknown): void {
         });
       }
     }
+  });
+
+  // BUG-07 FIX: Remove both rendered child nodes and the dynamic comment marker
+  // from the DOM on owner cleanup to prevent orphaned comment accumulation.
+  onCleanup(() => {
+    const p = marker.parentNode || parent;
+    if (p) {
+      for (const oldNode of currentNodes) {
+        if (oldNode.parentNode === p) {
+          p.removeChild(oldNode);
+        }
+      }
+      if (marker.parentNode === p) {
+        p.removeChild(marker);
+      }
+    }
+    currentNodes = [];
   });
 }
 

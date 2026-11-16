@@ -21,15 +21,19 @@ function drainPendingEffects(): void {
     let cycles = 0;
     while (pendingEffects.size > 0) {
       if (++cycles > MAX_BATCH_CYCLES) {
+        // BUG-03 FIX: Do NOT reset isFlushing before handleError.
+        // Keeping isFlushing = true during handleError prevents recursive re-entry
+        // into drainPendingEffects if handleError writes signals.
+        // The finally block will reset isFlushing = false after the throw,
+        // and any effects newly queued by handleError will be drained in a
+        // fresh non-reentrant call after isFlushing becomes false.
         const firstSubOwner = Array.from(pendingEffects)[0]?.owner ?? null;
         pendingEffects.clear();
         const err = new Error('[SAMREY-301] Maximum reactive batch update cycles (1000) exceeded. Detected cyclic dependency or infinite effect loop.');
-        isFlushing = false;
         handleError(err, firstSubOwner, activeSubscriber?.owner ?? null);
-        if (pendingEffects.size > 0 && batchDepth === 0) {
-          drainPendingEffects();
-        }
         throw err;
+        // finally block below will: set isFlushing = false, then
+        // the signal write that caused this will re-drain if new effects arrived.
       }
       const current = Array.from(pendingEffects);
       pendingEffects.clear();
@@ -47,6 +51,12 @@ function drainPendingEffects(): void {
     }
   } finally {
     isFlushing = false;
+    // BUG-03 FIX: If handleError queued new effects (via signal writes inside error
+    // handlers), drain them now that isFlushing is false. This replaces the
+    // unsafe recursive call that was inside the cycle-limit branch above.
+    if (pendingEffects.size > 0 && batchDepth === 0) {
+      drainPendingEffects();
+    }
   }
 }
 

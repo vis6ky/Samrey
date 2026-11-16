@@ -5,7 +5,7 @@
 
 import { signal } from './signal.js';
 import { Signal } from './types.js';
-import { incrementClock } from './batch.js';
+import { batch, incrementClock } from './batch.js';
 
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 export const PROXIED = Symbol.for('SAMREY_PROXIED');
@@ -28,6 +28,12 @@ export function createStore<T extends object>(initialObject: T): T {
 
   const signalMap = new Map<string | symbol, Signal<any>>();
   const childStores = new Map<string | symbol, any>();
+  // BUG-02 FIX: Track the exact object reference each child store was created
+  // for. When the signal value changes to a different object identity (e.g.
+  // after `produce` replaces a nested object), the cached child store is stale
+  // and must be recreated with the new target. Without this, the proxy returned
+  // in the `get` trap could wrap the OLD object reference indefinitely.
+  const childStoreTargets = new Map<string | symbol, object>();
   const iterationSignal = signal(0);
 
   const handler: ProxyHandler<T> = {
@@ -54,9 +60,16 @@ export function createStore<T extends object>(initialObject: T): T {
       const currentVal = s.value;
       if (isWrappable(currentVal)) {
         let child = childStores.get(prop);
-        if (!child) {
+        // BUG-02 FIX: Invalidate child store if the wrapped object identity has
+        // changed (e.g. after `produce` or direct proxy assignment replaces a
+        // nested object with a new reference). The `set` trap deletes from
+        // childStores when going through the proxy, but external mutations that
+        // bypass the proxy setter (e.g. direct raw-target writes) would not
+        // clear the cache. This identity check closes that gap.
+        if (!child || childStoreTargets.get(prop) !== currentVal) {
           child = createStore(currentVal);
           childStores.set(prop, child);
+          childStoreTargets.set(prop, currentVal);
         }
         return child;
       }
@@ -69,6 +82,7 @@ export function createStore<T extends object>(initialObject: T): T {
       }
 
       childStores.delete(prop);
+      childStoreTargets.delete(prop);
       const hadKey = Reflect.has(target, prop);
       const res = Reflect.set(target, prop, val, target);
 
@@ -94,6 +108,7 @@ export function createStore<T extends object>(initialObject: T): T {
       const success = Reflect.deleteProperty(target, prop);
       if (hadKey && success) {
         childStores.delete(prop);
+        childStoreTargets.delete(prop);
         const s = signalMap.get(prop);
         if (s) {
           s.value = undefined;
@@ -123,9 +138,17 @@ export function createStore<T extends object>(initialObject: T): T {
 
 /**
  * Runs a mutator function on a store draft or target object.
+ *
+ * BUG-01 FIX: All mutations made by `fn` are now wrapped in a single `batch()`
+ * so that reactive effects see only the fully-updated state rather than firing
+ * on every individual property assignment mid-mutation.
+ *
+ * Before this fix, `fn(target)` mutated the live proxy directly with no
+ * batching — each property write inside `fn` immediately notified subscribers,
+ * causing effects to run with partially-updated (torn) state.
  */
 export function produce<T extends object>(target: T, fn: (draft: T) => void): T {
-  fn(target);
+  batch(() => fn(target));
   return target;
 }
 

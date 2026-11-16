@@ -3,7 +3,7 @@
  * @samrey/http - Reactive Resource Primitive
  */
 
-import { signal, effect, onCleanup, useContext, SuspenseTrackerContext, ReadonlySignal } from '@samrey/reactivity';
+import { signal, effect, onCleanup, useContext, SuspenseTrackerContext, ReadonlySignal, untrack } from '@samrey/reactivity';
 import { Resource, ResourceStatus } from './types.js';
 
 function readonlyView<R>(getter: () => R): ReadonlySignal<R> {
@@ -134,10 +134,14 @@ export function createResource<T, S = unknown>(
   }
 
   // Reactive source tracking
+  // BUG-08 FIX: Wrap load(sVal) in untrack() so that any synchronous signal reads
+  // inside fetcher() are not registered as dependencies of this effect.
   if (source) {
     effect(() => {
       const sVal = source();
-      load(sVal).catch(() => {});
+      untrack(() => {
+        load(sVal).catch(() => {});
+      });
     });
   } else {
     load().catch(() => {});
