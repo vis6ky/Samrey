@@ -51,16 +51,13 @@ export function signal<T>(initialValue: T): Signal<T> {
       node.version = incrementClock();
 
       // BUG-05 FIX: Notify subscribers directly without wrapping in batch().
-      // The previous batch() wrapper was redundant: queueEffect() already checks
-      // batchDepth and either queues the effect (inside a batch) or drains
-      // immediately (outside). The inner batch() incremented batchDepth
-      // unnecessarily, which caused effects triggered by signal writes inside
-      // other effects to be deferred one extra drain cycle rather than being
-      // processed in the natural order. It also caused O(n) extra batch frames
-      // per signal write in tight reactive loops.
+      // Snapshot subscribers with Array.from() so synchronous subscriber execution
+      // that removes and re-subscribes during an effect re-run cannot mutate the
+      // live iteration and trigger an infinite Set iteration loop.
       if (node.subscribers.size > 0) {
-        for (const sub of node.subscribers) {
-          sub.notify(node.version);
+        const subs = Array.from(node.subscribers);
+        for (let i = 0; i < subs.length; i++) {
+          subs[i].notify(node.version);
         }
       }
     } else if (

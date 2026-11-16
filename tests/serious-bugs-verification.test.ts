@@ -1,9 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { signal, computed, effect, batch, createStore, produce, createOwner, runWithOwner } from '../packages/reactivity/src/index.js';
-import { createField, bindField, validators } from '../packages/forms/src/index.js';
-import { createHttpClient, httpClient, createResource } from '../packages/http/src/index.js';
-import { bindDynamicChild, Show, on } from '../packages/runtime/src/index.js';
+import { signal, computed, effect, batch, createStore, produce, createOwner, runWithOwner } from '../packages/reactivity/dist/index.js';
+import { createField, bindField, validators } from '../packages/forms/dist/index.js';
+import { createHttpClient, httpClient, createResource } from '../packages/http/dist/index.js';
+import { bindDynamicChild, Show, on } from '../packages/runtime/dist/index.js';
+import { renderTest, fireEvent, flushReactivity } from '../packages/testing/dist/index.js';
 
 describe('Serious Bugs Fix Verification (BUG-01 to BUG-15)', () => {
   // BUG-01: produce wraps mutations in batch()
@@ -268,6 +269,39 @@ describe('Serious Bugs Fix Verification (BUG-01 to BUG-15)', () => {
     } finally {
       console.warn = origWarn;
     }
+  });
+
+  // BUG-16: renderTest in Node.js wraps component in headless container so querySelector finds root elements
+  it('BUG-16: renderTest in Node.js finds component root elements via container.querySelector()', async () => {
+    const { template, bindText: bText } = await import('../packages/runtime/dist/index.js');
+    const _tmpl = template('<button class="test-btn">Count: <span class="num">0</span></button>');
+    const count = signal(0);
+
+    const { container, unmount } = renderTest(() => {
+      const root = _tmpl.clone();
+      const num = root.querySelector('.num')!;
+      bText(num, () => count.value.toString());
+      return root;
+    });
+
+    const btn = container.querySelector('button');
+    assert.ok(btn, 'container.querySelector("button") must find the root button in Node.js');
+    assert.equal(btn.textContent, 'Count: 0');
+
+    count.value = 5;
+    await flushReactivity();
+    assert.equal(btn.textContent, 'Count: 5');
+    unmount();
+  });
+
+  // BUG-17: SSR starter template generates hydrate() instead of destructive mount()
+  it('BUG-17: generateStarterProject with ssr template uses hydrate() for client entry', async () => {
+    const { generateStarterProject } = await import('../packages/cli/dist/starter-template.js');
+    const files = generateStarterProject('test-ssr-app', { template: 'ssr' });
+    const entryClient = files['src/entry-client.ts'];
+
+    assert.ok(entryClient.includes('hydrate('), 'SSR client entry must invoke hydrate()');
+    assert.ok(entryClient.includes('root.hasChildNodes()'), 'SSR client entry must check for existing server-rendered nodes');
   });
 });
 

@@ -4,6 +4,7 @@
  */
 
 import { createRoot, signal, computed } from '@samrey/reactivity';
+import { el } from '@samrey/runtime';
 
 export interface TestRenderResult<TNode = HTMLElement> {
   container: TNode;
@@ -13,34 +14,41 @@ export interface TestRenderResult<TNode = HTMLElement> {
 export function renderTest<TNode = HTMLElement>(componentFactory: () => unknown): TestRenderResult<TNode> {
   let disposeRoot: () => void;
 
-  let container: HTMLElement | null = null;
-  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-    container = document.createElement('div');
-    container.setAttribute('data-samrey-test-container', 'true');
-    if (document.body) {
-      document.body.appendChild(container);
-    }
+  // Use el('div') so that in both browser (document.createElement) and Node.js
+  // (createHeadlessElement), a container element wraps mounted components, enabling
+  // container.querySelector(...) to find component root elements consistently.
+  const container = el('div', { 'data-samrey-test-container': 'true' }) as HTMLElement;
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.appendChild(container);
   }
 
-  const node = createRoot((dispose) => {
+  let node: unknown;
+  createRoot((dispose) => {
     disposeRoot = dispose;
-    const res = componentFactory();
-    if (container && res) {
-      if (typeof res === 'object' && res !== null && 'nodeType' in res) {
-        container.appendChild(res as Node);
-      } else if (Array.isArray(res)) {
-        res.forEach((n) => n && typeof n === 'object' && 'nodeType' in n && container!.appendChild(n as Node));
+    node = componentFactory();
+    if (node) {
+      if (typeof node === 'object' && 'nodeType' in node) {
+        container.appendChild(node as Node);
+      } else if (Array.isArray(node)) {
+        node.forEach((n) => n && typeof n === 'object' && 'nodeType' in n && container.appendChild(n as Node));
       }
     }
-    return res;
   });
 
+  const isMountedDom = Boolean(
+    node && typeof node === 'object' && ('nodeType' in node || Array.isArray(node))
+  );
+
   return {
-    container: (container || node) as any,
+    container: (isMountedDom ? container : node) as any,
     unmount: () => {
       disposeRoot();
       if (container && container.parentNode) {
-        container.remove();
+        if (typeof container.parentNode.removeChild === 'function') {
+          container.parentNode.removeChild(container);
+        } else if (typeof (container as any).remove === 'function') {
+          (container as any).remove();
+        }
       }
     }
   };

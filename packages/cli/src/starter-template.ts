@@ -260,7 +260,22 @@ export function AboutView() {
 }
 `;
 
-  const entryClientTs = `import { mount } from '@samrey/runtime';
+  const entryClientTs = templateType === 'ssr'
+    ? `import { hydrate, mount } from '@samrey/runtime';
+import { App } from './App.js';
+
+const root = document.getElementById('app');
+if (root) {
+  // If server-rendered markup is present, hydrate to attach reactive bindings without replacing DOM;
+  // otherwise fallback to client mount.
+  if (root.hasChildNodes() && !root.innerHTML.includes('<!--ssr-outlet-->')) {
+    hydrate(() => App(), root);
+  } else {
+    mount(() => App(), root);
+  }
+}
+`
+    : `import { mount } from '@samrey/runtime';
 import { App } from './App.js';
 
 const root = document.getElementById('app');

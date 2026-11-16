@@ -159,10 +159,9 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
   }
 
   function read(): T {
-    if (isDead()) {
-      return cachedValue;
+    if (!isDead()) {
+      trackDependency(node);
     }
-    trackDependency(node);
     return evaluate();
   }
 
