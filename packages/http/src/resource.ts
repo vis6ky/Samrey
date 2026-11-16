@@ -3,7 +3,7 @@
  * @samrey/http - Reactive Resource Primitive
  */
 
-import { signal, effect, onCleanup, useContext, SuspenseTrackerContext, ReadonlySignal, untrack } from '@samrey/reactivity';
+import { signal, effect, onCleanup, useContext, SuspenseTrackerContext, type ReadonlySignal, untrack } from '@samrey/reactivity';
 import { Resource, ResourceStatus } from './types.js';
 
 function readonlyView<R>(getter: () => R): ReadonlySignal<R> {

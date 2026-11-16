@@ -3,7 +3,7 @@
  * @samrey/forms - Form Container Controller with Standard Schema (~v1) Support
  */
 
-import { signal, computed, ReadonlySignal } from '@samrey/reactivity';
+import { signal, computed, type ReadonlySignal } from '@samrey/reactivity';
 import { createField, FieldState } from './field.js';
 import { isRequiredValidator } from './required-marker.js';
 import { StandardSchemaV1, Validator } from './standard-schema.js';

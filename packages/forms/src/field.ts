@@ -3,7 +3,7 @@
  * @samrey/forms - Reactive Field State
  */
 
-import { signal, computed, effect, onCleanup, ReadonlySignal } from '@samrey/reactivity';
+import { signal, computed, effect, onCleanup, type ReadonlySignal } from '@samrey/reactivity';
 import { computeAriaAttributes, AriaBindingAttributes } from './aria.js';
 import { Validator } from './standard-schema.js';
 import { REQUIRED_VALIDATOR_MARKER, isRequiredValidator } from './required-marker.js';
