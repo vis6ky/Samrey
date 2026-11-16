@@ -25,6 +25,7 @@ import {
   generateCursorMdc,
   SAMREY_API_REGISTRY
 } from '@samrey/ai';
+import { ArchitecturePlanner, SelfCorrectionEngine, WorkflowEngine } from '@samrey/ai-workflow';
 import { McpToolDefinition, ToolCallResult } from './protocol.js';
 import { resolveSafePath, executeSafeCommand, redactSecrets, safeWriteFile } from './security.js';
 
@@ -458,6 +459,68 @@ export const MCP_TOOLS: McpToolDefinition[] = [
       },
       required: ['errorMessage']
     }
+  },
+
+  // 28. samrey_workflow_start
+  {
+    name: 'samrey_workflow_start',
+    description: 'Initialize or resume an autonomous AI development task lifecycle.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Unique identifier for the task' },
+        taskTitle: { type: 'string', description: 'Human-readable title of the task' },
+        agentId: { type: 'string', description: 'Optional agent identifier' }
+      },
+      required: ['taskId', 'taskTitle']
+    }
+  },
+
+  // 29. samrey_workflow_plan
+  {
+    name: 'samrey_workflow_plan',
+    description: 'Generate a structured Samrey application architecture plan from functional requirements.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        appName: { type: 'string', description: 'Name of the application' },
+        description: { type: 'string', description: 'Application purpose summary' },
+        features: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'List of features to architect'
+        }
+      },
+      required: ['appName', 'description', 'features']
+    }
+  },
+
+  // 30. samrey_workflow_status
+  {
+    name: 'samrey_workflow_status',
+    description: 'Inspect task state, completed stages, outstanding stages, changed files, and execution trace.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Task identifier' }
+      },
+      required: ['taskId']
+    }
+  },
+
+  // 31. samrey_self_correct
+  {
+    name: 'samrey_self_correct',
+    description: 'Diagnose a build, test, or runtime failure and formulate a safe, targeted correction using Samrey rules.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        errorMessage: { type: 'string', description: 'Failure message or stack trace' },
+        targetFile: { type: 'string', description: 'Optional path to the failing source file' },
+        stage: { type: 'string', enum: ['BUILD', 'VALIDATION', 'TEST', 'RUNTIME'], description: 'Failure stage' }
+      },
+      required: ['errorMessage']
+    }
   }
 ];
 
@@ -672,24 +735,26 @@ export async function handleToolCall(
         { path: '.cursor/rules/samrey.mdc', content: generateCursorMdc() }
       ];
 
-      for (const t of targets) {
-        const full = path.join(root, t.path);
-        if (!force && fs.existsSync(full)) continue;
-        const dir = path.dirname(full);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(full, t.content, 'utf8');
-        written.push(t.path);
-      }
+      try {
+        for (const t of targets) {
+          const full = path.join(root, t.path);
+          if (!force && fs.existsSync(full)) continue;
+          safeWriteFile(t.path, t.content, root, force);
+          written.push(t.path);
+        }
 
-      const skillsDir = path.join(root, 'skills');
-      if (!fs.existsSync(skillsDir)) fs.mkdirSync(skillsDir, { recursive: true });
-      for (const skill of SAMREY_SKILLS) {
-        const sDir = path.join(skillsDir, skill.id);
-        const sFile = path.join(sDir, 'SKILL.md');
-        if (!force && fs.existsSync(sFile)) continue;
-        if (!fs.existsSync(sDir)) fs.mkdirSync(sDir, { recursive: true });
-        fs.writeFileSync(sFile, skill.content, 'utf8');
-        written.push(`skills/${skill.id}/SKILL.md`);
+        for (const skill of SAMREY_SKILLS) {
+          const sRel = `skills/${skill.id}/SKILL.md`;
+          const full = path.join(root, sRel);
+          if (!force && fs.existsSync(full)) continue;
+          safeWriteFile(sRel, skill.content, root, force);
+          written.push(sRel);
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text', text: `Init failed: ${err?.message || err}` }],
+          isError: true
+        };
       }
 
       return {
@@ -1423,6 +1488,55 @@ export function ${name}() {
       const diag = diagnoseError(args.errorMessage || '', args.sourceCode);
       return {
         content: [{ type: 'text', text: JSON.stringify(diag, null, 2) }]
+      };
+    }
+
+    case 'samrey_workflow_start': {
+      const engine = new WorkflowEngine(
+        args.taskId,
+        args.taskTitle,
+        root,
+        args.agentId || 'mcp-agent'
+      );
+      const disc = await engine.discover();
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ state: engine.getState(), discovery: disc.data }, null, 2) }]
+      };
+    }
+
+    case 'samrey_workflow_plan': {
+      const planner = new ArchitecturePlanner();
+      const plan = planner.planApplication({
+        appName: args.appName,
+        description: args.description,
+        features: args.features || []
+      });
+      return {
+        content: [{ type: 'text', text: JSON.stringify(plan, null, 2) }]
+      };
+    }
+
+    case 'samrey_workflow_status': {
+      const engine = new WorkflowEngine(args.taskId, '', root);
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ state: engine.getState(), trace: engine.getTrace() }, null, 2) }]
+      };
+    }
+
+    case 'samrey_self_correct': {
+      const engine = new SelfCorrectionEngine();
+      const correction = engine.diagnoseFailure({
+        stage: args.stage || 'BUILD',
+        errorMessage: args.errorMessage,
+        targetFile: args.targetFile
+      }, root);
+      return {
+        content: [{
+          type: 'text',
+          text: correction
+            ? JSON.stringify({ identified: true, correction }, null, 2)
+            : JSON.stringify({ identified: false, message: 'No authoritative root cause identified.' }, null, 2)
+        }]
       };
     }
 

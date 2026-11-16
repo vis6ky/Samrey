@@ -14,11 +14,11 @@ Results are partitioned strictly by execution category to ensure fair comparison
 
 | Task | Agent / Model | Category | Score | Result | Compilation | AST Clean | Tests | A11y / Quality |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **TASK-01-COUNTER** (Build a Reactive Counter) | Antigravity IDE Agent | `authenticated-ide-agent` | **100/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 20/20 |
+| **TASK-01-COUNTER** (Build a Reactive Counter) | Golden Reference | `authenticated-ide-agent` | **100/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 20/20 |
 | **TASK-02-COMPONENTS** (Create Reusable Samrey Components) | Golden Reference | `authenticated-ide-agent` | **95/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 15/20 |
 | **TASK-03-ROUTING** (Build a Routed Dashboard) | Golden Reference | `authenticated-ide-agent` | **95/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 15/20 |
 | **TASK-04-FORMS** (Implement Validated Forms) | Golden Reference | `authenticated-ide-agent` | **100/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 20/20 |
 | **TASK-05-DEBUG** (Debug an Intentionally Broken Application) | Golden Reference | `authenticated-ide-agent` | **95/100** | ✅ PASS | 20/20 | 20/20 | 40/40 | 15/20 |
 
 ---
-*Last updated: 2026-11-16T10:55:11.459Z*
+*Last updated: 2026-11-16T11:19:27.258Z*

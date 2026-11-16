@@ -1,0 +1,43 @@
+{
+  "name": "@samrey/ai-workflow",
+  "version": "2.1.0",
+  "description": "Autonomous AI Application Development & Self-Correction Engine for Samrey Framework",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@samrey/core": "^2.1.0",
+    "@samrey/reactivity": "^2.1.0",
+    "@samrey/runtime": "^2.1.0",
+    "@samrey/compiler": "^2.1.0",
+    "@samrey/router": "^2.1.0",
+    "@samrey/forms": "^2.1.0",
+    "@samrey/http": "^2.1.0",
+    "@samrey/security": "^2.1.0",
+    "@samrey/testing": "^2.1.0",
+    "@samrey/ai": "^2.1.0"
+  }
+}

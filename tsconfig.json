@@ -73,6 +73,12 @@
       ],
       "@samrey/mcp-server/*": [
         "./packages/mcp-server/*"
+      ],
+      "@samrey/ai-workflow": [
+        "./packages/ai-workflow/src/index.ts"
+      ],
+      "@samrey/ai-workflow/*": [
+        "./packages/ai-workflow/*"
       ]
     },
     "allowImportingTsExtensions": true,

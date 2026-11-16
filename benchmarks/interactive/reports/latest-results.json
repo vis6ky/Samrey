@@ -3,13 +3,13 @@
     "taskId": "TASK-01-COUNTER",
     "taskTitle": "Build a Reactive Counter",
     "agent": {
-      "agentName": "Antigravity IDE Agent",
+      "agentName": "Golden Reference",
       "modelIdentifier": "gemini-in-antigravity",
       "category": "authenticated-ide-agent",
       "humanInterventions": 0,
       "correctionCycles": 0
     },
-    "timestamp": "2026-11-16T10:55:11.457Z",
+    "timestamp": "2026-11-16T11:19:27.218Z",
     "passed": true,
     "score": 100,
     "dimensions": {
@@ -74,7 +74,7 @@
       "humanInterventions": 0,
       "correctionCycles": 0
     },
-    "timestamp": "2026-11-16T10:55:04.876Z",
+    "timestamp": "2026-11-16T11:19:27.225Z",
     "passed": true,
     "score": 95,
     "dimensions": {
@@ -135,7 +135,7 @@
       "humanInterventions": 0,
       "correctionCycles": 0
     },
-    "timestamp": "2026-11-16T10:55:04.888Z",
+    "timestamp": "2026-11-16T11:19:27.236Z",
     "passed": true,
     "score": 95,
     "dimensions": {
@@ -192,7 +192,7 @@
       "humanInterventions": 0,
       "correctionCycles": 0
     },
-    "timestamp": "2026-11-16T10:55:04.901Z",
+    "timestamp": "2026-11-16T11:19:27.248Z",
     "passed": true,
     "score": 100,
     "dimensions": {
@@ -249,7 +249,7 @@
       "humanInterventions": 0,
       "correctionCycles": 0
     },
-    "timestamp": "2026-11-16T10:55:04.908Z",
+    "timestamp": "2026-11-16T11:19:27.257Z",
     "passed": true,
     "score": 95,
     "dimensions": {

@@ -49,7 +49,8 @@
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@samrey/ai": "^2.1.0"
+    "@samrey/ai": "^2.1.0",
+    "@samrey/ai-workflow": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

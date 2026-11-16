@@ -32,6 +32,7 @@
     "benchmark:ai:self-test": "tsx benchmarks/run-benchmark.ts --self-test",
     "benchmark:interactive": "tsx benchmarks/interactive/evaluation/evaluator.ts",
     "benchmark:interactive:self-test": "tsx benchmarks/interactive/evaluation/evaluator.ts --all-self-test",
+    "benchmark:saas": "tsx benchmarks/autonomous-saas/verify.ts",
     "release:preflight": "tsx scripts/release/preflight.ts",
     "release:validate": "tsx scripts/release/validate-packages.ts && tsx scripts/release/validate-dependencies.ts && tsx scripts/release/validate-exports.ts && tsx scripts/release/validate-version.ts && tsx scripts/release/validate-license.ts && tsx scripts/release/validate-files.ts",
     "release:pack": "tsx scripts/release/pack.ts",

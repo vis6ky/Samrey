@@ -1,0 +1,57 @@
+{
+  "taskId": "TASK-UNIT-TEST",
+  "agentId": "test-agent",
+  "modelId": "gemini-flash",
+  "executionMode": "autonomous",
+  "status": "COMPLETED",
+  "startTime": "2026-11-16T11:10:08.761Z",
+  "stepsCompleted": [
+    {
+      "stage": "DISCOVER",
+      "timestamp": "2026-11-16T11:10:08.763Z",
+      "durationMs": 0,
+      "status": "SUCCESS",
+      "summary": "Discovered Samrey 2.1.0 runtime environment"
+    },
+    {
+      "stage": "PLAN",
+      "timestamp": "2026-11-16T11:10:08.764Z",
+      "durationMs": 0,
+      "status": "SUCCESS",
+      "summary": "Generated architecture plan for \"Test App\"",
+      "metadata": {
+        "componentsCount": 5,
+        "routesCount": 5,
+        "modelsCount": 2
+      }
+    },
+    {
+      "stage": "VALIDATE",
+      "timestamp": "2026-11-16T11:10:08.764Z",
+      "durationMs": 0,
+      "status": "SUCCESS",
+      "summary": "Validated Counter.ts: Clean"
+    },
+    {
+      "stage": "VALIDATE",
+      "timestamp": "2026-11-16T11:10:08.765Z",
+      "durationMs": 0,
+      "status": "SUCCESS",
+      "summary": "Validated Broken.ts: Violations detected"
+    },
+    {
+      "stage": "REPORT",
+      "timestamp": "2026-11-16T11:10:08.765Z",
+      "durationMs": 50,
+      "status": "SUCCESS",
+      "summary": "Generated development report"
+    }
+  ],
+  "filesCreated": [],
+  "filesModified": [],
+  "diagnostics": [],
+  "correctionAttempts": [],
+  "humanInterventions": 0,
+  "endTime": "2026-11-16T11:10:08.766Z",
+  "totalDurationMs": 5
+}
