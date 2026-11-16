@@ -1238,7 +1238,6 @@ export function validateSamreyCode(
 
   const codeWithoutComments = stripComments(code);
   const codeWithoutStrings = stripCommentsAndStrings(code, false);
-  const codeWithTemplateExpressionsOnly = stripCommentsAndStrings(code, true);
   const tokens = tokenizeCode(code);
 
   // 1. Detect Foreign Framework Imports
