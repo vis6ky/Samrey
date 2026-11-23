@@ -22,6 +22,18 @@ function getGeminiClient(): GoogleGenAI | null {
 import { assistantRateLimiter } from './src/server/rate-limiter.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+function safeMarkdownFence(content: string, tag = ''): string {
+  const matches = content.match(/`+/g);
+  let maxRun = 2;
+  if (matches) {
+    for (const m of matches) {
+      if (m.length > maxRun) maxRun = m.length;
+    }
+  }
+  const fence = '`'.repeat(maxRun + 1);
+  return `${fence}${tag}\n${content}\n${fence}`;
+}
+
 function createAssistantMiddleware() {
   return async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     if (req.url === '/api/assistant' && req.method === 'POST') {
@@ -136,9 +148,9 @@ Return a valid JSON object matching this schema:
   "docLinks": [{"label": "Reactivity Guide", "url": "#reactivity", "sourcePath": "docs/REACTIVITY_AND_CONTROL_FLOW.md"}]
 }`;
 
-            let userText = `User Goal / Question: ${prompt}\n\nUser Code:\n\`\`\`typescript\n${code}\n\`\`\``;
+            let userText = `User Goal / Question: ${prompt}\n\nUser Code:\n${safeMarkdownFence(code, 'typescript')}`;
             if (retrievedDocs) {
-              userText += `\n\n[User-Provided Reference Snippets]:\n\`\`\`\n${retrievedDocs}\n\`\`\``;
+              userText += `\n\n[User-Provided Reference Snippets]:\n${safeMarkdownFence(retrievedDocs)}`;
             }
 
             const response = await ai.models.generateContent({
@@ -208,7 +220,7 @@ You MUST format your response with the following 12 numbered sections:
 
           let userPromptText = prompt;
           if (retrievedDocs) {
-            userPromptText = `[User-Provided Reference Snippets]:\n\`\`\`\n${retrievedDocs}\n\`\`\`\n\nQuestion / Goal:\n${prompt}`;
+            userPromptText = `[User-Provided Reference Snippets]:\n${safeMarkdownFence(retrievedDocs)}\n\nQuestion / Goal:\n${prompt}`;
           }
 
           const contents: any[] = [];

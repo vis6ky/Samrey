@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This report documents the exhaustive pattern-wide investigation and remediation of the four original security audit findings (`EXT-001` through `EXT-004`), the four follow-up security patterns (`NEW-001` through `NEW-004`), and the subsequent four-batch architectural, runtime, compiler, CLI, SSR/hydration, and documentation hardening pass across all 13 monorepo packages (`packages/*`) and companion documentation/web assets. Every confirmed defect has been remediated, backed by automated regression tests, and verified without Virtual DOM or external runtime dependencies.
+This report documents the exhaustive pattern-wide investigation and remediation of the four original security audit findings (`EXT-001` through `EXT-004`), the four follow-up security patterns (`NEW-001` through `NEW-004`), and the subsequent four-batch architectural, runtime, compiler, CLI, SSR/hydration, and documentation hardening pass across all 14 monorepo packages (`packages/*`) and companion documentation/web assets. Every confirmed defect has been remediated, backed by automated regression tests, and verified without Virtual DOM or external runtime dependencies.
 
 ---
 
@@ -57,7 +57,7 @@ This report documents the exhaustive pattern-wide investigation and remediation 
 - **Batch 1 — Security & Sandbox Hardening**: Hardened Trusted Types realm isolation (`trusted-types.ts`), sanitizer convergence (`sanitizer.ts`), SSR hydration/event script escaping (`packages/ssr/src/hydration.ts`), CLI dev server path/header protections (`packages/cli/src/commands/dev.ts`), MCP tool/security guards (`packages/mcp-server/src/tools.ts`, `security.ts`), `HttpClient` protections (`packages/http/src/client.ts`), and interactive web playground interpreters (`src/lib/sandboxInterpreter.ts`, `runtimeSandbox.ts`).
 - **Batch 2 — Reactivity, Router, HTTP, Forms, Runtime & SSR/Hydration**: Hardened `computed()`/`effect()` (`packages/reactivity`), router navigation (`packages/router`), resource cancellation/state (`packages/http/src/resource.ts`), form/field validation (`packages/forms`), surgical DOM bindings and W3C DOM-compliant `serializeHeadlessTextContent()` excluding comment/PI/doctype nodes (`packages/runtime/src/bindings.ts`, `dom.ts`, `control-flow.ts`, `headless-dom.ts`), and SSR/SSG streaming and hydration (`packages/ssr/src/stream.ts`, `ssg.ts`, `hydration.ts`).
 - **Batch 3 — Compiler & CLI Accuracy**: Updated `packages/compiler/src/parser.ts` and `codegen.ts` to expand non-void self-closing HTML tags while preserving void/foreign SVG/MathML tags, avoid prototype pollution via `Object.create(null)`, and perform single-pass lexical `detectRuntimeHelpers()` scanning over `RUNTIME_HELPERS`; hardened `packages/cli/src/audit.ts`, `commands/build.ts`, `commands/audit.ts`, `runner.ts`, and `starter-template.ts` (known DOM handler table, comment/regex skipping, `--ssr`/`--minify`/`--sourcemap` flag forwarding, explicit failure on unsupported `audit --fix`, and valid SSR/SSG starter templates).
-- **Batch 4 — Docs, Validators, Package Builds & Gate Verification**: Synchronized docs, AI validators, and web catalog data; rebuilt all 13 `@samrey/*` package `dist/` artifacts and the `@samrey/cli` bundle (`bin/samrey.bundle.js`).
+- **Batch 4 — Docs, Validators, Package Builds & Gate Verification**: Synchronized docs, AI validators, and web catalog data; rebuilt all 14 `@samrey/*` package `dist/` artifacts and the `@samrey/cli` bundle (`bin/samrey.bundle.js`).
 
 ---
 

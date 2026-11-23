@@ -31,12 +31,10 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
       const seg = pathSegments[i]!;
       if (p.startsWith(':')) {
         const key = p.slice(1);
-        Object.defineProperty(params, key, {
-          value: safeDecodeURIComponent(seg),
-          writable: true,
-          enumerable: true,
-          configurable: true
-        });
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+          continue;
+        }
+        params[key] = safeDecodeURIComponent(seg);
       } else if (p !== seg) {
         return null;
       }
@@ -44,12 +42,9 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
     const wildcardToken = patternSegments[wildcardIdx]!;
     const key = wildcardToken.slice(1) || '*';
     const restSegments = pathSegments.slice(wildcardIdx);
-    Object.defineProperty(params, key, {
-      value: restSegments.map(safeDecodeURIComponent).join('/'),
-      writable: true,
-      enumerable: true,
-      configurable: true
-    });
+    if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+      params[key] = restSegments.map(safeDecodeURIComponent).join('/');
+    }
     return params;
   }
 
@@ -65,12 +60,10 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
 
     if (p.startsWith(':')) {
       const key = p.slice(1);
-      Object.defineProperty(params, key, {
-        value: safeDecodeURIComponent(seg),
-        writable: true,
-        enumerable: true,
-        configurable: true
-      });
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+      params[key] = safeDecodeURIComponent(seg);
     } else if (p !== seg) {
       return null;
     }

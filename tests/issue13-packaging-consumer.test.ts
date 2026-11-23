@@ -13,7 +13,7 @@ describe('Issue 13: Packaging & Plain Node.js Consumer Import Acceptance', () =>
     try {
       // 1. Reuse shared packed tarball fixture
       const packed = getSharedTarballs();
-      assert.equal(packed.length, 13, 'Must produce 13 tarballs');
+      assert.equal(packed.length, 14, 'Must produce 14 tarballs');
 
       // 2. Initialize consumer project
       const consumerDir = path.join(tempDir, 'consumer');
@@ -29,7 +29,8 @@ describe('Issue 13: Packaging & Plain Node.js Consumer Import Acceptance', () =>
       );
 
       // 3. Install all tarballs using npm
-      execSync('npm install --prefer-offline --no-audit', {
+      const npmCache = path.join(tempDir, '.npm-cache');
+      execSync(`npm install --prefer-offline --no-audit --cache "${npmCache}"`, {
         cwd: consumerDir,
         stdio: 'pipe'
       });
@@ -46,7 +47,10 @@ describe('Issue 13: Packaging & Plain Node.js Consumer Import Acceptance', () =>
         '@samrey/ssr',
         '@samrey/devtools',
         '@samrey/testing',
-        '@samrey/cli'
+        '@samrey/cli',
+        '@samrey/ai',
+        '@samrey/ai-workflow',
+        '@samrey/mcp-server'
       ];
 
       for (const pkgName of packagesToImport) {

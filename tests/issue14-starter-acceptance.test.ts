@@ -18,7 +18,7 @@ describe('Item 4: Starter Template Acceptance & Plain TS Integration', { timeout
   it('verifies all 4 starter templates (spa, ssr, minimal, ssg) with packed tarballs in clean room', async () => {
     // 1. Reuse shared packed tarball fixture
     const tarballs = getSharedTarballs();
-    assert.strictEqual(tarballs.length, 13, 'Must produce 13 tarballs');
+    assert.strictEqual(tarballs.length, 14, 'Must produce 14 tarballs');
 
     const templates = ['spa', 'ssr', 'minimal', 'ssg'] as const;
 
@@ -50,7 +50,8 @@ describe('Item 4: Starter Template Acceptance & Plain TS Integration', { timeout
       fs.writeFileSync(pkgPath, JSON.stringify(manifest, null, 2), 'utf8');
 
       // Install dependencies
-      execSync('npm install --prefer-offline --no-audit', { cwd: projDir, stdio: 'pipe' });
+      const npmCache = path.join(tempBase, '.npm-cache');
+      execSync(`npm install --prefer-offline --no-audit --cache "${npmCache}"`, { cwd: projDir, stdio: 'pipe' });
 
       // 1. tsc --noEmit must pass with exit code 0
       try {

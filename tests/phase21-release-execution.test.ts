@@ -32,8 +32,8 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
 
   it('2. Package Manifest Hardening Verification', () => {
     const { packages, allValid } = validateAllPackages('2.1.0');
-    assert.strictEqual(packages.length, 13, 'Must audit 13 packages');
-    assert.ok(allValid, 'All 13 packages must have hardened manifests');
+    assert.strictEqual(packages.length, 14, 'Must audit 14 packages');
+    assert.ok(allValid, 'All 14 packages must have hardened manifests');
     for (const p of packages) {
       assert.strictEqual(p.version, '2.1.0', `${p.packageName} version must be 2.1.0`);
       assert.strictEqual(p.license, 'Apache-2.0', `${p.packageName} license must be Apache-2.0`);
@@ -45,7 +45,7 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
   it('3. Dependency Topology & Topological Sort Verification', () => {
     const topology = validateDependencyTopology();
     assert.ok(!topology.hasCycles, 'Dependency graph must have 0 cycles');
-    assert.strictEqual(topology.topologicalOrder.length, 13, 'Topological order must include all 13 packages');
+    assert.strictEqual(topology.topologicalOrder.length, 14, 'Topological order must include all 14 packages');
     assert.strictEqual(topology.foreignFrameworkViolations.length, 0, 'Zero foreign framework dependencies allowed');
     assert.strictEqual(topology.invalidWorkspaceRefs.length, 0, 'Zero invalid workspace refs allowed');
     assert.ok(topology.isValid, 'Topology validation must be valid');
@@ -71,13 +71,13 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
 
   it('7. Published File Whitelist & Blacklist Audit', () => {
     const fileResult = inspectPublishedFiles();
-    assert.strictEqual(fileResult.packages.length, 13, 'Must inspect 13 packages');
+    assert.strictEqual(fileResult.packages.length, 14, 'Must inspect 14 packages');
     assert.ok(fileResult.allValid, 'No blacklisted files (tests, secrets, .env) in tarballs');
   });
 
   it('8. Release Packaging Pipeline', () => {
     const tarballs = packAllPackages();
-    assert.strictEqual(tarballs.length, 13, 'Must package 13 tarballs');
+    assert.strictEqual(tarballs.length, 14, 'Must package 14 tarballs');
     for (const t of tarballs) {
       assert.ok(t.sizeBytes > 0, `Tarball ${t.filename} size must be > 0`);
       assert.ok(t.sha256.length === 64, `Tarball ${t.filename} SHA256 must be valid hex hash`);
@@ -90,7 +90,7 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
     const dryRunRes = runPublish({ tag: 'rc', dryRun: true });
     assert.ok(dryRunRes.success, 'Dry run publish simulation must succeed');
     assert.strictEqual(dryRunRes.tag, 'rc', 'Channel tag must be rc');
-    assert.strictEqual(dryRunRes.publishedPackages.length, 13, 'Must cover all 13 packages');
+    assert.strictEqual(dryRunRes.publishedPackages.length, 14, 'Must cover all 14 packages');
 
     // B. Safety violation on direct "latest" tag without force
     const safetyRes = runPublish({ tag: 'latest', dryRun: false, forceLatest: false });

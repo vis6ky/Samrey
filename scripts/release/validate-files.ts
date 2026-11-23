@@ -28,6 +28,7 @@ const PACKAGES = [
   'testing',
   'devtools',
   'ai',
+  'ai-workflow',
   'mcp-server',
   'cli'
 ];
@@ -53,9 +54,10 @@ export function inspectPublishedFiles(): { packages: PackageFileInspection[]; al
   const results: PackageFileInspection[] = [];
   let allValid = true;
 
+  const cacheDir = path.join(os.tmpdir(), 'npm-pack-cache');
   for (const pkg of PACKAGES) {
     const pkgDir = path.join(process.cwd(), 'packages', pkg);
-    const out = execSync('npm pack --dry-run --json', { cwd: pkgDir, encoding: 'utf8' });
+    const out = execSync(`npm pack --dry-run --json --cache "${cacheDir}"`, { cwd: pkgDir, encoding: 'utf8' });
     const data = JSON.parse(out)[0];
 
     const files: string[] = (data.files || []).map((f: any) => f.path || f);

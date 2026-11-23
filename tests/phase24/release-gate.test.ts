@@ -21,14 +21,14 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
 
   it('Gate 2: Package Manifest Hardening & Metadata Parity', () => {
     const { packages, allValid } = validateAllPackages('2.1.0');
-    assert.strictEqual(packages.length, 13, 'Must validate all 13 packages');
+    assert.strictEqual(packages.length, 14, 'Must validate all 14 packages');
     assert.ok(allValid, 'All package manifests must be hardened');
   });
 
   it('Gate 3: Dependency Graph Topological Integrity (0 Cycles)', () => {
     const topology = validateDependencyTopology();
     assert.strictEqual(topology.hasCycles, false, 'Dependency graph must have 0 cycles');
-    assert.strictEqual(topology.topologicalOrder.length, 13, 'Must include all 13 packages in topological sort');
+    assert.strictEqual(topology.topologicalOrder.length, 14, 'Must include all 14 packages in topological sort');
   });
 
   it('Gate 4: Public API 100% Contract Parity & Freeze', async () => {
@@ -39,13 +39,13 @@ describe('Phase 24 — Unified GA Master Release Gate', () => {
 
   it('Gate 5: Version Synchronization Pinned to 2.1.0', () => {
     const versionRes = validateVersionConsistency('2.1.0');
-    assert.ok(versionRes.allMatch, 'Root and all 11 packages must be 2.1.0');
+    assert.ok(versionRes.allMatch, 'Root and all 14 packages must be 2.1.0');
   });
 
   it('Gate 6: Release Publication Dry-Run Simulation', () => {
     const publishRes = runPublish({ tag: 'latest', dryRun: true, forceLatest: true });
     assert.strictEqual(publishRes.isDryRun, true);
-    assert.strictEqual(publishRes.publishedPackages.length, 13);
+    assert.strictEqual(publishRes.publishedPackages.length, 14);
     assert.strictEqual(publishRes.success, true);
   });
 });
