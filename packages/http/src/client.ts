@@ -5,6 +5,7 @@
 
 import { sanitizeUri, safeJsonParse, scrubPrototypePollution } from '@samrey/security';
 import { HttpError } from './types.js';
+import { RequestCache } from './cache.js';
 
 async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined> {
   if (typeof res.text === 'function') {
@@ -24,9 +25,18 @@ async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined>
   return undefined;
 }
 
-export interface RequestOptions extends RequestInit {
+export interface RequestOptions extends Omit<RequestInit, 'cache'> {
   timeoutMs?: number;
   allowCrossOrigin?: boolean;
+  dedupe?: boolean;
+  cache?: RequestCache | boolean;
+  ttlMs?: number;
+  tags?: string[];
+}
+
+export interface HttpClientOptions {
+  cache?: RequestCache | boolean;
+  defaultTtl?: number;
 }
 
 function mergeHeaders(defaults: Record<string, string>, userHeaders?: HeadersInit): Headers {
@@ -70,7 +80,25 @@ function isProtocolRelativeUrl(raw: string): boolean {
 }
 
 export class HttpClient {
-  constructor(private baseUrl = '') {}
+  private _cache: RequestCache | null;
+
+  constructor(private baseUrl = '', options?: HttpClientOptions) {
+    if (options?.cache === false) {
+      this._cache = null;
+    } else if (options?.cache instanceof RequestCache) {
+      this._cache = options.cache;
+    } else {
+      this._cache = new RequestCache({ defaultTtl: options?.defaultTtl });
+    }
+  }
+
+  get cache(): RequestCache | null {
+    return this._cache;
+  }
+
+  invalidateTags(tags: string | string[]): number {
+    return this._cache?.invalidateTags(tags) ?? 0;
+  }
 
   private getExpectedOrigin(): string | null {
     if (this.baseUrl && /^https?:\/\//i.test(this.baseUrl)) {
@@ -196,6 +224,8 @@ export class HttpClient {
 
     const maxRedirects = 5;
 
+    const { cache: _c, dedupe: _d, ttlMs: _t, tags: _tg, timeoutMs: _to, allowCrossOrigin: _aco, ...fetchOptions } = options;
+
     try {
       let res!: Response;
       for (let hop = 0; hop <= maxRedirects; hop++) {
@@ -203,7 +233,7 @@ export class HttpClient {
           ? (options.redirect === 'error' ? 'error' : 'manual')
           : (options.redirect ?? 'manual');
         res = await fetch(currentUrl, {
-          ...options,
+          ...fetchOptions,
           redirect: effectiveRedirect,
           method: currentMethod,
           headers,
@@ -327,28 +357,59 @@ export class HttpClient {
   }
 
   async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const activeCache = options.cache instanceof RequestCache
+      ? options.cache
+      : (options.cache !== false ? this._cache : null);
+    const shouldDedupe = options.dedupe !== false && activeCache !== null;
+
+    if (shouldDedupe && activeCache) {
+      const url = this.resolveUrl(path, options.allowCrossOrigin);
+      const cacheKey = `GET:${url}`;
+      return activeCache.dedupe<T>(
+        cacheKey,
+        () => this.request<T>(path, 'GET', undefined, options),
+        options.ttlMs,
+        options.tags
+      );
+    }
     return this.request<T>(path, 'GET', undefined, options);
   }
 
   async post<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
-    return this.request<T>(path, 'POST', body, options);
+    const res = await this.request<T>(path, 'POST', body, options);
+    if (options.tags && this._cache) {
+      this._cache.invalidateTags(options.tags);
+    }
+    return res;
   }
 
   async put<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
-    return this.request<T>(path, 'PUT', body, options);
+    const res = await this.request<T>(path, 'PUT', body, options);
+    if (options.tags && this._cache) {
+      this._cache.invalidateTags(options.tags);
+    }
+    return res;
   }
 
   async patch<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
-    return this.request<T>(path, 'PATCH', body, options);
+    const res = await this.request<T>(path, 'PATCH', body, options);
+    if (options.tags && this._cache) {
+      this._cache.invalidateTags(options.tags);
+    }
+    return res;
   }
 
   async delete<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    return this.request<T>(path, 'DELETE', undefined, options);
+    const res = await this.request<T>(path, 'DELETE', undefined, options);
+    if (options.tags && this._cache) {
+      this._cache.invalidateTags(options.tags);
+    }
+    return res;
   }
 }
 
-export function createHttpClient(baseUrl?: string): HttpClient {
-  return new HttpClient(baseUrl);
+export function createHttpClient(baseUrl?: string, options?: HttpClientOptions): HttpClient {
+  return new HttpClient(baseUrl, options);
 }
 
 /**

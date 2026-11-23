@@ -35,7 +35,12 @@ export class RateLimiter {
     if (this.trustProxy) {
       const forwarded = req.headers['x-forwarded-for'];
       if (typeof forwarded === 'string' && forwarded.length > 0) {
-        return forwarded.split(',')[0].trim();
+        const parts = forwarded.split(',').map((s) => s.trim()).filter(Boolean);
+        if (parts.length > 0) {
+          // The trusted reverse proxy appends the client's actual remote IP to the end of the chain.
+          // Using the leftmost value allows clients to spoof arbitrary IPs and rotate headers to bypass rate limits.
+          return parts[parts.length - 1];
+        }
       }
     }
     return req.socket.remoteAddress || '127.0.0.1';
@@ -52,17 +57,21 @@ export class RateLimiter {
 
   public check(ip: string, now = Date.now()): { allowed: boolean; retryAfter?: number } {
     let record = this.records.get(ip);
-    if (!record) {
+    if (record) {
+      // Move to back of Map iteration order to maintain genuine LRU ordering
+      this.records.delete(ip);
+      this.records.set(ip, record);
+    } else {
       // If capacity is reached, prune expired entries
       if (this.records.size >= this.maxEntries) {
         this.prune(now);
       }
 
-      // If still at or over capacity, evict the oldest entry
+      // If still at or over capacity, evict the least recently used entry (first in Map iteration order)
       if (this.records.size >= this.maxEntries) {
-        const oldestKey = this.records.keys().next().value;
-        if (oldestKey) {
-          this.records.delete(oldestKey);
+        const lruKey = this.records.keys().next().value;
+        if (lruKey !== undefined) {
+          this.records.delete(lruKey);
         }
       }
 

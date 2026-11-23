@@ -3,7 +3,7 @@
  * Samrey Framework — Autonomous Development Observability & Execution Trace
  */
 
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { SecurityPolicy } from './authorization.js';
 

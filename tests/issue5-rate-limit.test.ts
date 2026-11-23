@@ -59,4 +59,42 @@ describe('Issue 5: Assistant Rate Limiter Security & Bounded Resource Control', 
     // Size must never exceed maxEntries
     assert.ok(limiter.size() <= maxEntries, `Size ${limiter.size()} must be capped at ${maxEntries}`);
   });
+
+  it('4. Uses rightmost X-Forwarded-For IP to prevent header rotation bypass', () => {
+    const limiter = new RateLimiter({ trustProxy: true });
+
+    // Client spoofs '1.1.1.1', but proxy appends real client IP '203.0.113.195'
+    const reqWithSpoof = {
+      headers: {
+        'x-forwarded-for': '1.1.1.1, 10.0.0.1, 203.0.113.195'
+      },
+      socket: { remoteAddress: '127.0.0.1' }
+    } as unknown as IncomingMessage;
+
+    const ip = limiter.getClientIp(reqWithSpoof);
+    assert.strictEqual(ip, '203.0.113.195', 'Must select rightmost IP appended by proxy');
+  });
+
+  it('5. Enforces true LRU eviction: active early IP is preserved while inactive entries are evicted', () => {
+    const maxEntries = 3;
+    const limiter = new RateLimiter({ windowMs: 60000, maxRequests: 10, maxEntries });
+
+    // Insert ipA, ipB, ipC
+    limiter.check('ipA');
+    limiter.check('ipB');
+    limiter.check('ipC');
+
+    // Access ipA again so it becomes the most recently used
+    limiter.check('ipA');
+
+    // Insert ipD -> causes eviction
+    limiter.check('ipD');
+
+    // ipB was least recently used, so ipB should be evicted, while ipA remains
+    const ipARes = limiter.check('ipA');
+    assert.strictEqual(ipARes.allowed, true);
+    // ipA should have 3 timestamps recorded (not reset)
+    const recordA = (limiter as any).records.get('ipA');
+    assert.strictEqual(recordA.timestamps.length, 3, 'Active ipA must retain its request history');
+  });
 });

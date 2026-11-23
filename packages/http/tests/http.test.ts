@@ -456,4 +456,164 @@ describe('@samrey/http', () => {
       globalThis.fetch = origFetch;
     }
   });
+
+  it('deduplicates concurrent identical GET requests in HttpClient', async () => {
+    const origFetch = globalThis.fetch;
+    let fetchCount = 0;
+    globalThis.fetch = (async () => {
+      fetchCount++;
+      await new Promise((r) => setTimeout(r, 20));
+      return new Response(JSON.stringify({ message: 'ok', count: fetchCount }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }) as any;
+
+    try {
+      const client = createHttpClient('https://api.example.com');
+      const [res1, res2] = await Promise.all([
+        client.get<{ message: string; count: number }>('/shared-resource'),
+        client.get<{ message: string; count: number }>('/shared-resource')
+      ]);
+
+      assert.equal(fetchCount, 1, 'Two concurrent GET requests must be deduplicated into 1 network call');
+      assert.equal(res1.message, 'ok');
+      assert.equal(res1.count, 1);
+      assert.equal(res2.message, 'ok');
+      assert.equal(res2.count, 1);
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it('supports cache tags invalidation in HttpClient and automatic mutation invalidation', async () => {
+    const origFetch = globalThis.fetch;
+    let fetchCount = 0;
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      fetchCount++;
+      if (init?.method === 'POST') {
+        return new Response(JSON.stringify({ created: true }), { status: 201 });
+      }
+      return new Response(JSON.stringify({ items: ['item1'], fetchIndex: fetchCount }), { status: 200 });
+    }) as any;
+
+    try {
+      const client = createHttpClient('https://api.example.com');
+
+      // 1. Initial cached GET with tag 'products'
+      const first = await client.get<{ items: string[]; fetchIndex: number }>('/products', {
+        tags: ['products'],
+        ttlMs: 60_000
+      });
+      assert.equal(first.fetchIndex, 1);
+
+      // 2. Second GET hits cache (no new network fetch)
+      const cached = await client.get<{ items: string[]; fetchIndex: number }>('/products', {
+        tags: ['products']
+      });
+      assert.equal(cached.fetchIndex, 1);
+      assert.equal(fetchCount, 1);
+
+      // 3. POST with tags: ['products'] automatically invalidates the tag
+      await client.post('/products', { name: 'item2' }, { tags: ['products'] });
+
+      // 4. Third GET fetches fresh data from network
+      const fresh = await client.get<{ items: string[]; fetchIndex: number }>('/products', {
+        tags: ['products']
+      });
+      assert.equal(fresh.fetchIndex, 3); // 1 = initial GET, 2 = POST, 3 = refetched GET
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it('RequestCache: clear() and delete() invalidate in-flight requests and prevent stale cache writes', async () => {
+    const cache = new RequestCache();
+    let resolveFirst!: (val: string) => void;
+    const slowFetch = () => new Promise<string>((r) => { resolveFirst = r; });
+
+    // Start in-flight request
+    const p1 = cache.dedupe('test-key', slowFetch);
+
+    // Delete key while request is still in flight
+    cache.delete('test-key');
+
+    // Resolve the in-flight request
+    resolveFirst('stale-value');
+    await p1;
+
+    // Cache must NOT contain 'test-key' because it was invalidated during flight
+    assert.equal(cache.has('test-key'), false, 'Stale resolved data must not be written to cache after delete()');
+
+    // Next request should run fresh fetcher
+    let secondFetched = false;
+    const res = await cache.dedupe('test-key', async () => {
+      secondFetched = true;
+      return 'fresh-value';
+    });
+    assert.equal(secondFetched, true);
+    assert.equal(res, 'fresh-value');
+  });
+
+  it('RequestCache: correctly caches undefined response and supports LRU eviction with empty string keys', async () => {
+    const cache = new RequestCache({ maxEntries: 2 });
+    let calls = 0;
+
+    // Caching undefined response
+    const fetchUndefined = async () => {
+      calls++;
+      return undefined;
+    };
+
+    const val1 = await cache.dedupe('key-undef', fetchUndefined);
+    assert.equal(val1, undefined);
+    assert.equal(calls, 1);
+
+    // Calling again should read cached undefined without repeating network call
+    const val2 = await cache.dedupe('key-undef', fetchUndefined);
+    assert.equal(val2, undefined);
+    assert.equal(calls, 1);
+
+    // Test LRU eviction with empty string key ""
+    cache.clear();
+    cache.set('', 'empty-key-val');
+    cache.set('k2', 'val2');
+    assert.equal(cache.size, 2);
+
+    // Adding third key must evict oldest ('')
+    cache.set('k3', 'val3');
+    assert.equal(cache.size, 2);
+    assert.equal(cache.has(''), false, 'Oldest empty-string key must be evicted by LRU');
+    assert.equal(cache.has('k2'), true);
+    assert.equal(cache.has('k3'), true);
+  });
+
+  it('createResource: supports options.key, options.tags, and createResource.invalidateTags()', async () => {
+    let fetchCount = 0;
+    const fetcher = async () => {
+      fetchCount++;
+      return { count: fetchCount };
+    };
+
+    const [r1] = createResource(fetcher, {
+      key: 'resource-tag-test',
+      tags: ['test-tag']
+    });
+
+    const data1 = await r1.refetch();
+    assert.equal(data1.count, 1);
+
+    // Refetching while cached returns cached data without calling fetcher
+    const data2 = await r1.refetch();
+    assert.equal(data2.count, 1);
+    assert.equal(fetchCount, 1);
+
+    // Invalidate tag via createResource.invalidateTags
+    createResource.invalidateTags(['test-tag']);
+
+    // Refetching now triggers a fresh network call
+    const data3 = await r1.refetch();
+    assert.equal(data3.count, 2);
+    assert.equal(fetchCount, 2);
+  });
 });

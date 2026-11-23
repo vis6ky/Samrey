@@ -1,7 +1,7 @@
 # Frequently Asked Questions (FAQ)
 
 ### Q: Why does Samrey not use a Virtual DOM?
-**A:** Virtual DOM diffing carries significant memory and CPU overhead: creating JavaScript object trees, traversing trees recursively, and computing diffs on every render. Samrey leverages fine-grained signal graphs and compiles templates into native C++ `cloneNode(true)` operations with point-to-point text and attribute hole bindings. Updates execute with zero diffing overhead.
+**A:** Virtual DOM diffing carries significant memory and CPU overhead: creating JavaScript object trees, traversing trees recursively, and computing diffs on every render. Samrey leverages fine-grained signal graphs and compiles templates into browser-native DOM `cloneNode(true)` operations with point-to-point text and attribute hole bindings. Updates execute with zero diffing overhead.
 
 ---
 

@@ -4,7 +4,7 @@
  */
 
 import { Dependency, Signal, Subscriber } from './types.js';
-import { trackDependency, incrementClock } from './batch.js';
+import { trackDependency, incrementClock, batch } from './batch.js';
 
 function isDevRuntime(): boolean {
   if (typeof process !== 'undefined' && process.env) {
@@ -50,15 +50,15 @@ export function signal<T>(initialValue: T): Signal<T> {
       }
       node.version = incrementClock();
 
-      // BUG-05 FIX: Notify subscribers directly without wrapping in batch().
-      // Snapshot subscribers with Array.from() so synchronous subscriber execution
-      // that removes and re-subscribes during an effect re-run cannot mutate the
-      // live iteration and trigger an infinite Set iteration loop.
+      // Batch subscriber notifications so that diamond dependency graphs propagate
+      // dirty flags across all branches before queued effects drain, preventing glitches.
       if (node.subscribers.size > 0) {
-        const subs = Array.from(node.subscribers);
-        for (let i = 0; i < subs.length; i++) {
-          subs[i].notify(node.version);
-        }
+        batch(() => {
+          const subs = Array.from(node.subscribers);
+          for (let i = 0; i < subs.length; i++) {
+            subs[i].notify(node.version);
+          }
+        });
       }
     } else if (
       lastArraySnapshot !== null &&

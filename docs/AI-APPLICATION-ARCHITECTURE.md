@@ -8,7 +8,7 @@
 
 Samrey applications execute with **zero Virtual DOM**. Unlike React, Vue, or Angular:
 - **Components Run Once**: Component functions execute exactly once during instantiation. They are factory functions that construct and wire the DOM tree, not render functions that re-execute on every state tick.
-- **Static Template Hoisting**: Markup invariants are hoisted at module scope using `template('...')`. Cloning pre-parsed template fragments leverages native browser C++ `cloneNode(true)`, outperforming synthetic element construction by an order of magnitude.
+- **Static Template Hoisting**: Markup invariants are hoisted at module scope using `template('...')`. Cloning pre-parsed template fragments leverages browser-native DOM `cloneNode(true)`, outperforming synthetic element construction by an order of magnitude.
 - **Surgical Reactivity**: Fine-grained reactive signals (`signal()`, `computed()`) connect directly to micro-DOM mutation points (`bindText`, `bindAttr`, `bindClass`, `on`). State updates bypass component trees entirely and touch only the target DOM nodes.
 
 ---

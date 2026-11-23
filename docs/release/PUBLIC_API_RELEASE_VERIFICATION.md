@@ -16,7 +16,7 @@
 | `@samrey/security` | 10 | 39 | 0 | **PASS** |
 | `@samrey/compiler` | 9 | 19 | 0 | **PASS** |
 | `@samrey/router` | 14 | 18 | 0 | **PASS** |
-| `@samrey/http` | 4 | 8 | 0 | **PASS** |
+| `@samrey/http` | 4 | 9 | 0 | **PASS** |
 | `@samrey/forms` | 4 | 7 | 0 | **PASS** |
 | `@samrey/ssr` | 9 | 24 | 0 | **PASS** |
 | `@samrey/testing` | 6 | 9 | 0 | **PASS** |

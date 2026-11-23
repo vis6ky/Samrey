@@ -7,7 +7,6 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@samrey/core": "^2.1.0",
     "@samrey/reactivity": "^2.1.0",
     "@samrey/runtime": "^2.1.0"
   }

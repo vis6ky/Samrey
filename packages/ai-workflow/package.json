@@ -3,6 +3,15 @@
   "version": "2.1.0",
   "description": "Autonomous AI Application Development & Self-Correction Engine for Samrey Framework",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vis6ky/Samrey.git",
+    "directory": "packages/ai-workflow"
+  },
+  "homepage": "https://github.com/vis6ky/Samrey#readme",
+  "bugs": {
+    "url": "https://github.com/vis6ky/Samrey/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -29,7 +38,6 @@
     "test": "node --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@samrey/core": "^2.1.0",
     "@samrey/reactivity": "^2.1.0",
     "@samrey/runtime": "^2.1.0",
     "@samrey/compiler": "^2.1.0",

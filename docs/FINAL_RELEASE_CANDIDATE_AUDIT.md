@@ -30,21 +30,24 @@ The audit was conducted strictly against real repository sources, zero assumptio
 
 ## 1. Repository Reality Check
 
-All 11 packages declared in the Samrey monorepo were directly verified in `/packages/*`:
+All 14 packages declared in the Samrey monorepo were directly verified in `/packages/*`:
 
 | Package Directory | NPM Package Name | Version | Type | Entry Points |
 | :--- | :--- | :--- | :--- | :--- |
-| `/packages/reactivity` | `@samrey/reactivity` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/security` | `@samrey/security` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/compiler` | `@samrey/compiler` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/runtime` | `@samrey/runtime` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/router` | `@samrey/router` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/http` | `@samrey/http` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/forms` | `@samrey/forms` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/ssr` | `@samrey/ssr` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/testing` | `@samrey/testing` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/devtools` | `@samrey/devtools` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`) |
-| `/packages/cli` | `@samrey/cli` | `0.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: samrey`) |
+| `/packages/reactivity` | `@samrey/reactivity` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/security` | `@samrey/security` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/compiler` | `@samrey/compiler` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/runtime` | `@samrey/runtime` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/router` | `@samrey/router` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/http` | `@samrey/http` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/forms` | `@samrey/forms` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/ssr` | `@samrey/ssr` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/testing` | `@samrey/testing` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/devtools` | `@samrey/devtools` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/cli` | `@samrey/cli` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`, `bin: samrey`) |
+| `/packages/ai` | `@samrey/ai` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/ai-workflow` | `@samrey/ai-workflow` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
+| `/packages/mcp-server` | `@samrey/mcp-server` | `2.1.0` | `module` | `main`, `types`, `exports` (`.`) |
 
 ### Dependency Graph & Circular Dependency Audit
 - **Reactivity & Security**: Core zero-dependency base layer. No circular imports.

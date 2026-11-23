@@ -9,7 +9,7 @@ import { TraceLogger } from './observability.js';
 import { SecurityPolicy, AuthorizationLevel } from './authorization.js';
 
 export interface FailureContext {
-  stage: 'BUILD' | 'VALIDATION' | 'TEST' | 'RUNTIME';
+  stage: 'BUILD' | 'VALIDATE' | 'VALIDATION' | 'TEST' | 'RUNTIME';
   errorMessage: string;
   errorCode?: string;
   targetFile?: string;
@@ -293,15 +293,8 @@ export class SelfCorrectionEngine {
     }
   }
 
-  private findSourceFileWithPattern(pattern: RegExp, projectDir: string): string | null {
+  private findSourceFileWithPattern(_pattern: RegExp, _projectDir: string): string | null {
     // Helper to scan for files containing prohibited patterns
-    try {
-      const srcDir = resolve(projectDir, 'src');
-      if (!existsSync(srcDir)) return null;
-      // In practice, returns first matching file in src/
-      return null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 }

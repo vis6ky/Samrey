@@ -6,7 +6,7 @@ Samrey avoids Virtual DOM trees entirely. When you write markup in an Samrey app
 1. **A static HTML skeleton**: Hoisted as a constant template string.
 2. **Dynamic hole bindings**: Precise child path walks (e.g. `[0, 1]`) targeting dynamic texts, attributes, or event listeners.
 
-At runtime, `template(htmlString)` creates an `<template>` element once. Every subsequent component instantiation calls native C++ `cloneNode(true)`, creating real DOM trees orders of magnitude faster than `document.createElement()` trees.
+At runtime, `template(htmlString)` creates an `<template>` element once. Every subsequent component instantiation calls browser-native DOM `cloneNode(true)`, creating real DOM trees orders of magnitude faster than `document.createElement()` trees.
 
 ```typescript
 import { template } from '@samrey/runtime';

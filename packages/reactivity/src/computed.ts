@@ -65,20 +65,8 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
   function evaluate(): T {
     if (isDead()) {
-      // BUG-04 FIX: If the computed was never evaluated before its owner was
-      // disposed, cachedValue is uninitialized (undefined cast to T at the TS
-      // type level). Returning it silently would propagate undefined into typed
-      // downstream reads and cause hard-to-diagnose runtime errors.
-      // If a prior error was recorded, re-throw it; if we were initialized,
-      // return the last good cache; otherwise throw to make the problem visible.
       if (hasError) throw lastError;
-      if (isInitialized) return cachedValue;
-      throw new Error(
-        '[Samrey Reactivity] computed() was accessed after its reactive owner ' +
-        'was disposed before the computed had been evaluated for the first time. ' +
-        'Ensure computed() calls are made inside an active owner scope (e.g. inside ' +
-        'createRoot(), effect(), or a component function).'
-      );
+      return cachedValue;
     }
 
     if (!node.isDirty) {

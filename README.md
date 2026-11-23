@@ -13,7 +13,7 @@
 
 ## Overview
 
-Samrey is an isomorphic web framework designed from first principles to deliver extreme runtime execution speed, mathematical reactive consistency, and airtight compile-time security. Unlike traditional Virtual DOM frameworks (React, Vue) that re-render entire component subtrees or diff virtual trees on every state change, Samrey compiles templates Ahead-of-Time into static HTML strings cloned via native C++ `cloneNode(true)` and surgical point-to-point DOM bindings.
+Samrey is an isomorphic web framework designed from first principles to deliver extreme runtime execution speed, mathematical reactive consistency, and airtight compile-time security. Unlike traditional Virtual DOM frameworks (React, Vue) that re-render entire component subtrees or diff virtual trees on every state change, Samrey compiles templates Ahead-of-Time into static HTML strings cloned via browser-native DOM `cloneNode(true)` and surgical point-to-point DOM bindings.
 
 ### Core Architectural Highlights
 
@@ -91,6 +91,7 @@ In Samrey, `<For>` preserves DOM elements and owner scopes using keyed identity 
 | [`@samrey/testing`](./packages/testing) | `2.1.0` | Test component mounting harness, signal flushers, assertion helpers |
 | [`@samrey/devtools`](./packages/devtools) | `2.1.0` | Origin-gated devtools bridge, dependency graph inspection, transaction logging |
 | [`@samrey/ai`](./packages/ai) | `2.1.0` | AI workflow integration, structured diagnostics, documentation & example engine |
+| [`@samrey/ai-workflow`](./packages/ai-workflow) | `2.1.0` | Autonomous AI workflow engine, iterative self-correction, and observability |
 | [`@samrey/mcp-server`](./packages/mcp-server) | `2.1.0` | Model Context Protocol (MCP) server exposing Samrey tools & code validators |
 | [`@samrey/cli`](./packages/cli) | `2.1.0` | CLI scaffold generator, Vite plugin, security and a11y static auditor |
 

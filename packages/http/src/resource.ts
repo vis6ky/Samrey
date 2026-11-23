@@ -5,6 +5,7 @@
 
 import { signal, effect, onCleanup, useContext, SuspenseTrackerContext, type ReadonlySignal, untrack } from '@samrey/reactivity';
 import { Resource, ResourceStatus } from './types.js';
+import { defaultRequestCache, RequestCache } from './cache.js';
 
 function readonlyView<R>(getter: () => R): ReadonlySignal<R> {
   const view = (() => getter()) as ReadonlySignal<R>;
@@ -18,6 +19,11 @@ function readonlyView<R>(getter: () => R): ReadonlySignal<R> {
 export interface ResourceOptions<T = unknown> {
   initialValue?: T;
   timeoutMs?: number;
+  key?: string | (() => string);
+  tags?: string[];
+  cache?: RequestCache | boolean;
+  ttlMs?: number;
+  dedupe?: boolean;
 }
 
 export function createResource<T>(
@@ -95,13 +101,28 @@ export function createResource<T, S = unknown>(
     const run = (async () => {
       try {
         const sourceVal = explicitSource !== undefined ? explicitSource : (source ? source() : (undefined as unknown as S));
-        const fetchPromise = Promise.resolve(fetcher(sourceVal, { abortSignal: controller.signal }));
-        if (timeoutPromise) {
-          fetchPromise.catch(() => {});
+        const executeFetch = () => {
+          const fetchPromise = Promise.resolve(fetcher(sourceVal, { abortSignal: controller.signal }));
+          if (timeoutPromise) {
+            fetchPromise.catch(() => {});
+          }
+          return timeoutPromise
+            ? Promise.race([fetchPromise, timeoutPromise])
+            : fetchPromise;
+        };
+
+        let result: T;
+        const cacheKey = typeof options.key === 'function' ? options.key() : options.key;
+        const activeCache = options.cache instanceof RequestCache
+          ? options.cache
+          : (options.cache !== false ? defaultRequestCache : null);
+
+        if (cacheKey && activeCache && options.dedupe !== false) {
+          result = await activeCache.dedupe(cacheKey, executeFetch, options.ttlMs, options.tags);
+        } else {
+          result = await executeFetch();
         }
-        const result = timeoutPromise
-          ? await Promise.race([fetchPromise, timeoutPromise])
-          : await fetchPromise;
+
         if (!disposed && seq === activeSeq) {
           data.value = result;
           status.value = 'success';
@@ -194,3 +215,12 @@ export function createResource<T, S = unknown>(
 
   return resource;
 }
+
+(createResource as any).cache = defaultRequestCache;
+(createResource as any).invalidateTags = (tags: string | string[]): number => defaultRequestCache.invalidateTags(tags);
+
+export namespace createResource {
+  export const cache: RequestCache = defaultRequestCache;
+  export const invalidateTags: (tags: string | string[]) => number = (tags: string | string[]) => defaultRequestCache.invalidateTags(tags);
+}
+

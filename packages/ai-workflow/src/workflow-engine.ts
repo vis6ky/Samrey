@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { WorkflowStage, TraceLogger, ExecutionTrace } from './observability.js';
-import { SecurityPolicy, AuthorizationLevel } from './authorization.js';
+import { AuthorizationLevel } from './authorization.js';
 import { ArchitecturePlanner, ApplicationArchitecturePlan } from './architecture-planner.js';
 import { SelfCorrectionEngine, FailureContext } from './self-correction.js';
 
@@ -47,7 +47,6 @@ export class WorkflowEngine {
   private state: TaskState;
   private stateFile: string;
   private logger: TraceLogger;
-  private security: SecurityPolicy;
   private planner: ArchitecturePlanner;
   private selfCorrection: SelfCorrectionEngine;
 
@@ -60,7 +59,6 @@ export class WorkflowEngine {
     authorizationLevel = AuthorizationLevel.BUILD_EXECUTION
   ) {
     this.stateFile = resolve(projectDir, '.samrey', `task-${taskId}.json`);
-    this.security = new SecurityPolicy(authorizationLevel);
     this.logger = new TraceLogger(
       taskId,
       agentId,

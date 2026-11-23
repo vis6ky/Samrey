@@ -426,7 +426,7 @@ function patchMultiRootFragment(fragment: Node): Node {
 }
 
 /**
- * Creates a template factory that clones pre-parsed HTML strings via native C++ cloneNode(true).
+ * Creates a template factory that clones pre-parsed HTML strings via browser-native DOM cloneNode(true).
  * Returns a factory function with a `.clone()` method and fine-grained template references (`root.refs`).
  */
 export function template<S extends string = string>(htmlString: S): TemplateFactory<S> {

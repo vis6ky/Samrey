@@ -3,7 +3,7 @@
 **Version:** 2.1.0  
 **Status:** Living Canonical API Contract Specification
 
-This document lists the exact, verified public APIs exported by all 13 official Samrey framework packages.
+This document lists the exact, verified public APIs exported by all 14 official Samrey framework packages.
 
 ---
 
@@ -326,3 +326,34 @@ Command-line interface (`samrey` / `npx @samrey/cli`):
 - `samrey explain <code-or-error> [--json]`
 - `samrey audit [--security] [--a11y] [--json]`
 - `samrey generate <type> <name>`
+
+---
+
+## 14. `@samrey/ai-workflow`
+
+```ts
+export class WorkflowEngine {
+  constructor(projectDir: string, options?: WorkflowOptions);
+  execute(spec: ApplicationSpec): Promise<WorkflowRunResult>;
+}
+
+export class ArchitecturePlanner {
+  constructor(projectDir: string);
+  plan(spec: ApplicationSpec): Promise<ArchitecturePlan>;
+}
+
+export class SelfCorrectionEngine {
+  constructor(projectDir: string, options?: SelfCorrectionOptions);
+  attemptCorrection(context: FailureContext): Promise<CorrectionResult>;
+}
+
+export class TraceLogger {
+  constructor(logPath?: string);
+  log(entry: TraceEntry): void;
+}
+
+export class SecurityPolicy {
+  constructor(options?: SecurityPolicyOptions);
+  validateOperation(op: FileOperation): boolean;
+}
+```

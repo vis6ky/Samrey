@@ -70,7 +70,7 @@ export const DIMENSIONS: DimensionItem[] = [
     },
     samrey: {
       summary: 'Static <template> clone hoisting with fine-grained DOM slot bindings',
-      architecturalSolution: 'Module-level pre-parsed <template> tags cloned via native browser C++ cloneNode(true). Signal bindings hook directly into text nodes and attributes with zero VDOM.'
+      architecturalSolution: 'Module-level pre-parsed <template> tags cloned via browser-native DOM cloneNode(true). Signal bindings hook directly into text nodes and attributes with zero VDOM.'
     }
   },
   {

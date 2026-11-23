@@ -9,7 +9,7 @@
 All agents must adhere to the detailed rules defined in the `ai/` specification suite:
 - [ai/SPEC.md](ai/SPEC.md): Core framework specification & design invariants
 - [ai/ARCHITECTURE.md](ai/ARCHITECTURE.md): Zero-VDOM execution lifecycle & system architecture
-- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Authoritative public API contracts across all 13 `@samrey/*` packages
+- [ai/API_CONTRACTS.md](ai/API_CONTRACTS.md): Authoritative public API contracts across all 14 `@samrey/*` packages
 - [ai/REACTIVITY_RULES.md](ai/REACTIVITY_RULES.md): Signals, computed, effects, stores, and owner hierarchy rules
 - [ai/COMPONENT_RULES.md](ai/COMPONENT_RULES.md): Static template cloning (`template()`), `.refs`, surgical bindings, and control flow functions
 - [ai/COMPILER_RULES.md](ai/COMPILER_RULES.md): AIR intermediate representation, static hoisting, and diagnostic codes

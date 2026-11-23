@@ -18,19 +18,22 @@ The entire test suite across 38 suites comprising 130 comprehensive tests passes
 
 ## 2. Package-by-Package Audit Status
 
-| Package | Version | Types | ESM | Security / Zero-Eval | Tests Passed | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `@samrey/reactivity` | `0.1.0` | `.d.ts` | Yes | Zero-Eval / Glitch-Free | 22/22 | **READY** |
-| `@samrey/security` | `0.1.0` | `.d.ts` | Yes | Strict Trusted Types / Timing-Safe CSRF | 18/18 | **READY** |
-| `@samrey/compiler` | `0.1.0` | `.d.ts` | Yes | AST / AIR / Constant Folding / Source Maps | 16/16 | **READY** |
-| `@samrey/runtime` | `0.1.0` | `.d.ts` | Yes | Direct DOM cloning / Hole bindings / Keyed `<For>` | 14/14 | **READY** |
-| `@samrey/router` | `0.1.0` | `.d.ts` | Yes | Parameterized matching / Redirect sanitization | 8/8 | **READY** |
-| `@samrey/http` | `0.1.0` | `.d.ts` | Yes | Deduplicated `createResource` / Abort tracking | 6/6 | **READY** |
-| `@samrey/forms` | `0.1.0` | `.d.ts` | Yes | Standard Schema / ARIA / Prototype safe | 10/10 | **READY** |
-| `@samrey/ssr` | `0.1.0` | `.d.ts` | Yes | Streaming SSR / SSG / Secret Guard / Event Replay | 18/18 | **READY** |
-| `@samrey/testing` | `0.1.0` | `.d.ts` | Yes | Component mounting harness / Flushers | 4/4 | **READY** |
-| `@samrey/devtools` | `0.1.0` | `.d.ts` | Yes | Origin-gated bridge / Redaction filter | 4/4 | **READY** |
-| `@samrey/cli` | `0.1.0` | `.d.ts` | Yes | Project generator / Vite plugin / Static auditor | 10/10 | **READY** |
+| Package | Version | Types | ESM | Security / Zero-Eval | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `@samrey/reactivity` | `2.1.0` | `.d.ts` | Yes | Zero-Eval / Glitch-Free | **READY** |
+| `@samrey/security` | `2.1.0` | `.d.ts` | Yes | Strict Trusted Types / Timing-Safe CSRF | **READY** |
+| `@samrey/compiler` | `2.1.0` | `.d.ts` | Yes | AST / AIR / Constant Folding / Source Maps | **READY** |
+| `@samrey/runtime` | `2.1.0` | `.d.ts` | Yes | Direct DOM cloning / Hole bindings / Keyed `<For>` | **READY** |
+| `@samrey/router` | `2.1.0` | `.d.ts` | Yes | Parameterized matching / Redirect sanitization | **READY** |
+| `@samrey/http` | `2.1.0` | `.d.ts` | Yes | Deduplicated `createResource` / Abort tracking | **READY** |
+| `@samrey/forms` | `2.1.0` | `.d.ts` | Yes | Standard Schema / ARIA / Prototype safe | **READY** |
+| `@samrey/ssr` | `2.1.0` | `.d.ts` | Yes | Streaming SSR / SSG / Secret Guard / Event Replay | **READY** |
+| `@samrey/testing` | `2.1.0` | `.d.ts` | Yes | Component mounting harness / Flushers | **READY** |
+| `@samrey/devtools` | `2.1.0` | `.d.ts` | Yes | Origin-gated bridge / Redaction filter | **READY** |
+| `@samrey/cli` | `2.1.0` | `.d.ts` | Yes | Project generator / Vite plugin / Static auditor | **READY** |
+| `@samrey/ai` | `2.1.0` | `.d.ts` | Yes | Skills / Knowledge / Validation | **READY** |
+| `@samrey/ai-workflow` | `2.1.0` | `.d.ts` | Yes | Autonomous Development & Self-Correction | **READY** |
+| `@samrey/mcp-server` | `2.1.0` | `.d.ts` | Yes | Model Context Protocol Stdio Server | **READY** |
 
 ---
 

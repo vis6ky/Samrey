@@ -5,9 +5,12 @@ import {
   AuthorizationLevel,
   ArchitecturePlanner,
   SelfCorrectionEngine,
-  TraceLogger,
   WorkflowEngine
 } from '../src/index.js';
+
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 describe('@samrey/ai-workflow', () => {
   describe('SecurityPolicy', () => {
@@ -106,36 +109,41 @@ describe('@samrey/ai-workflow', () => {
 
   describe('WorkflowEngine', () => {
     it('advances through workflow stages and maintains persistent state', async () => {
-      const engine = new WorkflowEngine(
-        'TASK-UNIT-TEST',
-        'Unit Test Task',
-        process.cwd(),
-        'test-agent',
-        'gemini-flash'
-      );
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'samrey-wf-unit-test-'));
+      try {
+        const engine = new WorkflowEngine(
+          'TASK-UNIT-TEST',
+          'Unit Test Task',
+          tempDir,
+          'test-agent',
+          'gemini-flash'
+        );
 
-      const disc = await engine.discover();
-      assert.equal(disc.success, true);
-      assert.ok(engine.getState().completedStages.includes('DISCOVER'));
+        const disc = await engine.discover();
+        assert.equal(disc.success, true);
+        assert.ok(engine.getState().completedStages.includes('DISCOVER'));
 
-      const plan = await engine.plan({
-        appName: 'Test App',
-        description: 'Test Application',
-        features: ['dashboard']
-      });
-      assert.equal(plan.appName, 'Test App');
-      assert.ok(engine.getState().completedStages.includes('PLAN'));
+        const plan = await engine.plan({
+          appName: 'Test App',
+          description: 'Test Application',
+          features: ['dashboard']
+        });
+        assert.equal(plan.appName, 'Test App');
+        assert.ok(engine.getState().completedStages.includes('PLAN'));
 
-      const val = await engine.validate('const count = signal(0);', 'Counter.ts');
-      assert.equal(val.valid, true);
+        const val = await engine.validate('const count = signal(0);', 'Counter.ts');
+        assert.equal(val.valid, true);
 
-      const invalidVal = await engine.validate('const [x, setX] = useState(0);', 'Broken.ts');
-      assert.equal(invalidVal.valid, false);
-      assert.ok(invalidVal.violations.length > 0);
+        const invalidVal = await engine.validate('const [x, setX] = useState(0);', 'Broken.ts');
+        assert.equal(invalidVal.valid, false);
+        assert.ok(invalidVal.violations.length > 0);
 
-      const report = engine.report();
-      assert.equal(report.state.status, 'COMPLETED');
-      assert.ok(report.trace.stepsCompleted.length >= 3);
+        const report = engine.report();
+        assert.equal(report.state.status, 'COMPLETED');
+        assert.ok(report.trace.stepsCompleted.length >= 3);
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 });
