@@ -20,6 +20,7 @@ const PACKAGES = [
   'testing',
   'devtools',
   'ai',
+  'ai-workflow',
   'mcp-server',
   'cli'
 ];

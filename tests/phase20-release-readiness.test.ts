@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { execSync } from 'node:child_process';
 import { buildAllPackages } from '../scripts/build-packages.js';
 
@@ -36,6 +37,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
     'testing',
     'devtools',
     'ai',
+    'ai-workflow',
     'mcp-server',
     'cli'
   ];
@@ -83,7 +85,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
   });
 
   describe('2. Package Manifest & Dependency Graph Validation', () => {
-    it('verifies all 11 package manifests have version 2.0.0, Apache-2.0, repository metadata, and correct exports', () => {
+    it('verifies all 14 package manifests have version 2.1.0, Apache-2.0, repository metadata, and correct exports', () => {
       for (const pkg of PACKAGES) {
         const manifestPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
         assert.ok(fs.existsSync(manifestPath), `Manifest missing for @samrey/${pkg}`);
@@ -105,7 +107,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
   });
 
   describe('3. Public API Contract Exhaustive Verification', () => {
-    it('verifies 100% of public API exports across all 11 packages against docs/PUBLIC_API.md contract', () => {
+    it('verifies 100% of public API exports across all packages against docs/PUBLIC_API.md contract', () => {
       // Reactivity
       assert.equal(typeof signal, 'function');
       assert.equal(typeof computed, 'function');
@@ -228,9 +230,10 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
   });
 
   describe('4 & 5. NPM Tarballs, Clean-Room Consumer & Isolation', () => {
-    it('packages all 11 modules into tarballs, verifies contents, and executes cleanly in consumer', () => {
-      const tarballDir = path.join('/tmp', 'samrey-phase20-tarballs');
-      const consumerDir = path.join('/tmp', 'samrey-phase20-consumer');
+    it('packages all 14 modules into tarballs, verifies contents, and executes cleanly in consumer', () => {
+      const tarballDir = path.join(os.tmpdir(), 'samrey-phase20-tarballs');
+      const consumerDir = path.join(os.tmpdir(), 'samrey-phase20-consumer');
+      const npmCache = path.join(os.tmpdir(), 'npm-pack-cache');
 
       fs.rmSync(tarballDir, { recursive: true, force: true });
       fs.rmSync(consumerDir, { recursive: true, force: true });
@@ -246,7 +249,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       // Run npm pack on all packages
       for (const pkg of PACKAGES) {
         const pkgDir = path.join(process.cwd(), 'packages', pkg);
-        execSync(`npm pack --pack-destination "${tarballDir}"`, { cwd: pkgDir, stdio: 'pipe' });
+        execSync(`npm pack --pack-destination "${tarballDir}" --cache "${npmCache}"`, { cwd: pkgDir, stdio: 'pipe' });
       }
 
       const tarballs = fs.readdirSync(tarballDir).filter(f => f.endsWith('.tgz'));
@@ -289,7 +292,7 @@ describe('Samrey Phase 20 — Public Release & npm Publication Readiness', () =>
       );
 
       // Install in isolated clean room
-      execSync('npm install --prefer-offline --no-audit', { cwd: consumerDir, stdio: 'pipe' });
+      execSync(`npm install --prefer-offline --no-audit --cache "${npmCache}"`, { cwd: consumerDir, stdio: 'pipe' });
 
       // Run isolated consumer smoke script
       const consumerScript = `

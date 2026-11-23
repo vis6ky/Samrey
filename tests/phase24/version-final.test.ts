@@ -11,17 +11,15 @@ import * as path from 'node:path';
 import { validateVersionConsistency } from '../../scripts/release/validate-version.js';
 
 describe('Phase 24 — Version Final Gate', () => {
-  const PACKAGES = [
-    'reactivity', 'runtime', 'security', 'compiler', 'router',
-    'http', 'forms', 'ssr', 'testing', 'devtools', 'cli'
-  ];
+  const packagesDir = path.join(process.cwd(), 'packages');
+  const PACKAGES = fs.readdirSync(packagesDir).filter(f => fs.existsSync(path.join(packagesDir, f, 'package.json')));
 
   it('1. Verifies root package.json is pinned to 2.1.0', () => {
     const rootManifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
     assert.strictEqual(rootManifest.version, '2.1.0');
   });
 
-  it('2. Verifies all 11 packages are pinned to 2.1.0', () => {
+  it(`2. Verifies all ${PACKAGES.length} packages are pinned to 2.1.0`, () => {
     const result = validateVersionConsistency('2.1.0');
     assert.strictEqual(result.allMatch, true, `Version mismatches: ${result.mismatches.join(', ')}`);
     assert.strictEqual(result.expectedVersion, '2.1.0');

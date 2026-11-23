@@ -93,7 +93,8 @@ export function packAllPackages(
       execSync('npm run build', { cwd: pkgDir, stdio: 'pipe' });
     }
 
-    const packOut = execSync(`npm pack --pack-destination "${outDir}"`, { cwd: pkgDir, encoding: 'utf8' }).trim();
+    const cacheDir = path.join(os.tmpdir(), 'npm-pack-cache');
+    const packOut = execSync(`npm pack --pack-destination "${outDir}" --cache "${cacheDir}"`, { cwd: pkgDir, encoding: 'utf8' }).trim();
     const generatedFilename = packOut.split('\n').filter(Boolean).pop()!.trim();
     const destTarball = path.join(outDir, generatedFilename);
 

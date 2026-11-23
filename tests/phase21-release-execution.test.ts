@@ -26,7 +26,7 @@ describe('Samrey Phase 21 — Public Release Execution & Registry Verification',
   it('1. Preflight Pipeline Verification', () => {
     const preflight = runPreflight();
     assert.ok(preflight.toolsReady, 'Tooling must be ready');
-    assert.strictEqual(preflight.packagesFound, 13, 'All 13 @samrey/* packages must be present');
+    assert.strictEqual(preflight.packagesFound, 14, 'All 14 @samrey/* packages must be present');
     assert.ok(preflight.success, 'Preflight check must succeed');
   });
 

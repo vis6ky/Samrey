@@ -5,6 +5,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { execSync } from 'node:child_process';
 import { packAllPackages } from './pack.js';
 import { generateStarterProject } from '../../packages/cli/src/index.js';
@@ -48,7 +49,8 @@ export async function runSmokeTest(consumerBaseDir = '/tmp/samrey-public-consume
   fs.writeFileSync(path.join(consumerBaseDir, 'package.json'), JSON.stringify(consumerPkg, null, 2));
 
   diagnostics.push('Installing packed .tgz archives into isolated consumer directory...');
-  execSync('npm install --prefer-offline --no-audit --no-package-lock', { cwd: consumerBaseDir, stdio: 'pipe' });
+  const npmCache = path.join(os.tmpdir(), 'npm-pack-cache');
+  execSync(`npm install --prefer-offline --no-audit --no-package-lock --cache "${npmCache}"`, { cwd: consumerBaseDir, stdio: 'pipe' });
 
   // 3. Clean-room Execution Script
   const testScript = `

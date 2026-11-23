@@ -12,10 +12,8 @@ import { execSync } from 'node:child_process';
 import { packAllPackages } from '../../scripts/release/pack.js';
 
 describe('Phase 24 — NPM Artifact Certification Gate', () => {
-  const PACKAGES = [
-    'reactivity', 'runtime', 'security', 'compiler', 'router',
-    'http', 'forms', 'ssr', 'testing', 'devtools', 'ai', 'mcp-server', 'cli'
-  ];
+  const packagesDir = path.join(process.cwd(), 'packages');
+  const PACKAGES = fs.readdirSync(packagesDir).filter(f => fs.existsSync(path.join(packagesDir, f, 'package.json')));
 
   it(`1. Packs all ${PACKAGES.length} packages and verifies SHA256 checksums`, () => {
     const cliBundlePath = path.join(process.cwd(), 'packages', 'cli', 'bin', 'samrey.bundle.js');

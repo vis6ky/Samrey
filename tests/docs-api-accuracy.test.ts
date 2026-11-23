@@ -35,6 +35,7 @@ const PACKAGES = [
   'security',
   'cli',
   'ai',
+  'ai-workflow',
   'mcp-server'
 ];
 

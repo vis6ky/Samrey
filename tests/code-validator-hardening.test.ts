@@ -390,7 +390,7 @@ describe('Item 5: validateSamreyCode Hardening', () => {
   describe('(e) Batch 4: Validator Root-Cause Sync & Import Parity (@samrey/ai + src/lib/codeValidator)', () => {
     const PACKAGES = [
       'reactivity', 'runtime', 'compiler', 'router', 'forms',
-      'http', 'ssr', 'testing', 'devtools', 'security', 'cli', 'ai', 'mcp-server'
+      'http', 'ssr', 'testing', 'devtools', 'security', 'cli', 'ai', 'ai-workflow', 'mcp-server'
     ];
 
     async function collectRealPackageExports() {
