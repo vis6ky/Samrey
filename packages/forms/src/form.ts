@@ -73,6 +73,7 @@ export function createForm<TValues extends Record<string, any>>(
   const isSubmittingSignal = signal<boolean>(false);
   const formErrorSignal = signal<string | null>(null);
   let submitInFlight = false;
+  let onSubmitRunning = false;
   let resetEpoch = 0;
   const fields = Object.create(null) as { [K in keyof TValues]: FieldState<TValues[K]> };
 
@@ -110,7 +111,7 @@ export function createForm<TValues extends Record<string, any>>(
       e.preventDefault();
     }
 
-    if (submitInFlight || isSubmittingSignal.value) {
+    if (submitInFlight || isSubmittingSignal.value || onSubmitRunning) {
       return false;
     }
 
@@ -228,8 +229,17 @@ export function createForm<TValues extends Record<string, any>>(
       }
 
       // 4. Run onSubmit
-      await config.onSubmit(finalValues);
-      return true;
+      try {
+        onSubmitRunning = true;
+        await config.onSubmit(finalValues);
+        return true;
+      } catch (err: any) {
+        if (epoch !== resetEpoch) return false;
+        formErrorSignal.value = err?.message || String(err) || 'Form submission failed';
+        return false;
+      } finally {
+        onSubmitRunning = false;
+      }
     } finally {
       if (epoch === resetEpoch) {
         submitInFlight = false;

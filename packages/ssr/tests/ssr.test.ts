@@ -117,4 +117,12 @@ describe('@samrey/ssr - Server Side Rendering', () => {
     assert.equal(staticPassCount, 1, 'Static SSR without loaders must only execute app() once');
     assert.equal(staticDisposed, 1, 'Single-pass SSR owner must dispose after serialization');
   });
+
+  it('provides a pure browser client entry without node:async_hooks or node:fs dependencies', async () => {
+    const browserEntry = await import('../src/browser.js');
+    assert.equal(typeof browserEntry.hydrate, 'function');
+    assert.equal(typeof browserEntry.createServerData, 'function');
+    assert.equal(typeof browserEntry.stripSecrets, 'function');
+    assert.equal(typeof browserEntry.serializeStateForHydration, 'function');
+  });
 });

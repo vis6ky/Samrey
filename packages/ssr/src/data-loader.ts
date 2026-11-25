@@ -4,7 +4,7 @@
  */
 
 import { signal, ReadonlySignal } from '@samrey/reactivity';
-import { getSSRContext, getSSRLoaderError } from './context.js';
+import { getSSRContext, getSSRLoaderError } from './context-registry.js';
 import { deserializeHydrationState } from './serializer.js';
 
 export interface ServerDataOptions<T> {

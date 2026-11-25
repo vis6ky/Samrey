@@ -1049,6 +1049,32 @@ MIIEowIBAAKCAQEA0Y1+abcdefghijklmnopqrstuvwxyz1234567890
           () => resolveSafePath(realProj, 'subalias/via-raw-dotdot'),
           /Security Exception/i
         );
+
+        // 7. samrey_fix_diagnostics must validate target paths and reject protected files and non-existent files with caller code
+        const { handleToolCall } = await import('../src/tools.js');
+        const fixProtected = await handleToolCall('samrey_fix_diagnostics', {
+          filePath: '.github/workflows/ci.yml',
+          code: 'const [x, setX] = useState(0);',
+          apply: true
+        }, realProj);
+        assert.equal(fixProtected.isError, true);
+        assert.ok(fixProtected.content[0].text.includes('Path validation failed'));
+
+        const fixPkgJson = await handleToolCall('samrey_fix_diagnostics', {
+          filePath: 'package.json',
+          code: 'const [x, setX] = useState(0);',
+          apply: true
+        }, realProj);
+        assert.equal(fixPkgJson.isError, true);
+        assert.ok(fixPkgJson.content[0].text.includes('Path validation failed'));
+
+        const fixMissing = await handleToolCall('samrey_fix_diagnostics', {
+          filePath: 'src/missing.ts',
+          code: 'const [x, setX] = useState(0);',
+          apply: true
+        }, realProj);
+        assert.equal(fixMissing.isError, true);
+        assert.ok(fixMissing.content[0].text.includes('File not found'));
       } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
       }

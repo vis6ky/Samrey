@@ -214,15 +214,14 @@ describe('Security Fuzzing Suite', () => {
       }
     });
 
-    it('safely ignores prototype pollution param keys', () => {
+    it('safely rejects prototype pollution and reserved param keys', () => {
       const match1 = matchPath('/:__proto__', '/evil-val');
       assert.equal((Object.prototype as any)['evil-val'], undefined);
-      assert.equal(Object.prototype.hasOwnProperty.call(match1, '__proto__'), false);
-      assert.notEqual((match1 as any)?.['__proto__'], 'evil-val');
+      assert.equal(match1, null, 'Must reject routes with __proto__ param key');
 
       const match2 = matchPath('/:constructor', '/evil-val');
-      assert.equal(Object.prototype.hasOwnProperty.call(match2, 'constructor'), false);
-      assert.notEqual((match2 as any)?.['constructor'], 'evil-val');
+      assert.equal((Object.prototype as any)['evil-val'], undefined);
+      assert.equal(match2, null, 'Must reject routes with constructor param key');
     });
   });
 });

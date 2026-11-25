@@ -52,6 +52,26 @@ describe('@samrey/router', () => {
     assert.deepEqual(matchPath('/files/*filepath', '/files/nested/dir/file.txt'), { filepath: 'nested/dir/file.txt' });
   });
 
+  it('correctly matches middle wildcards and does not ignore tail patterns', () => {
+    assert.deepEqual(matchPath('/a/*/b', '/a/x/b'), { '*': 'x' });
+    assert.deepEqual(matchPath('/a/*/b', '/a/x/y/b'), { '*': 'x/y' });
+    assert.equal(matchPath('/a/*/b', '/a/x/zzz'), null, 'Must reject when tail does not match');
+    assert.deepEqual(matchPath('/api/*endpoint/status', '/api/v1/auth/status'), { endpoint: 'v1/auth' });
+    assert.equal(matchPath('/api/*endpoint/status', '/api/v1/auth/metrics'), null);
+  });
+
+  it('prevents directory traversal by refusing to decode %2e%2e into .. in wildcard params', () => {
+    const res = matchPath('/files/*path', '/files/%2e%2e/%2e%2e/etc/passwd');
+    assert.ok(res);
+    assert.equal(res['path'], '%2e%2e/%2e%2e/etc/passwd', 'Must preserve %2e%2e to prevent directory traversal');
+  });
+
+  it('refuses to match routes containing reserved param names like constructor and __proto__', () => {
+    assert.equal(matchPath('/:constructor', '/evil'), null, 'Must not match route with constructor param');
+    assert.equal(matchPath('/:__proto__', '/evil'), null, 'Must not match route with __proto__ param');
+    assert.equal(matchPath('/items/:constructor/view', '/items/123/view'), null);
+  });
+
   it('disposes component owners on navigation and handles arrays of nodes in RouterOutlet', () => {
     let homeDisposals = 0;
     let aboutMounted = 0;

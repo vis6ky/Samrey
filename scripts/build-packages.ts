@@ -27,8 +27,9 @@ export function buildAllPackages(): void {
     // Build with tsc: output JS + .d.ts + sourcemaps into dist
     const tscBin = path.join(process.cwd(), 'node_modules', '.bin', 'tsc');
     const tscCmd = fs.existsSync(tscBin) ? `"${tscBin}"` : 'npx --no-install tsc';
+    const tsFiles = fs.readdirSync(srcDir).filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts')).map(f => path.join(srcDir, f));
     execSync(
-      `${tscCmd} "${srcIndex}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --strict --noUnusedLocals --noUnusedParameters --skipLibCheck`,
+      `${tscCmd} "${tsFiles.join('" "')}" --outDir "${distDir}" --rootDir "${srcDir}" --declaration --declarationMap --sourceMap --target ES2022 --module ESNext --moduleResolution bundler --strict --noUnusedLocals --noUnusedParameters --skipLibCheck`,
       { cwd: process.cwd(), stdio: 'pipe' }
     );
 

@@ -4,35 +4,24 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { SSRHeadMetadata, SSRContext } from './context-registry.js';
+import {
+  registerSSRContextProvider,
+  getSSRContext,
+  getSSRLoaderError
+} from './context-registry.js';
 
-export interface SSRHeadMetadata {
-  title?: string;
-  meta: Array<{ name?: string; property?: string; content: string }>;
-  links: Array<{ rel: string; href: string; as?: string }>;
-  scripts: Array<{ src?: string; inline?: string; defer?: boolean; type?: string }>;
-}
-
-export interface SSRContext {
-  id: string;
-  state: Record<string, unknown>;
-  loaders: Map<string, Promise<unknown>>;
-  head: SSRHeadMetadata;
-  statusCode: number;
-  errors: Error[];
-  headFlushed?: boolean;
-  registerLoader: <T>(key: string, promise: Promise<T>) => void;
-  setError: (err: Error, status?: number) => void;
-  setTitle: (title: string) => void;
-  addMeta: (meta: { name?: string; property?: string; content: string }) => void;
-}
+export type { SSRHeadMetadata, SSRContext };
+export { getSSRContext, getSSRLoaderError };
 
 const asyncLocalStorage = new AsyncLocalStorage<SSRContext>();
 let fallbackContext: SSRContext | null = null;
 const loaderErrorsMap = new WeakMap<SSRContext, Map<string, Error>>();
 
-export function getSSRLoaderError(ctx: SSRContext, key: string): Error | undefined {
-  return loaderErrorsMap.get(ctx)?.get(key);
-}
+registerSSRContextProvider(
+  () => asyncLocalStorage.getStore() ?? fallbackContext,
+  (ctx, key) => loaderErrorsMap.get(ctx)?.get(key)
+);
 
 /**
  * Creates a fresh, isolated SSR context for a single server request.
@@ -91,13 +80,6 @@ export function createSSRContext(initialState: Record<string, unknown> = {}): SS
 
   loaderErrorsMap.set(context, loaderErrors);
   return context;
-}
-
-/**
- * Retrieves the currently active request's SSR context, or null if on client/unscoped.
- */
-export function getSSRContext(): SSRContext | null {
-  return asyncLocalStorage.getStore() ?? fallbackContext;
 }
 
 /**

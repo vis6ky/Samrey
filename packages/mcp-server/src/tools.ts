@@ -1038,17 +1038,21 @@ describe('${feat} Feature', () => {
       let targetFile: string | undefined;
 
       if (filePath) {
-        try {
-          targetFile = resolveSafePath(root, filePath);
-          if (fs.existsSync(targetFile)) {
-            codeToFix = fs.readFileSync(targetFile, 'utf8');
-          }
-        } catch (err: any) {
+        const pathValidation = validateTargetPath(filePath, root, true);
+        if (!pathValidation.valid) {
           return {
-            content: [{ type: 'text', text: `Path error: ${err.message}` }],
+            content: [{ type: 'text', text: `Path validation failed: ${pathValidation.error}` }],
             isError: true
           };
         }
+        targetFile = pathValidation.resolvedPath!;
+        if (!fs.existsSync(targetFile)) {
+          return {
+            content: [{ type: 'text', text: `File not found: "${filePath}". samrey_fix_diagnostics only repairs existing files.` }],
+            isError: true
+          };
+        }
+        codeToFix = fs.readFileSync(targetFile, 'utf8');
       }
 
       if (!codeToFix) {
@@ -1085,8 +1089,16 @@ describe('${feat} Feature', () => {
       }
 
       // 3. Write back if apply is true
-      if (args.apply && targetFile && changes.length > 0) {
-        safeWriteFile(targetFile, repaired, root, true);
+      if (args.apply) {
+        if (!targetFile) {
+          return {
+            content: [{ type: 'text', text: 'Cannot apply fixes without a valid, existing filePath within allowed directories.' }],
+            isError: true
+          };
+        }
+        if (changes.length > 0) {
+          safeWriteFile(targetFile, repaired, root, true);
+        }
       }
 
       return {

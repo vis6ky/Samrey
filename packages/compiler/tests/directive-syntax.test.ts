@@ -158,6 +158,37 @@ describe('Item 6: Directive Syntax Support (class:name={x} and .property={x})', 
       assert.strictEqual(el.outerHTML, 'safe', 'outerHTML must not be modified by bindProperty');
       assert.strictEqual(el.srcdoc, 'safe', 'srcdoc must not be modified by bindProperty');
     });
+
+    it('bindProperty sanitizes URL properties like src, href, action and formAction', () => {
+      const el = { src: '', href: '', action: '', formAction: '' } as any;
+
+      const userUrl = signal('javascript:alert(1)');
+      bindProperty(el, 'src', () => userUrl.value);
+      bindProperty(el, 'href', () => userUrl.value);
+      bindProperty(el, 'action', () => userUrl.value);
+      bindProperty(el, 'formAction', () => userUrl.value);
+
+      assert.strictEqual(el.src, 'about:blank', 'src must be sanitized to about:blank');
+      assert.strictEqual(el.href, 'about:blank', 'href must be sanitized to about:blank');
+      assert.strictEqual(el.action, 'about:blank', 'action must be sanitized to about:blank');
+      assert.strictEqual(el.formAction, 'about:blank', 'formAction must be sanitized to about:blank');
+
+      userUrl.value = 'https://example.com/safe';
+      assert.strictEqual(el.src, 'https://example.com/safe');
+      assert.strictEqual(el.href, 'https://example.com/safe');
+    });
+
+    it('bindProperty sanitizes style and blocks string srcObject assignments', () => {
+      const el = { style: '', srcObject: null } as any;
+
+      const badStyle = signal('color: red; background: url(javascript:alert(1))');
+      bindProperty(el, 'style', () => badStyle.value);
+      assert.ok(!el.style.includes('javascript:'));
+
+      const badSrcObject = signal('javascript:alert(1)');
+      bindProperty(el, 'srcObject', () => badSrcObject.value);
+      assert.strictEqual(el.srcObject, null, 'srcObject must reject string assignment');
+    });
   });
 
   describe('d. Malformed directive validation and compiler errors', () => {

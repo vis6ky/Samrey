@@ -366,7 +366,7 @@ describe('@samrey/http', () => {
       const relClient = createHttpClient('/api');
       await assert.rejects(() => relClient.get('/opaque'), /opaque|redirect|Blocked/i);
       await assert.rejects(() => relClient.get('/redir-evil'), /cross-origin|redirect|Blocked/i);
-      assert.ok(calls.every((c) => c.redirect === 'manual'), 'Must pass redirect: manual when allowCrossOrigin is false even in browsers');
+      assert.ok(calls.every((c) => c.redirect === 'follow'), 'Must pass redirect: follow by default in browsers to allow same-origin redirects');
       assert.ok(!calls.some((c) => c.url.includes('evil.com')), 'Must never send redirect request to evil.com');
 
       const redirRes = await relClient.get<{ ok: boolean }>('/users');
@@ -615,5 +615,76 @@ describe('@samrey/http', () => {
     const data3 = await r1.refetch();
     assert.equal(data3.count, 2);
     assert.equal(fetchCount, 2);
+  });
+
+  it('bypasses cache when Authorization or Cookie headers are present (prevents cross-user response leakage)', async () => {
+    const originalFetch = globalThis.fetch;
+    let fetchCount = 0;
+    const client = createHttpClient('https://api.example.com', { cache: true });
+
+    globalThis.fetch = (async (u: unknown, init?: RequestInit) => {
+      fetchCount++;
+      const auth = new Headers(init?.headers).get('authorization');
+      return new Response(JSON.stringify({ user: auth, fetchCount }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }) as any;
+
+    try {
+      // Alice requests /profile with her auth token
+      const resAlice = await client.get<{ user: string; fetchCount: number }>('/profile', {
+        headers: { Authorization: 'Bearer token-alice' }
+      });
+      assert.equal(resAlice.user, 'Bearer token-alice');
+      assert.equal(resAlice.fetchCount, 1);
+
+      // Bob requests same URL with his auth token - MUST NOT receive Alice's cached data!
+      const resBob = await client.get<{ user: string; fetchCount: number }>('/profile', {
+        headers: { Authorization: 'Bearer token-bob' }
+      });
+      assert.equal(resBob.user, 'Bearer token-bob');
+      assert.equal(resBob.fetchCount, 2);
+
+      // Concurrent requests with different auth must make separate calls
+      const [concAlice, concBob] = await Promise.all([
+        client.get<{ user: string }>('/profile', { headers: { Authorization: 'Bearer token-alice' } }),
+        client.get<{ user: string }>('/profile', { headers: { Authorization: 'Bearer token-bob' } })
+      ]);
+      assert.equal(concAlice.user, 'Bearer token-alice');
+      assert.equal(concBob.user, 'Bearer token-bob');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('default shared httpClient has cache disabled to prevent SSR multi-tenant cache leaks', () => {
+    assert.equal(httpClient.cache, null, 'Default httpClient must have cache: null');
+  });
+
+  it('rejects 200 responses with non-JSON or HTML content with HttpError', async () => {
+    const originalFetch = globalThis.fetch;
+    const client = createHttpClient('https://api.example.com');
+
+    globalThis.fetch = (async () => {
+      // 200 OK HTML login/portal page
+      return new Response('<!DOCTYPE html><html><body>Login Page</body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      });
+    }) as any;
+
+    try {
+      await assert.rejects(
+        () => client.get('/api/account'),
+        (err: any) => {
+          assert.equal(err.status, 200);
+          assert.ok(err.message.includes('Expected JSON response'));
+          return true;
+        }
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

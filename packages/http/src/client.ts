@@ -7,15 +7,26 @@ import { sanitizeUri, safeJsonParse, scrubPrototypePollution } from '@samrey/sec
 import { HttpError } from './types.js';
 import { RequestCache } from './cache.js';
 
-async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined> {
+async function readSafeResponsePayload<T>(res: Response, expectedAccept?: string): Promise<T | undefined> {
+  const contentType = res.headers?.get?.('content-type')?.toLowerCase() || '';
   if (typeof res.text === 'function') {
     const rawText = await res.text();
     if (!rawText || rawText.trim() === '') {
       return undefined;
     }
+    const isJsonContentType = contentType.includes('application/json') || contentType.includes('+json');
+    const isHtml = contentType.includes('text/html') || rawText.trim().startsWith('<!DOCTYPE') || rawText.trim().startsWith('<html');
+
     try {
       return safeJsonParse<T>(rawText);
-    } catch {
+    } catch (parseErr) {
+      if (isJsonContentType || isHtml || (!expectedAccept || expectedAccept.includes('application/json'))) {
+        throw new HttpError(
+          res.status,
+          `[Samrey HTTP] Expected JSON response from ${res.url || 'server'}, but received non-JSON / HTML payload (${contentType || 'unrecognized'})`,
+          rawText
+        );
+      }
       return rawText as unknown as T;
     }
   }
@@ -23,6 +34,31 @@ async function readSafeResponsePayload<T>(res: Response): Promise<T | undefined>
     return scrubPrototypePollution(await res.json()) as T;
   }
   return undefined;
+}
+
+function hasAuthOrCredentials(headers?: HeadersInit, credentials?: RequestCredentials): boolean {
+  if (credentials === 'include' || credentials === 'same-origin') {
+    return true;
+  }
+  if (!headers) return false;
+  if (headers instanceof Headers) {
+    return headers.has('authorization') || headers.has('cookie') || headers.has('proxy-authorization');
+  }
+  if (Array.isArray(headers)) {
+    return headers.some(([k]) => {
+      const lk = k.toLowerCase();
+      return lk === 'authorization' || lk === 'cookie' || lk === 'proxy-authorization';
+    });
+  }
+  if (typeof headers === 'object') {
+    for (const k of Object.keys(headers)) {
+      const lk = k.toLowerCase();
+      if (lk === 'authorization' || lk === 'cookie' || lk === 'proxy-authorization') {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export interface RequestOptions extends Omit<RequestInit, 'cache'> {
@@ -228,10 +264,14 @@ export class HttpClient {
 
     try {
       let res!: Response;
+      const isBrowserEnv = (typeof window !== 'undefined' && typeof window.document !== 'undefined') ||
+        (typeof globalThis !== 'undefined' && Boolean((globalThis as any).window && (globalThis as any).document));
       for (let hop = 0; hop <= maxRedirects; hop++) {
-        const effectiveRedirect: RequestRedirect = !allowCrossOrigin
-          ? (options.redirect === 'error' ? 'error' : 'manual')
-          : (options.redirect ?? 'manual');
+        const effectiveRedirect: RequestRedirect = isBrowserEnv
+          ? (options.redirect ?? 'follow')
+          : (!allowCrossOrigin
+              ? (options.redirect === 'error' ? 'error' : 'manual')
+              : (options.redirect ?? 'manual'));
         res = await fetch(currentUrl, {
           ...fetchOptions,
           redirect: effectiveRedirect,
@@ -334,9 +374,9 @@ export class HttpClient {
       if (!res.ok) {
         let errBody: unknown;
         try {
-          errBody = await readSafeResponsePayload(res);
-        } catch {
-          errBody = undefined;
+          errBody = await readSafeResponsePayload(res, headers.get('accept') || undefined);
+        } catch (e: any) {
+          errBody = e?.payload ?? undefined;
         }
         throw new HttpError(res.status, `HTTP Error ${res.status}: ${res.statusText}`, errBody);
       }
@@ -345,7 +385,7 @@ export class HttpClient {
         return undefined as unknown as T;
       }
 
-      return (await readSafeResponsePayload<T>(res)) as T;
+      return (await readSafeResponsePayload<T>(res, headers.get('accept') || undefined)) as T;
     } finally {
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
@@ -357,10 +397,11 @@ export class HttpClient {
   }
 
   async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const activeCache = options.cache instanceof RequestCache
+    const isAuthed = hasAuthOrCredentials(options.headers, options.credentials);
+    const activeCache = !isAuthed && (options.cache instanceof RequestCache
       ? options.cache
-      : (options.cache !== false ? this._cache : null);
-    const shouldDedupe = options.dedupe !== false && activeCache !== null;
+      : (options.cache !== false ? this._cache : null));
+    const shouldDedupe = !isAuthed && options.dedupe !== false && activeCache !== null;
 
     if (shouldDedupe && activeCache) {
       const url = this.resolveUrl(path, options.allowCrossOrigin);
@@ -413,8 +454,9 @@ export function createHttpClient(baseUrl?: string, options?: HttpClientOptions):
 }
 
 /**
- * Default shared HttpClient instance. Frozen to prevent state mutation across SSR requests (BUG-11 FIX).
- * In SSR multi-tenant applications, use `createHttpClient()` to create isolated
- * client instances per request context if custom base URLs or options are needed.
+ * Default shared HttpClient instance. Configured with cache disabled to prevent cross-request
+ * and cross-tenant state leaks in SSR and multi-tenant environments.
+ * In applications, use `createHttpClient()` to create dedicated client instances with
+ * custom base URLs, auth tokens, or isolated RequestCache configurations.
  */
-export const httpClient = Object.freeze(new HttpClient());
+export const httpClient = Object.freeze(new HttpClient('', { cache: false }));

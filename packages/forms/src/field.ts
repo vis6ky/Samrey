@@ -251,11 +251,29 @@ export const validators = {
   // BUG-09 FIX: Allow `false` as a valid value (in addition to `0`) so boolean
   // fields and checkboxes are not erroneously marked invalid when false.
   required: (msg = 'Field is required') => {
-    const fn = (val: unknown) => (!val && val !== 0 && val !== false ? msg : null);
+    const fn = (val: unknown) => {
+      if (val === null || val === undefined) return msg;
+      if (typeof val === 'string' && val.trim() === '') return msg;
+      if (Array.isArray(val) && val.length === 0) return msg;
+      if (!val && val !== 0 && val !== false) return msg;
+      return null;
+    };
     (fn as unknown as Record<symbol, unknown>)[REQUIRED_VALIDATOR_MARKER] = true;
     return fn;
   },
-  email: (msg = 'Invalid email address') => (val: string) => (!val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)) ? null : msg),
+  email: (msg = 'Invalid email address') => (val: string) => {
+    if (!val) return null;
+    const s = String(val);
+    if (s.length > 254) return msg;
+    const at = s.indexOf('@');
+    if (at <= 0 || at !== s.lastIndexOf('@') || at === s.length - 1) return msg;
+    const local = s.slice(0, at);
+    const domain = s.slice(at + 1);
+    if (/\s/.test(local) || /\s/.test(domain)) return msg;
+    const dot = domain.indexOf('.');
+    if (dot <= 0 || dot === domain.length - 1) return msg;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) ? null : msg;
+  },
   minLength: (min: number, msg = `Minimum length is ${min}`) => (val: string) => (!val || String(val).length >= min ? null : msg),
   maxLength: (max: number, msg = `Maximum length is ${max}`) => (val: string) => (!val || String(val).length <= max ? null : msg),
   pattern: (regex: RegExp, msg = 'Invalid format') => (val: string) => {

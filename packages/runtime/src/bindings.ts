@@ -247,7 +247,22 @@ export function bindProperty(element: Element, propName: string, getter: () => u
   let targetElem: Element = element;
   effect(() => {
     try {
-      (targetElem as any)[propName] = getter();
+      let val = getter();
+      if (val !== null && val !== undefined) {
+        if (SRCSET_ATTRIBUTES.has(lowerProp)) {
+          val = sanitizeSrcset(String(val));
+        } else if (URL_ATTRIBUTES.has(lowerProp)) {
+          val = sanitizeUri(String(val), { allowImageDataUri: true });
+        } else if (lowerProp === 'style') {
+          val = sanitizeCssStyle(val);
+        } else if (lowerProp === 'srcobject') {
+          if (typeof val === 'string') {
+            console.warn('[Samrey Security Warning] Refusing to assign string to srcObject property.');
+            return;
+          }
+        }
+      }
+      (targetElem as any)[propName] = val;
     } catch (err) {
       console.warn(`[Samrey Runtime] Failed to set property "${propName}":`, err);
     }

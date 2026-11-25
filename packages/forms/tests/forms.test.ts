@@ -594,4 +594,72 @@ describe('@samrey/forms', () => {
     assert.equal(await thenableSchemaForm.submit(), false);
     assert.equal(thenableSchemaForm.fields.email.error.value, 'Thenable rejected email');
   });
+
+  it('validators.email resists ReDoS on long repeated strings', () => {
+    const emailValidator = validators.email();
+    const start = performance.now();
+    const malicious = 'a'.repeat(32000) + '@evil.com';
+    const result = emailValidator(malicious);
+    const duration = performance.now() - start;
+
+    assert.equal(result, 'Invalid email address');
+    assert.ok(duration < 20, `Email validation should be instant, took ${duration}ms`);
+  });
+
+  it('validators.required rejects whitespace-only strings and empty arrays', () => {
+    const requiredValidator = validators.required();
+    assert.equal(requiredValidator('   '), 'Field is required');
+    assert.equal(requiredValidator('\t\n  '), 'Field is required');
+    assert.equal(requiredValidator([]), 'Field is required');
+    assert.equal(requiredValidator(['a']), null);
+    assert.equal(requiredValidator('valid'), null);
+    assert.equal(requiredValidator(0), null);
+    assert.equal(requiredValidator(false), null);
+  });
+
+  it('catches onSubmit rejections and assigns them to formError instead of unhandled rejections', async () => {
+    const form = createForm({
+      initialValues: { username: 'alice' },
+      onSubmit: async () => {
+        throw new Error('Network timeout during submit');
+      }
+    });
+
+    const success = await form.submit();
+    assert.equal(success, false);
+    assert.equal(form.formError.value, 'Network timeout during submit');
+    assert.equal(form.isSubmitting.value, false);
+  });
+
+  it('prevents a second concurrent submit when reset() is called during an in-flight submit', async () => {
+    let submitCallCount = 0;
+    let resolveSubmit: () => void;
+    const submitPromise = new Promise<void>((r) => { resolveSubmit = r; });
+
+    const form = createForm({
+      initialValues: { name: 'Initial' },
+      onSubmit: async () => {
+        submitCallCount++;
+        await submitPromise;
+      }
+    });
+
+    // 1. Start first submit
+    const firstSubmitPromise = form.submit();
+    assert.equal(form.isSubmitting.value, true);
+
+    // 2. Call reset() while submit is in-flight
+    form.reset();
+
+    // 3. Attempt second submit while first is still in flight
+    const secondSubmitResult = await form.submit();
+    assert.equal(secondSubmitResult, false, 'Second submit must be rejected while first submit is in-flight');
+
+    // 4. Resolve first submit
+    resolveSubmit!();
+    await firstSubmitPromise;
+
+    assert.equal(submitCallCount, 1, 'onSubmit must have been invoked exactly once');
+    assert.equal(form.isSubmitting.value, false);
+  });
 });
