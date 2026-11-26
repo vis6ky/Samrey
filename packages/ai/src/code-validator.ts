@@ -191,7 +191,8 @@ export const OFFICIAL_PACKAGE_EXPORTS: Record<string, Set<string>> = {
     'createHttpClient',
     'createResource',
     'defaultRequestCache',
-    'httpClient'
+    'httpClient',
+    'invalidateTags'
   ]),
   '@samrey/ssr': new Set([
     'createSSRContext',
@@ -428,15 +429,18 @@ export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
     'ASTShowNode',
     'ASTTextNode',
     'ConstantFoldResult',
+    'DiagnosticSeverity',
     'ErrorDefinition',
     'ParseOptions',
     'ParseResult',
     'Position',
+    'QuickFixPatch',
     'SamreyDiagnosticOptions',
     'SamreyErrorCode',
     'SecurityContext',
     'SourceLocation',
-    'SourceLocationInfo'
+    'SourceLocationInfo',
+    'StructuredDiagnosticJson'
   ]),
   '@samrey/router': new Set([
     'LinkProps',
@@ -460,6 +464,7 @@ export const KNOWN_TYPE_EXPORTS: Record<string, Set<string>> = {
   ]),
   '@samrey/http': new Set([
     'HttpCacheOptions',
+    'HttpClientOptions',
     'RequestOptions',
     'Resource',
     'ResourceActions',
@@ -895,6 +900,10 @@ export function stripComments(code: string): string {
         updatePrev('/');
         continue;
       }
+      updatePrev('/');
+      result += '/';
+      i++;
+      continue;
     } else if (code[i] === "'" || code[i] === '"') {
       const quote = code[i];
       result += quote;

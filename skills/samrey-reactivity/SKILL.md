@@ -30,7 +30,7 @@ count.update(n => n + 1); // Functional update
 const isEven = computed(() => count.value % 2 === 0);
 
 // Deep Store
-const [state, setState] = createStore({ user: { name: 'Alex' } });
+const state = createStore({ user: { name: 'Alex' } });
 produce(state, draft => {
   draft.user.name = 'Bob';
 });

@@ -43,8 +43,7 @@ npx @samrey/cli explain --fix src/MyComponent.ts
 ### Stale Signal Closure / Unresponsive DOM
 - **Cause**: Passed static value instead of getter function to dynamic binding:
   ```ts
-  // Broken:
-  bindText(el, count.value.toString());
+  // Broken: bindText(el, count.value.toString()); (passes static snapshot instead of getter)
   // Fixed:
   bindText(el, () => count.value.toString());
   ```

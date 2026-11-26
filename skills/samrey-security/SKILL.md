@@ -35,7 +35,7 @@ const publicState = stripSecrets(serverSessionData);
 ## 4. Verified Code Example
 ```ts
 import { sanitizeHtml, sanitizeUrl } from '@samrey/security';
-import { template, bindAttr } from '@samrey/runtime';
+import { template, bindAttr, rawHtml } from '@samrey/runtime';
 
 const _profileTmpl = template(`
   <div class="user-profile">
@@ -52,8 +52,8 @@ export function UserProfile(props: { website: string; bio: string }) {
   const safeHref = sanitizeUrl(props.website);
   bindAttr(websiteLink, 'href', () => safeHref);
 
-  // Sanitize and set formatted bio
-  bioBox.innerHTML = sanitizeHtml(props.bio);
+  // Sanitize and mount formatted bio
+  bioBox.appendChild(rawHtml(sanitizeHtml(props.bio)));
 
   return root;
 }

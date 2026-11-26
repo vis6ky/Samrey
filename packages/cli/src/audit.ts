@@ -726,10 +726,11 @@ export function auditSource(source: string, filename = 'Component.tsx'): AuditRe
 
     for (const err of validation.errors) {
       const errLine = err.line ?? 1;
-      const isJsUriAttrErr = err.message.startsWith('Dangerous "javascript:" URI scheme detected in attribute (');
-      if (isJsUriAttrErr) {
+      const uriAttrMatch = /^Dangerous "(javascript:|vbscript:|data:text\/html)" URI scheme detected in attribute "([^"]+)"\./.exec(err.message);
+      if (uriAttrMatch) {
+        const attrName = uriAttrMatch[2]!.toLowerCase();
         const alreadyReportedOnLine = messages.some(
-          (m) => m.startsWith(`${filename}:${errLine}:`) && m.toLowerCase().includes('javascript:')
+          (m) => m.startsWith(`${filename}:${errLine}:`) && m.includes(`"${attrName}" attribute`)
         );
         if (alreadyReportedOnLine) {
           continue;

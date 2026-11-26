@@ -61,7 +61,7 @@ export const OFFICIAL_SAMREY_EXPORTS: Record<string, string[]> = {
   ],
   '@samrey/http': [
     'HttpClient', 'HttpError', 'RequestCache', 'createHttpCache', 'createHttpClient',
-    'createResource', 'defaultRequestCache', 'httpClient'
+    'createResource', 'defaultRequestCache', 'httpClient', 'invalidateTags'
   ],
   '@samrey/security': [
     'DANGEROUS_HTML_TAGS', 'DANGEROUS_TEMPLATE_TAGS', 'SAFE_IMAGE_DATA_URI',
@@ -150,9 +150,9 @@ export const OFFICIAL_SAMREY_TYPES: Record<string, string[]> = {
     'AIRDynamicTextNode', 'AIRNode', 'AIRStaticNode', 'AIRTemplateUnit',
     'ASTAttributeNode', 'ASTComponentNode', 'ASTElementNode', 'ASTForNode',
     'ASTInterpolationNode', 'ASTNode', 'ASTRootNode', 'ASTShowNode', 'ASTTextNode',
-    'ConstantFoldResult', 'ErrorDefinition', 'ParseOptions', 'ParseResult', 'Position',
-    'SamreyDiagnosticOptions', 'SamreyErrorCode', 'SecurityContext', 'SourceLocation',
-    'SourceLocationInfo'
+    'ConstantFoldResult', 'DiagnosticSeverity', 'ErrorDefinition', 'ParseOptions', 'ParseResult', 'Position',
+    'QuickFixPatch', 'SamreyDiagnosticOptions', 'SamreyErrorCode', 'SecurityContext', 'SourceLocation',
+    'SourceLocationInfo', 'StructuredDiagnosticJson'
   ],
   '@samrey/router': [
     'LinkProps', 'RouteMatch', 'RouteRecord', 'RouterInstance'
@@ -163,7 +163,7 @@ export const OFFICIAL_SAMREY_TYPES: Record<string, string[]> = {
     'StandardSchemaResult', 'StandardSchemaSuccess', 'StandardSchemaV1', 'Validator'
   ],
   '@samrey/http': [
-    'HttpCacheOptions', 'RequestOptions', 'Resource', 'ResourceActions',
+    'HttpCacheOptions', 'HttpClientOptions', 'RequestOptions', 'Resource', 'ResourceActions',
     'ResourceOptions', 'ResourceStatus'
   ],
   '@samrey/ssr': [
@@ -758,7 +758,7 @@ export function validateSamreyCode(
     errors.push('Dangerous document.write() call detected.');
   }
 
-  if (/(?:inner|outer)HTML/i.test(codeWithoutComments)) {
+  if (/(?:inner|outer)\s*(?:['"`]\s*\+\s*['"`])?\s*HTML/i.test(codeWithoutComments)) {
     const htmlAssignRegex = /(?:\b(?:innerHTML|outerHTML)\s*|\[\s*['"`](?:innerHTML|outerHTML)['"`]\s*\]\s*|\[\s*['"`](?:inner|outer)['"`]\s*\+\s*['"`]HTML['"`]\s*\]\s*)(?:\+=|=)\s*([^\n;},]+)/g;
     let hm: RegExpExecArray | null;
     while ((hm = htmlAssignRegex.exec(codeWithoutComments)) !== null) {
@@ -769,12 +769,12 @@ export function validateSamreyCode(
         break;
       }
     }
+  }
 
-    if (
-      /\b(?:insertAdjacentHTML\s*(?:\?\.)?\s*\(|\[\s*['"`]insertAdjacentHTML['"`]\s*\]\s*(?:\?\.)?\s*\()\s*[^,]+,\s*(?!['"`][^'"`]*['"`]\s*[,)])/.test(codeWithoutComments)
-    ) {
-      errors.push('Unsafe insertAdjacentHTML call with non-literal expression detected.');
-    }
+  if (
+    /\b(?:insertAdjacentHTML\s*(?:\?\.)?\s*\(|\[\s*['"`]insertAdjacentHTML['"`]\s*\]\s*(?:\?\.)?\s*\()\s*[^,]+,\s*(?!['"`][^'"`]*['"`]\s*[,)])/.test(codeWithoutComments)
+  ) {
+    errors.push('Unsafe insertAdjacentHTML call with non-literal expression detected.');
   }
 
   const dangerousUriPattern = /(?:javascript|vbscript|data\s*:\s*text\/html)/i;
